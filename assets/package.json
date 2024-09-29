@@ -1,0 +1,28 @@
+{
+    "name": "@symfony/ux-wire-utilities",
+    "version": "1.0.0",
+    "license": "MIT",
+    "type": "module",
+    "symfony": {
+        "controllers": {
+            "datatables": {
+                "main": "dist/controller.js",
+                "fetch": "eager",
+                "webpackMode": "eager",
+                "enabled": true
+            }
+        },
+        "importmap": {
+            "@hotwired/stimulus": "^3.0.0",
+            "datatables.net-dt": "^2.1.5"
+        }
+    },
+    "peerDependencies": {
+        "@hotwired/stimulus": "^3.0.0",
+        "datatables.net-dt": "^2.1.5"
+    },
+    "devDependencies": {
+        "@hotwired/stimulus": "^3.0.0",
+        "datatables.net-dt": "^2.1.5"
+    }
+}

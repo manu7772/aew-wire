@@ -1,0 +1,64 @@
+{
+    "name": "aequation/wire",
+    "type": "symfony-bundle",
+    "description": "This bundle is my symfony common base projects.",
+    "keywords": [ "symfony", "symfony-ux" ],
+    "homepage": "https://www.aequation.fr",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Emmanuel Dujardin / Aequation",
+            "homepage": "https://github.com/manu7772"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Aequation\\WireBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Aequation\\WireBundle\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=8.2",
+        "symfony/config": "7.1.*",
+        "symfony/dependency-injection": "^7.1",
+        "symfony/stimulus-bundle": "^2.20",
+        "symfony/http-kernel": "^7.1",
+        "symfony/var-dumper": "^7.1",
+        "symfony/expression-language": "7.1.*",
+        "symfony/filesystem": "7.1.*",
+        "symfony/property-access": "7.1.*",
+        "symfony/property-info": "7.1.*",
+        "symfony/string": "7.1.*",
+        "symfony/yaml": "7.1.*",
+        "symfony/http-client": "7.1.*",
+        "symfony/asset-mapper": "7.1.*",
+        "symfony/asset": "7.1.*",
+        "symfony/twig-pack": "dev-main"
+    },
+    "require-dev": {
+        "symfony/framework-bundle": "7.1.*",
+        "symfony/phpunit-bridge": "7.1.*",
+        "symfony/twig-bundle": "7.1.*",
+        "symfony/var-dumper": "7.1.*"
+    },
+    "conflict": {
+        "symfony/flex": "<1.13"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": false,
+            "symfony/runtime": false
+        }
+    },
+    "extra": {
+        "thanks": {
+            "name": "symfony/ux",
+            "url": "https://github.com/symfony/ux"
+        }
+    },
+    "minimum-stability": "stable"
+}
