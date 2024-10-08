@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialization</title>
+</head>
+<body>
+    <h1>Initialization</h1>
+    <div>
+        {% block main %}
+        {{ dump(initializer.allConfigsData) }}
+        {# {{ dump(initializer.getConfigData('manage_entities')) }} #}
+        {# {{ dump(initializer.getConfigData('copy_yaml_files')) }} #}
+        {{ dump(initializer.installConfig('manage_entities')) }}
+        {% endblock %}
+    </div>
+</body>
+</html>

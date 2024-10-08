@@ -1,0 +1,16 @@
+<?php
+namespace {{ interface.namespace }};
+
+{% for name,uses in interface.class_uses[default([])] -%}
+// {{ name }}
+{% for class in uses -%}
+use {{ use }};
+{% endfor -%}
+{% endfor -%}
+
+interface {{ interface.shortname }}{{ interface.extends|default(false) ? ' extends ' ~ interface.extends }}{{ interface.implements|length ? ' implements ' ~ interface.implements|join(', ') }}
+{
+
+    
+
+}

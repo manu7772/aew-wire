@@ -1,12 +1,13 @@
 {
-    "name": "@symfony/ux-wire-utilities",
-    "version": "1.0.0",
+    "name": "@aequation/wire",
+    "description": "DataTables integration for Symfony",
     "license": "MIT",
+    "version": "1.0.0",
     "type": "module",
     "symfony": {
         "controllers": {
             "datatables": {
-                "main": "dist/controller.js",
+                "main": "dist/dt_controller.js",
                 "fetch": "eager",
                 "webpackMode": "eager",
                 "enabled": true

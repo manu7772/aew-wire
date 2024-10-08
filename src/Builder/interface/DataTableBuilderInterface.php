@@ -1,5 +1,5 @@
 <?php
-namespace Aequation\WireBundle\Builder;
+namespace Aequation\WireBundle\Builder\interface;
 
 use Aequation\WireBundle\Model\DataTable;
 

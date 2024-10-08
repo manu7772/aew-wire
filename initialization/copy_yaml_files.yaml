@@ -1,0 +1,14 @@
+[
+    # {
+    #     from: 'package_dir ~ "/config/packages/"',
+    #     names: ['*.yaml','*.yml'],
+    #     to: 'kernel.getProjectDir() ~ "/config/packages/"',
+    #     merge_type: 'keep_project', # 'no_merge', 'replace', 'keep_project', 'conform_package'
+    # },
+    {
+        from: 'package_dir ~ "/config/routes/"',
+        names: ['*.yaml','*.yml'],
+        to: 'kernel.getProjectDir() ~ "/config/routes/"',
+        merge_type: 'replace', # 'no_merge', 'replace', 'keep_project', 'conform_package'
+    },
+]

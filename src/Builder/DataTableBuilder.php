@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Builder;
 
+use Aequation\WireBundle\Builder\interface\DataTableBuilderInterface;
 use Aequation\WireBundle\Model\DataTable;
 
 class DataTableBuilder implements DataTableBuilderInterface

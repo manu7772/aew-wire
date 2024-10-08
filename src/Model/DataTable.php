@@ -16,6 +16,11 @@ class DataTable
         return $this->id;
     }
 
+    public function getDataController(): ?string
+    {
+        return $this->attributes['data-controller'] ?? null;
+    }
+
     public function getOptions(): array
     {
         return $this->options;

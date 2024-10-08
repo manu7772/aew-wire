@@ -7,15 +7,16 @@ class AequationWireBundle extends Bundle
 {
 
     public static function getProjectPath(
-        bool $directory_separator = true
+        int $level = 1,
+        bool $directory_separator = false
     ): string
     {
-        return \dirname(__DIR__, 1).($directory_separator ? DIRECTORY_SEPARATOR : '');
+        return \dirname(__DIR__, $level).($directory_separator ? DIRECTORY_SEPARATOR : '');
     }
 
     public function getPath(): string
     {
-        return \dirname(__DIR__);
+        return static::getProjectPath(1, false);
     }
 
 }

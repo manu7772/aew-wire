@@ -1,0 +1,2 @@
+name: ucfirst(entity_name)
+names: ucfirst(entity_name) + "s"

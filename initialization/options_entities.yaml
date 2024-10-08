@@ -1,0 +1,53 @@
+{
+    namespace: 'App\Entity',
+    traits: {
+        AppEntity: {
+            classname: 'Aequation\WireBundle\Entity\trait\AppEntity',
+            interfaces: ['Aequation\WireBundle\Entity\interface\AppEntityInterface'],
+            class_attributes: [],
+        },
+        Clonable: {
+            classname: 'Aequation\WireBundle\Entity\trait\Clonable',
+            interfaces: ['Aequation\WireBundle\Entity\interface\ClonableInterface'],
+            class_attributes: [],
+        },
+        Created: {
+            classname: 'Aequation\WireBundle\Entity\trait\Created',
+            interfaces: ['Aequation\WireBundle\Entity\interface\CreatedInterface'],
+            class_attributes: [],
+        },
+        Enabled: {
+            classname: 'Aequation\WireBundle\Entity\trait\Enabled',
+            interfaces: ['Aequation\WireBundle\Entity\interface\EnabledInterface'],
+            class_attributes: [],
+        },
+        Owner: {
+            classname: 'Aequation\WireBundle\Entity\trait\Owner',
+            interfaces: ['Aequation\WireBundle\Entity\interface\OwnerInterface'],
+            class_attributes: [],
+        },
+        RelationOrder: {
+            classname: 'Aequation\WireBundle\Entity\trait\RelationOrder',
+            interfaces: ['Aequation\WireBundle\Entity\interface\RelationOrderInterface'],
+            class_attributes: [],
+        },
+        Serializable: {
+            classname: 'Aequation\WireBundle\Entity\trait\Serializable',
+            interfaces: ['Aequation\WireBundle\Entity\interface\SerializableInterface'],
+            class_attributes: [],
+        },
+        Slug: {
+            classname: 'Aequation\WireBundle\Entity\trait\Slug',
+            interfaces: ['Aequation\WireBundle\Entity\interface\SlugInterface'],
+            class_attributes: ['Aequation\WireBundle\Entity\attribute\Slugable'],
+        },
+        Unamed: {
+            classname: 'Aequation\WireBundle\Entity\trait\Unamed',
+            interfaces: ['Aequation\WireBundle\Entity\interface\UnamedInterface'],
+            class_attributes: [],
+        },
+    },
+    interfaces: {
+
+    },
+}

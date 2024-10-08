@@ -1,0 +1,5 @@
+controllers:
+    resource:
+        path: ../../vendor/aequation/wire/src/Controller
+        namespace: Aequation\WireBundle\Controller
+    type: attribute
