@@ -1,0 +1,32 @@
+[
+    {
+        file: 'kernel.getProjectDir() ~ "/.env"',
+        text_lines: [
+            {
+                text: "APP_LOCALE=fr_FR",
+                replace: true,
+                search: '/(APP_LOCALE=)/',
+                where: '/^(?!#)/',
+            },
+            {
+                text: "APP_TIMEZONE=Europe/Paris",
+                replace: true,
+                search: '/(APP_TIMEZONE=)/',
+                where: '/^(?!#)/',
+            },
+            {
+                text: "APP_CURRENCY=EUR",
+                replace: true,
+                search: '/(APP_CURRENCY=)/',
+                where: '/^(?!#)/',
+            },
+            # {
+            #     text: "APP_TEST=1000",
+            #     replace: true,
+            #     search: '/(APP_TEST=)/',
+            #     where: '/^(?!#)/',
+            # },
+        ],
+            
+    },
+]

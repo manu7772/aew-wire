@@ -89,7 +89,7 @@ abstract class BaseWireRepository extends ServiceEntityRepository implements Bas
         bool $apply_context = true,
     ): array
     {
-        $alias = $this->getQB_findBy($search, $apply_context, $qb);
+        $alias = $this->getQB_findBy($search, $qb, $apply_context);
         $qb->select($alias.'.id');
         if(!in_array($field, ['id'])) {
             $qb->addSelect($alias.'.'.$field);
@@ -341,8 +341,8 @@ abstract class BaseWireRepository extends ServiceEntityRepository implements Bas
 
     public function getQB_findBy(
         ?array $search,
-        bool $apply_context = true,
-        ?QueryBuilder &$qb
+        ?QueryBuilder &$qb,
+        bool $apply_context = true
     ): string
     {
         $alias = static::getAlias($qb);

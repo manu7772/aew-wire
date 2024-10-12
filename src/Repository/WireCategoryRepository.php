@@ -3,17 +3,15 @@ namespace Aequation\WireBundle\Repository;
 
 use Aequation\WireBundle\Entity\WireCategory;
 use Aequation\WireBundle\Repository\BaseWireRepository;
-// Symfony
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Aequation\WireBundle\Repository\interface\WireCategoryRepositoryInterface;
 
 /**
  * @extends BaseWireRepository
  */
-abstract class WireCategoryRepository extends BaseWireRepository
+abstract class WireCategoryRepository extends BaseWireRepository implements WireCategoryRepositoryInterface
 {
 
-    const ENTITY_CLASS = WireCategory::class;
-    const NAME = 'wire_category';
-
+    // const ENTITY_CLASS = WireCategory::class;
+    // const NAME = 'wire_category';
 
 }

@@ -1,9 +1,14 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Entity\interface\TraitCreatedInterface;
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Created;
 use Aequation\WireBundle\Entity\trait\Enabled;
+use Aequation\WireBundle\Entity\trait\Screenable;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Tools\Encoders;
 use DateInterval;
@@ -17,9 +22,9 @@ use DateTimeImmutable;
 
 #[MappedSuperclass()]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class WireUser extends MappSuperClassEntity implements WireUserInterface
+class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitEnabledInterface, TraitCreatedInterface, TraitUnamedInterface, TraitScreenableInterface
 {
-    use Enabled, Created, Unamed;
+    use Enabled, Created, Unamed, Screenable;
 
     public const ICON = "tabler:user-filled";
     public const FA_ICON = "user";

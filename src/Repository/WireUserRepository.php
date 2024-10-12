@@ -4,7 +4,6 @@ namespace Aequation\WireBundle\Repository;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Repository\BaseWireRepository;
 // Symfony
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -15,8 +14,8 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 abstract class WireUserRepository extends BaseWireRepository implements PasswordUpgraderInterface
 {
 
-    const ENTITY_CLASS = WireUser::class;
-    const NAME = 'wire_user';
+    // const ENTITY_CLASS = WireUser::class;
+    // const NAME = 'wire_user';
 
     /**
      * Used to upgrade (rehash) the user's password automatically over time.

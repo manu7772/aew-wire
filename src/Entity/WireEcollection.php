@@ -2,10 +2,12 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
+use Aequation\WireBundle\Attribute\RelationOrder;
 use Aequation\WireBundle\Entity\interface\TraitHasOrderedInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\trait\RelationOrder;
+use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Entity\trait\HasOrdered;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
@@ -23,9 +25,9 @@ use Exception;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
-abstract class WireEcollection extends WireItem implements WireEcollectionInterface, TraitHasOrderedInterface
+class WireEcollection extends WireItem implements WireEcollectionInterface, TraitHasOrderedInterface
 {
-    use RelationOrder;
+    use HasOrdered;
 
     #[ORM\ManyToMany(targetEntity: WireItem::class, mappedBy: 'parents', cascade: ['persist'])]
     #[RelationOrder()]

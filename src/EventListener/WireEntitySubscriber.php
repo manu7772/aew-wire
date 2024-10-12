@@ -19,9 +19,7 @@ class WireEntitySubscriber
     public function __construct(
         public readonly AttributeWireServiceInterface $attributeWire
     )
-    {
-        
-    }
+    {}
 
     public function postCreate(
         WireEntityEvent $event

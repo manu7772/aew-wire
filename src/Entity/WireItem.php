@@ -29,7 +29,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireItemServiceInterface::class)]
-abstract class WireItem extends MappSuperClassEntity implements WireItemInterface, TraitCreatedInterface, TraitEnabledInterface, TraitUnamedInterface, TraitOwnerInterface
+class WireItem extends MappSuperClassEntity implements WireItemInterface, TraitCreatedInterface, TraitEnabledInterface, TraitUnamedInterface, TraitOwnerInterface
 {
     use Created, Enabled, Owner, Serializable, Unamed;
 

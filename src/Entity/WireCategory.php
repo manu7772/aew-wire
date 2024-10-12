@@ -34,7 +34,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     use Created, Slug, Unamed;
 
     public const ICON = "tabler:clipboard-list";
-    public const FA_ICON = "clipboard-list";
+    public const FA_ICON = "fa-solid fa-clipboard-list";
 
     #[ORM\Column(nullable: false)]
     protected ?string $name = null;

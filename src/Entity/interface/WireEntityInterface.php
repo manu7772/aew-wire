@@ -9,10 +9,6 @@ use Stringable;
 
 interface WireEntityInterface extends Stringable, Serializable
 {
-    public const ICON = 'tabler:question-mark';
-    public const FA_ICON = 'question';
-    public const SERIALIZATION_PROPS = ['id','euid','classname','shortname'];
-    public const IS_CLONABLE = false;
 
     // Embeded Status
     public function setEmbededStatus(EntityEmbededStatusInterface $estatus): void;

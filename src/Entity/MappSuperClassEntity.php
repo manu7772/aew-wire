@@ -21,6 +21,11 @@ abstract class MappSuperClassEntity implements WireEntityInterface
 {
     use WireEntity;
 
+    public const ICON = 'tabler:question-mark';
+    public const FA_ICON = 'question';
+    public const SERIALIZATION_PROPS = ['id','euid','classname','shortname'];
+    public const IS_CLONABLE = false;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -38,14 +43,14 @@ abstract class MappSuperClassEntity implements WireEntityInterface
         $this->_estatus->setCloning();
         $this->id = null;
         $this->__clone_entity(); // ----> UPDATE $this->_appManaged;
-        if($this instanceof OwnerInterface) {
-            $this->_service->defineEntityOwner($this, true);
-        }
-        $this->_setClone(false);
-        $this->_service->dispatchEvent($this, AppEvent::afterClone);
-        if($this->_service->isDev() && $this->_appManaged->entity !== $this) {
-            throw new Exception(vsprintf('Error %s line %d: this %s "%s" (id:%s) owned %s is invalid (has other entity %s "%s" - id:%s)!', [__METHOD__, __LINE__, $this->getClassname(), $this, $this->getId() ?? 'null', AppEntityInfo::class, $this->_appManaged->entity->getClassname(), $this->_appManaged->entity, $this->_appManaged->entity->getId() ?? 'null']));
-        }
+        // if($this instanceof OwnerInterface) {
+        //     $this->_service->defineEntityOwner($this, true);
+        // }
+        // $this->_setClone(false);
+        // $this->_service->dispatchEvent($this, AppEvent::afterClone);
+        // if($this->_service->isDev() && $this->_appManaged->entity !== $this) {
+        //     throw new Exception(vsprintf('Error %s line %d: this %s "%s" (id:%s) owned %s is invalid (has other entity %s "%s" - id:%s)!', [__METHOD__, __LINE__, $this->getClassname(), $this, $this->getId() ?? 'null', AppEntityInfo::class, $this->_appManaged->entity->getClassname(), $this->_appManaged->entity, $this->_appManaged->entity->getId() ?? 'null']));
+        // }
         $this->_estatus->setCloned();
     }
 
