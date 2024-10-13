@@ -16,6 +16,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
+use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
 use Twig\Loader\LoaderInterface;
 use Twig\Environment;
@@ -24,6 +25,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
 {
 
     public const APP_WIRE_SESSION_PREFIX = 'appwire_';
+    public const STOPWATCH_MAIN_NAME = "stw_main";
     public const DEFAULT_TIMEZONE = 'Europe/Paris';
     public const DEFAULT_DATENOW = 'NOW';
     public const DEFAULT_TINY_VALUES = ['darkmode' => true];
@@ -68,6 +70,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getParameterBag(): ParameterBagInterface;
     public function getParam(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
     public function getParameter(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
+    // Stopwatch
+    public function startStopwatch(): static;
+    public function getStopwatch(): ?Stopwatch;
+    public function getStopwatchTime(): int|float;
     // Tiny values
     public function setTinyvalue(string $name, mixed $value): static;
     public function getTinyvalue(string $name, mixed $default = null): mixed;

@@ -20,6 +20,12 @@
                 search: '/(APP_CURRENCY=)/',
                 where: '/^(?!#)/',
             },
+            {
+                text: "UX_MAP_DSN=leaflet://default",
+                replace: true,
+                search: '/(UX_MAP_DSN=)/',
+                where: '/^(?!#)/',
+            },
             # {
             #     text: "APP_TEST=1000",
             #     replace: true,

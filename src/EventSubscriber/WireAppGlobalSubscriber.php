@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\EventSubscriber;
 
+use Aequation\WireBundle\Service\AppWireService;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,6 +18,7 @@ use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use function Symfony\Component\String\u;
 // PHP
 use DateTime;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class WireAppGlobalSubscriber implements EventSubscriberInterface
 {
@@ -29,6 +31,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     public function __construct(
         // #[Autowire(service: 'service_container')]
         // protected ContainerInterface $container,
+        // protected KernelInterface $kernel,
         protected AppWireServiceInterface $appWire,
         protected RouterInterface $router
     )

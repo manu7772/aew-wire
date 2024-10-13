@@ -30,6 +30,7 @@ use DateTimeInterface;
 use DateTimeZone;
 use Exception;
 use Serializable;
+use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
 
 #[AsAlias(AppWireServiceInterface::class, public: true)]
@@ -42,6 +43,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private bool $context_initialized = false;
     private readonly array $symfony;
     private readonly array $php;
+    private readonly Stopwatch $stopwatch;
     
     // Serializable data
     private int $timestamp;
@@ -61,6 +63,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // public readonly AccessDecisionManagerInterface $accessDecisionManager,
         // public readonly NormalizerInterface $normalizer,
     ) {
+        // $this->startStopwatch();
         $this->timestamp = time();
         $this->tinyvalues = static::DEFAULT_TINY_VALUES;
         $this->setTokenStorage($tokenStorage);
@@ -110,9 +113,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
         }
         $session = $request?->hasSession() ? $request->getSession() : null;
-        // if($session instanceof SessionInterface && !$this->isInitialized()) {
-        //     $this->initializeAppContext($session);
-        // }
         return $session;
     }
 
@@ -276,31 +276,25 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
 
     /************************************************************************************************************/
-    /** APP CONTEXT                                                                                             */
+    /** INITIALIZE                                                                                              */
     /************************************************************************************************************/
 
     public function initialize(): bool
     {
-        $session = $this->getSession();
-        if($session instanceof SessionInterface) {
-            return $this->initializeAppContext($session);
-        }
-        return $this->isInitialized();
-    }
-
-    private function initializeAppContext(
-        SessionInterface $session
-    ): bool
-    {
-        if(!$this->isCurrentFirewallAvailableForInit()) {
-            $this->context_initialized = false;
-            // if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: initialization is forbidden in this firewall %s!', [__METHOD__, __LINE__, $this->getFirewallName()]));
-        } else if(!$this->isInitialized()) {
-            $this->session ??= $session;
-            $session_data = $this->retrieveAppWire();
-            $this->jsonUnserialize($session_data);
-            $this->context_initialized = true;
-            $this->saveAppWire($session);
+        $this->startStopwatch();
+        if(!$this->isInitialized()) {
+            $session = $this->getSession();
+            if($session instanceof SessionInterface) {
+                if(!$this->isCurrentFirewallAvailableForInit()) {
+                    $this->context_initialized = false;
+                    // if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: initialization is forbidden in this firewall %s!', [__METHOD__, __LINE__, $this->getFirewallName()]));
+                } else {
+                    $this->session ??= $session;
+                    $session_data = $this->retrieveAppWire();
+                    $this->jsonUnserialize($session_data);
+                    $this->context_initialized = true;
+                }    
+            }
         }
         return $this->isInitialized();
     }
@@ -316,7 +310,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function saveAppWire(): bool
     {
         if($this->isInitialized()) {
-            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize());
+            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(true));
+            if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
             return true;
         }
         return false;
@@ -441,6 +436,32 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     }
 
 
+    /** STOPWATCH */
+
+    public function startStopwatch(): static
+    {
+        $this->stopwatch ??= new Stopwatch(true);
+        if(!$this->stopwatch->isStarted(static::STOPWATCH_MAIN_NAME)) {
+            $this->stopwatch->start(static::STOPWATCH_MAIN_NAME);
+        }
+        return $this;
+    }
+
+    public function getStopwatch(): ?Stopwatch
+    {
+        return $this->stopwatch ?? null;
+    }
+
+    public function getStopwatchTime(): int|float
+    {
+        if($this->stopwatch?->isStarted(static::STOPWATCH_MAIN_NAME)) {
+            $event = $this->stopwatch->stop(static::STOPWATCH_MAIN_NAME);
+            return $event->getDuration();
+        }
+        return -1;
+    }
+
+
     /** TINY VALUES */
 
     public function __call($name, $arguments)
@@ -523,41 +544,46 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     {
         return [
             // All
-            'sessionID' => ['serialize' => true, 'unserialize' => false],
-            'user' => ['serialize' => true, 'unserialize' => false],
-            'environment' => ['serialize' => true, 'unserialize' => false],
-            'firewallname' => ['serialize' => true, 'unserialize' => false],
-            'clientIp' => ['serialize' => true, 'unserialize' => false],
-            'XmlHttpRequest' => ['serialize' => true, 'unserialize' => false],
-            'TurboFrameRequest' => ['serialize' => true, 'unserialize' => false],
-            'TurboStreamRequest' => ['serialize' => true, 'unserialize' => false],
-            'public' => ['serialize' => true, 'unserialize' => false],
-            'private' => ['serialize' => true, 'unserialize' => false],
-            'currentdatetime' => ['serialize' => true, 'unserialize' => false],
-            'debug' => ['serialize' => true, 'unserialize' => false],
-            'locale' => ['serialize' => true, 'unserialize' => false],
-            'enabled_locales' => ['serialize' => true, 'unserialize' => false],
-            'current_route' => ['serialize' => true, 'unserialize' => false],
-            'current_route_parameters' => ['serialize' => true, 'unserialize' => false],
+            'sessionID' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'user' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'environment' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'firewallname' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'clientIp' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'XmlHttpRequest' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'TurboFrameRequest' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'TurboStreamRequest' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'public' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'private' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'currentdatetime' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'debug' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'locale' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'enabled_locales' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'current_route' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'current_route_parameters' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => false],
+            'stopwatchTime' => ['serialize' => true, 'unserialize' => false, 'finalOnly' => true],
             // Unserializable
-            'timezone' => ['serialize' => true, 'unserialize' => true],
-            'datenow' => ['serialize' => true, 'unserialize' => true],
-            'tinyvalues' => ['serialize' => true, 'unserialize' => 'mergeTinyvalues'],
+            'timezone' => ['serialize' => true, 'unserialize' => true, 'finalOnly' => false],
+            'datenow' => ['serialize' => true, 'unserialize' => true, 'finalOnly' => false],
+            'tinyvalues' => ['serialize' => true, 'unserialize' => 'mergeTinyvalues', 'finalOnly' => false],
         ];
     }
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(
+        bool $insertFinals = false
+    ): mixed
     {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
         $data = [];
         foreach ($this->getSerializables() as $property => $values) {
-            $method = 'get'.ucfirst($property);
-            if(is_string($values['serialize'])) {
-                $this->{$values['serialize']}();
-            } else if(method_exists($this, $method)) {
-                $data[$property] = $this->{$method}();
-            } else if($values['serialize']) {
-                $data[$property] = $propertyAccessor->getValue($this, $property);
+            if($insertFinals || !$values['finalOnly']) {
+                $method = 'get'.ucfirst($property);
+                if(is_string($values['serialize'])) {
+                    $this->{$values['serialize']}();
+                } else if(method_exists($this, $method)) {
+                    $data[$property] = $this->{$method}();
+                } else if($values['serialize']) {
+                    $data[$property] = $propertyAccessor->getValue($this, $property);
+                }
             }
         }
         return $data;

@@ -56,7 +56,9 @@
         "symfony/ux-twig-component": "^2.20",
         "symfony/ux-live-component": "^2.20",
         "symfony/ux-icons": "^2.20",
-        "symfony/ux-turbo": "^2.20"
+        "symfony/ux-turbo": "^2.20",
+        "symfony/ux-leaflet-map": "^2.20",
+        "symfony/stopwatch": "^7.1"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.1.*",
