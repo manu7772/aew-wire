@@ -1,19 +1,34 @@
 import { Controller } from "@hotwired/stimulus"
 import DataTable from 'datatables.net-dt'
 
-console.debug('Controller DataTable enabled')
-let isDataTableInitialized = false
+// let isDataTableInitialized = false
+let datatable = null
 class default_1 extends Controller
 {
     static targets = ['viewValue']
 
+    // initialize() {
+    //     console.debug('--- Initializing DataTable', this.viewValue)
+    // }
+
     connect() {
-        console.debug('Creating new DataTable', this.viewValue)
-        if(!isDataTableInitialized) {
+        if(!datatable) {
+            // this.element.innerHtml = '<strong>Initialize......</strong>'
+            // console.debug('--- Creating DataTable', [this.element, this.viewValue])
             const payload = this.viewValue;
-            new DataTable(this.element, payload)
-            isDataTableInitialized = true
+            datatable = new DataTable(this.element, payload)
+        } else {
+            // console.debug('--- Updating DataTable', [this.element, this.viewValue])
+            datatable.draw()
         }
+    }
+
+    disconnect() {
+        // console.debug('--- Stopped datatable', this.viewValue)
+        // if(datatable) {
+        //     datatable.destroy()
+        //     datatable = null
+        // }
     }
 
 }

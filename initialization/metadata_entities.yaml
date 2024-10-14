@@ -1,6 +1,6 @@
 {
     Category: {
-        extends: 'Aequation\WireBundle\Entity\LaboCategory',
+        extends: 'Aequation\WireBundle\Entity\WireCategory',
         traits: [Created, Slug, Unamed],
         interfaces: [],
         constants: {

@@ -58,7 +58,9 @@
         "symfony/ux-icons": "^2.20",
         "symfony/ux-turbo": "^2.20",
         "symfony/ux-leaflet-map": "^2.20",
-        "symfony/stopwatch": "^7.1"
+        "symfony/stopwatch": "^7.1",
+        "liip/imagine-bundle": "^2.13",
+        "vich/uploader-bundle": "^2.4"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.1.*",

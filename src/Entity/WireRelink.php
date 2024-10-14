@@ -3,16 +3,19 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
+use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
 use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
+// Symfony
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: WireRelinkRepository::class)]
 #[ClassCustomService(WireRelinkServiceInterface::class)]
@@ -22,13 +25,13 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[Slugable('name')]
-abstract class WireRelink extends WireItem implements WireRelinkInterface, TraitSlugInterface
+abstract class WireRelink extends WireItem implements TraitPreferedInterface, WireRelinkInterface, TraitSlugInterface
 {
 
-    use Slug;
+    use Slug, Prefered;
 
     public const ICON = 'tabler:link';
-    public const FA_ICON = 'link';
+    public const FA_ICON = 'fa fa-link';
     /**
      * @see https://www.w3schools.com/tags/att_a_target.asp 
      * <a target="_blank|_self|_parent|_top|framename">
@@ -50,11 +53,11 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface, Trait
     #[ORM\Column(length: 16, nullable: true)]
     protected ?string $target = null;
 
-    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'relinks')]
+    #[ORM\ManyToOne(targetEntity: WireRelinkInterface::class, inversedBy: 'relinks')]
     protected ?self $parentrelink = null;
 
     #[ORM\Column]
-    protected bool $turboenabled = true;
+    protected bool $turbopreload = true;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     protected ?string $linktitle = null;
@@ -62,7 +65,7 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface, Trait
     /**
      * @var Collection<int, self>
      */
-    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parentrelink')]
+    #[ORM\OneToMany(targetEntity: WireRelinkInterface::class, mappedBy: 'parentrelink')]
     protected Collection $relinks;
 
     public function __construct()
@@ -136,42 +139,42 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface, Trait
     /**
      * @return Collection<int, self>
      */
-    public function getrelinks(): Collection
+    public function getRelinks(): Collection
     {
         return $this->relinks;
     }
 
-    public function addChild(self $child): static
+    public function addRelink(self $relink): static
     {
-        if (!$this->relinks->contains($child)) {
-            $this->relinks->add($child);
-            $child->setParentrelink($this);
+        if (!$this->relinks->contains($relink)) {
+            $this->relinks->add($relink);
+            $relink->setParentrelink($this);
         }
         return $this;
     }
 
-    public function removeChild(self $child): static
+    public function removeRelink(self $relink): static
     {
-        if ($this->relinks->removeElement($child)) {
+        if ($this->relinks->removeElement($relink)) {
             // set the owning side to null (unless already changed)
-            if ($child->getParentrelink() === $this) {
-                $child->setParentrelink(null);
+            if ($relink->getParentrelink() === $this) {
+                $relink->setParentrelink(null);
             }
         }
         return $this;
     }
 
-    public function setTurboenabled(
-        bool $turboenabled = true
+    public function setTurbopreload(
+        bool $turbopreload = true
     ): static
     {
-        $this->turboenabled = $turboenabled;
+        $this->turbopreload = $turbopreload;
         return $this;
     }
 
-    public function isTurboenabled(): bool
+    public function isTurbopreload(): bool
     {
-        return $this->turboenabled;
+        return $this->turbopreload;
     }
 
     public function getLinktitle(): ?string

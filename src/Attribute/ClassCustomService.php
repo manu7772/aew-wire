@@ -11,7 +11,7 @@ use Attribute;
  * @author emmanuel:dujardin Aequation
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-Class ClassCustomService extends baseClassAttribute implements AppAttributeClassInterface
+Class ClassCustomService extends BaseClassAttribute implements AppAttributeClassInterface
 {
 
     public function __construct(

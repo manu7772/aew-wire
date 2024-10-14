@@ -32,6 +32,7 @@ class DataTableExtension extends AbstractExtension
         array $attributes = []
     ): string
     {
+        // $attributes['data-turbo-temporary'] = "false";
         $table->setAttributes(array_merge($table->getAttributes(), $attributes));
 
         $controllers = [];
@@ -46,18 +47,16 @@ class DataTableExtension extends AbstractExtension
         }
 
         foreach ($table->getAttributes() as $name => $value) {
-            if ('data-controller' === $name) {
-                continue;
-            }
-
-            if (true === $value) {
-                $stimulusAttributes->addAttribute($name, $name);
-            } elseif (false !== $value) {
-                $stimulusAttributes->addAttribute($name, $value);
+            if(!in_array($name, ['data-controller'])) {
+                if(true === $value) {
+                    $stimulusAttributes->addAttribute($name, $name);
+                } else if (false !== $value) {
+                    $stimulusAttributes->addAttribute($name, $value);
+                }
             }
         }
 
-        return vsprintf('<table id="%s" %s></table>', [$table->getId(), $stimulusAttributes]);
+        return vsprintf('<table%s %s>Loading...</table>', [empty($table->getId()) ? '' : ' id="'.$table->getId().'"', $stimulusAttributes]);
     }
 
 }

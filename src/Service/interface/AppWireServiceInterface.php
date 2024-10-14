@@ -16,6 +16,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
+use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
 use Twig\Loader\LoaderInterface;
@@ -32,6 +33,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public const PUBLIC_FIREWALLS = ['main'];
     public const EXCLUDED_FIREWALLS = ['dev','tmp','image_resolver','uploads','secured_area'];
     // public const EXCLUDED_FIREWALLS_FOR_INIT = ['tmp','image_resolver','uploads','secured_area'];
+    public const TEMP_DIR = 'tmp';
 
     // AppVariable
     public function setTokenStorage(TokenStorageInterface $tokenStorage): void;
@@ -66,6 +68,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isXmlHttpRequest(): bool;
     public function isTurboFrameRequest(): bool;
     public function isTurboStreamRequest(bool $prepareRequest = false): bool;
+    // Dirs
+    public function getProjectDir(string $path = null): string;
+    public function getCacheDir(string $path = null): string;
+    public function getLogDir(string $path = null): string;
     // Parameters
     public function getParameterBag(): ParameterBagInterface;
     public function getParam(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
@@ -90,13 +96,19 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getCurrentDatetime(): DateTimeImmutable;
     public function getCurrentDatetimeFormated(string $format = DATE_ATOM): string;
     // Environment / Security
+    public function isGranted(mixed $attributes, mixed $subject = null): bool;
     public function isPublic(): bool;
     public function isPrivate(): bool;
     public function isDev(): bool;
     public function isProd(): bool;
     public function isTest(): bool;
     public function getFirewalls(): array;
+    public function getFirewallName(): ?string;
     public function getMainFirewalls(): array;
     public function getFirewallChoices(bool $onlyMains = true): array;
+    // Routes
+    public function getRoutes(): RouteCollection;
+    public function routeExists(string $route, bool|array $control_generation = false): bool;
+    public function getUrlIfExists(string $route, array $parameters = [], int $referenceType = null, array|string $methods = null): ?string;
 
 }

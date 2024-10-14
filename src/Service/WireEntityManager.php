@@ -1,28 +1,32 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Entity\interface\TraitClonableInterface;
-use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Event\WireEntityEvent;
-use Aequation\WireBundle\Event\WireEntitySubscriber;
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireImageInterface;
+use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
+// Symfony
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
-use Exception;
-// Symfony
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+// PHP
+use Exception;
 
 #[AsAlias(WireEntityManagerInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: false)]
@@ -35,7 +39,9 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     public function __construct(
         protected EntityManagerInterface $em,
         protected AppWireServiceInterface $appWire,
-        protected EventDispatcherInterface $eventDispatcher
+        protected EventDispatcherInterface $eventDispatcher,
+        protected UploaderHelper $vichHelper,
+        protected CacheManager $liipCache
     )
     {
         $this->uow = $this->em->getUnitOfWork();
@@ -376,6 +382,26 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             }
         }
         return $classnames;
+    }
+
+
+    /************************************************************************************************************/
+    /** VICH IMAGE / LIIP IMAGE                                                                                 */
+    /************************************************************************************************************/
+
+    public function getBrowserPath(
+        WireImageInterface|WirePdfInterface $media,
+        string $filter = null,
+        array $runtimeConfig = [],
+        $resolver = null,
+        $referenceType = UrlGeneratorInterface::ABSOLUTE_URL
+    ): ?string
+    {
+        $browserPath = $this->vichHelper->asset($media);
+        if($filter && !($media instanceof WirePdfInterface)) {
+            $browserPath = $this->liipCache->getBrowserPath($browserPath, $filter, $runtimeConfig, $resolver, $referenceType);
+        }
+        return $browserPath;
     }
 
 }

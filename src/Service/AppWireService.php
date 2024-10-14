@@ -1,6 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
+use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\AttributeWireServiceInterface;
@@ -30,6 +34,10 @@ use DateTimeInterface;
 use DateTimeZone;
 use Exception;
 use Serializable;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Routing\Router;
+use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
 
@@ -212,6 +220,43 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return !empty($serviceName) && $this->has($serviceName)
             ? $this->get($serviceName)
             : null;
+    }
+
+
+    /************************************************************************************************************/
+    /** DIRS                                                                                                    */
+    /************************************************************************************************************/
+
+    public function getProjectDir(
+        string $path = null
+    ): string
+    {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getProjectDir().$path;
+    }
+
+    public function getCacheDir(
+        string $path = null
+    ): string
+    {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getCacheDir().$path;
+    }
+
+    public function getLogDir(
+        string $path = null
+    ): string
+    {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getLogDir().$path;
+    }
+
+    public function getTempDir(
+        string $path = null
+    ): string
+    {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getProjectDir().DIRECTORY_SEPARATOR.static::TEMP_DIR.DIRECTORY_SEPARATOR.$path;
     }
 
 
@@ -643,10 +688,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     /** SECURITY                                                                                                */
     /************************************************************************************************************/
 
-    // public function getUser(): ?UserInterface
-    // {
-    //     return $this->security->getUser();
-    // }
+    public function isGranted(
+        mixed $attributes,
+        mixed $subject = null
+    ): bool
+    {
+        return $this->security->isGranted($attributes, $subject);
+    }
 
     public function isPublic(): bool
     {
@@ -744,5 +792,119 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     // {
     //     return $this->get(CacheServiceInterface::class);
     // }
+
+    /************************************************************************************************************/
+    /** ROUTES                                                                                                  */
+    /************************************************************************************************************/
+
+    public function getRoutes(): RouteCollection
+    {
+        return $this->get('router')->getRouteCollection();
+    }
+    
+    public function routeExists(string $route, bool|array $control_generation = false): bool
+    {
+        $exists = $this->getRoutes()->get($route) !== null;
+        if($exists && $control_generation) {
+            try {
+                $this->get('router')->generate($route, is_array($control_generation) ? $control_generation : []);
+            } catch (\Throwable $th) {
+                //throw $th;
+                $exists = false;
+            }
+        }
+        return $exists;
+    }
+
+    public function isCurrentRoute(
+        string $route,
+        mixed $param = null
+    ): bool
+    {
+        // dump($this->getCurrent_route(), $this->getCurrent_route_parameters(), $param instanceof MenuInterface ? $param->getItems() : null);
+        if($param instanceof WireWebpageInterface && $param instanceof TraitPreferedInterface) {
+            if($param->isPrefered() && $this->getCurrent_route() === 'app_home') return true;
+        }
+        if($route !== $this->getCurrent_route()) return false;
+        if(!empty($param)) {
+            if($param instanceof TraitSlugInterface) {
+                if($param instanceof WireWebpageInterface) {
+                    if($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
+                }
+                if($param instanceof WireMenuInterface) {
+                    foreach ($param->getItems() as $item) {
+                        if(in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
+                    }
+                }
+                $param = $param->getSlug();
+            }
+            return in_array($param, $this->getCurrent_route_parameters());
+        }
+        return true;
+    }
+
+    public function getCurrent_route_object(): ?Route
+    {
+        $route = $this->getCurrent_route();
+        return $route
+            ? $this->getRoutes()->get($route)
+            : null;
+    }
+
+    /**
+     * Get URL of route only if can be generated
+     * public const ABSOLUTE_URL = 0;
+     * public const ABSOLUTE_PATH = 1;
+     * public const RELATIVE_PATH = 2;
+     * public const NETWORK_PATH = 3;
+     *
+     * @param string $route
+     * @param array $parameters
+     * @param [type] $referenceType
+     * @return string|null
+     */
+    public function getUrlIfExists(
+        string $route,
+        array $parameters = [],
+        int $referenceType = null,
+        array|string $methods = null
+    ): ?string
+    {
+        $objroute = $this->getRoutes()->get($route);
+        if(!($objroute instanceof Route)) return null;
+        // Methods
+        $route_methods = $objroute->getMethods();
+        if(!empty($methods) && !empty($route_methods)) {
+            $valids = array_intersect((array)$methods, $$route_methods);
+            if(empty($valids)) return null;
+        }
+        $current_route = $this->getCurrent_route();
+        // if(!$this->getRoutes()->get($route)) return null;
+
+        // ? : avoid if is same as current route / includes logic security
+        if(preg_match('/^\?+/', $route)) {
+            $user = $this->getUser();
+            $route = preg_replace('/^\?+/', '', $route);
+            switch (true) {
+                case preg_match('/login/', $route):
+                    if(preg_match('/login/', $current_route) || $user) return null;
+                    break;
+                case preg_match('/logout/', $route):
+                    if(preg_match('/logout/', $current_route) || !$user) return null;
+                    break;
+                default:
+                    if($route === $current_route) return null;
+                    break;
+            }
+        }
+        try {
+            /** @var RouterInterface */
+            $router = $this->get('router');
+            $url = $router->generate(name: $route, parameters: $parameters, referenceType: $referenceType);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+        return $url ?? null;
+    }
 
 }

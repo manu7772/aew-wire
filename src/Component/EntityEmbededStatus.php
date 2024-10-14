@@ -7,6 +7,7 @@ use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Event\WireEntityEvent;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // PHP
 use Exception;
 
@@ -14,7 +15,8 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
 {
 
     protected int $typeStatus;
-    public readonly WireEntityManagerInterface $WireEntityManager;
+    public readonly WireEntityManagerInterface $wireEntityManager;
+    public readonly WireEntityServiceInterface $wireEntityService;
 
     public function __construct(
         public readonly WireEntityInterface $entity,
@@ -22,7 +24,8 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         public readonly AppWireServiceInterface $appWire
     )
     {
-        $this->WireEntityManager = $this->appWire->get(AppWireServiceInterface::class);
+        $this->wireEntityManager = $this->appWire->get(AppWireServiceInterface::class);
+        $this->wireEntityService = $this->wireEntityManager->getEntityService($this->entity);
         $this->entity->setEmbededStatus($this);
         $this->typeStatus = static::ENTITY_STATUS_NULL;
         $this->setType($type);
