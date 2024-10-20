@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
@@ -56,7 +57,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private readonly array $symfony;
     private readonly array $php;
     private readonly Stopwatch $stopwatch;
-    
+
     // Serializable data
     private int $timestamp;
     private DateTimeZone $timezone;
@@ -117,12 +118,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function __sleep(): array
     {
-        throw new BadMethodCallException(vsprintf('Cannot serialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
+        throw new BadMethodCallException(vsprintf('Cannot serialize %s', [static::class . (static::class !== __CLASS__ ? PHP_EOL . '(based on ' . __CLASS__ . ')' : '')]));
     }
 
     public function __wakeup(): void
     {
-        throw new BadMethodCallException(vsprintf('Cannot unserialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
+        throw new BadMethodCallException(vsprintf('Cannot unserialize %s', [static::class . (static::class !== __CLASS__ ? PHP_EOL . '(based on ' . __CLASS__ . ')' : '')]));
     }
 
     /**
@@ -148,16 +149,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getSymfony(): array
     {
-        if(!isset($this->symfony)) {
+        if (!isset($this->symfony)) {
             /** @var App/Kernel $kernel */
             $kernel = $this->kernel;
             $eom = explode('/', $kernel::END_OF_MAINTENANCE);
-            $END_OF_MAINTENANCE = new DateTimeImmutable($eom[1].'-'.$eom[0].'-01');
+            $END_OF_MAINTENANCE = new DateTimeImmutable($eom[1] . '-' . $eom[0] . '-01');
             $eol = explode('/', $kernel::END_OF_LIFE);
-            $END_OF_LIFE = new DateTimeImmutable($eol[1].'-'.$eol[0].'-01');
+            $END_OF_LIFE = new DateTimeImmutable($eol[1] . '-' . $eol[0] . '-01');
             $this->symfony = [
                 'VERSION' => $kernel::VERSION,
-                'SHORT_VERSION' => $kernel::MAJOR_VERSION.'.'.$kernel::MINOR_VERSION,
+                'SHORT_VERSION' => $kernel::MAJOR_VERSION . '.' . $kernel::MINOR_VERSION,
                 'VERSION_ID' => $kernel::VERSION_ID,
                 'MAJOR_VERSION' => $kernel::MAJOR_VERSION,
                 'MINOR_VERSION' => $kernel::MINOR_VERSION,
@@ -174,7 +175,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getPhp(): array
     {
-        if(!isset($this->php)) {
+        if (!isset($this->php)) {
             // PHP INFO / in MB : memory_get_usage() / 1048576
             $this->php = [
                 'version' => phpversion(),
@@ -209,8 +210,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function has(
         string $id
-    ): bool
-    {
+    ): bool {
         return $this->getContainer()->has($id);
         // return $this->getContainer()?->has($id) ?: false;
     }
@@ -224,15 +224,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function get(
         string $id,
         int $invalidBehavior = ContainerInterface::NULL_ON_INVALID_REFERENCE
-    ): ?object
-    {
+    ): ?object {
         return $this->getContainer()->get($id, $invalidBehavior);
     }
 
     public function getClassService(
         string|object $objectOrClass
-    ): ?object
-    {
+    ): ?object {
         $serviceName = $this->get(AttributeWireServiceInterface::class)->getClassServiceName($objectOrClass);
         return !empty($serviceName) && $this->has($serviceName)
             ? $this->get($serviceName)
@@ -246,34 +244,30 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getProjectDir(
         string $path = null
-    ): string
-    {
-        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
-        return $this->kernel->getProjectDir().$path;
+    ): string {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/', '/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getProjectDir() . $path;
     }
 
     public function getCacheDir(
         string $path = null
-    ): string
-    {
-        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
-        return $this->kernel->getCacheDir().$path;
+    ): string {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/', '/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getCacheDir() . $path;
     }
 
     public function getLogDir(
         string $path = null
-    ): string
-    {
-        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
-        return $this->kernel->getLogDir().$path;
+    ): string {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/', '/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getLogDir() . $path;
     }
 
     public function getTempDir(
         string $path = null
-    ): string
-    {
-        $path = empty($path) ? '' : preg_replace(['/^\\/*/','/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
-        return $this->kernel->getProjectDir().DIRECTORY_SEPARATOR.static::TEMP_DIR.DIRECTORY_SEPARATOR.$path;
+    ): string {
+        $path = empty($path) ? '' : preg_replace(['/^\\/*/', '/\\/*$/'], [DIRECTORY_SEPARATOR, ''], $path);
+        return $this->kernel->getProjectDir() . DIRECTORY_SEPARATOR . static::TEMP_DIR . DIRECTORY_SEPARATOR . $path;
     }
 
 
@@ -289,17 +283,15 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getParam(
         string $name,
         array|bool|string|int|float|UnitEnum|null $default = null,
-    ): array|bool|string|int|float|UnitEnum|null
-    {
+    ): array|bool|string|int|float|UnitEnum|null {
         return $this->getParameter($name, $default);
     }
 
     public function getParameter(
         string $name,
         array|bool|string|int|float|UnitEnum|null $default = null,
-    ): array|bool|string|int|float|UnitEnum|null
-    {
-        if($this->parameterBag->has($name)) {
+    ): array|bool|string|int|float|UnitEnum|null {
+        if ($this->parameterBag->has($name)) {
             try {
                 return $this->parameterBag->get($name);
             } catch (\Throwable $th) {
@@ -326,26 +318,24 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function isTurboStreamRequest(
         bool $prepareRequest = false
-    ): bool
-    {
+    ): bool {
         $request = $this->getRequest();
         $isTurbo = $request
             ? $request->getMethod() !== 'GET' && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()
             : false;
-        if($isTurbo && $prepareRequest) $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+        if ($isTurbo && $prepareRequest) $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
         return $isTurbo;
     }
 
     public function getTurboMetas(
         bool $asMarkup = true
-    ): string|Markup
-    {
+    ): string|Markup {
         $default = "preserve";
         $metas = [];
         // Turbo refresh
         $turbo_refresh = $this->getParam('turbo-refresh-scroll', $default);
-        if(!empty($turbo_refresh)) {
-            $metas[] = '<meta name="turbo-refresh-scroll" content="'.$turbo_refresh.'">';
+        if (!empty($turbo_refresh)) {
+            $metas[] = '<meta name="turbo-refresh-scroll" content="' . $turbo_refresh . '">';
         }
         $html = implode(PHP_EOL, $metas) ?? '';
         return $asMarkup
@@ -361,10 +351,10 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function initialize(): bool
     {
         $this->startStopwatch();
-        if(!$this->isInitialized()) {
+        if (!$this->isInitialized()) {
             $session = $this->getSession();
-            if($session instanceof SessionInterface) {
-                if(!$this->isCurrentFirewallAvailableForInit()) {
+            if ($session instanceof SessionInterface) {
+                if (!$this->isCurrentFirewallAvailableForInit()) {
                     $this->context_initialized = false;
                     // if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: initialization is forbidden in this firewall %s!', [__METHOD__, __LINE__, $this->getFirewallName()]));
                 } else {
@@ -372,7 +362,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                     $session_data = $this->retrieveAppWire();
                     $this->jsonUnserialize($session_data);
                     $this->context_initialized = true;
-                }    
+                }
             }
         }
         return $this->isInitialized();
@@ -380,17 +370,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function retrieveAppWire(
         string $firewall = null
-    ): ?array
-    {
+    ): ?array {
         $firewall ??= $this->getFirewallName();
-        return $this->session->get(static::APP_WIRE_SESSION_PREFIX.$firewall, []);
+        return $this->session->get(static::APP_WIRE_SESSION_PREFIX . $firewall, []);
     }
 
     public function saveAppWire(): bool
     {
-        if($this->isInitialized()) {
-            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(true));
-            if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
+        if ($this->isInitialized()) {
+            $this->session->set(static::APP_WIRE_SESSION_PREFIX . $this->getFirewallName(), $this->jsonSerialize(true));
+            if ($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX . $this->getFirewallName()));
             return true;
         }
         return false;
@@ -398,22 +387,21 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function clearAppWire(
         string $firewall = null
-    ): bool
-    {
-        if($this->session ?? false) {
+    ): bool {
+        if ($this->session ?? false) {
             $firewall ??= $this->getFirewallName();
-            if($this->session->has(static::APP_WIRE_SESSION_PREFIX.$firewall)) {
-                $this->session->remove(static::APP_WIRE_SESSION_PREFIX.$firewall);
+            if ($this->session->has(static::APP_WIRE_SESSION_PREFIX . $firewall)) {
+                $this->session->remove(static::APP_WIRE_SESSION_PREFIX . $firewall);
                 // if($firewall === $this->getFirewallName()) $this->context_initialized = false;
             }
-            return !$this->session->has(static::APP_WIRE_SESSION_PREFIX.$firewall);
+            return !$this->session->has(static::APP_WIRE_SESSION_PREFIX . $firewall);
         }
         return false;
     }
 
     public function resetAppWire(): bool
     {
-        if($this->clearAppWire()) {
+        if ($this->clearAppWire()) {
             $this->context_initialized = false;
             return $this->initialize();
         }
@@ -450,8 +438,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function setTimezone(
         string|DateTimeZone $timezone
-    ): static
-    {
+    ): static {
         $this->timezone = is_string($timezone) ? new DateTimeZone($timezone) : $timezone;
         return $this;
     }
@@ -470,9 +457,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function setDatenow(
         string $datenow
-    ): static
-    {
-        if($this->isDev()) {
+    ): static {
+        if ($this->isDev()) {
             try {
                 $test = new DateTimeImmutable($datenow, $this->getTimezone());
             } catch (\Throwable $th) {
@@ -490,8 +476,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function getDatetimeTZ(
         string|DateTimeInterface $date = 'now'
-    ): DateTimeImmutable
-    {
+    ): DateTimeImmutable {
         return $date instanceof DateTimeInterface
             ? $date->setTimezone($this->getTimezone())
             : new DateTimeImmutable($date, $this->getTimezone());
@@ -499,8 +484,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getCurrentDatetime(
         TimezoneInterface $object = null
-    ): DateTimeImmutable
-    {
+    ): DateTimeImmutable {
         $timezone = $object ? $object->getDateTimezone() : $this->getTimezone();
         return new DateTimeImmutable($this->getDatenow(), $timezone);
     }
@@ -508,8 +492,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getCurrentDatetimeFormated(
         string $format = DATE_ATOM,
         TimezoneInterface $object = null
-    ): string
-    {
+    ): string {
         $date = $this->getCurrentDatetime($object);
         return $date->format($format);
     }
@@ -520,7 +503,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function startStopwatch(): static
     {
         $this->stopwatch ??= new Stopwatch(true);
-        if(!$this->stopwatch->isStarted(static::STOPWATCH_MAIN_NAME)) {
+        if (!$this->stopwatch->isStarted(static::STOPWATCH_MAIN_NAME)) {
             $this->stopwatch->start(static::STOPWATCH_MAIN_NAME);
         }
         return $this;
@@ -533,7 +516,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getStopwatchTime(): int|float
     {
-        if($this->stopwatch?->isStarted(static::STOPWATCH_MAIN_NAME)) {
+        if ($this->stopwatch?->isStarted(static::STOPWATCH_MAIN_NAME)) {
             $event = $this->stopwatch->stop(static::STOPWATCH_MAIN_NAME);
             return $event->getDuration();
         }
@@ -545,37 +528,52 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function __call($name, $arguments)
     {
-        if(preg_match('/^set/', $name)) {
+        if (preg_match('/^set/', $name)) {
             $name = lcfirst(preg_replace('/^set/', '', $name));
             return $this->setTinyvalue($name, ...$arguments);
         }
-        if(!array_key_exists($name, $this->tinyvalues) && preg_match('/^get/', $name)) {
+        if (!array_key_exists($name, $this->tinyvalues) && preg_match('/^get/', $name)) {
             $name = lcfirst(preg_replace('/^get/', '', $name));
         }
-        if(array_key_exists($name, $this->tinyvalues)) {
+        if (array_key_exists($name, $this->tinyvalues)) {
             return $this->tinyvalues[$name];
         }
         throw new Exception(vsprintf('Error %s line %d: can not call "%s" because it does not exist!', [__METHOD__, __LINE__, $name]));
         // return $this->appContext->$name(...$arguments);
     }
 
+    public function __isset($name)
+    {
+        return array_key_exists($name, $this->tinyvalues);
+    }
+
+    public function __get($name)
+    {
+        return $this->tinyvalues[$name];
+    }
+
+    public function __set($name, $value)
+    {
+        $this->tinyvalues[$name] = $value;
+        return $this;
+    }
+
     public function setTinyvalue(
         string $name,
         mixed $value,
         bool $controlType = true
-    ): static
-    {
-        if(method_exists($this, lcfirst(preg_replace('/^set/', '', $name)))) {
+    ): static {
+        if (method_exists($this, lcfirst(preg_replace('/^set/', '', $name)))) {
             throw new Exception(vsprintf('Error %s line %d: name %s for value is not acceptable, please change name!', [__METHOD__, __LINE__, $name]));
         }
-        if(method_exists($this, lcfirst(preg_replace('/^get/', '', $name)))) {
+        if (method_exists($this, lcfirst(preg_replace('/^get/', '', $name)))) {
             throw new Exception(vsprintf('Error %s line %d: name %s for value is not acceptable, please change name!', [__METHOD__, __LINE__, $name]));
         }
-        if($controlType && isset($this->tinyvalues[$name])) {
+        if ($controlType && isset($this->tinyvalues[$name])) {
             $value_type = is_object($value) ? get_class($value) : gettype($value);
             $tiny_type = is_object($this->tinyvalues[$name]) ? get_class($this->tinyvalues[$name]) : gettype($this->tinyvalues[$name]);
-            if(!in_array($value_type, ['NULL']) && !in_array($tiny_type, ['NULL'])) {
-                if($value_type !== $tiny_type) {
+            if (!in_array($value_type, ['NULL']) && !in_array($tiny_type, ['NULL'])) {
+                if ($value_type !== $tiny_type) {
                     throw new Exception(vsprintf('Error %s line %d: value (%s given) is not same type as actual value (got %s)!', [__METHOD__, __LINE__, $value_type, $tiny_type]));
                 }
             }
@@ -587,8 +585,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getTinyvalue(
         string $name,
         mixed $default = null
-    ): mixed
-    {
+    ): mixed {
         return $this->tinyvalues[$name] ?? $default;
     }
 
@@ -599,8 +596,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function setTinyvalues(
         array $values
-    ): static
-    {
+    ): static {
         foreach ($values as $name => $value) {
             $this->setTinyvalue($name, $value, true);
         }
@@ -609,8 +605,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     private function mergeTinyvalues(
         array $values
-    ): static
-    {
+    ): static {
         foreach ($values as $name => $value) {
             $this->tinyvalues[$name] = $value;
         }
@@ -649,18 +644,17 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function jsonSerialize(
         bool $insertFinals = false
-    ): mixed
-    {
+    ): mixed {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
         $data = [];
         foreach ($this->getSerializables() as $property => $values) {
-            if($insertFinals || !$values['finalOnly']) {
-                $method = 'get'.ucfirst($property);
-                if(is_string($values['serialize'])) {
+            if ($insertFinals || !$values['finalOnly']) {
+                $method = 'get' . ucfirst($property);
+                if (is_string($values['serialize'])) {
                     $this->{$values['serialize']}();
-                } else if(method_exists($this, $method)) {
+                } else if (method_exists($this, $method)) {
                     $data[$property] = $this->{$method}();
-                } else if($values['serialize']) {
+                } else if ($values['serialize']) {
                     $data[$property] = $propertyAccessor->getValue($this, $property);
                 }
             }
@@ -670,17 +664,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function jsonUnserialize(
         array $data
-    ): void
-    {
+    ): void {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
         $sery = $this->getSerializables();
         foreach ($data as $property => $value) {
-            $method = 'set'.ucfirst($property);
-            if(is_string($sery[$property]['unserialize'])) {
+            $method = 'set' . ucfirst($property);
+            if (is_string($sery[$property]['unserialize'])) {
                 $this->{$sery[$property]['unserialize']}($value);
-            } else if(method_exists($this, $method)) {
+            } else if (method_exists($this, $method)) {
                 $data[$property] = $this->{$method}($value);
-            } else if($sery[$property]['unserialize']) {
+            } else if ($sery[$property]['unserialize']) {
                 $propertyAccessor->setValue($this, $property, $value);
             }
         }
@@ -725,8 +718,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function isGranted(
         mixed $attributes,
         mixed $subject = null
-    ): bool
-    {
+    ): bool {
         return $this->security->isGranted($attributes, $subject);
     }
 
@@ -780,7 +772,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getFirewallName(): ?string
     {
-        if(!isset($this->firewallname)) {
+        if (!isset($this->firewallname)) {
             $fwc = $this->getFirewallConfig();
             return $fwc
                 ? $this->firewallname = $fwc->getName()
@@ -802,8 +794,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getFirewallChoices(
         bool $onlyMains = true,
-    ): array
-    {
+    ): array {
         $firewalls = $onlyMains
             ? $this->getMainFirewalls()
             : $this->getFirewalls();
@@ -835,11 +826,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     {
         return $this->get('router')->getRouteCollection();
     }
-    
+
     public function routeExists(string $route, bool|array $control_generation = false): bool
     {
         $exists = $this->getRoutes()->get($route) !== null;
-        if($exists && $control_generation) {
+        if ($exists && $control_generation) {
             try {
                 $this->get('router')->generate($route, is_array($control_generation) ? $control_generation : []);
             } catch (\Throwable $th) {
@@ -853,21 +844,20 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function isCurrentRoute(
         string $route,
         mixed $param = null
-    ): bool
-    {
+    ): bool {
         // dump($this->getCurrent_route(), $this->getCurrent_route_parameters(), $param instanceof MenuInterface ? $param->getItems() : null);
-        if($param instanceof WireWebpageInterface && $param instanceof TraitPreferedInterface) {
-            if($param->isPrefered() && $this->getCurrent_route() === 'app_home') return true;
+        if ($param instanceof WireWebpageInterface && $param instanceof TraitPreferedInterface) {
+            if ($param->isPrefered() && $this->getCurrent_route() === 'app_home') return true;
         }
-        if($route !== $this->getCurrent_route()) return false;
-        if(!empty($param)) {
-            if($param instanceof TraitSlugInterface) {
-                if($param instanceof WireWebpageInterface) {
-                    if($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
+        if ($route !== $this->getCurrent_route()) return false;
+        if (!empty($param)) {
+            if ($param instanceof TraitSlugInterface) {
+                if ($param instanceof WireWebpageInterface) {
+                    if ($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
                 }
-                if($param instanceof WireMenuInterface) {
+                if ($param instanceof WireMenuInterface) {
                     foreach ($param->getItems() as $item) {
-                        if(in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
+                        if (in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
                     }
                 }
                 $param = $param->getSlug();
@@ -902,32 +892,31 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         array $parameters = [],
         int $referenceType = null,
         array|string $methods = null
-    ): ?string
-    {
+    ): ?string {
         $objroute = $this->getRoutes()->get($route);
-        if(!($objroute instanceof Route)) return null;
+        if (!($objroute instanceof Route)) return null;
         // Methods
         $route_methods = $objroute->getMethods();
-        if(!empty($methods) && !empty($route_methods)) {
+        if (!empty($methods) && !empty($route_methods)) {
             $valids = array_intersect((array)$methods, $$route_methods);
-            if(empty($valids)) return null;
+            if (empty($valids)) return null;
         }
         $current_route = $this->getCurrent_route();
         // if(!$this->getRoutes()->get($route)) return null;
 
         // ? : avoid if is same as current route / includes logic security
-        if(preg_match('/^\?+/', $route)) {
+        if (preg_match('/^\?+/', $route)) {
             $user = $this->getUser();
             $route = preg_replace('/^\?+/', '', $route);
             switch (true) {
                 case preg_match('/login/', $route):
-                    if(preg_match('/login/', $current_route) || $user) return null;
+                    if (preg_match('/login/', $current_route) || $user) return null;
                     break;
                 case preg_match('/logout/', $route):
-                    if(preg_match('/logout/', $current_route) || !$user) return null;
+                    if (preg_match('/logout/', $current_route) || !$user) return null;
                     break;
                 default:
-                    if($route === $current_route) return null;
+                    if ($route === $current_route) return null;
                     break;
             }
         }
@@ -940,5 +929,4 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         }
         return $url ?? null;
     }
-
 }

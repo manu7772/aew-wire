@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -14,9 +15,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Component\HttpFoundation\Response;
 
-// #[AsAlias(WireUserServiceInterface::class, public: true)]
-// #[Autoconfigure(autowire: true, lazy: true)]
-abstract class WireUserService extends BaseWireEntityService implements WireUserServiceInterface
+#[AsAlias(WireUserServiceInterface::class, public: true)]
+#[Autoconfigure(autowire: true, lazy: true)]
+class WireUserService extends BaseWireEntityService implements WireUserServiceInterface
 {
 
     protected Security $security;
@@ -24,8 +25,7 @@ abstract class WireUserService extends BaseWireEntityService implements WireUser
     public function __construct(
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService
-    )
-    {
+    ) {
         parent::__construct($appWire, $wireEntityService);
         $this->security = $this->appWire->security;
     }
@@ -37,8 +37,7 @@ abstract class WireUserService extends BaseWireEntityService implements WireUser
 
     public function getMainAdminUser(
         bool $findSadminIfNotFound = false
-    ): ?WireUserInterface
-    {
+    ): ?WireUserInterface {
         $admin_email = $this->appWire->getParam('main_admin');
         /** @var ServiceEntityRepository */
         $repository = $this->getRepository();
@@ -63,11 +62,9 @@ abstract class WireUserService extends BaseWireEntityService implements WireUser
 
     public function updateUserLastLogin(
         WireUserInterface $user
-    ): static
-    {
+    ): static {
         $user->updateLastLogin();
         $this->wireEntityService->flush();
         return $this;
     }
-
 }

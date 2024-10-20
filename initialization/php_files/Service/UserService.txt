@@ -1,0 +1,18 @@
+<?php
+namespace App\Service;
+
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Service\WireUserService;
+// App
+use App\Service\interface\UserServiceInterface;
+
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+
+#[AsAlias(WireUserServiceInterface::class, public: true)]
+class UserService extends WireUserService implements UserServiceInterface
+{
+
+    public const ENTITY_CLASS = WireUserInterface::class;
+
+}

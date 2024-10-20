@@ -1,0 +1,9 @@
+<?php
+namespace App\Service\interface;
+
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+
+interface UserServiceInterface extends WireUserServiceInterface
+{
+
+}
