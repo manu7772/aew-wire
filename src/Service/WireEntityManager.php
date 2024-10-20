@@ -71,7 +71,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         WireEntityInterface $entity
     ): static
     {
-        if($entity->getEmbededStatus()->requireDispatchEvent(WireEntityEvent::BEFORE_PERSIST)) {
+        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_PERSIST)) {
             $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_PERSIST);
         }
         $this->em->persist($entity);
@@ -82,7 +82,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         WireEntityInterface $entity
     ): static
     {
-        if($entity->getEmbededStatus()->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
+        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
             $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_REMOVE);
         }
         $this->em->remove($entity);
@@ -93,7 +93,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     {
         foreach ($this->uow->getScheduledEntityUpdates() as $entity) {
             if($entity instanceof WireEntityInterface) {
-                if($entity->getEmbededStatus()->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
+                if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
                     $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
                 } else if($this->appWire->isDev()) {
                     throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for update, but EmbededStatus did not know it (Event %s not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
@@ -149,7 +149,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     ): ?WireEntityInterface
     {
         $clone = null;
-        if($entity->getEmbededStatus()->isClonable()) {
+        if($entity->_estatus->isClonable()) {
             /** @var WireEntityInterface|TraitClonableInteface $entity */
             switch ($clone_method) {
                 case static::CLONE_METHOD_WIRE:

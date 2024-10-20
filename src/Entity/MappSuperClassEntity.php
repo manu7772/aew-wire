@@ -1,19 +1,15 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\LaboBundle\EventListener\Attribute\AppEvent;
-use Aequation\LaboBundle\Model\Interface\OwnerInterface;
 use Aequation\WireBundle\Component\EntityEmbededStatus;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\trait\AppEntity;
 use Aequation\WireBundle\Entity\trait\WireEntity;
 // Symfony
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\PropertyAccess\PropertyAccess;
-
-use Exception;
+// PHP
 use Throwable;
 
 #[MappedSuperclass]
@@ -24,7 +20,6 @@ abstract class MappSuperClassEntity implements WireEntityInterface
     public const ICON = 'tabler:question-mark';
     public const FA_ICON = 'question';
     public const SERIALIZATION_PROPS = ['id','euid','classname','shortname'];
-    public const IS_CLONABLE = false;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

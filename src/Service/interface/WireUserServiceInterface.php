@@ -1,14 +1,16 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
-// Symfony
-use Symfony\Component\Security\Core\User\UserInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 interface WireUserServiceInterface extends WireEntityServiceInterface
 {
 
-    public function getUser(): ?UserInterface;
-    public function getMainAdminUser(): ?UserInterface;
-    public function getMainSAdminUser(): ?UserInterface;
+    public function getUser(): ?WireUserInterface;
+    public function getMainAdminUser(): ?WireUserInterface;
+    public function getMainSAdminUser(): ?WireUserInterface;
+    public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response;
+    public function updateUserLastLogin(WireUserInterface $user): static;
 
 }

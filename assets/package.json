@@ -10,20 +10,26 @@
                 "main": "dist/dt_controller.js",
                 "fetch": "eager",
                 "webpackMode": "eager",
-                "enabled": true
+                "enabled": true,
+                "autoimport": {
+                    "simple-datatables/dist/style.min.css": true
+                }
             }
         },
         "importmap": {
-            "@hotwired/stimulus": "^3.0.0",
-            "datatables.net-dt": "^2.1.5"
+            "@hotwired/stimulus": "^3.2.2",
+            "flowbite": "^2.5.2",
+            "simple-datatables": "9.2.1"
         }
     },
     "peerDependencies": {
-        "@hotwired/stimulus": "^3.0.0",
-        "datatables.net-dt": "^2.1.5"
+        "@hotwired/stimulus": "^3.2.2",
+        "flowbite": "^2.5.2",
+        "simple-datatables": "9.2.1"
     },
     "devDependencies": {
-        "@hotwired/stimulus": "^3.0.0",
-        "datatables.net-dt": "^2.1.5"
+        "@hotwired/stimulus": "^3.2.2",
+        "flowbite": "^2.5.2",
+        "simple-datatables": "9.2.1"
     }
 }

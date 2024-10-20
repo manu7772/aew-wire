@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import DataTable from 'datatables.net-dt'
+import { DataTable } from 'simple-datatables'
 
 // let isDataTableInitialized = false
 let datatable = null
@@ -19,7 +19,7 @@ class default_1 extends Controller
             datatable = new DataTable(this.element, payload)
         } else {
             // console.debug('--- Updating DataTable', [this.element, this.viewValue])
-            datatable.draw()
+            datatable.refresh()
         }
     }
 

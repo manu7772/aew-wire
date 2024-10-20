@@ -19,7 +19,7 @@ interface InitializerInterface extends WireServiceInterface
     public function installConfig(string $name): bool;
     public function getConfigNames(): array;
     public function hasConfigName(string $name): bool;
-    public function findConfigFiles(string $name): null|string|array;
+    public function findConfigFiles(string $name): array;
     public function getConfigData(string $name): ?array;
     // public function getAllConfigsData(): array;
 

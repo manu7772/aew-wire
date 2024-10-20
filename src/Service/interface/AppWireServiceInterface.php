@@ -21,6 +21,7 @@ use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
 use Twig\Loader\LoaderInterface;
 use Twig\Environment;
+use Twig\Markup;
 
 interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
 {
@@ -68,6 +69,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isXmlHttpRequest(): bool;
     public function isTurboFrameRequest(): bool;
     public function isTurboStreamRequest(bool $prepareRequest = false): bool;
+    public function getTurboMetas(bool $asMarkup = true): string|Markup;
     // Dirs
     public function getProjectDir(string $path = null): string;
     public function getCacheDir(string $path = null): string;

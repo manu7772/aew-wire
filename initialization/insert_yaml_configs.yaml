@@ -132,7 +132,7 @@
                 replace: true,
                 type: 'merge',
                 data: {
-                    app: '@Aequation\WireBundle\Service\interface\AppWireVariableInterface'
+                    app: '@Aequation\WireBundle\Service\interface\AppWireServiceInterface'
                 },
             },
         ],

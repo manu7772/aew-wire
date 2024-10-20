@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="fr" class="{{ app.session and app.session.get('darkmode', app.user.darkmode|default(false)) ? 'dark' : '' }}">
+<html lang="{{ app.locale }}" class="{{ app.darkmode ? 'dark' }}">
 	<head>
-		<meta charset="{{ app.service.getStringEncoder() }}">
+		<meta charset="{{ app.charset }}">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>{% block title %}Aequation Labo BUNDLE{% endblock %}</title>
+		<title>{% block title %}Aequation Wire BUNDLE{% endblock %}</title>
 		<link rel="icon" href="{% block favicon %}{{ asset(app.service.param('favicon.admin', 'favicon.svg')) }}{% endblock %}">
-        <link rel="stylesheet" href="{{ asset('styles/pico.css') }}">
+        {# <link rel="stylesheet" href="{{ asset('styles/pico.css') }}">
         <link rel="stylesheet" href="{{ asset('styles/pico.colors.css') }}">
-        <link rel="stylesheet" href="{{ asset('styles/labo-simple.css') }}">
+        <link rel="stylesheet" href="{{ asset('styles/wire-simple.css') }}"> #}
 		{% block javascripts %}
-		{# {% block importmap %}{{ importmap('labo') }}{% endblock %} #}
+		{# {% block importmap %}{{ importmap('wire') }}{% endblock %} #}
 		{% endblock %}
 	</head>
 	<body>
@@ -23,7 +23,7 @@
 					<div class="left-col">
 						{% block sub_menu %}
 						{% if submenu is defined %}
-						{% include "@AequationLabo/bases/_submenu.html.twig" with {submenu: submenu} %}
+						{% include "@AequationWire/bases/_submenu.html.twig" with {submenu: submenu} %}
 						{% endif %}
 						{% endblock %}
 					</div>
@@ -41,7 +41,7 @@
 		</footer>
 		{% block after_container %}
 			{# commands, modals, etc. content here #}
-            {% include '@AequationLabo/partials/_flashes.html.twig' %}
+            {% include '@AequationWire/partials/_flashes.html.twig' %}
 		{% endblock %}
 	</body>
 </html>

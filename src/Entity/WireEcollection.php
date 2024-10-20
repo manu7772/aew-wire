@@ -25,7 +25,7 @@ use Exception;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
-class WireEcollection extends WireItem implements WireEcollectionInterface, TraitHasOrderedInterface
+abstract class WireEcollection extends WireItem implements WireEcollectionInterface, TraitHasOrderedInterface
 {
     use HasOrdered;
 

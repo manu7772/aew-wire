@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -11,13 +12,12 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Component\HttpFoundation\Response;
 
 // #[AsAlias(WireUserServiceInterface::class, public: true)]
 // #[Autoconfigure(autowire: true, lazy: true)]
 abstract class WireUserService extends BaseWireEntityService implements WireUserServiceInterface
 {
-
-    // public const ENTITY_CLASS = WireUser::class;
 
     protected Security $security;
 
@@ -30,14 +30,14 @@ abstract class WireUserService extends BaseWireEntityService implements WireUser
         $this->security = $this->appWire->security;
     }
 
-    public function getUser(): ?UserInterface
+    public function getUser(): ?WireUserInterface
     {
         return $this->security->getUser();
     }
 
     public function getMainAdminUser(
         bool $findSadminIfNotFound = false
-    ): ?UserInterface
+    ): ?WireUserInterface
     {
         $admin_email = $this->appWire->getParam('main_admin');
         /** @var ServiceEntityRepository */
@@ -48,12 +48,26 @@ abstract class WireUserService extends BaseWireEntityService implements WireUser
             : $user;
     }
 
-    public function getMainSAdminUser(): ?UserInterface
+    public function getMainSAdminUser(): ?WireUserInterface
     {
         $admin_email = $this->appWire->getParam('main_sadmin');
         /** @var ServiceEntityRepository */
         $repository = $this->getRepository();
         return $repository->findOneByEmail($admin_email);
+    }
+
+    public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response
+    {
+        return $this->security->logout($validateCsrfToken);
+    }
+
+    public function updateUserLastLogin(
+        WireUserInterface $user
+    ): static
+    {
+        $user->updateLastLogin();
+        $this->wireEntityService->flush();
+        return $this;
     }
 
 }

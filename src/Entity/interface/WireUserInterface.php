@@ -9,7 +9,9 @@ interface WireUserInterface extends UserInterface, WireEntityInterface, Password
 {
 
     public function isEqualTo(UserInterface $user): bool;
-    public function canLogin(): bool;
+    public function isLoggable(): bool;
+    public function isVerified(): bool;
+    public function updateLastLogin(): static;
 
     public function getEmail(): ?string;
     public function setEmail(string $email): static;
@@ -19,6 +21,9 @@ interface WireUserInterface extends UserInterface, WireEntityInterface, Password
     public function getPassword(): ?string;
     public function setPassword(string $password): static;
     public function eraseCredentials(): void;
+    // Darkmode
+    public function isDarkmode(): bool;
+    public function setDarkmode(bool $darkmode): static;
 
 
 }

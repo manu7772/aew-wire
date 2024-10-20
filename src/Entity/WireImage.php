@@ -38,7 +38,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
     #[ORM\Column(length: 255)]
     protected ?string $filename = null;
 
-    #[Vich\UploadableField(mapping: 'photo', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname', dimensions: 'dimensions')]
+    #[Vich\UploadableField(mapping: '@vichmapping', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname', dimensions: 'dimensions')]
     #[Assert\File(
         maxSize: '12M',
         maxSizeMessage: 'Le fichier ne peut pas dépasser la taille de {{ limit }}{{ suffix }} : votre fichier fait {{ size }}{{ suffix }}',
@@ -47,6 +47,9 @@ abstract class WireImage extends WireItem implements WireImageInterface
     )]
     #[Serializer\Ignore]
     protected File|UploadedFile|null $file = null;
+
+    #[ORM\Column(length: 255)]
+    protected string $vichmapping = 'photo';
 
     #[ORM\Column]
     protected ?int $size = null;
@@ -163,6 +166,17 @@ abstract class WireImage extends WireItem implements WireImageInterface
         return $this;
     }
 
+    public function getVichmapping(): string
+    {
+        return $this->vichmapping;
+    }
+
+    public function setVichmapping(string $vichmapping): static
+    {
+        $this->vichmapping = $vichmapping;
+        return $this;
+    }
+
     public function getSize(): ?int
     {
         return $this->size;
@@ -171,7 +185,6 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public function setSize(?int $size): static
     {
         $this->size = $size;
-
         return $this;
     }
 
@@ -183,7 +196,6 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public function setMime(?string $mime): static
     {
         $this->mime = $mime;
-
         return $this;
     }
 
@@ -195,7 +207,6 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public function setOriginalname(?string $originalname): static
     {
         $this->originalname = $originalname;
-
         return $this;
     }
 
@@ -220,7 +231,6 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 

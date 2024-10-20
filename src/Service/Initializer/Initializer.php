@@ -19,6 +19,8 @@ use Symfony\Component\Yaml\Yaml;
 // PHP
 use Exception;
 use SplFileInfo;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Twig\Environment;
 
@@ -29,10 +31,10 @@ class Initializer extends BaseService implements InitializerInterface
 
     private KernelInterface $kernel;
     private array $config_files = [];
-    private string $project_dir;
-    private string $cache_dir;
+    // private string $project_dir;
+    // private string $cache_dir;
     // private string $log_dir;
-    private string $package_dir;
+    // private string $package_dir;
     private string $date;
 
     public function __construct(
@@ -46,11 +48,11 @@ class Initializer extends BaseService implements InitializerInterface
         $this->date = $this->appWire->getDatetimeTZ()->format('Y-m-d_His');
         $this->expressionLanguage->addPhpFunctions();
         // Project
-        $this->project_dir = $this->kernel->getProjectDir();
-        $this->cache_dir = $this->kernel->getCacheDir();
+        // $this->project_dir = $this->kernel->getProjectDir();
+        // $this->cache_dir = $this->kernel->getCacheDir();
         // $this->log_dir = $this->kernel->getLogDir();
         // Package
-        $this->package_dir = AequationWireBundle::getProjectPath();
+        // $this->package_dir = AequationWireBundle::getPackagePath();
     }
 
     private function getNewFinder(): Finder
@@ -67,21 +69,22 @@ class Initializer extends BaseService implements InitializerInterface
     ): bool
     {
         if($this->hasConfigName($name)) {
-            $data = $this->getConfigData($name);
-            if(!empty($data)) {
-                switch ($name) {
-                    case 'manage_entities':
-                        return $this->manageEntities($data);
-                        break;
-                    case 'insert_yaml_configs':
-                        return $this->insertYamlConfigs($data);
-                        break;
-                    case 'copy_config_files':
-                        return $this->copyConfigFiles($data);
-                        break;
-                    case 'textfiles_actions':
-                        return $this->textfilesActions($data);
-                        break;
+            foreach ($this->getConfigData($name) as $data) {
+                if(!empty($data)) {
+                    switch ($name) {
+                        case 'manage_entities':
+                            return $this->manageEntities($data);
+                            break;
+                        case 'insert_yaml_configs':
+                            return $this->insertYamlConfigs($data);
+                            break;
+                        case 'copy_config_files':
+                            return $this->copyConfigFiles($data);
+                            break;
+                        case 'textfiles_actions':
+                            return $this->textfilesActions($data);
+                            break;
+                    }
                 }
             }
         }
@@ -104,37 +107,27 @@ class Initializer extends BaseService implements InitializerInterface
 
     public function findConfigFiles(
         string $name
-    ): null|string|array
+    ): array
     {
-        if(!isset($this->config_files[$name])) {
-            $arrayOfFiles = is_array(static::SOURCES[$name]);
-            $files = is_array(static::SOURCES[$name]) ? static::SOURCES[$name] : [static::SOURCES[$name]];
-            $this->config_files[$name] = $arrayOfFiles ? [] : null;
+        if(!isset($this->config_files[$name])) {    
+            $files = (array)static::SOURCES[$name];
+            $this->config_files[$name] = [];
             foreach ($files as $subname => $file) {
-                // First, search in project
-                $filepath = implode(DIRECTORY_SEPARATOR, [$this->project_dir, static::MAIN_PATH, $file]);
-                if($this->filesystem->exists($filepath)) {
-                    if($arrayOfFiles) {
-                        $this->config_files[$name][$subname] = $filepath;
-                    } else {
-                        $this->config_files[$name] = $filepath;
-                    }
-                } else {
+                $search_dirs = [
+                    // First, search in project
+                    $this->appWire->getProjectDir(static::MAIN_PATH),
                     // Second, search in package
-                    $filepath = implode(DIRECTORY_SEPARATOR, [$this->package_dir, static::MAIN_PATH, $file]);
-                    if($this->filesystem->exists($filepath)) {
-                        if($arrayOfFiles) {
-                            $this->config_files[$name][$subname] = $filepath;
-                        } else {
-                            $this->config_files[$name] = $filepath;
-                        }
-                    }
+                    AequationWireBundle::getPackagePath(static::MAIN_PATH),
+                ];
+                $filelocator = new FileLocator($search_dirs);
+                $found = (array)$filelocator->locate($file);
+                if(count($found)) {
+                    $this->config_files[$name][$subname] = reset($found);
                 }
             }
         }
-        return empty($this->config_files[$name])
-            ? null
-            : $this->config_files[$name];
+        // dd($this->config_files);
+        return $this->config_files[$name];
     }
 
     private function getYamlFromFile(
@@ -152,9 +145,7 @@ class Initializer extends BaseService implements InitializerInterface
         mixed $data
     ): bool
     {
-        if(false === $this->filesystem->dumpFile($file, Yaml::dump($data, 12))) {
-            return false;
-        }
+        $this->filesystem->dumpFile($file, Yaml::dump($data, 12));
         return file_exists($file);
     }
 
@@ -163,20 +154,16 @@ class Initializer extends BaseService implements InitializerInterface
     ): ?array
     {
         $files = $this->findConfigFiles($name);
-        $arrayOfFiles = is_array($files);
+        if(empty($files)) return null;
         $array = [];
-        foreach ((array) $files as $subname => $file) {
+        foreach ((array)$files as $subname => $file) {
             $data = $this->getYamlFromFile($file);
             if(is_array($data)) {
                 $new = [
                     'source' => $file,
                     'data' => $this->compileData($data),
                 ];
-                if($arrayOfFiles) {
-                    $array[$subname] = $new;
-                } else {
-                    return $new;
-                }
+                $array[$subname] = $new;
             }
         }
         return empty($array) ? null : $array;
@@ -194,7 +181,7 @@ class Initializer extends BaseService implements InitializerInterface
     private function getDefaultContextValues(): array
     {
         return [
-            'package_dir' => $this->package_dir,
+            'package_dir' => AequationWireBundle::getPackagePath(),
             'kernel' => $this->kernel,
         ];
     }
@@ -229,8 +216,8 @@ class Initializer extends BaseService implements InitializerInterface
     ): bool
     {
         $file = new SplFileInfo($file);
-        $path = Strings::getAfter($file->getPath(), $this->project_dir);
-        $dest = dirname($this->cache_dir).DIRECTORY_SEPARATOR.'old_configs'.DIRECTORY_SEPARATOR.$this->date.$path;
+        $path = Strings::getAfter($file->getPath(), $this->appWire->getProjectDir());
+        $dest = dirname($this->appWire->getCacheDir('old_configs'.DIRECTORY_SEPARATOR.$this->date.$path));
         // $copy_name = $dest.DIRECTORY_SEPARATOR.Strings::getBeforeLast($file->getFilename(), '.').'_'.$this->date.'.'.$file->getExtension();
         $copy_name = $dest.DIRECTORY_SEPARATOR.$file->getFilename();
         // dd($file, $copy_name, file_exists($copy_name));
@@ -256,7 +243,7 @@ class Initializer extends BaseService implements InitializerInterface
                 throw new Exception(vsprintf('Error %s line %d: template %s not found!', [__METHOD__, __LINE__, $template]));
             }
             $php_code = $this->twig->render($template, $vars);
-            $result = $this->filesystem->dumpFile(implode(DIRECTORY_SEPARATOR, [$this->project_dir, 'src', 'Entity', $vars['entity']->getFilename()]), $php_code);
+            $result = $this->filesystem->dumpFile(implode(DIRECTORY_SEPARATOR, [$this->appWire->getProjectDir(), 'src', 'Entity', $vars['entity']->getFilename()]), $php_code);
             if(!$result) return false;
         }
         return true;

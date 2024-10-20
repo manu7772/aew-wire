@@ -10,6 +10,7 @@ use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\AttributeWireServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
+use Aequation\WireBundle\Tools\Strings;
 use BadMethodCallException;
 // Symphony
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -34,12 +35,15 @@ use DateTimeInterface;
 use DateTimeZone;
 use Exception;
 use Serializable;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
+use Twig\Markup;
 use UnitEnum;
+use Vich\UploaderBundle\Mapping\PropertyMappingResolverInterface;
 
 #[AsAlias(AppWireServiceInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: false)]
@@ -81,7 +85,20 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->setLocaleSwitcher($localeSwitcher);
         $this->setEnabledLocales(['fr_FR']);
         $this->container = $this->kernel->getContainer();
+        // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
+        // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
     }
+
+
+    /************************************************************************************************************/
+    /** HTTP Kernal shortcuts                                                                                   */
+    /************************************************************************************************************/
+
+    public function getCharset(): string
+    {
+        return $this->kernel->getCharset();
+    }
+
 
 
     /************************************************************************************************************/
@@ -319,6 +336,23 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $isTurbo;
     }
 
+    public function getTurboMetas(
+        bool $asMarkup = true
+    ): string|Markup
+    {
+        $default = "preserve";
+        $metas = [];
+        // Turbo refresh
+        $turbo_refresh = $this->getParam('turbo-refresh-scroll', $default);
+        if(!empty($turbo_refresh)) {
+            $metas[] = '<meta name="turbo-refresh-scroll" content="'.$turbo_refresh.'">';
+        }
+        $html = implode(PHP_EOL, $metas) ?? '';
+        return $asMarkup
+            ? Strings::markup(html: $html)
+            : $html;
+    }
+
 
     /************************************************************************************************************/
     /** INITIALIZE                                                                                              */
@@ -521,7 +555,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         if(array_key_exists($name, $this->tinyvalues)) {
             return $this->tinyvalues[$name];
         }
-        throw new Exception(vsprintf('Error %s line %d: can not call %s because it does not exist!', [__METHOD__, __LINE__, $name]));
+        throw new Exception(vsprintf('Error %s line %d: can not call "%s" because it does not exist!', [__METHOD__, __LINE__, $name]));
         // return $this->appContext->$name(...$arguments);
     }
 

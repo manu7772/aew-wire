@@ -1,9 +1,12 @@
 <?php
 namespace Aequation\WireBundle\DependencyInjection;
 
+use Aequation\WireBundle\AequationWireBundle;
+// Symfony
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Aequation\WireBundle\Builder\DataTableBuilder;
 use Aequation\WireBundle\Builder\DataTableBuilderInterface;
+use Aequation\WireBundle\Tools\Files;
 use Aequation\WireBundle\Twig\DataTableExtension;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -20,7 +23,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
     {
         $loader = new YamlFileLoader(
             $container,
-            new FileLocator(__DIR__.'/../../config')
+            new FileLocator(AequationWireBundle::getPackagePath('config'))
         );
         $loader->load('services.yaml');
 
@@ -34,7 +37,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
         //     ->setAlias(DataTableBuilderInterface::class, 'datatable.builder')
         //     ->setPublic(false);
         // $container
-        //     ->setDefinition('datatable.twig_extension', new Definition(DataTableExtension::class))
+        //     ->setDefinition('datareturntable.twig_extension', new Definition(DataTableExtension::class))
         //     ->addArgument(new Reference('stimulus.helper'))
         //     ->addTag('twig.extension')
         //     ->setPublic(false);
@@ -46,7 +49,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
             $container->prependExtensionConfig('framework', [
                 'asset_mapper' => [
                     'paths' => [
-                        __DIR__.'/../../assets/dist' => '@symfony/ux-wire-utilities',
+                        AequationWireBundle::getPackagePath('assets/dist') => '@symfony/ux-wire-utilities',
                     ],
                 ],
             ]);

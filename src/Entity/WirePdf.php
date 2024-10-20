@@ -1,5 +1,5 @@
 <?php
-namespace Aequation\LaboBundle\Entity;
+namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
@@ -31,13 +31,13 @@ use Exception;
 #[ClassCustomService(WirePdfServiceInterface::class)]
 #[Vich\Uploadable]
 #[Slugable('name')]
-class WirePdf extends WireItem implements WirePdfInterface, TraitSlugInterface
+abstract class WirePdf extends WireItem implements WirePdfInterface, TraitSlugInterface
 {
 
     use Slug;
 
     public const ICON = 'tabler:file-type-pdf';
-    public const FA_ICON = 'file-pdf';
+    public const FA_ICON = 'fa-solid fa-file-pdf';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
@@ -107,7 +107,7 @@ class WirePdf extends WireItem implements WirePdfInterface, TraitSlugInterface
     }
 
     #[Serializer\Ignore]
-    public function getFile(): File|null
+    public function getFile(): File|UploadedFile|null
     {
         return $this->file;
     }

@@ -1,8 +1,10 @@
 <?php
 namespace Aequation\WireBundle\EventSubscriber;
 
-use Aequation\WireBundle\Service\AppWireService;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 // use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -18,27 +20,27 @@ use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use function Symfony\Component\String\u;
 // PHP
 use DateTime;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Security\Http\Event\CheckPassportEvent;
+use Symfony\Component\Security\Http\Event\LoginFailureEvent;
+use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 class WireAppGlobalSubscriber implements EventSubscriberInterface
 {
     public const DEFAULT_ERROR_TEMPLATE = 'exception/all.html.twig';
     public const TEST_PASSED_NAME = 'test_passed';
+    public const LOGIN_PARAMS_KEYS = ['email','password','_csrf_token'];
 
-    // protected AppWireServiceInterface $appWire;
-    // protected RouterInterface $router;
 
     public function __construct(
         // #[Autowire(service: 'service_container')]
         // protected ContainerInterface $container,
-        // protected KernelInterface $kernel,
         protected AppWireServiceInterface $appWire,
+        protected WireUserServiceInterface $userService,
         protected RouterInterface $router
     )
-    {
-        // $this->appWire = $this->container->get(AppWireServiceInterface::class);
-        // $this->router = $this->appWire->get('router');
-    }
+    {}
 
     /**
      * Get subscribed Events
@@ -52,13 +54,32 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
             KernelEvents::CONTROLLER => 'onController',
             // KernelEvents::RESPONSE => 'onKernelResponse',
             KernelEvents::FINISH_REQUEST => 'onFinishRequest',
+            // Login
+            CheckPassportEvent::class => ['onCheckPassport', -10],
+            LoginSuccessEvent::class => 'onLoginSuccess',
+            LoginFailureEvent::class => 'onLoginFailure',
         ];
     }
 
     public function onRequest(RequestEvent $event): void
     {
-        $this->appWire->initialize();
-        if(!$event->isMainRequest()) return;
+        if($event->isMainRequest()) {
+            $this->appWire->initialize();
+            // LOGOUT INVALID USER IMMEDIATLY!!!
+            $user = $this->userService->getUser();
+            if($user && !$user->isLoggable() && !preg_match('/^\\/_wdt\\//', $event->getRequest()->getPathInfo())) {
+                // $route_logged_out = $this->router->generate('app_logged_out');
+                if($this->appWire->getCurrent_route() !== 'app_logged_out') {
+                    // if(!$user->isLoggable()) {
+                        $response = $this->userService->logoutCurrentUser(false);
+                        $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
+                        $event->setResponse($response);
+                    // }
+                }
+            }
+        } else if($this->appWire->isDev()) {
+            // dd(vsprintf('DEV TEST (%s line %d) : not main request with route %s and URL %s', [__METHOD__, __LINE__, $this->appWire->getCurrent_route(), $event->getRequest()->getPathInfo()]));
+        }
     }
 
     public function onException(ExceptionEvent $event): void
@@ -235,5 +256,41 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     //         }
     //     }
     // }
+
+    public function onCheckPassport(CheckPassportEvent $event): void
+    {
+        /** @var ?WireUserInterface */
+        $user = $this->appWire->getUser();
+        if ($user instanceof WireUserInterface && !$user->isLoggable()) {
+            throw new AccountNotVerifiedAuthenticationException();
+        }
+    }
+
+    public function onLoginSuccess(LoginSuccessEvent $event): void
+    {
+        $keys = array_keys($event->getRequest()->request->all());
+        if(count($keys) >= count(static::LOGIN_PARAMS_KEYS)) {
+            if(count(array_intersect_key($keys, static::LOGIN_PARAMS_KEYS)) >= count(static::LOGIN_PARAMS_KEYS)) {
+                /** @var WireUserInterface */
+                $user = $event->getUser();
+                // if($this->security->isGranted('ROLE_EDITOR')) {
+                //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
+                // }
+                $this->userService->updateUserLastLogin($user);
+                $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
+            }
+        }
+        return;
+    }
+
+    public function onLoginFailure(LoginFailureEvent $event): void
+    {
+        if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
+            $response = new RedirectResponse(
+                $this->router->generate('app_home')
+            );
+            $event->setResponse($response);
+        }
+    }
 
 }

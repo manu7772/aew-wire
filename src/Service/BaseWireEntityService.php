@@ -8,6 +8,7 @@ use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
 use Symfony\Bundle\SecurityBundle\Security;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Exception;
 
 // #[AsAlias(WireUserServiceInterface::class, public: true)]
 // #[Autoconfigure(autowire: true, lazy: true)]
@@ -31,7 +32,11 @@ abstract class BaseWireEntityService extends BaseService implements WireEntitySe
 
     public function getRepository(): BaseWireRepositoryInterface
     {
-        return $this->wireEntityService->getRepository($this->getEntityClassname());
+        $classname = $this->getEntityClassname();
+        if(empty($classname)) {
+            throw new Exception(vsprintf('Error %s line %d: classname is missing! (Tryed with static::ENTITY_CLASS: %s).', [__METHOD__, __LINE__, json_encode(static::ENTITY_CLASS)]));
+        }
+        return $this->wireEntityService->getRepository($classname);
     }
 
     public function getEntitiesCount(array $criteria = []): int

@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Initialization</title>
-</head>
-<body>
+{% extends "@AequationWire/base_web.html.twig" %}
+
+{% block title %}{{ webpage.name|default('website') }}{% endblock %}
+
+{% block body %}
     <h1>Initialization <a href="{{ path('aequation_wire_initializer.home') }}"><twig:ux:icon name="tabler:refresh" width="18" /></a></h1>
     <div>
         {% set ret = app.flashes('data')|default([])|first %}
@@ -25,7 +22,7 @@
         <ol>
             {% for act in initializer.configNames %}
             <li>
-                <a href="{{ path('aequation_wire_initializer.initialize', {action: act}) }}">Install {{ act|trans({}, 'initialize') }}</a>
+                {{ loop.index }}. <a href="{{ path('aequation_wire_initializer.initialize', {action: act}) }}"{{ turbo_preload(false) }}>Install {{ act|trans({}, 'initialize') }}</a>
             </li>
             {% endfor %}
         </ol>
@@ -34,8 +31,7 @@
         {# {{ dump(initializer.getConfigData('copy_yaml_files')) }} #}
         {# {{ dump(initializer.installConfig('manage_entities')) }} #}
         {% endblock %}
-        {{ dump(app.jsonSerialize()) }}
-        {{ dump(app.token) }}
+        {# {{ dump(app.jsonSerialize()) }} #}
+        {# {{ dump(app.token) }} #}
     </div>
-</body>
-</html>
+{% endblock %}

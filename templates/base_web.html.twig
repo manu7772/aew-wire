@@ -1,38 +1,40 @@
 <!DOCTYPE html>
-<html lang="fr" class="{{ app.session and app.session.get('darkmode', app.user.darkmode|default(false)) ? 'dark' : '' }}">
+<html lang="{{ app.locale }}" class="{{ app.darkmode ? 'dark' }}">
 	<head>
-		<meta charset="{{ app.service.getStringEncoder() }}">
+		<meta charset="{{ app.charset }}">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>
 			{% block title %}Website{% endblock %}
 		</title>
 		{% block favicon %}
-		<link rel="icon" href="{% block favicon_url %}{{ asset(app.service.param('favicon.main', 'favicon.svg')) }}{% endblock %}">
+		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}">
 		{% endblock %}
         {% block stylesheets %}
+		<link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}">
         {% endblock %}
 		{% block javascripts %}
-			{% block importmap %}{{ importmap('app') }}{% endblock %}
+			{% block importmap %}{{ importmap('@aequation/wire') }}{% endblock %}
 		{% endblock %}
-		{{ app.service.getTurboMetas() }}
+		{{ app.getTurboMetas() }}
 	</head>
-	{# {% set test = app.session.set('darkmode', true) %} #}
 	{% block body_outer %}
-	{# <body id="app"{{ app.service.getDataTurboBodyAttrs() }} data-app="{{ app.service.appParams(true, 'public_app') }}" class="nav-fixed" {{ stimulus_controller('globalapp') }}> #}
-	<body id="app"{{ app.service.getDataTurboBodyAttrs() }} class="nav-fixed" {{ stimulus_controller('globalapp') }}>
+	{# <body id="app"{{ app.getDataTurboBodyAttrs() }} data-app="{{ app.appParams(true, 'public_app') }}" class="nav-fixed" {{ stimulus_controller('globalapp') }}> #}
+	<body id="app" class="nav-fixed" {{ stimulus_controller('globalapp') }}>
 		{% block body_inner %}
-		{% block navbar %}
-			{% if menu is defined %}
-			{% include "@AequationLabo/webpage/bases/_navbar.html.twig" with {menu: menu} %}
-			{% endif %}
-		{% endblock %}
-		{% block body %}
-			{# main content here #}
-		{% endblock %}
+		<div class="container mx-auto">
+			{% block navbar %}
+				{% if menu is defined %}
+				{% include "@AequationWire/webpage/bases/_navbar.html.twig" with {menu: menu} %}
+				{% endif %}
+			{% endblock %}
+			{% block body %}
+				{# main content here #}
+			{% endblock %}
+		</div>
 		{% endblock %}
 		{% block after_container %}
 			{# commands, modals, etc. content here #}
-            {% include '@AequationLabo/partials/_flashes.html.twig' %}
+            {% include '@AequationWire/partials/_flashes.html.twig' %}
 		{% endblock %}
 	</body>
 	{% endblock %}

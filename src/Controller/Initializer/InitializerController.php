@@ -9,8 +9,8 @@ use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route(path: '/ae-initializer', name: 'aequation_wire_initializer.')]
-#[IsGranted("dev|ROLE_SUPER_ADMIN", null, 'forbidden_access', 403)]
+#[Route(path: '/ae-initializer', name: 'aequation_wire_initializer.', env: 'dev')]
+// #[IsGranted("dev|ROLE_SUPER_ADMIN", null, 'forbidden_access', 403)]
 class InitializerController extends AbstractController
 {
 

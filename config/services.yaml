@@ -17,6 +17,5 @@ services:
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Component/'
-            # - '../src/Model/'
             - '../src/Entity/'
             - '../src/Attribute/'

@@ -22,7 +22,7 @@ use DateTimeImmutable;
 
 #[MappedSuperclass()]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitEnabledInterface, TraitCreatedInterface, TraitUnamedInterface, TraitScreenableInterface
+abstract class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitEnabledInterface, TraitCreatedInterface, TraitUnamedInterface, TraitScreenableInterface
 {
     use Enabled, Created, Unamed, Screenable;
 
@@ -66,10 +66,10 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     protected ?DateTimeImmutable $expiresAt = null;
 
     #[ORM\Column]
-    protected ?bool $isVerified = false;
+    protected bool $isVerified = false;
 
     #[ORM\Column(nullable: true)]
-    protected ?\DateTimeImmutable $lastLogin = null;
+    protected ?DateTimeImmutable $lastLogin = null;
 
 
     public function __toString(): string
@@ -77,9 +77,9 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
         return $this->getCivilName().' ['.$this->email.']';
     }
 
-    public function canLogin(): bool
+    public function isLoggable(): bool
     {
-        return $this->isEnabled() && !$this->isSoftdeleted() && !$this->isExpired();
+        return $this->isEnabled() && $this->isVerified() && !($this->isSoftdeleted() || $this->isExpired());
     }
 
     public function isEqualTo(UserInterface $user): bool
@@ -119,7 +119,6 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -199,7 +198,6 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setFirstname(string $firstname): static
     {
         $this->firstname = $firstname;
-
         return $this;
     }
 
@@ -211,11 +209,10 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setLastname(?string $lastname): static
     {
         $this->lastname = $lastname;
-
         return $this;
     }
 
-    public function isDarkmode(): ?bool
+    public function isDarkmode(): bool
     {
         return $this->darkmode;
     }
@@ -223,7 +220,6 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setDarkmode(bool $darkmode): static
     {
         $this->darkmode = $darkmode;
-
         return $this;
     }
 
@@ -249,16 +245,15 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setExpiresAt(?DateTimeImmutable $expiresAt): static
     {
         $this->expiresAt = $expiresAt;
-
         return $this;
     }
 
-    public function getIsVerified(): ?bool
+    public function getIsVerified(): bool
     {
         return $this->isVerified;
     }
 
-    public function isVerified(): ?bool
+    public function isVerified(): bool
     {
         return $this->isVerified;
     }
@@ -266,19 +261,17 @@ class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitE
     public function setIsVerified(bool $isVerified): static
     {
         $this->isVerified = $isVerified;
-
         return $this;
     }
 
-    public function getLastLogin(): ?\DateTimeImmutable
+    public function getLastLogin(): ?DateTimeImmutable
     {
         return $this->lastLogin;
     }
 
-    public function setLastLogin(?\DateTimeImmutable $lastLogin): static
+    public function setLastLogin(?DateTimeImmutable $lastLogin): static
     {
         $this->lastLogin = $lastLogin;
-
         return $this;
     }
 
