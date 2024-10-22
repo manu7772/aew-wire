@@ -43,5 +43,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 RUN wget https://get.symfony.com/cli/installer -O - | bash \
     && mv /root/.symfony*/bin/symfony /usr/local/bin/symfony
 
+# Add GIT globals
+RUN git config --global core.fileMode false
+RUN git config --global user.name manu7772
+RUN git config --global user.email manu7772@gmail.com
+
 # Working directory
 WORKDIR /bundle
