@@ -4,7 +4,6 @@
     "license": "MIT",
     "version": "1.0.0",
     "type": "module",
-    "main": "wireadmin.js",
     "symfony": {
         "controllers": {
             "datatables": {
@@ -15,10 +14,6 @@
                 "autoimport": {
                     "simple-datatables/dist/style.min.css": true
                 }
-            },
-            "wireadmin": {
-                "main": "wireadmin.js",
-                "entrypoint": true
             }
         },
         "importmap": {
