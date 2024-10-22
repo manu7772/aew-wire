@@ -2,10 +2,12 @@
 namespace Aequation\WireBundle;
 
 use Aequation\WireBundle\Tools\Files;
-use Exception;
+// Symfony
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+// PHP
+use Exception;
 
 class AequationWireBundle extends Bundle
 {

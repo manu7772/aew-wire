@@ -2,8 +2,8 @@
 namespace Aequation\WireBundle\Twig;
 
 use Aequation\WireBundle\Model\DataTable;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 // Symfony
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\UX\StimulusBundle\Helper\StimulusHelper;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -15,9 +15,7 @@ class DataTableExtension extends AbstractExtension
         #[Autowire(service: 'stimulus.helper')]
         private StimulusHelper $stimulus
     )
-    {
-        
-    }
+    {}
 
     public function getFunctions(): array
     {
@@ -56,7 +54,7 @@ class DataTableExtension extends AbstractExtension
             }
         }
 
-        return vsprintf('<table%s %s>Loading...</table>', [empty($table->getId()) ? '' : ' id="'.$table->getId().'"', $stimulusAttributes]);
+        return vsprintf('<table%s %s></table>', [empty($table->getId()) ? '' : ' id="'.$table->getId().'"', $stimulusAttributes]);
     }
 
 }

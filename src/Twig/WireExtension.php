@@ -1,18 +1,16 @@
 <?php
 namespace Aequation\WireBundle\Twig;
 
-// Symfony
-
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Strings;
 use Aequation\WireBundle\Tools\Times;
-use Symfony\Component\HttpKernel\KernelInterface;
+// Symfony
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
-// PHP
-use DateTimeImmutable;
 use Twig\Extension\GlobalsInterface;
 use Twig\Markup;
+// PHP
+use DateTimeImmutable;
 
 class WireExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -30,12 +28,10 @@ class WireExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('turbo_memory', [$this, 'turboMemory']),
             new TwigFunction('turbo_preload', [$this, 'turboPreload']),
         ];
-
         if(!$this->appWire->isDev()) {
             // Prevent dump function call if not in dev evnironment
             $functions[] = new TwigFunction('dump', [$this, 'dump']);
         }
-
         return $functions;
     }
 

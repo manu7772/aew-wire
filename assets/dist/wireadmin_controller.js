@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-// import "../styles/wireadmin.css"
+import "bundles/aequationwire/assets/styles/wireadmin.css"
 
 class default_0 extends Controller
 {

@@ -4,6 +4,7 @@
     "license": "MIT",
     "version": "1.0.0",
     "type": "module",
+    "main": "wireadmin.js",
     "symfony": {
         "controllers": {
             "datatables": {

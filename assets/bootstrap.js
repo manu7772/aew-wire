@@ -1,6 +1,6 @@
 import { startStimulusApp } from '@symfony/stimulus-bundle';
-import wireadmin_controller from './dist/wireadmin_controller'
+import wireadmin_controller from './dist/wireadmin_controller.js'
 
-const app = startStimulusApp();
+const wireadmin = startStimulusApp();
 // register any custom, 3rd party controllers here
-app.register('wireadmin', wireadmin_controller);
+wireadmin.register('wireadmin', wireadmin_controller);
