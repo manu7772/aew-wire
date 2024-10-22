@@ -16,6 +16,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
+use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Stopwatch\Stopwatch;
 use UnitEnum;
@@ -70,6 +71,8 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isTurboFrameRequest(): bool;
     public function isTurboStreamRequest(bool $prepareRequest = false): bool;
     public function getTurboMetas(bool $asMarkup = true): string|Markup;
+    public function getContext(): RequestContext;
+    public function getContextAsArray(): array;
     // Dirs
     public function getProjectDir(string $path = null): string;
     public function getCacheDir(string $path = null): string;
@@ -85,6 +88,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // Tiny values
     public function setTinyvalue(string $name, mixed $value): static;
     public function getTinyvalue(string $name, mixed $default = null): mixed;
+    public function setTinyvalues(array $values): static;
+    // Serialization
+    public function jsonSerialize(bool $onlySerializable = false): mixed;
+    public function jsonUnserialize(array $data): void;
     // Twig
     public function getTwig(): Environment;
     public function getTwigLoader(): LoaderInterface;
@@ -94,6 +101,9 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getTimezone(): DateTimeZone;
     public function getTimezoneName(): string;
     public function getDatetimeTZ(string|DateTimeInterface $date = 'now'): DateTimeImmutable;
+    // Locale / Languages
+    public function runWithLocale(string $locale, callable $callback): static;
+    public function resetLocale(): static;
     // DateTime
     public function getCurrentDatetime(): DateTimeImmutable;
     public function getCurrentDatetimeFormated(string $format = DATE_ATOM): string;

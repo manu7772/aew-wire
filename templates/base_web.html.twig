@@ -10,7 +10,7 @@
 		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}">
 		{% endblock %}
         {% block stylesheets %}
-		<link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}">
+		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}
         {% endblock %}
 		{% block javascripts %}
 			{% block importmap %}{{ importmap('@aequation/wire') }}{% endblock %}

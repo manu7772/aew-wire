@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Twig;
 
 // Symfony
 
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Strings;
 use Aequation\WireBundle\Tools\Times;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -10,13 +11,14 @@ use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 // PHP
 use DateTimeImmutable;
+use Twig\Extension\GlobalsInterface;
 use Twig\Markup;
 
-class WireExtension extends AbstractExtension
+class WireExtension extends AbstractExtension implements GlobalsInterface
 {
 
     public function __construct(
-        private KernelInterface $kernel
+        private AppWireServiceInterface $appWire
     )
     {}
 
@@ -29,12 +31,24 @@ class WireExtension extends AbstractExtension
             new TwigFunction('turbo_preload', [$this, 'turboPreload']),
         ];
 
-        if($this->kernel->getEnvironment() !== 'dev') {
+        if(!$this->appWire->isDev()) {
             // Prevent dump function call if not in dev evnironment
             $functions[] = new TwigFunction('dump', [$this, 'dump']);
         }
 
         return $functions;
+    }
+
+    /**
+     * Get Twig globals
+     * @return array
+     */
+    public function getGlobals(): array
+    {
+        return [
+            'app' => $this->appWire,
+            'currentYear' => $this->getCurrentYear(),
+        ];
     }
 
 
