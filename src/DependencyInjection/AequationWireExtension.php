@@ -12,6 +12,7 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 // PHP
 use Exception;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class AequationWireExtension extends Extension implements PrependExtensionInterface
 {
@@ -22,7 +23,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
         'AssetMapper' => true,
     ];
 
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader(
             $container,
@@ -33,7 +34,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
         $config = $this->processConfiguration($configuration, $configs);
     }
 
-    public function prepend(ContainerBuilder $container)
+    public function prepend(ContainerBuilder $container): void
     {
         foreach (static::CONFIGURES as $name => $enabled) {
             // control if configured in 
@@ -48,7 +49,7 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
         }
     }
 
-    public function getConfiguration(array $config, ContainerBuilder $container)
+    public function getConfiguration(array $config, ContainerBuilder $container): ?ConfigurationInterface
     {
         return new Configuration($config, $container);
     }
