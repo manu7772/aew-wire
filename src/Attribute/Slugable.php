@@ -11,7 +11,7 @@ use ReflectionProperty;
  * @author emmanuel:dujardin Aequation
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-class Slugable extends baseClassAttribute implements AppAttributeClassInterface
+class Slugable extends BaseClassAttribute implements AppAttributeClassInterface
 {
 
     public ReflectionProperty|string $property;

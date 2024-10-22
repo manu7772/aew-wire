@@ -15,7 +15,7 @@ use ReflectionProperty;
 use ReflectionClassConstant;
 
 #[Attribute(Attribute::TARGET_CLASS_CONSTANT | Attribute::TARGET_METHOD | Attribute::TARGET_PROPERTY)]
-class CssClasses extends baseClassAttribute implements AppAttributeConstantInterface, AppAttributeMethodInterface, AppAttributePropertyInterface, CssClassesInterface
+class CssClasses extends BaseClassAttribute implements AppAttributeConstantInterface, AppAttributeMethodInterface, AppAttributePropertyInterface, CssClassesInterface
 {
 
     public const TARGET_VALUES = ['value','key'];
