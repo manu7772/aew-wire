@@ -13,13 +13,13 @@
 		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}
         {% endblock %}
 		{% block javascripts %}
-			{% block importmap %}{{ importmap('wireadmin') }}{% endblock %}
+			{% block importmap %}{{ importmap('app') }}{% endblock %}
 		{% endblock %}
 		{{ app.getTurboMetas() }}
 	</head>
 	{% block body_outer %}
 	{# <body id="app"{{ app.getDataTurboBodyAttrs() }} data-app="{{ app.appParams(true, 'public_app') }}" class="nav-fixed" {{ stimulus_controller('globalapp') }}> #}
-	<body id="app" class="nav-fixed">
+	<body id="app">
 		{% block body_inner %}
 		<div class="container mx-auto">
 			{% block navbar %}
