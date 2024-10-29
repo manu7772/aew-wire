@@ -2,11 +2,13 @@
 namespace Aequation\WireBundle\Repository\interface;
 
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+// Symfony
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
+// use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-interface BaseWireRepositoryInterface
+// #[AutoconfigureTag('doctrine.repository_service')]
+interface BaseWireRepositoryInterface extends ServiceEntityRepositoryInterface
 {
-    const ENTITY_CLASS = '';
-    const NAME = 'u';
 
     // Base tools
     public function hasField(string $name): bool;

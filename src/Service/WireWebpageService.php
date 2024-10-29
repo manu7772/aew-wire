@@ -5,7 +5,6 @@ use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 // PHP
 use Exception;
-use SplFileInfo;
 
 abstract class WireWebpageService extends WireHtmlcodeService implements WireWebpageServiceInterface
 {

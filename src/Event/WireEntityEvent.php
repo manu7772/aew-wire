@@ -35,6 +35,11 @@ class WireEntityEvent extends Event
         return $this->entity;
     }
 
+    public function getObject(): WireEntityInterface
+    {
+        return $this->entity;
+    }
+
     public function getEntityService(): WireEntityManagerInterface|WireEntityServiceInterface
     {
         return $this->wireEntityManager->getEntityService($this->entity);

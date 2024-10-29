@@ -22,6 +22,9 @@ use Exception;
 abstract class BaseWireRepository extends ServiceEntityRepository implements BaseWireRepositoryInterface
 {
 
+    const ENTITY_CLASS = WireEntityInterface::class;
+    const NAME = 'u';
+
     public function __construct(
         ManagerRegistry $registry,
         public readonly AppWireServiceInterface $appWire,
@@ -29,7 +32,7 @@ abstract class BaseWireRepository extends ServiceEntityRepository implements Bas
     {
         parent::__construct(registry: $registry, entityClass: static::ENTITY_CLASS);
         if($this->appWire->isDev()) {
-            if($this->getEntityName() !== static::ENTITY_CLASS) throw new Exception(vsprintf('Error %s line %d: in %s, entity classes %s and %s do not match!', [__METHOD__, __LINE__, __CLASS__, $this->getEntityName(), static::ENTITY_CLASS]));
+            if(!is_a($this->getEntityName(), static::ENTITY_CLASS, true)) throw new Exception(vsprintf('Error %s line %d: in %s, entity classes %s and %s do not match!', [__METHOD__, __LINE__, __CLASS__, $this->getEntityName(), static::ENTITY_CLASS]));
         }
     }
 

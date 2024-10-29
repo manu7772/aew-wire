@@ -19,16 +19,16 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Form\FormEvents;
 // PHP
 use Exception;
-use Symfony\Component\Form\FormEvents;
 
 #[MappedSuperclass]
 #[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà pour ce type')]
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[HasLifecycleCallbacks]
 #[Slugable(property: 'name')]
-abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface, TraitCreatedInterface, TraitSlugInterface, TraitUnamedInterface
+abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {
 
     use Created, Slug, Unamed;
@@ -68,7 +68,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return $this;
     }
 
-    #[OnEventCall(events: FormEvents::PRE_SET_DATA)]
+    #[OnEventCall(events: [FormEvents::PRE_SET_DATA])]
     public function setTypeChoices(
         WireCategoryServiceInterface $service
     ): static
@@ -94,8 +94,31 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     public function setType(string $type): static
     {
+        $availables = $this->getAvailableTypes();
+        if(!array_key_exists($type, $availables)) {
+            $memtype = $type;
+            if(false === ($type = array_search($type, $availables))) {
+                throw new Exception(vsprintf('Error %s line %d: type "%s" not found!', [__METHOD__, __LINE__, $memtype]));
+            }
+        }
         $this->type = $type;
         return $this;
+    }
+
+    /**
+     * Get list of available types
+     * 
+     * Returns array of classname => shortname
+     * 
+     * @return array
+     */
+    public function getAvailableTypes(): array
+    {
+        $types = [];
+        foreach ($this->getTypeChoices() as $classname => $values) {
+            $types[$classname] = Objects::getShortname($values, false);
+        }
+        return $types;
     }
 
     public function getDescription(): ?string

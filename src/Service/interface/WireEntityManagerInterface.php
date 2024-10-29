@@ -25,14 +25,23 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getRelateds(string|WireEntityInterface $objectOrClass, string|array|null $relationTypes = null, bool $excludeSelf = false): array;
 
     // Persist
-    public function persist(WireEntityInterface $entity): static;
-    public function remove(WireEntityInterface $entity): static;
+    public function persist(WireEntityInterface $entity, bool $flush = false): static;
+    public function update(WireEntityInterface $entity, bool $flush = false): static;
+    public function remove(WireEntityInterface $entity, bool $flush = false): static;
     public function flush(): static;
+    // Actions only used by entity service
+    public function __innerPersist(WireEntityInterface $entity, bool $flush = false): static;
+    public function __innerUpdate(WireEntityInterface $entity, bool $flush = false): static;
+    public function __innerRemove(WireEntityInterface $entity, bool $flush = false): static;
 
     // Create
     public function createEntity(string $classname, string $uname = null): WireEntityInterface;
     public function createModel(string $classname): WireEntityInterface;
     public function createClone(WireEntityInterface $entity, string $uname = null, int $clone_method = 1): ?WireEntityInterface;
+    // Actions only used by entity service
+    public function __innerCreateEntity(string $classname, string $uname = null): WireEntityInterface; // ONLY USED BY ENTITY SERVICE
+    public function __innerCreateModel(string $classname): WireEntityInterface; // ONLY USED BY ENTITY SERVICE
+    public function __innerCreateClone(WireEntityInterface $entity, string $uname = null, int $clone_method = 1): ?WireEntityInterface; // ONLY USED BY ENTITY SERVICE
 
     // Find
     public function getRepository(string $classname, string $field = null): BaseWireRepositoryInterface;

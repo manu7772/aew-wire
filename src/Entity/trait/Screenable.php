@@ -29,7 +29,7 @@ trait Screenable
         return $this;
     }
 
-    public function getWebpage(): WireHtmlcodeInterface
+    public function getWebpage(): ?WireHtmlcodeInterface
     {
         return $this->webpage;
     }

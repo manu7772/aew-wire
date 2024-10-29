@@ -11,7 +11,6 @@ use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\trait\Created;
 use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Owner;
-use Aequation\WireBundle\Entity\trait\Serializable;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireItemRepository;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
@@ -29,9 +28,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireItemServiceInterface::class)]
-abstract class WireItem extends MappSuperClassEntity implements WireItemInterface, TraitCreatedInterface, TraitEnabledInterface, TraitUnamedInterface, TraitOwnerInterface
+abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
 {
-    use Created, Enabled, Owner, Serializable, Unamed;
+    use Created, Enabled, Owner, Unamed;
 
     public const ICON = 'tabler:file';
     public const FA_ICON = 'file';

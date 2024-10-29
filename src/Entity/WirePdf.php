@@ -31,7 +31,7 @@ use Exception;
 #[ClassCustomService(WirePdfServiceInterface::class)]
 #[Vich\Uploadable]
 #[Slugable('name')]
-abstract class WirePdf extends WireItem implements WirePdfInterface, TraitSlugInterface
+abstract class WirePdf extends WireItem implements WirePdfInterface
 {
 
     use Slug;

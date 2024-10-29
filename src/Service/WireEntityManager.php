@@ -68,35 +68,105 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /****************************************************************************************************/
 
     public function persist(
-        WireEntityInterface $entity
+        WireEntityInterface $entity,
+        bool $flush = false
     ): static
     {
+        $service = $this->getEntityService($entity);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->persist($entity, $flush)
+            : $this->__innerPersist($entity, $flush);
+    }
+
+    public function __innerPersist(
+        WireEntityInterface $entity,
+        bool $flush = false
+    ): static
+    {
+        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
         if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_PERSIST)) {
             $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_PERSIST);
         }
         $this->em->persist($entity);
+        if($flush) $this->flush();
+        return $this;
+    }
+
+    public function update(
+        WireEntityInterface $entity,
+        bool $flush = false
+    ): static
+    {
+        $service = $this->getEntityService($entity);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->update($entity, $flush)
+            : $this->__innerUpdate($entity, $flush);
+    }
+
+    public function __innerUpdate(
+        WireEntityInterface $entity,
+        bool $flush = false
+    ): static
+    {
+        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
+        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
+            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
+        }
+        if($flush) $this->flush();
         return $this;
     }
 
     public function remove(
-        WireEntityInterface $entity
+        WireEntityInterface $entity,
+        bool $flush = false
     ): static
     {
+        $service = $this->getEntityService($entity);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->remove($entity, $flush)
+            : $this->__innerRemove($entity, $flush);
+    }
+
+    public function __innerRemove(
+        WireEntityInterface $entity,
+        bool $flush = false
+    ): static
+    {
+        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
         if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
             $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_REMOVE);
         }
         $this->em->remove($entity);
+        if($flush) $this->flush();
         return $this;
     }
 
     public function flush(): static
     {
+        if($this->appWire->isDev()) {
+            foreach ($this->uow->getScheduledEntityInsertions() as $entity) {
+                if($entity instanceof WireEntityInterface) {
+                    $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
+                }
+            }
+        }
         foreach ($this->uow->getScheduledEntityUpdates() as $entity) {
             if($entity instanceof WireEntityInterface) {
+                if($this->appWire->isDev()) $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
                 if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
-                    $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
-                } else if($this->appWire->isDev()) {
-                    throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for update, but EmbededStatus did not know it (Event %s not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
+                //     $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
+                // } else if($this->appWire->isDev()) {
+                    if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for update, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
+                }
+            }
+        }
+        foreach ($this->uow->getScheduledEntityDeletions() as $entity) {
+            if($entity instanceof WireEntityInterface) {
+                if($this->appWire->isDev()) $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
+                if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
+                //     $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_REMOVE);
+                // } else if($this->appWire->isDev()) {
+                    if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for deletion, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
                 }
             }
         }
@@ -119,6 +189,17 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         string $uname = null
     ): WireEntityInterface
     {
+        $service = $this->getEntityService($classname);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->createEntity($uname)
+            : $this->__innerCreateEntity($classname, $uname);
+    }
+
+    public function __innerCreateEntity(
+        string $classname,
+        string $uname = null
+    ): WireEntityInterface
+    {
         /** @var WireEntityInterface */
         $new = new $classname();
         if($new instanceof TraitUnamedInterface && !empty($uname)) {
@@ -137,12 +218,34 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         string $classname
     ): WireEntityInterface
     {
+        $service = $this->getEntityService($classname);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->createModel()
+            : $this->__innerCreateModel($classname);
+    }
+
+    public function __innerCreateModel(
+        string $classname
+    ): WireEntityInterface
+    {
         $model = new $classname();
         $this->eventDispatcher->dispatch(new WireEntityEvent($model, $this), WireEntityEvent::POST_MODEL);
         return $model;
     }
 
     public function createClone(
+        WireEntityInterface $entity,
+        string $uname = null,
+        int $clone_method = 1
+    ): ?WireEntityInterface
+    {
+        $service = $this->getEntityService($entity);
+        return $service instanceof WireEntityServiceInterface
+            ? $service->createClone($entity, $uname, $clone_method)
+            : $this->__innerCreateClone($entity, $uname, $clone_method);
+    }
+
+    public function __innerCreateClone(
         WireEntityInterface $entity,
         string $uname = null,
         int $clone_method = 1
@@ -349,7 +452,8 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     }
 
     /**
-     * Get relations of entity
+     * Get Doctrine relations of entity
+     * 
      * @param string|WireEntityInterface $objectOrClass
      * @param string|array|null|null $relationTypes
      * @param boolean $excludeSelf

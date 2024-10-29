@@ -3,10 +3,9 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 // PHP
-use Serializable;
 use Stringable;
 
-interface WireEntityInterface extends Stringable, Serializable
+interface WireEntityInterface extends Stringable, TraitSerializableInterface
 {
 
     public const IS_CLONABLE = false;

@@ -6,7 +6,7 @@ use Doctrine\Common\Collections\Collection;
 
 // Symfony
 
-interface WireEcollectionInterface extends WireItemInterface
+interface WireEcollectionInterface extends WireItemInterface, TraitHasOrderedInterface
 {
 
     public function getItems(): Collection;

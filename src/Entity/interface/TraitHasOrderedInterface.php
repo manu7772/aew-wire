@@ -7,9 +7,9 @@ use ReflectionProperty;
 
 interface TraitHasOrderedInterface extends TraitInterface
 {
-    public const ITEMS_ACCEPT = [
-        'items' => [WireItem::class],
-    ];
+    // public const ITEMS_ACCEPT = [
+    //     'items' => [WireItem::class],
+    // ];
 
     public function __construct_hasOrdered(): void;
     public function updateRelationOrder(WireEntityEvent $event): bool;

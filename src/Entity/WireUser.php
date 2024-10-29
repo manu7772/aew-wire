@@ -22,7 +22,7 @@ use DateTimeImmutable;
 
 #[MappedSuperclass()]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-abstract class WireUser extends MappSuperClassEntity implements WireUserInterface, TraitEnabledInterface, TraitCreatedInterface, TraitUnamedInterface, TraitScreenableInterface
+abstract class WireUser extends MappSuperClassEntity implements WireUserInterface
 {
     use Enabled, Created, Unamed, Screenable;
 
@@ -141,17 +141,68 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
+        $roles[] = static::ROLE_USER;
         return array_unique($roles);
     }
 
     /**
+     * Set Roles
+     * 
      * @param list<string> $roles
      */
     public function setRoles(array $roles): static
     {
-        $this->roles = $roles;
+        $this->roles = [];
+        foreach ($roles as $role) {
+            $this->addRole($role);
+        }
         return $this;
+    }
+
+    /**
+     * Add Role
+     *
+     * @param string $role
+     * @return static
+     */
+    public function addRole(string $role): static
+    {
+        if(!$this->HasRole($role)) $this->roles[] = $role;
+        // $this->roles = array_unique($this->roles);
+        return $this;
+    }
+
+    /**
+     * Has Role
+     *
+     * @param string $role
+     * @return boolean
+     */
+    public function HasRole(string $role): bool
+    {
+        return in_array($role, $this->roles);
+    }
+
+    /**
+     * Set Superadmin
+     *
+     * @return static
+     */
+    public function setSuperadmin(): static
+    {
+        $this->addRole(static::ROLE_SUPER_ADMIN);
+        $this->setEnabled(true);
+        $this->setSoftdeleted(false);
+        $this->setIsVerified(true);
+        return $this;
+    }
+
+    public function isValidSuperadmin(): bool
+    {
+        return $this->HasRole(static::ROLE_SUPER_ADMIN)
+            && $this->isEnabled()
+            && !$this->isSoftdeleted()
+            && $this->isVerified();
     }
 
     /**

@@ -3,10 +3,10 @@ namespace Aequation\WireBundle\Repository;
 
 use Aequation\WireBundle\Entity\WireHtmlcode;
 use Aequation\WireBundle\Repository\interface\WireHtmlcodeRepositoryInterface;
-use Aequation\WireBundle\Repository\WireItemRepository;
+use Aequation\WireBundle\Repository\WireEcollectionRepository;
 
 /**
- * @extends WireItemRepository
+ * @extends WireEcollectionRepository
  */
 abstract class WireHtmlcodeRepository extends WireEcollectionRepository implements WireHtmlcodeRepositoryInterface
 {

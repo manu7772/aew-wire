@@ -21,7 +21,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WireFactoryServiceInterface::class)]
 #[Slugable('name')]
-abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitSlugInterface, TraitScreenableInterface
+abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 
     use Slug, Screenable;

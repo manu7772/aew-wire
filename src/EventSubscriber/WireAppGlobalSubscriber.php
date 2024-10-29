@@ -166,6 +166,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
                 // TEST/DEMO WEBSITES RESTRICTED AREA
                 // **********************************
                 $grantedHosts = [
+                    '127.0.0.1',
                     'localhost',
                     $website_host,
                     'www.'.$website_host,
@@ -190,6 +191,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
                 // COUNTDOWN/LAUNCH WEBSITES
                 // **********************************
                 $qualifiedHosts = [
+                    // '127.0.0.1',
                     // 'localhost',
                     $website_host,
                     'www.'.$website_host,

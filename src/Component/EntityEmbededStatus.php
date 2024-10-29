@@ -17,6 +17,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     protected int $typeStatus;
     public readonly WireEntityManagerInterface $wireEntityManager;
     public readonly WireEntityServiceInterface $wireEntityService;
+    public readonly array $dispatchedEvents;
 
     public function __construct(
         public readonly WireEntityInterface $entity,
@@ -24,6 +25,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         public readonly AppWireServiceInterface $appWire
     )
     {
+        $this->dispatchedEvents = [];
         $this->wireEntityManager = $this->appWire->get(AppWireServiceInterface::class);
         $this->wireEntityService = $this->wireEntityManager->getEntityService($this->entity);
         $this->entity->setEmbededStatus($this);
@@ -142,36 +144,119 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
 
     /** Dispatch requirements */
 
+    /**
+     * List of events that can be triggered
+     *
+     * @return array
+     */
+    public static function getAvailableEvents(): array
+    {
+        return [
+            WireEntityEvent::BEFORE_PERSIST,
+            WireEntityEvent::BEFORE_UPDATE,
+            WireEntityEvent::BEFORE_REMOVE,
+        ];
+    }
+
+    /**
+     * Is event available to be triggered
+     *
+     * @param string $eventName
+     * @return boolean
+     */
+    public function isAvailableEvent(
+        string $eventName
+    ): bool
+    {
+        $events = static::getAvailableEvents();
+        return in_array($eventName, $events) && $this->isManageable();
+    }
+
+    /**
+     * Get dispatched events as array ($eventName => number of triggers)
+     *
+     * @return array
+     */
+    public function getDispatchedEvents(): array
+    {
+        return $this->dispatchedEvents;
+    }
+
+    /**
+     * Add event when dispatched/triggered
+     *
+     * @param string $eventName
+     * @param integer $incValue = 1
+     * @return static
+     */
+    public function addDispatchedEvent(
+        string $eventName,
+        int $incValue = 1
+    ): static
+    {
+        if($this->appWire->isDev()) {
+            $this->failIfNotManageable(__METHOD__, __LINE__, vsprintf('Error %s line %d: Event %s is not supported!', [__METHOD__, __LINE__, $eventName]));
+        }
+        $this->dispatchedEvents[$eventName] ??= 0;
+        $this->dispatchedEvents[$eventName] = $this->dispatchedEvents[$eventName] + $incValue;
+        return $this;
+    }
+
+    public function resetDispatchedEvents(
+        string|array $eventNames
+    ): static
+    {
+        foreach ((array)$eventNames as $eventName) {
+            if($this->isAvailableEvent($eventName)) {
+                $this->dispatchedEvents[$eventName] = 0;
+            } else if(isset($this->dispatchedEvents[$eventName])) {
+                // Unknown event
+                unset($this->dispatchedEvents[$eventName]);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Is Event required?
+     *
+     * @param string $eventName
+     * @return boolean
+     */
     public function requireDispatchEvent(
         string $eventName
     ): bool
     {
+        if($this->appWire->isDev() && !$this->isAvailableEvent($eventName)) {
+            throw new Exception(vsprintf('Error %s line %d: Event %s is not supported!', [__METHOD__, __LINE__, $eventName]));
+        }
+        if($this->isEventDispatched($eventName)) return false;
         switch ($eventName) {
-            case WireEntityEvent::BEFORE_REMOVE:
-                return ($this->isLoaded() || $this->isFlushed())
-                    && !$this->isModel()
-                    ;
-                break;
-            case WireEntityEvent::BEFORE_UPDATE:
-                return ($this->isLoaded() || $this->isFlushed())
-                    && !$this->isModel()
-                    ;
-                break;
             case WireEntityEvent::BEFORE_PERSIST:
                 return !$this->isLoaded()
                     && !$this->isPersisted()
                     && !$this->isFlushed()
-                    && !$this->isModel()
-                    ;
+                    && !$this->isModel();
                 break;
-            default:
-                if($this->appWire->isDev()) {
-                    throw new Exception(vsprintf('Error %s line %d: Event %s is not supported!', [__METHOD__, __LINE__, $eventName]));
-                }
+            case WireEntityEvent::BEFORE_UPDATE:
+                return ($this->isLoaded() || $this->isFlushed())
+                    && !$this->isModel();
                 break;
-        }
+            case WireEntityEvent::BEFORE_REMOVE:
+                return ($this->isLoaded() || $this->isFlushed())
+                    && !$this->isModel();
+                break;
+            }
         return false;
     }
+
+    public function isEventDispatched(
+        string $eventName
+    ): bool
+    {
+        return array_key_exists($eventName, $this->dispatchedEvents) && $this->dispatchedEvents[$eventName] > 0;
+    }
+
 
     /** ENTITY */
 
@@ -239,6 +324,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         if($this->appWire->isDev()) $this->checkStatus(static::ENTITY_STATUS_FLUSHED, true);
         $this->typeStatus = $this->typeStatus ^ static::ENTITY_STATUS_FLUSHING; // Remove flushed
         $this->typeStatus = $this->typeStatus | static::ENTITY_STATUS_FLUSHED;
+        $this->resetDispatchedEvents(WireEntityEvent::BEFORE_UPDATE);
         return $this;
     }
 
@@ -272,6 +358,20 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     {
         $test = $this->typeStatus & static::ENTITY_STATUS_DELETED;
         return $test > 0;
+    }
+
+
+    public function isManageable(): bool
+    {
+        return $this->isEntity() && !$this->isDeleted();
+    }
+
+    public function failIfNotManageable(string $method = null, int $line = null, string $message = null): void
+    {
+        if(!$this->isManageable()) {
+            $message ??= vsprintf('Error %s line %d: entity %s %s of type %s is not manageable!', [$method ?? __METHOD__, $line ?? __LINE__, $this->entity->getClassname(), $this->entity->__toString(), $this->getType()]);
+            throw new Exception($message);
+        }
     }
 
 

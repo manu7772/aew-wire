@@ -5,7 +5,7 @@ use Aequation\WireBundle\Entity\WireEcollection;
 // Symfony
 use Doctrine\Common\Collections\Collection;
 
-interface WireItemInterface extends WireEntityInterface
+interface WireItemInterface extends WireEntityInterface, TraitCreatedInterface, TraitEnabledInterface, TraitUnamedInterface, TraitOwnerInterface
 {
 
     public function getName(): ?string;

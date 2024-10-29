@@ -6,9 +6,9 @@ use Aequation\WireBundle\Attribute\RelationOrder;
 use Aequation\WireBundle\Entity\interface\TraitHasOrderedInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\trait\HasOrdered;
-use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
 // Symfony
@@ -25,11 +25,15 @@ use Exception;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
-abstract class WireEcollection extends WireItem implements WireEcollectionInterface, TraitHasOrderedInterface
+abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
     use HasOrdered;
 
-    #[ORM\ManyToMany(targetEntity: WireItem::class, mappedBy: 'parents', cascade: ['persist'])]
+    public const ITEMS_ACCEPT = [
+        'items' => [WireItemInterface::class],
+    ];
+
+    #[ORM\ManyToMany(targetEntity: WireItemInterface::class, mappedBy: 'parents', cascade: ['persist'])]
     #[RelationOrder()]
     #[Serializer\Ignore]
     protected Collection $items;
@@ -57,7 +61,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     }
 
     #[Serializer\Ignore]
-    public function addItem(WireItem $item): bool
+    public function addItem(WireItemInterface $item): bool
     {
         if($this->isAcceptsItemForEcollection($item, 'items')) {
             if (!$this->hasItem($item)) $this->items->add($item);
@@ -75,7 +79,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this->items->contains($item);
     }
 
-    public function removeItem(WireItem $item): static
+    public function removeItem(WireItemInterface $item): static
     {
         $this->items->removeElement($item);
         if($item->hasParent($this)) $item->removeParent($this);

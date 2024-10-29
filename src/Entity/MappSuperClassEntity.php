@@ -2,7 +2,9 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Component\EntityEmbededStatus;
+use Aequation\WireBundle\Entity\interface\TraitSerializableInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\trait\Serializable;
 use Aequation\WireBundle\Entity\trait\WireEntity;
 // Symfony
 use Doctrine\ORM\Mapping\MappedSuperclass;
@@ -15,7 +17,7 @@ use Throwable;
 #[MappedSuperclass]
 abstract class MappSuperClassEntity implements WireEntityInterface
 {
-    use WireEntity;
+    use WireEntity, Serializable;
 
     public const ICON = 'tabler:question-mark';
     public const FA_ICON = 'question';

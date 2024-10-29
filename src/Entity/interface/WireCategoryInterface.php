@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-interface WireCategoryInterface extends WireEntityInterface
+interface WireCategoryInterface extends WireEntityInterface, TraitCreatedInterface, TraitSlugInterface, TraitUnamedInterface
 {
 
     public const DEFAULT_TYPE = 'default';

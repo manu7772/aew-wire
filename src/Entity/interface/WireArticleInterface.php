@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity\interface;
 // PHP
 use DateTimeInterface;
 
-interface WireArticleInterface extends WireItemInterface
+interface WireArticleInterface extends WireItemInterface, TraitSlugInterface, TraitScreenableInterface
 {
 
     public function getTitle(): ?string;

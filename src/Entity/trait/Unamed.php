@@ -44,7 +44,7 @@ trait Unamed
         string $uname = null
     ): static
     {
-        if(!isset($this->uname) || $this->_isClone()) $this->uname = $this->_service->getNew(Uname::class);
+        // if(!isset($this->uname) || $this->_isClone()) $this->uname = $this->_service->getNew(Uname::class);
         if(empty($uname)) $uname = empty($this->_tempUname) ? null : $this->_tempUname;
         $this->_tempUname = $uname;
         $this->uname->attributeEntity($this, $uname);

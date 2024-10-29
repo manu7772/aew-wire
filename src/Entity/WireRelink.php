@@ -25,7 +25,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[Slugable('name')]
-abstract class WireRelink extends WireItem implements TraitPreferedInterface, WireRelinkInterface, TraitSlugInterface
+abstract class WireRelink extends WireItem implements WireRelinkInterface
 {
 
     use Slug, Prefered;

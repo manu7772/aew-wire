@@ -7,7 +7,6 @@ use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Symfony\Component\Yaml\Yaml;
 // PHP
 use Exception;
-use SplFileInfo;
 
 abstract class WireWebsectionService extends WireHtmlcodeService implements WireWebsectionServiceInterface
 {

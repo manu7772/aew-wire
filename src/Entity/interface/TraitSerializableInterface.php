@@ -1,8 +1,9 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
+use Serializable;
 
-interface TraitSerializableInterface extends TraitInterface
+interface TraitSerializableInterface extends TraitInterface, Serializable
 {
 
     public function __construct_serializable(): void;

@@ -2,6 +2,7 @@
 
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -55,16 +56,47 @@ class WireUserService extends BaseWireEntityService implements WireUserServiceIn
         return $repository->findOneByEmail($admin_email);
     }
 
+    /**
+     * Check if main SUPER ADMIN user (Webmaster) is still ROLE_SUPER_ADMIN
+     * Check if enabled, not softdeleted et verified, too
+     * If not, restore ROLE_SUPER_ADMIN status and FLUSH changes in database
+     * 
+     * @return WireUserInterface|null
+     */
+    public function checkMainSuperadmin(): ?WireUserInterface
+    {
+        /** @var WireUserInterface&TraitEnabledInterface */
+        $admin = $this->getMainSAdminUser();
+        if($admin && !$admin->isValidSuperadmin()) {
+            $admin->setSuperadmin();
+            $this->flush();
+            return $admin;
+        }
+        return null;
+    }
+
+    /**
+     * Logout current User
+     *
+     * @param boolean $validateCsrfToken
+     * @return Response|null
+     */
     public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response
     {
         return $this->security->logout($validateCsrfToken);
     }
 
+    /**
+     * Update User last login
+     *
+     * @param WireUserInterface $user
+     * @return static
+     */
     public function updateUserLastLogin(
         WireUserInterface $user
     ): static {
         $user->updateLastLogin();
-        $this->wireEntityService->flush();
+        $this->flush();
         return $this;
     }
 }

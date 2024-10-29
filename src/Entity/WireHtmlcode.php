@@ -23,7 +23,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WireHtmlcodeServiceInterface::class)]
 #[Slugable('name')]
-abstract class WireHtmlcode extends WireEcollection implements WireHtmlcodeInterface, TraitSlugInterface, TraitScreenableInterface
+abstract class WireHtmlcode extends WireEcollection implements WireHtmlcodeInterface
 {
 
     use Slug, Screenable;

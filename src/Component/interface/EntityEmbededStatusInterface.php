@@ -29,7 +29,13 @@ interface EntityEmbededStatusInterface
     public function getType(): string;
     public function isEmptyStatus(): bool;
     // Dispatch requirements
+    public static function getAvailableEvents(): array;
+    public function isAvailableEvent(string $eventName): bool;
+    public function getDispatchedEvents(): array;
+    public function addDispatchedEvent(string $eventName, int $incValue = 1): static;
+    public function resetDispatchedEvents(string|array $eventNames): static;
     public function requireDispatchEvent(string $eventName): bool;
+    public function isEventDispatched(string $eventName): bool;
     // Entity
     public function isEntity(): bool;
     public function setCreated(): static;
@@ -46,6 +52,9 @@ interface EntityEmbededStatusInterface
     public function isTodelete(): bool;
     public function setDeleted(): static;
     public function isDeleted(): bool;
+    // Manageable
+    public function isManageable(): bool;
+    public function failIfNotManageable(string $method = null, int $line = null, string $message = null): void;
     // Model
     public function setModel(): static;
     public function isModel(): bool;

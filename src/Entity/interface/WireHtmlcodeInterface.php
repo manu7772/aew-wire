@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface WireHtmlcodeInterface extends WireEcollectionInterface
+interface WireHtmlcodeInterface extends WireEcollectionInterface, TraitSlugInterface, TraitScreenableInterface
 {
 
 }

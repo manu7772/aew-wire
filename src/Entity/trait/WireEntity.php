@@ -66,9 +66,6 @@ trait WireEntity
     // #[AppEvent(groups: [AppEvent::afterClone])]
     public function _removeIsClone(): static
     {
-        if($this->_service->isDev() && $this->_isClone()) {
-            // throw new Exception(vsprintf('Error %s line %d: this %s "%s" should not be isClone status TRUE when AppEvent %s !', [__METHOD__, __LINE__, $this->getClassname(), $this, AppEvent::afterClone]));
-        }
         $this->_setClone(false);
         return $this;
     }
@@ -76,7 +73,7 @@ trait WireEntity
     public function __clone_entity(): void
     {
         $this->euid = $this->getNewEuid();
-        $this->_service->setManagerToEntity($this);
+        // $this->_service->setManagerToEntity($this);
         // Other clones
         $clone_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__clone_(?!entity)/', $method_name));
         foreach ($clone_methods as $method) {

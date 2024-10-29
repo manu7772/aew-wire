@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity\interface;
 // Symfony
 use Symfony\Component\HttpFoundation\File\File;
 
-interface WirePdfInterface extends WireItemInterface
+interface WirePdfInterface extends WireItemInterface, TraitSlugInterface
 {
     public function setFile(File $file): static;
     public function getFile(): File|null;

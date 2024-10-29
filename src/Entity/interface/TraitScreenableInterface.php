@@ -7,6 +7,6 @@ interface TraitScreenableInterface extends TraitInterface
 
     public function __construct_screenable(): void;
     public function setWebpage(WireHtmlcodeInterface $pageweb): static;
-    public function getWebpage(): WireHtmlcodeInterface;
+    public function getWebpage(): ?WireHtmlcodeInterface;
 
 }
