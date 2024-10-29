@@ -20,7 +20,7 @@ use Exception;
 #[UniqueEntity('uname', message: 'Ce uname {{ value }} est déjà utilisé !')]
 #[UniqueEntity('euidofentity', message: 'Cet euid-of-entity {{ value }} est déjà utilisé !')]
 #[ClassCustomService(UnameServiceInterface::class)]
-final class Uname extends MappSuperClassEntity implements UnameInterface
+class Uname extends MappSuperClassEntity implements UnameInterface
 {
 
     public const ICON = "tabler:fingerprint";
