@@ -58,9 +58,9 @@ abstract class WireHtmlcode extends WireEcollection implements WireHtmlcodeInter
         return $this->content;
     }
 
-    public function setContent(array $content): static
+    public function setContent(string|array $content): static
     {
-        $this->content = $content;
+        $this->content = (array)$content;
         return $this;
     }
 

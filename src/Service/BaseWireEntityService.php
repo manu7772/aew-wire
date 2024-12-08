@@ -27,7 +27,7 @@ abstract class BaseWireEntityService extends BaseService implements WireEntitySe
     {}
 
 
-    public function createEntity(string $uname = null): WireEntityInterface
+    public function createEntity(?string $uname = null): WireEntityInterface
     {
         $classname = $this->getEntityClassname();
         $new = $this->wireEntityService->__innerCreateEntity($classname, $uname);
@@ -41,7 +41,7 @@ abstract class BaseWireEntityService extends BaseService implements WireEntitySe
         return $model;
     }
 
-    public function createClone(WireEntityInterface $entity, string $uname = null, int $clone_method = 1): ?WireEntityInterface
+    public function createClone(WireEntityInterface $entity, ?string $uname = null, int $clone_method = 1): ?WireEntityInterface
     {
         if($this->getEntityClassname() === $entity->getClassname()) {
             return $this->wireEntityService->__innerCreateClone($entity, $uname, $clone_method);

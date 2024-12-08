@@ -29,7 +29,7 @@ class Iterables implements ToolInterface
 
     public static function removeEmptyElements(
         array $array,
-        callable $callback = null
+        ?callable $callback = null
     ): array
     {
         $array = array_map('trim', $array);
@@ -37,8 +37,14 @@ class Iterables implements ToolInterface
         return array_filter($array, $callback);
     }
 
+    public static function isArrayIndex(mixed $index): bool
+    {
+        return is_int($index) || (is_string($index) && preg_match_all('/^\w+$/i', $index));
+    }
+
+
     /*************************************************************************************
-     * HTML Attribures
+     * HTML Attributes
      *************************************************************************************/
 
     public static function toClassList(

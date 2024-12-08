@@ -22,6 +22,7 @@ use Doctrine\Common\Collections\Collection;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Uid\UuidV7 as Uuid;
 
 #[ORM\Entity(repositoryClass: WireItemRepository::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
@@ -36,6 +37,12 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     public const FA_ICON = 'file';
     public const SERIALIZATION_PROPS = ['id','euid','name','classname','shortname'];
 
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[Serializer\Groups(['index'])]
+    protected ?Uuid $id = null;
 
     #[ORM\Column(length: 255)]
     #[Serializer\Groups('index')]

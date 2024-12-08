@@ -1,7 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
+// Aequation
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
+// Symfony
+use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Stringable;
 
@@ -14,7 +17,7 @@ interface WireEntityInterface extends Stringable, TraitSerializableInterface
     public function setEmbededStatus(EntityEmbededStatusInterface $estatus): void;
     public function getEmbededStatus(): EntityEmbededStatusInterface;
     // Interface of all entities
-    public function getId(): ?int;
+    public function getId(): ?Uuid;
     public function getEuid(): ?string;
     public function getUnameThenEuid(): string;
     public function defineUname(string $uname): static;

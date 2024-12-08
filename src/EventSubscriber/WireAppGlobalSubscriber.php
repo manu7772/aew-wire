@@ -214,7 +214,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     protected function isAvailableRouteFor(
         string $action,
-        string $route = null
+        ?string $route = null
     ): bool
     {
         $route ??= $this->appWire->route;

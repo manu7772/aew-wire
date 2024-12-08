@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+
 interface InitializerInterface extends WireServiceInterface
 {
 
@@ -16,7 +18,7 @@ interface InitializerInterface extends WireServiceInterface
     ];
     public const SEARCH_DEPTH = ['>=0','<3'];
 
-    public function installConfig(string $name): bool;
+    public function installConfig(string $name): OpresultInterface;
     public function getConfigNames(): array;
     public function hasConfigName(string $name): bool;
     public function findConfigFiles(string $name): array;

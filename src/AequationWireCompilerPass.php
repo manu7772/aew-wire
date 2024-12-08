@@ -14,7 +14,7 @@ use Throwable;
 class AequationWireCompilerPass implements CompilerPassInterface
 {
     public const CONFIGURES = [
-        'VichUploader' => true,
+        'VichUploader' => false,
         'Tailwind' => true,
         'Parameters' => false,
     ];

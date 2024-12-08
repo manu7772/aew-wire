@@ -8,9 +8,9 @@ interface WireEntityServiceInterface extends WireServiceInterface
 {
 
     // New
-    public function createEntity(string $uname = null): WireEntityInterface;
+    public function createEntity(?string $uname = null): WireEntityInterface;
     public function createModel(): WireEntityInterface;
-    public function createClone(WireEntityInterface $entity, string $uname = null, int $clone_method = 1): ?WireEntityInterface;
+    public function createClone(WireEntityInterface $entity, ?string $uname = null, int $clone_method = 1): ?WireEntityInterface;
     // Querys
     public function getEntityClassname(): ?string;
     public function getRepository(): BaseWireRepositoryInterface;

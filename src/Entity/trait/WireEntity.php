@@ -48,13 +48,16 @@ trait WireEntity
         foreach ($construct_methods as $method) {
             $this->$method();
         }
-        if(!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s sould implement %s!', [__METHOD__, __LINE__, static::class, WireEntityInterface::class]));
+        if(!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
     }
 
     public function setEmbededStatus(
         EntityEmbededStatusInterface $estatus
     ): void
     {
+        if(isset($this->_estatus) && !$this->_estatus->isProd()) {
+            throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->_estatus->getType(), $this->__toString(), EntityEmbededStatusInterface::class]));
+        }
         $this->_estatus = $estatus;
     }
 

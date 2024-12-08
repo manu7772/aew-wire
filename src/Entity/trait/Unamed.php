@@ -2,7 +2,10 @@
 namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Service\interface\UnameServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -17,26 +20,17 @@ trait Unamed
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\Valid()]
     #[Serializer\Ignore]
-    protected readonly Uname $uname;
-
-    public ?string $_tempUname = null;
+    protected Uname $uname;
 
 
     public function __construct_unamed(): void
     {
-        $this->slug = '-';
-        $this->updateSlug = false;
         if(!($this instanceof TraitUnamedInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitUnamedInterface::class]));
-    }
-
-    public function autoUpdateUname(): static
-    {
-        return $this->updateUname();
     }
 
     public function __clone_unamed(): void
     {
-        if(!empty($this->_tempUname)) $this->_tempUname = $this->_tempUname.' - copie'.rand(1000, 9999);
+        $this->uname = null;
         $this->updateUname();
     }
 
@@ -44,16 +38,17 @@ trait Unamed
         string $uname = null
     ): static
     {
-        // if(!isset($this->uname) || $this->_isClone()) $this->uname = $this->_service->getNew(Uname::class);
-        if(empty($uname)) $uname = empty($this->_tempUname) ? null : $this->_tempUname;
-        $this->_tempUname = $uname;
+        if(!isset($this->uname)) {
+            // Add new Uname
+            /** @var Uname */
+            $this->uname = $this->_estatus->appWire->get(UnameServiceInterface::class)->createEntity(Uname::class, null);
+        }
         $this->uname->attributeEntity($this, $uname);
         return $this;
     }
 
-    public function getUname(): ?Uname
+    public function getUname(): UnameInterface
     {
-        if(!isset($this->uname)) $this->updateUname();
         return $this->uname;
     }
 

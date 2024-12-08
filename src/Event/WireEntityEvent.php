@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Event;
 
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -11,24 +12,32 @@ use Symfony\Contracts\EventDispatcher\Event;
 class WireEntityEvent extends Event
 {
 
-    public const ON_LOAD = 'on.load';
-    public const POST_CREATE = 'post.create';
-    public const POST_MODEL = 'post.model';
-    public const POST_CLONE = 'post.clone';
+    public const ON_LOAD                = 'on.load';
+    public const POST_CREATE            = 'post.create';
+    public const POST_MODEL             = 'post.model';
+    public const POST_CLONE             = 'post.clone';
 
-    public const BEFORE_PERSIST = 'before.persist';
-    public const BEFORE_UPDATE = 'before.update';
-    public const BEFORE_REMOVE = 'before.remove';
+    public const ON_EMBED               = 'on.embed';              /** --> Load EntityEmbededStatus if has not (ex. : if entity is loaded) */
+    public const APPLY_RECHECK          = 'apply.recheck';         /** --> Event lauched at any time needed */
+    public const BEFORE_PERSIST         = 'before.persist';
+    public const BEFORE_UPDATE          = 'before.update';
+    public const BEFORE_REMOVE          = 'before.remove';
 
-    public const FORM_PRE_SET_DATA = 'form.pre_set_data';
-    public const FORM_POST_SET_DATA = 'form.post_set_data';
-    public const FORM_PRE_SUBMIT = 'form.pre_submit';
-    public const FORM_POST_SUBMIT = 'form.post_submit';
+    public const FORM_PRE_SET_DATA      = 'form.pre_set_data';
+    public const FORM_POST_SET_DATA     = 'form.post_set_data';
+    public const FORM_PRE_SUBMIT        = 'form.pre_submit';
+    public const FORM_POST_SUBMIT       = 'form.post_submit';
 
     public function __construct(
         public readonly WireEntityInterface $entity,
-        public readonly WireEntityManagerInterface $wireEntityManager
+        public readonly WireEntityManagerInterface $wireEntityManager,
+        public readonly string $eventName
     ) {}
+
+    public function getEventName(): string
+    {
+        return $this->eventName;
+    }
 
     public function getEntity(): WireEntityInterface
     {
@@ -43,6 +52,11 @@ class WireEntityEvent extends Event
     public function getEntityService(): WireEntityManagerInterface|WireEntityServiceInterface
     {
         return $this->wireEntityManager->getEntityService($this->entity);
+    }
+
+    public function getAppWire(): AppWireServiceInterface
+    {
+        return $this->wireEntityManager->appWire;
     }
 
 }

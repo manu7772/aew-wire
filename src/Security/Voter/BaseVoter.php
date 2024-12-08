@@ -23,14 +23,15 @@ abstract class BaseVoter extends Voter implements WireAppVoterInterface
 
     public const INTERFACE = null;
 
-    public readonly WireEntityServiceInterface $wireEntityService;
+    public readonly ?WireEntityServiceInterface $wireEntityService;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityManager
     )
     {
-        $this->wireEntityService = $this->wireEntityManager->getEntityService(static::getInterface());
+        $service = $this->wireEntityManager->getEntityService(static::getInterface());
+        $this->wireEntityService = $service instanceof WireEntityServiceInterface ? $service : null;
     }
 
     public static function getInterface(): string
@@ -54,7 +55,7 @@ abstract class BaseVoter extends Voter implements WireAppVoterInterface
     }
 
     private static function getConstants(
-        callable $filter = null
+        ?callable $filter = null
     ): array
     {
         $rc = new ReflectionClass(static::class);
@@ -196,7 +197,7 @@ abstract class BaseVoter extends Voter implements WireAppVoterInterface
         if(HttpRequest::isCli()) return false;
         /** @var WireUserInterface|UserInterface */
         $user ??= $this->appWire->getUser();
-        return $user?->canLogin() ?: true;
+        return $user?->isLoggable() ?: true;
     }
 
     // protected function getSubjectAsObject(
@@ -230,7 +231,7 @@ abstract class BaseVoter extends Voter implements WireAppVoterInterface
      * @return array
      */
     public static function getActions(
-        string $firewall = null
+        ?string $firewall = null
     ): array
     {
         $test = empty($firewall) ? 'ACTION_' : strtoupper('('.$firewall.'_)?ACTION_');

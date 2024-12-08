@@ -20,7 +20,7 @@ class Encoders implements ToolInterface
 
     public static function generatePassword(
         int $length = 12,
-        string $chars = null
+        ?string $chars = null
     ): string
     {
         return ByteString::fromRandom($length, $chars)->toString();

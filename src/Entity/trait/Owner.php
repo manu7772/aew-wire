@@ -17,8 +17,8 @@ trait Owner
     }
 
     #[ORM\ManyToOne(targetEntity: WireUserInterface::class)]
-    #[ORM\JoinColumn(name: 'owner_entity')]
-    #[CurrentUser()]
+    #[ORM\JoinColumn(name: 'owner_entity', nullable: true)]
+    #[CurrentUser(required: true)]
     protected ?WireUserInterface $owner = null;
 
     public function getOwner(): ?WireUserInterface

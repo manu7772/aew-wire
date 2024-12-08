@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+// Aequation
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Event\WireEntityEvent;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
@@ -15,8 +16,8 @@ use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -28,6 +29,10 @@ use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 // PHP
 use Exception;
 
+/**
+ * Class WireEntityManager
+ * @package Aequation\WireBundle\Service
+ */
 #[AsAlias(WireEntityManagerInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: false)]
 class WireEntityManager extends BaseService implements WireEntityManagerInterface
@@ -36,10 +41,19 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     public readonly ArrayCollection $createds;
     public readonly UnitOfWork $uow;
 
+    /**
+     * constructor.
+     * 
+     * @param EntityManagerInterface $em
+     * @param AppWireServiceInterface $appWire
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param UploaderHelper $vichHelper
+     * @param CacheManager $liipCache
+     */
     public function __construct(
-        protected EntityManagerInterface $em,
-        protected AppWireServiceInterface $appWire,
-        protected EventDispatcherInterface $eventDispatcher,
+        public readonly EntityManagerInterface $em,
+        public readonly AppWireServiceInterface $appWire,
+        public readonly EventDispatcherInterface $eventDispatcher,
         protected UploaderHelper $vichHelper,
         protected CacheManager $liipCache
     )
@@ -48,12 +62,23 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         $this->createds = new ArrayCollection();
     }
 
-
+    /**
+     * get AppWireService
+     *
+     * @return AppWireServiceInterface
+     */
     public function getAppWireService(): AppWireServiceInterface
     {
         return $this->appWire;
     }
 
+    /**
+     * get entity service
+     * if no service found, return self as default
+     *
+     * @param string|WireEntityInterface $entity
+     * @return WireEntityManagerInterface|WireEntityServiceInterface
+     */
     public function getEntityService(
         string|WireEntityInterface $entity
     ): WireEntityManagerInterface|WireEntityServiceInterface
@@ -67,106 +92,147 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /** PERSISTANCE                                                                                     */
     /****************************************************************************************************/
 
+    /**
+     * persist entity
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function persist(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
         $service = $this->getEntityService($entity);
-        return $service instanceof WireEntityServiceInterface
+        $service instanceof WireEntityServiceInterface
             ? $service->persist($entity, $flush)
             : $this->__innerPersist($entity, $flush);
+        return $this;
     }
 
+    /**
+     * inner persist
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function __innerPersist(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
-        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
         if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_PERSIST)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_PERSIST);
+            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_PERSIST), WireEntityEvent::BEFORE_PERSIST);
         }
         $this->em->persist($entity);
         if($flush) $this->flush();
         return $this;
     }
 
+    /**
+     * update entity
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function update(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
         $service = $this->getEntityService($entity);
-        return $service instanceof WireEntityServiceInterface
+        $service instanceof WireEntityServiceInterface
             ? $service->update($entity, $flush)
             : $this->__innerUpdate($entity, $flush);
+        return $this;
     }
 
+    /**
+     * inner update
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function __innerUpdate(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
-        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
         if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
+            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_UPDATE), WireEntityEvent::BEFORE_UPDATE);
         }
         if($flush) $this->flush();
         return $this;
     }
 
+    /**
+     * remove entity
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function remove(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
         $service = $this->getEntityService($entity);
-        return $service instanceof WireEntityServiceInterface
+        $service instanceof WireEntityServiceInterface
             ? $service->remove($entity, $flush)
             : $this->__innerRemove($entity, $flush);
+        return $this;
     }
 
+    /**
+     * inner remove
+     * 
+     * @param WireEntityInterface $entity
+     * @param bool $flush
+     * @return static
+     */
     public function __innerRemove(
         WireEntityInterface $entity,
         bool $flush = false
     ): static
     {
-        $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
         if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_REMOVE);
+            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_REMOVE), WireEntityEvent::BEFORE_REMOVE);
         }
         $this->em->remove($entity);
         if($flush) $this->flush();
         return $this;
     }
 
+    /**
+     * flush
+     * 
+     * @return static
+     */
     public function flush(): static
     {
         if($this->appWire->isDev()) {
             foreach ($this->uow->getScheduledEntityInsertions() as $entity) {
                 if($entity instanceof WireEntityInterface) {
-                    $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
+                    // 
                 }
             }
         }
         foreach ($this->uow->getScheduledEntityUpdates() as $entity) {
             if($entity instanceof WireEntityInterface) {
-                if($this->appWire->isDev()) $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
-                if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
-                //     $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_UPDATE);
-                // } else if($this->appWire->isDev()) {
-                    if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for update, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
-                }
+                if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for deletion, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
+                $entity->_estatus->applyEvents(WireEntityEvent::BEFORE_UPDATE);
             }
         }
         foreach ($this->uow->getScheduledEntityDeletions() as $entity) {
             if($entity instanceof WireEntityInterface) {
-                if($this->appWire->isDev()) $entity->_estatus->failIfNotManageable(__METHOD__, __LINE__);
                 if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
-                //     $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this), WireEntityEvent::BEFORE_REMOVE);
-                // } else if($this->appWire->isDev()) {
                     if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for deletion, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
+                    $entity->_estatus->applyEvents(WireEntityEvent::BEFORE_REMOVE);
                 }
             }
         }
@@ -180,13 +246,15 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /****************************************************************************************************/
 
     /**
-     * Get new entity instance of WireEntityInterface
+     * create entity
+     * 
      * @param string $classname
+     * @param string|null $uname
      * @return WireEntityInterface
      */
     public function createEntity(
         string $classname,
-        string $uname = null
+        ?string $uname = null
     ): WireEntityInterface
     {
         $service = $this->getEntityService($classname);
@@ -195,25 +263,31 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             : $this->__innerCreateEntity($classname, $uname);
     }
 
+    /**
+     * inner create entity
+     * 
+     * @param string $classname
+     * @param string|null $uname
+     * @return WireEntityInterface
+     */
     public function __innerCreateEntity(
         string $classname,
-        string $uname = null
+        ?string $uname = null
     ): WireEntityInterface
     {
         /** @var WireEntityInterface */
         $new = new $classname();
-        if($new instanceof TraitUnamedInterface && !empty($uname)) {
-            if(Uname::isValidUname($uname)) {
-                $new->updateUname($uname);
-            } else if($this->appWire->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: this uname %s is invalid for new entity %s!', [__METHOD__, __LINE__, json_encode($uname)]), $new->getClassname());
-            }
-        }
+        $this->eventDispatcher->dispatch(new WireEntityEvent($new, $this, WireEntityEvent::POST_CREATE), WireEntityEvent::POST_CREATE);
         $this->createds->set($new->getUnameThenEuid(), $new);
-        $this->eventDispatcher->dispatch(new WireEntityEvent($new, $this), WireEntityEvent::POST_CREATE);
         return $new;
     }
 
+    /**
+     * create model
+     * 
+     * @param string $classname
+     * @return WireEntityInterface
+     */
     public function createModel(
         string $classname
     ): WireEntityInterface
@@ -224,18 +298,32 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             : $this->__innerCreateModel($classname);
     }
 
+    /**
+     * inner create model
+     * 
+     * @param string $classname
+     * @return WireEntityInterface
+     */
     public function __innerCreateModel(
         string $classname
     ): WireEntityInterface
     {
         $model = new $classname();
-        $this->eventDispatcher->dispatch(new WireEntityEvent($model, $this), WireEntityEvent::POST_MODEL);
+        $this->eventDispatcher->dispatch(new WireEntityEvent($model, $this, WireEntityEvent::POST_MODEL), WireEntityEvent::POST_MODEL);
         return $model;
     }
 
+    /**
+     * create clone
+     * 
+     * @param WireEntityInterface $entity
+     * @param string|null $uname
+     * @param int $clone_method
+     * @return WireEntityInterface|null
+     */
     public function createClone(
         WireEntityInterface $entity,
-        string $uname = null,
+        ?string $uname = null,
         int $clone_method = 1
     ): ?WireEntityInterface
     {
@@ -245,9 +333,17 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             : $this->__innerCreateClone($entity, $uname, $clone_method);
     }
 
+    /**
+     * inner create clone
+     * 
+     * @param WireEntityInterface $entity
+     * @param string|null $uname
+     * @param int $clone_method
+     * @return WireEntityInterface|null
+     */
     public function __innerCreateClone(
         WireEntityInterface $entity,
-        string $uname = null,
+        ?string $uname = null,
         int $clone_method = 1
     ): ?WireEntityInterface
     {
@@ -278,7 +374,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
                     break;
             }
             if($clone instanceof WireEntityInterface) {
-                $this->eventDispatcher->dispatch(new WireEntityEvent($clone, $this), WireEntityEvent::POST_CLONE);
+                $this->eventDispatcher->dispatch(new WireEntityEvent($clone, $this, WireEntityEvent::POST_CLONE), WireEntityEvent::POST_CLONE);
             }
         }
         return $clone;
@@ -288,9 +384,16 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /** REPOSITORY / FIND                                                                               */
     /****************************************************************************************************/
 
+    /**
+     * get repository
+     * 
+     * @param string $classname
+     * @param string|null $field
+     * @return BaseWireRepositoryInterface
+     */
     public function getRepository(
         string $classname,
-        string $field = null // if field, find repository where is declared this $field
+        ?string $field = null // if field, find repository where is declared this $field
     ): BaseWireRepositoryInterface
     {
         $cmd = $this->getClassMetadata($classname);
@@ -319,7 +422,8 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     }
 
     /**
-     * Get entity by EUID
+     * find entity by id
+     * 
      * @param string $euid
      * @return WireEntityInterface|null
      */
@@ -337,6 +441,12 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         return $entity instanceof WireEntityInterface ? $entity : null;
     }
 
+    /**
+     * find entity by uname
+     * 
+     * @param string $uname
+     * @return WireEntityInterface|null
+     */
     public function findEntityByUname(
         string $uname
     ): ?WireEntityInterface
@@ -356,6 +466,14 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         return $entity instanceof WireEntityInterface ? $entity : null;
     }
 
+    /**
+     * get count of entities
+     * can use criteria
+     * 
+     * @param string $classname
+     * @param array $criteria
+     * @return WireEntityInterface|null
+     */
     public function getEntitiesCount(
         string $classname,
         array $criteria = []
@@ -372,14 +490,14 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /************************************************************************************************************/
 
     /**
-     * Get ClassMetadata for Entity
-     * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
+     * get class metadata
      * 
-     * @param string|WireEntityInterface|null $objectOrClass
+     * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
+     * @param string|WireEntityInterface $objectOrClass
      * @return ClassMetadata|null
      */
     public function getClassMetadata(
-        string|WireEntityInterface $objectOrClass = null,
+        null|string|WireEntityInterface $objectOrClass = null,
     ): ?ClassMetadata
     {
         $classname = $objectOrClass instanceof WireEntityInterface ? $objectOrClass->getClassname() : $objectOrClass;
@@ -388,6 +506,12 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             : null;
     }
 
+    /**
+     * is AppWire entity
+     * 
+     * @param string|object $objectOrClass
+     * @return bool
+     */
     public static function isAppWireEntity(
         string|object $objectOrClass
     ): bool
@@ -397,6 +521,14 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
             : is_a($objectOrClass, WireEntityInterface::class, true);
     }
 
+    /**
+     * get entity names
+     * 
+     * @param bool $asShortnames
+     * @param bool $allnamespaces
+     * @param bool $onlyInstantiables
+     * @return array
+     */
     public function getEntityNames(
         bool $asShortnames = false,
         bool $allnamespaces = false,
@@ -418,6 +550,14 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         return $names;
     }
 
+    /**
+     * entity exists
+     * 
+     * @param string $classname
+     * @param bool $allnamespaces
+     * @param bool $onlyInstantiables
+     * @return bool
+     */
     public function entityExists(
         string $classname,
         bool $allnamespaces = false,
@@ -428,6 +568,13 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         return in_array($classname, $list) || array_key_exists($classname, $list);
     }
 
+    /**
+     * get fieds names of entity with unique constraint
+     * 
+     * @param string $classname
+     * @param bool|null $flatlisted
+     * @return string
+     */
     public static function getConstraintUniqueFields(
         string $classname,
         bool|null $flatlisted = false
@@ -493,9 +640,19 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     /** VICH IMAGE / LIIP IMAGE                                                                                 */
     /************************************************************************************************************/
 
+    /**
+     * get browser path
+     * 
+     * @param WireImageInterface|WirePdfInterface $media
+     * @param string|null $filter
+     * @param array $runtimeConfig
+     * @param mixed $resolver
+     * @param int $referenceType
+     * @return string|null
+     */
     public function getBrowserPath(
         WireImageInterface|WirePdfInterface $media,
-        string $filter = null,
+        ?string $filter = null,
         array $runtimeConfig = [],
         $resolver = null,
         $referenceType = UrlGeneratorInterface::ABSOLUTE_URL

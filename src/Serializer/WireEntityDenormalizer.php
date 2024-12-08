@@ -18,7 +18,10 @@ class WireEntityDenormalizer implements DenormalizerInterface
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        dd($data);
+        if(isset($context['wire_hidrate']) && true === (bool)$context['wire_hidrate']) {
+            dd($context, $data);
+
+        }
         // Do something here...
         $entity = $this->denormalizer->denormalize($data, $type, $format, $context);
         // Or do something here...

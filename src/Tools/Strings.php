@@ -30,7 +30,7 @@ class Strings implements ToolInterface
 
 	public static function markup(
 		?string $html,
-		string $charset = null
+		?string $charset = null
 	): Markup
 	{
 		return new Markup(

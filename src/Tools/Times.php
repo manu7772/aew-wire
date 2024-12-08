@@ -59,7 +59,7 @@ class Times implements ToolInterface
      */
     public static function min_to_hours(
         int|string $mins,
-        string $format = null
+        ?string $format = null
     ): string
     {
         if(!is_string($mins)) {
@@ -75,14 +75,20 @@ class Times implements ToolInterface
         return $tl->format($format);
     }
 
-    public static function toDateTimeImmut(DateTimeInterface|string &$when): void
+    public static function toDateTimeImmut(
+        DateTimeInterface|string &$when
+    ): void
     {
         if(!($when instanceof DateTimeInterface)) {
             $when = new DateTimeImmutable($when ?? 'NOW');
         }
     }
 
-	public static function getPreviousDayOfMonth($date = null, $day = "monday") {
+	public static function getPreviousDayOfMonth(
+        $date = null,
+        $day = "monday"
+    ): DateTimeImmutable
+    {
 		// if($date instanceOf DateTimeImmutable) $date = clone $date; // prevent modifiying original DateTimeImmutable object
 		if(is_string($date)) $date = new DateTimeImmutable($date);
 		if(!($date instanceOf DateTimeImmutable)) $date = new DateTimeImmutable($date);
@@ -93,19 +99,30 @@ class Times implements ToolInterface
 		return $date;
 	}
 
-	public static function pickDate(DateTimeImmutable $toModify, DateTimeImmutable $takeIn) {
+	public static function pickDate(
+        DateTimeImmutable $toModify,
+        DateTimeImmutable $takeIn
+    ): void
+    {
 		$toModify->setDate(intval($takeIn->format('Y')), intval($takeIn->format('m')), intval($takeIn->format('d')));
 		// return $toModify;
 	}
 
-	public static function pickTime(DateTimeImmutable $toModify, DateTimeImmutable $takeIn) {
+	public static function pickTime(
+        DateTimeImmutable $toModify,
+        DateTimeImmutable $takeIn
+    ): void
+    {
 		$toModify->setTime(intval($takeIn->format('H')), intval($takeIn->format('i')), intval($takeIn->format('s')));
 		// return $toModify;
 	}
 
 	/*** Chrnonometer */
 
-	public static function getTimeLenght(DateTimeImmutable $start, DateTimeImmutable $end = null) {
+	public static function getTimeLenght(
+        DateTimeImmutable $start,
+        ?DateTimeImmutable $end = null
+    ) {
 		$end ??= new DateTimeImmutable();
 		$diff = abs($end->getTimestamp() - $start->getTimestamp());
 		$hours = floor($diff / 3600);
@@ -117,11 +134,14 @@ class Times implements ToolInterface
 		return sprintf("%s:%s:%s", $hours, $minutes, $seconds);
 	}
 
-	public static function getStartChrono() {
+	public static function getStartChrono(): array|int|float|false
+    {
 		return hrtime();
 	}
 
-	public static function getEndChrono($start) {
+	public static function getEndChrono(
+        array $start
+    ): float {
 		$end = hrtime();
 		$sec = $end[0] - $start[0];
 		$ms = abs($end[1] - $start[1]);
@@ -130,7 +150,8 @@ class Times implements ToolInterface
 
     public static function getTimezoneChoices(): array
     {
-        return array_combine(timezone_identifiers_list(), timezone_identifiers_list());
+        $list = timezone_identifiers_list();
+        return array_combine($list, $list);
     }
 
 }

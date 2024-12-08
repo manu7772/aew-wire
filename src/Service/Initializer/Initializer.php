@@ -3,10 +3,13 @@ namespace Aequation\WireBundle\Service\Initializer;
 
 use Aequation\WireBundle\AequationWireBundle;
 use Aequation\WireBundle\Component\EntityCreator;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Service\BaseService;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\ExpressionLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\InitializerInterface;
+use Aequation\WireBundle\Tools\Files;
 use Aequation\WireBundle\Tools\Iterables;
 use Aequation\WireBundle\Tools\Strings;
 // Symfony
@@ -36,6 +39,7 @@ class Initializer extends BaseService implements InitializerInterface
     // private string $log_dir;
     // private string $package_dir;
     private string $date;
+    private bool $ae_wire_installed;
 
     public function __construct(
         private AppWireServiceInterface $appWire,
@@ -53,6 +57,29 @@ class Initializer extends BaseService implements InitializerInterface
         // $this->log_dir = $this->kernel->getLogDir();
         // Package
         // $this->package_dir = AequationWireBundle::getPackagePath();
+        $this->ae_wire_installed = static::isInstalled();
+        // $this->ae_wire_installed = $this->appWire->getParameter('ae_wire_installed', true);
+        // if($this->ae_wire_installed) {
+        //     // Check in yaml file, if cache is not refreshed
+        //     $files = new Files();
+        //     $file = $this->appWire->getConfigDir('services.yaml');
+        //     $params_yaml = $files->readYamlFile($file);
+        //     if(isset($params_yaml['ae_wire_installed'])) {
+        //         $this->ae_wire_installed = $params_yaml['ae_wire_installed'];
+        //     }
+        // }
+        dd($this->ae_wire_installed);
+    }
+
+    public static function isInstalled(): bool
+    {
+        $files = new Files();
+        $file = AequationWireBundle::getPackagePath('../config/services.yaml');
+        // if(!file_exists($file)) throw new Exception(vsprintf('Error %s line %d: file %s not found!', [__METHOD__, __LINE__, $file]));
+        $params_yaml = $files->readYamlFile($file);
+        return is_array($params_yaml) && isset($params_yaml['ae_wire_installed'])
+            ? $params_yaml['ae_wire_installed']
+            : false;
     }
 
     private function getNewFinder(): Finder
@@ -66,29 +93,51 @@ class Initializer extends BaseService implements InitializerInterface
 
     public function installConfig(
         string $name
-    ): bool
+    ): OpresultInterface
     {
+        $opresult = new Opresult();
         if($this->hasConfigName($name)) {
             foreach ($this->getConfigData($name) as $data) {
                 if(!empty($data)) {
                     switch ($name) {
                         case 'manage_entities':
-                            return $this->manageEntities($data);
+                            if($this->manageEntities($data)) {
+                                $opresult->addSuccess(vsprintf('Initialization "%s" done successfully', [$name]));
+                            } else {
+                                $opresult->addDanger(vsprintf('Initialization "%s" failed!', [$name]));
+                            }
                             break;
                         case 'insert_yaml_configs':
-                            return $this->insertYamlConfigs($data);
+                            if($this->insertYamlConfigs($data)) {
+                                $opresult->addSuccess(vsprintf('Initialization "%s" done successfully', [$name]));
+                            } else {
+                                $opresult->addDanger(vsprintf('Initialization "%s" failed!', [$name]));
+                            }
                             break;
                         case 'copy_config_files':
-                            return $this->copyConfigFiles($data);
+                            if($this->copyConfigFiles($data)) {
+                                $opresult->addSuccess(vsprintf('Initialization "%s" done successfully', [$name]));
+                            } else {
+                                $opresult->addDanger(vsprintf('Initialization "%s" failed!', [$name]));
+                            }
                             break;
                         case 'textfiles_actions':
-                            return $this->textfilesActions($data);
+                            if($this->textfilesActions($data)) {
+                                $opresult->addSuccess(vsprintf('Initialization "%s" done successfully', [$name]));
+                            } else {
+                                $opresult->addDanger(vsprintf('Initialization "%s" failed!', [$name]));
+                            }
+                            break;
+                        default:
+                            $opresult->addWarning(vsprintf('Initialization "%s" not supported yet!', [$name]));
                             break;
                     }
                 }
             }
+        } else {
+            $opresult->addWarning(vsprintf('Initialization "%s" not found!', [$name]));
         }
-        return false;
+        return $opresult;
     }
 
     public function getConfigNames(): array

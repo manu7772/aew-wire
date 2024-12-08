@@ -17,6 +17,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
+use Symfony\Component\Serializer\Attribute as Serializer;
+use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use DateTimeImmutable;
 
@@ -29,6 +31,13 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     public const ICON = "tabler:user-filled";
     public const FA_ICON = "user";
     public const SERIALIZATION_PROPS = ['id','email'];
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[Serializer\Groups(['index'])]
+    protected ?Uuid $id = null;
 
     #[ORM\Column(length: 180)]
     protected ?string $email = null;

@@ -20,6 +20,8 @@ use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\Serializer\Attribute as Serializer;
+use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Exception;
 
@@ -35,6 +37,13 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     public const ICON = "tabler:clipboard-list";
     public const FA_ICON = "fa-solid fa-clipboard-list";
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[Serializer\Groups(['index'])]
+    protected ?Uuid $id = null;
 
     #[ORM\Column(nullable: false)]
     protected ?string $name = null;

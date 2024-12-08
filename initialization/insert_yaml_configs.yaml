@@ -161,6 +161,7 @@
                 replace: true,
                 type: 'add',
                 data: {
+                    ae_wire_installed: true,
                     main_sadmin: manu7772@gmail.com,
                     main_admin: sebastien.polin123@orange.fr,
                     on_create_roles: {

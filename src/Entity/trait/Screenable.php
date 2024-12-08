@@ -15,7 +15,7 @@ trait Screenable
     public const HTML_TYPE = null;
 
     #[ORM\ManyToOne(targetEntity: WireWebpageInterface::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     protected ?WireWebpageInterface $webpage = null;
 
     public function __construct_screenable(): void

@@ -74,9 +74,11 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getContext(): RequestContext;
     public function getContextAsArray(): array;
     // Dirs
-    public function getProjectDir(string $path = null): string;
-    public function getCacheDir(string $path = null): string;
-    public function getLogDir(string $path = null): string;
+    public function getProjectDir(?string $path = null): string;
+    public function getCacheDir(?string $path = null): string;
+    public function getLogDir(?string $path = null): string;
+    public function getTempDir(?string $path = null): string;
+    public function getConfigDir(?string $path = null): string;
     // Parameters
     public function getParameterBag(): ParameterBagInterface;
     public function getParam(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
@@ -100,7 +102,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getDefaultTimezone(): DateTimeZone;
     public function getTimezone(): DateTimeZone;
     public function getTimezoneName(): string;
-    public function getDatetimeTZ(string|DateTimeInterface $date = 'now'): DateTimeImmutable;
+    public function getDatetimeTZ(string|DateTimeImmutable $date = 'now'): DateTimeImmutable;
     // Locale / Languages
     public function runWithLocale(string $locale, callable $callback): static;
     public function resetLocale(): static;
@@ -121,6 +123,6 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // Routes
     public function getRoutes(): RouteCollection;
     public function routeExists(string $route, bool|array $control_generation = false): bool;
-    public function getUrlIfExists(string $route, array $parameters = [], int $referenceType = null, array|string $methods = null): ?string;
+    public function getUrlIfExists(string $route, array $parameters = [], ?int $referenceType = null, null|array|string $methods = null): ?string;
 
 }
