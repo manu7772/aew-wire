@@ -565,7 +565,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     {
         if($this->isInitialized()) {
             $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(true));
-            if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
+            // if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
             return true;
         }
         return false;

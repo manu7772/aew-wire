@@ -11,6 +11,7 @@ use Twig\Extension\GlobalsInterface;
 use Twig\Markup;
 // PHP
 use DateTimeImmutable;
+use Exception;
 
 class WireExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -89,6 +90,7 @@ class WireExtension extends AbstractExtension implements GlobalsInterface
      */
     public function dump(mixed $value): null
     {
+        throw new Exception(vsprintf('Error %s line %d: function %s() is not available in production environment', [__METHOD__, __LINE__, 'dump']));
         return null;
     }
 

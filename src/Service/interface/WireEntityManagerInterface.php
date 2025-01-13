@@ -48,6 +48,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getRepository(string $classname, ?string $field = null): BaseWireRepositoryInterface;
     public function findEntityByEuid(string $euid): ?WireEntityInterface;
     public function findEntityByUname(string $uname): ?WireEntityInterface;
+    public function findEntityByUniqueValue(string $value): ?WireEntityInterface;
     public function getEntitiesCount(string $classname, array $criteria = []): int;
 
     // Liip

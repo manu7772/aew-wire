@@ -10,9 +10,11 @@ import { initFlowbite } from 'flowbite'
  */
 // import './styles/pico.css'
 // import './styles/pico.colors.css'
-// import './styles/wire-simple.css'
+import './styles/wire.css'
 // import './fontawesome-free-6.5.1-web/css/all.min.css'
 // import './styles/video.css'
+
+console.log('Hello, wireadmin!')
 
 document.addEventListener('turbo:render', () => {
     initFlowbite()

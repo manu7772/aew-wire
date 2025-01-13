@@ -466,6 +466,15 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         return $entity instanceof WireEntityInterface ? $entity : null;
     }
 
+    public function findEntityByUniqueValue(
+        string $value
+    ): ?WireEntityInterface
+    {
+        return Encoders::isEuidFormatValid($value)
+            ? $this->findEntityByEuid($value)
+            : $this->findEntityByUname($value, false);
+    }
+
     /**
      * get count of entities
      * can use criteria

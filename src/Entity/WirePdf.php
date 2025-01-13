@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Attribute as Serializer;
+use Symfony\Component\Routing\RouterInterface;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 // PHP
 use Exception;
@@ -39,6 +40,13 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     public const ICON = 'tabler:file-type-pdf';
     public const FA_ICON = 'fa-solid fa-file-pdf';
 
+    public const PAPERS = ['A4', 'A5', 'A6', 'letter', 'legal'];
+    public const ORIENTATIONS = ['portrait', 'landscape'];
+    public const SOURCETYPES = ['undefined', 'document', 'file'];
+
+    #[ORM\Column(type: Types::INTEGER)]
+    protected int $sourcetype = 0;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -57,6 +65,9 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     #[Serializer\Ignore]
     protected File|UploadedFile|null $file = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    protected ?string $content = null;
+
     #[ORM\Column]
     protected ?int $size = null;
 
@@ -66,10 +77,16 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     #[ORM\Column(length: 255)]
     protected ?string $originalname = null;
 
+    #[ORM\Column(length: 32)]
+    protected ?string $paper = 'A4';
+
+    #[ORM\Column(length: 32)]
+    protected ?string $orientation = 'portrait';
+
 
     public function __toString(): string
     {
-        return $this->originalname ?? parent::__toString();
+        return $this->filename ?? parent::__toString();
     }
 
     /**
@@ -141,6 +158,17 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         return $this;
     }
 
+    public function getContent(): ?string
+    {
+        return $this->content;
+    }
+
+    public function setContent(?string $content): static
+    {
+        $this->content = $content;
+        return $this;
+    }
+
     public function getSize(): ?int
     {
         return $this->size;
@@ -161,6 +189,23 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     {
         $this->mime = $mime;
         return $this;
+    }
+
+    public function getPaper(): ?string
+    {
+        return $this->paper;
+    }
+
+    public function setPaper(?string $paper): static
+    {
+        $papers = static::PAPERS;
+        $this->paper = in_array($paper, static::PAPERS) ? $paper : reset($papers);
+        return $this;
+    }
+
+    public static function getPaperChoices(): array
+    {
+        return array_combine(static::PAPERS, static::PAPERS);
     }
 
     public function getOriginalname(): ?string
@@ -185,5 +230,68 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         return $this;
     }
 
+    public function isPdfExportable(): bool
+    {
+        return $this->isActive();
+    }
+
+    public function getPdfUrlAccess(
+        ?int $referenceType = UrlGeneratorInterface::ABSOLUTE_URL,
+        string $action = 'inline'
+    ): ?string
+    {
+        return $this->_estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
+    }
+
+    public function getSourcetype(): int
+    {
+        return $this->sourcetype;
+    }
+
+    public function getSourcetypeName(): string
+    {
+        return static::SOURCETYPES[$this->sourcetype] ?? 'undefined';
+    }
+
+    public function setSourcetype(int|string $sourcetype): static
+    {
+        // Can not change sourcetype if already set
+        // if(!empty($this->getId())) return $this;
+
+        $sourcetypes = static::SOURCETYPES;
+        if(in_array($sourcetype, $sourcetypes)) {
+            // got name
+            $this->sourcetype = array_search($sourcetype, $sourcetypes);
+        } else if(array_key_exists($sourcetype, $sourcetypes)) {
+            // got key
+            $this->sourcetype = $sourcetype;
+        } else {
+            // default
+            $this->sourcetype = reset($sourcetypes);
+        }
+        return $this;
+    }
+
+    public static function getSourcetypeChoices(): array
+    {
+        return array_flip(static::SOURCETYPES);
+    }
+
+    public function getOrientation(): ?string
+    {
+        return $this->orientation;
+    }
+
+    public function setOrientation(?string $orientation): static
+    {
+        $orients = static::ORIENTATIONS;
+        $this->orientation = in_array($orientation, $orients) ? $orientation : reset($orients);
+        return $this;
+    }
+
+    public static function getOrientationChoices(): array
+    {
+        return array_combine(static::ORIENTATIONS, static::ORIENTATIONS);
+    }
 
 }
