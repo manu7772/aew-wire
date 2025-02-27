@@ -12,6 +12,4 @@ interface AppAttributePropertyInterface extends AppAttributeInterface
     public function setProperty(ReflectionProperty $property): static;
     public function getProperty(): ReflectionProperty;
 
-    public function apply(WireEntityEvent $event): void;
-
 }

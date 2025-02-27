@@ -3,6 +3,8 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
+// Symfony
+use Doctrine\ORM\EntityRepository;
 // PHP
 use Exception;
 
@@ -10,12 +12,13 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
 {
 
     public const ENTITY_CLASS = WireWebpageInterface::class;
+
     public const CACHE_WP_MODELS_LIFE = null;
     public const FILES_FOLDER = 'webpage/';
 
     public function getPreferedWebpage(): ?WireWebpageInterface
     {
-        /** @var ServiceEntityRepository */
+        /** @var EntityRepository */
         $repository = $this->getRepository();
         return $repository->findOneBy(['prefered' => true, 'enabled' => true, 'softdeleted' => false]);
     }
@@ -41,7 +44,7 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
     public function findWebpage(int|string|null $webpage): ?WireWebpageInterface
     {
         if(empty($webpage)) return $this->getPreferedWebpage();
-        /** @var ServiceEntityRepository */
+        /** @var EntityRepository */
         $repository = $this->getRepository();
         return preg_match('/^\\d+$/', (string)$webpage)
             ? $repository->find((int)$webpage)
@@ -142,7 +145,7 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
     //         if(!empty($default)) $entity->setTwigfile($default);
     //     }
     //     if($entity->_appManaged->isNew() && empty($entity->getMainmenu())) {
-    //         /** @var ServiceEntityRepository */
+    //         /** @var EntityRepository */
     //         $repository = $this->getRepository(Menu::class);
     //         $default = $repository->findOneBy(['prefered' => true]);
     //         if(!empty($default)) $entity->setMainmenu($default);

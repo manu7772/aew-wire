@@ -7,6 +7,7 @@ use Symfony\Component\String\ByteString;
 
 class Encoders implements ToolInterface
 {
+    public const EUID_SCHEMA = '/^([a-zA-Z0-9\\\\]+)\\|([a-f0-9]{14}\\.\\d{8})$/';
 
     public function __toString(): string
     {
@@ -56,7 +57,7 @@ class Encoders implements ToolInterface
      */
     public static function isEuidFormatValid(?string $euid): bool
     {
-        return !empty($euid) && preg_match('/^([a-zA-Z0-9\\\\]+)\\|([a-f0-9]{14}\\.\\d{8})$/', $euid);
+        return !empty($euid) && preg_match(static::EUID_SCHEMA, $euid);
     }
 
     /**
@@ -67,7 +68,7 @@ class Encoders implements ToolInterface
     public static function getClassOfEuid(?string $euid): ?string
     {
         return !empty($euid) && static::isEuidFormatValid($euid)
-            ? preg_replace('/^([a-zA-Z0-9\\\\]+)\\|([a-f0-9]{14}\\.\\d{8})$/', '$1', $euid)
+            ? preg_replace(static::EUID_SCHEMA, '$1', $euid)
             : null;
         
     }

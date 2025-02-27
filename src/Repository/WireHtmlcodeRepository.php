@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireEcollectionRepository;
 abstract class WireHtmlcodeRepository extends WireEcollectionRepository implements WireHtmlcodeRepositoryInterface
 {
 
-    // const ENTITY_CLASS = WireHtmlcode::class;
-    // const NAME = 'wire_htmlcode';
+    const ENTITY_CLASS = WireHtmlcode::class;
+    const NAME = 'wire_htmlcode';
 
 }

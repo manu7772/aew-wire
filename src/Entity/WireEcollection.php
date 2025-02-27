@@ -16,26 +16,31 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
 // PHP
 use Exception;
 
+/**
+ * Use Gedmo extension for sortable
+ * @see https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/sortable.md
+ */
 #[ORM\Entity(repositoryClass: WireEcollectionRepository::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
-abstract class WireEcollection extends WireItem implements WireEcollectionInterface
+class WireEcollection extends WireItem implements WireEcollectionInterface
 {
-    use HasOrdered;
 
+    public const ICON = [
+        'ux' => 'tabler:folder',
+        'fa' => 'fa-folder'
+    ];
     public const ITEMS_ACCEPT = [
         'items' => [WireItemInterface::class],
     ];
 
     #[ORM\ManyToMany(targetEntity: WireItemInterface::class, mappedBy: 'parents', cascade: ['persist'])]
-    #[RelationOrder()]
-    #[Serializer\Ignore]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $items;
 
     public function __construct()
@@ -45,7 +50,6 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     }
 
 
-    #[Serializer\Ignore]
     public function getItems(
         bool $filterActives = false
     ): Collection
@@ -54,13 +58,11 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         // return $this->items;
     }
 
-    #[Serializer\Ignore]
     public function getActiveItems(): Collection
     {
         return $this->items->filter(fn($item) => $item->isActive());
     }
 
-    #[Serializer\Ignore]
     public function addItem(WireItemInterface $item): bool
     {
         if($this->isAcceptsItemForEcollection($item, 'items')) {
@@ -73,7 +75,6 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this->hasItem($item);
     }
 
-    #[Serializer\Ignore]
     public function hasItem(WireEntityInterface $item): bool
     {
         return $this->items->contains($item);
@@ -94,7 +95,6 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function isAcceptsItemForEcollection(
         WireEntityInterface $item,
         string $property
@@ -108,7 +108,6 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return false;
     }
 
-    #[Serializer\Ignore]
     public function filterAcceptedItemsForEcollection(
         Collection $items,
         string $property

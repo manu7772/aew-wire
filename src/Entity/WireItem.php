@@ -1,68 +1,66 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Entity\WireEcollection;
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Entity\interface\TraitCreatedInterface;
-use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
-use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
-use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\RelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
-use Aequation\WireBundle\Entity\trait\Created;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Owner;
+use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireItemRepository;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
-use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Uid\UuidV7 as Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: WireItemRepository::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireItemServiceInterface::class)]
-abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
+class WireItem extends MappSuperClassEntity implements WireItemInterface
 {
-    use Created, Enabled, Owner, Unamed;
+    use Slug, Datetimed, Enabled, Unamed;
 
-    public const ICON = 'tabler:file';
-    public const FA_ICON = 'file';
-    public const SERIALIZATION_PROPS = ['id','euid','name','classname','shortname'];
+    public const ICON = [
+        'ux' => 'tabler:file',
+        'fa' => 'fa-file'
+    ];
+    // public const SERIALIZATION_PROPS = ['id','euid','name','classname','shortname'];
 
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    #[Serializer\Groups(['index'])]
-    protected ?Uuid $id = null;
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    protected $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Serializer\Groups('index')]
     protected ?string $name = null;
 
-    #[ORM\ManyToMany(targetEntity: WireEcollection::class, inversedBy: 'items', fetch: 'EXTRA_LAZY')]
-    #[Serializer\Ignore]
+    #[ORM\ManyToMany(targetEntity: WireEcollectionInterface::class, inversedBy: 'items', fetch: 'EXTRA_LAZY')]
+    #[Gedmo\SortableGroup]
     protected Collection $parents;
+
+    #[ORM\Column]
+    #[Gedmo\SortablePosition]
+    protected int $position;
+
+    #[ORM\OneToMany(targetEntity: WireRelinkInterface::class, mappedBy: 'itemowner', orphanRemoval: true, cascade: ['persist'])]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    protected Collection $relinks;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->parents = new ArrayCollection();
-    }
-
-    public function __clone()
-    {
-        parent::__clone();
-        $this->name .= ' - copie'.rand(1000, 9999);
-        $this->removeParents();
+        $this->relinks = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -81,8 +79,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this;
     }
 
-    #[Serializer\Ignore]
-    public function addParent(WireEcollection $parent): static
+    public function addParent(WireEcollectionInterface $parent): static
     {
         if($parent === $this) {
             // Failed to add parent
@@ -100,37 +97,39 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function getParents(): Collection
     {
         return $this->parents;
     }
 
-    #[Serializer\Ignore]
-    public function hasParent(
-        WireEcollection $parent
-    ): bool
+    public function hasParent(WireEcollectionInterface $parent): bool
     {
         return $this->parents->contains($parent);
     }
 
-    #[Serializer\Ignore]
-    public function removeParent(
-        WireEcollection $parent
-    ): static
+    public function removeParent(WireEcollectionInterface $parent): static
     {
         $this->parents->removeElement($parent);
         if($parent->hasItem($this)) $parent->removeItem($this);
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function removeParents(): static
     {
         foreach ($this->parents->toArray() as $parent) {
             $this->removeParent($parent);
         }
         return $this;
+    }
+
+    public function setPosition(int $position): void
+    {
+        $this->position = $position;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
     }
 
 

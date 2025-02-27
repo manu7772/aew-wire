@@ -19,7 +19,7 @@ class Slugable extends BaseClassAttribute implements AppAttributeClassInterface
     public function __construct(
         string $property,
     ) {
-        $this->property = $property;
+        $this->setProperty($property);
     }
 
     public function setClass(object $class): static

@@ -1,16 +1,41 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\WireItem;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
-// // Symfony
-// use Symfony\Component\DependencyInjection\Attribute\AsAlias;
-// use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
+// Symfony
+use Knp\Component\Pager\PaginatorInterface;
 
-// #[AsAlias(WireItemServiceInterface::class, public: true)]
-// #[Autoconfigure(autowire: true, lazy: true)]
-abstract class WireItemService extends BaseWireEntityService implements WireItemServiceInterface
+abstract class WireItemService implements WireItemServiceInterface
 {
 
-    // public const ENTITY_CLASS = WireItem::class;
+    USE TraitBaseService;
+    use TraitBaseEntityService;
+    
+    public const ENTITY_CLASS = WireItem::class;
+
+    public function __construct(
+        protected AppWireServiceInterface $appWire,
+        protected WireEntityManagerInterface $wireEntityService,
+        protected PaginatorInterface $paginator,
+        public readonly NormalizerServiceInterface $normalizer
+    ) {
+    }
+
+    /**
+     * Get entity classname
+     *
+     * @return string|null
+     */
+    public function getEntityClassname(): ?string
+    {
+        return (string)static::ENTITY_CLASS;
+    }
+
 
 }

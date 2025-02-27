@@ -3,35 +3,40 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
+use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
-use Aequation\WireBundle\Entity\trait\Prefered;
+use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Slug;
+use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
 // Symfony
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Routing\Router;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: WireRelinkRepository::class)]
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
+#[UniqueEntity(['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[Slugable('name')]
-abstract class WireRelink extends WireItem implements WireRelinkInterface
+class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
-    use Slug, Prefered;
+    use Datetimed, Slug, Unamed;
 
-    public const ICON = 'tabler:link';
-    public const FA_ICON = 'fa fa-link';
+    public const ICON = [
+        'ux' => 'tabler:link',
+        'fa' => 'fa-link'
+    ];
     /**
      * @see https://www.w3schools.com/tags/att_a_target.asp 
      * <a target="_blank|_self|_parent|_top|framename">
@@ -40,12 +45,36 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface
         'Même page' => '_self',
         'Nouvel onglet' => '_blank',
     ];
+    public const RELINK_TYPES = [
+        'Url' => 'URL',
+        'Adresse' => 'ADDRESS',
+        'Email' => 'EMAIL',
+        'Téléphone' => 'PHONE',
+    ];
+    public const RELINK_TYPE = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    protected ?string $url = null;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    protected $id = null;
 
-    #[ORM\Column(length: 128, nullable: true)]
-    protected ?string $route = null;
+    public function __toString(): string
+    {
+        return (string)$this->getMainlink();
+    }
+
+    /**
+     * Main link, regarding the static::RELINK_TYPE
+     * - URL: type url or route
+     * - ADDRESS: type address
+     * - EMAIL: type email
+     * - PHONE: type phone
+     */
+    #[ORM\Column(type: Types::TEXT, nullable: false)]
+    protected ?string $mainlink = null;
+
+    #[ORM\Column]
+    protected bool $prefered = false;
 
     #[ORM\Column(nullable: true)]
     protected ?array $params = null;
@@ -53,48 +82,129 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface
     #[ORM\Column(length: 16, nullable: true)]
     protected ?string $target = null;
 
-    #[ORM\ManyToOne(targetEntity: WireRelinkInterface::class, inversedBy: 'relinks')]
-    protected ?self $parentrelink = null;
+    // #[ORM\ManyToOne(targetEntity: LaboRelink::class, inversedBy: 'relinks', fetch: 'LAZY')]
+    // protected ?LaboRelink $parentrelink = null;
+
+    // /**
+    //  * @var Collection<int, LaboRelink>
+    //  */
+    // #[ORM\OneToMany(targetEntity: LaboRelink::class, mappedBy: 'parentrelink', fetch: 'EXTRA_LAZY')]
+    // #[RelationOrder()]
+    // protected Collection $relinks;
+
+    #[ORM\ManyToOne(targetEntity: WireItemInterface::class, inversedBy: 'relinks', fetch: 'LAZY')]
+    // #[Gedmo\SortableGroup]
+    protected WireItemInterface $itemowner;
 
     #[ORM\Column]
-    protected bool $turbopreload = true;
+    protected bool $turboenabled = true;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     protected ?string $linktitle = null;
 
-    /**
-     * @var Collection<int, self>
-     */
-    #[ORM\OneToMany(targetEntity: WireRelinkInterface::class, mappedBy: 'parentrelink')]
-    protected Collection $relinks;
+    #[ORM\Column]
+    // #[Gedmo\SortablePosition]
+    protected int $position;
+
+    // /**
+    //  * @var Collection<int, WireCategoryInterface>
+    //  */
+    // #[ORM\ManyToMany(targetEntity: WireCategoryInterface::class)]
+    // protected Collection $categorys;
 
     public function __construct()
     {
+        if(!in_array(static::RELINK_TYPE, static::RELINK_TYPES)) throw new \Exception(vsprintf('Error %s line %d: static::RELINK_TYPE is invalid. Should be one of these: %s!', [__METHOD__, __LINE__, implode(', ', static::RELINK_TYPES)]));
         parent::__construct();
-        $this->relinks = new ArrayCollection();
+        // $this->categorys = new ArrayCollection();
+        // $this->relinks = new ArrayCollection();
         $targets = static::TARGETS;
         $this->target = reset($targets);
     }
 
-    public function getUrl(): ?string
+    public function getALink(
+        ?int $referenceType = Router::ABSOLUTE_PATH
+    ): ?string
     {
-        return $this->url;
+        switch ($this->getRelinkType()) {
+            case 'URL':
+                /** @var FinalUrlinkInterface $this */
+                if($this->isUrl()) {
+                    return $this->mainlink;
+                } else if($this->isRoute()) {
+                    return $this->_service->getAppService()->getUrlIfExists($this->mainlink, $this->params, $referenceType);
+                }
+                break;
+            case 'ADDRESS':
+                /** @var FinalAddresslinkInterface $this */
+                return $this->getMaplink();
+                break;
+            case 'EMAIL':
+                /** @var FinalEmailinkInterface $this */
+                'mailto:'.$this->mainlink;
+                break;
+            case 'PHONE':
+                /** @var FinalPhonelinkInterface $this */
+                'tel:'.preg_replace('/[\\s]/', '', $this->mainlink);
+                break;
+        }
+        return null;
     }
 
-    public function setUrl(?string $url): static
+    public function isUrl(): bool
     {
-        $this->url = $url;
+        return $this->getRelinkType() === 'URL' && preg_match('/^https?:\/\//', $this->mainlink);
+    }
+
+    public function isRoute(): bool
+    {
+        return $this->getRelinkType() === 'URL' && !!$this->isUrl();
+    }
+
+    public function isAddress(): bool
+    {
+        return $this->getRelinkType() === 'ADDRESS';
+    }
+
+    public function isEmail(): bool
+    {
+        return $this->getRelinkType() === 'EMAIL';
+    }
+
+    public function isPhone(): bool
+    {
+        return $this->getRelinkType() === 'PHONE';
+    }
+
+    public function getRelinkType(): ?string
+    {
+        return static::RELINK_TYPE;
+    }
+
+    public function getRelinkTypeChoices(): array
+    {
+        return static::RELINK_TYPES;
+    }
+
+    public function getMainlink(): ?string
+    {
+        return $this->mainlink;
+    }
+
+    public function setMainlink(?string $mainlink): static
+    {
+        $this->mainlink = $mainlink;
         return $this;
     }
 
-    public function getRoute(): ?string
+    public function isPrefered(): bool
     {
-        return $this->route;
+        return $this->prefered;
     }
 
-    public function setRoute(?string $route): static
+    public function setPrefered(bool $prefered): static
     {
-        $this->route = $route;
+        $this->prefered = $prefered;
         return $this;
     }
 
@@ -116,65 +226,79 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface
 
     public function getTarget(): ?string
     {
-        return $this->target;
-    }
-
-    public function setTarget(string $target): static
-    {
-        $this->target = $target;
-        return $this;
-    }
-
-    public function getParentrelink(): ?self
-    {
-        return $this->parentrelink;
-    }
-
-    public function setParentrelink(?self $parentrelink): static
-    {
-        $this->parentrelink = $parentrelink;
-        return $this;
+        if($this->isUrl() || $this->isRoute()) {
+            return $this->target ?? '_self';
+        }
+        return null;
     }
 
     /**
-     * @return Collection<int, self>
+     * Get target (over attribute) as "_self" if URL is website domain, or as "_blank" if URL is external
+     * 
+     * @return string|null
      */
-    public function getRelinks(): Collection
+    public function getLogicTarget(): ?string
     {
-        return $this->relinks;
+        if($this->isRoute()) return '_self';
+        return $this->isUrl() ? $this->getTarget() : null;
     }
 
-    public function addRelink(self $relink): static
+    public function setTarget(?string $target): static
     {
-        if (!$this->relinks->contains($relink)) {
-            $this->relinks->add($relink);
-            $relink->setParentrelink($this);
-        }
+        $this->target = in_array($target, static::TARGETS) ? $target : null;
         return $this;
     }
 
-    public function removeRelink(self $relink): static
-    {
-        if ($this->relinks->removeElement($relink)) {
-            // set the owning side to null (unless already changed)
-            if ($relink->getParentrelink() === $this) {
-                $relink->setParentrelink(null);
-            }
-        }
-        return $this;
-    }
+    // public function getParentrelink(): ?static
+    // {
+    //     return $this->parentrelink;
+    // }
 
-    public function setTurbopreload(
-        bool $turbopreload = true
+    // public function setParentrelink(?LaboRelinkInterface $parentrelink): static
+    // {
+    //     $this->parentrelink = $parentrelink;
+    //     return $this;
+    // }
+
+    // /**
+    //  * @return Collection<int, LaboRelinkInterface>
+    //  */
+    // public function getRelinks(): Collection
+    // {
+    //     return $this->relinks;
+    // }
+
+    // public function addRelink(LaboRelinkInterface $child): static
+    // {
+    //     if (empty($this->parentrelink) && !$this->relinks->contains($child)) {
+    //         $this->relinks->add($child);
+    //         $child->setParentrelink($this);
+    //     }
+    //     return $this;
+    // }
+
+    // public function removeRelink(LaboRelinkInterface $child): static
+    // {
+    //     if ($this->relinks->removeElement($child)) {
+    //         // set the owning side to null (unless already changed)
+    //         if ($child->getParentrelink() === $this) {
+    //             $child->setParentrelink(null);
+    //         }
+    //     }
+    //     return $this;
+    // }
+
+    public function setTurboenabled(
+        bool $turboenabled = true
     ): static
     {
-        $this->turbopreload = $turbopreload;
+        $this->turboenabled = $turboenabled;
         return $this;
     }
 
-    public function isTurbopreload(): bool
+    public function isTurboenabled(): bool
     {
-        return $this->turbopreload;
+        return $this->turboenabled;
     }
 
     public function getLinktitle(): ?string
@@ -188,12 +312,56 @@ abstract class WireRelink extends WireItem implements WireRelinkInterface
         return $this;
     }
 
+
+    public function getItemowner(): WireItemInterface & TraitRelinkableInterface
+    {
+        return $this->itemowner;
+    }
+
+    public function setItemowner(WireItemInterface & TraitRelinkableInterface $itemowner): static
+    {
+        $this->itemowner = $itemowner;
+        if(!$itemowner->hasRelink($this)) $itemowner->addRelink($this);
+        return $this;
+    }
+
     // #[ORM\PrePersist]
     // #[ORM\PreUpdate]
     // public function updateLinkTitle(): static
     // {
     //     if(empty($this->linktitle)) $this->linktitle = $this->title;
     //     $this->linktitle = trim($this->linktitle);
+    //     return $this;
+    // }
+
+    // /**
+    //  * @return Collection<int, WireCategoryInterface>
+    //  */
+    // public function getCategorys(): Collection
+    // {
+    //     return $this->categorys;
+    // }
+
+    // public function addCategory(WireCategoryInterface $category): static
+    // {
+    //     if (!$this->categorys->contains($category)) {
+    //         $this->categorys->add($category);
+    //     }
+    //     return $this;
+    // }
+
+    // public function removeCategory(WireCategoryInterface $category): static
+    // {
+    //     $this->categorys->removeElement($category);
+    //     return $this;
+    // }
+
+    // public function removeCategorys(): static
+    // {
+    //     foreach ($this->categorys as $category) {
+    //         /** @var WireCategoryInterface $category */
+    //         $this->removeCategory($category);
+    //     }
     //     return $this;
     // }
 

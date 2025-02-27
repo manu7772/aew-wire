@@ -24,6 +24,33 @@ Class WireConfigurators
         switch ($name) {
             case 'Parameters':
                 if($asPrepend) {
+                    foreach (static::getParameters() as $name => $data) {
+                        if(is_array($data) && !array_is_list($data)) {
+                            foreach ($data as $key => $value) {
+                                $sub_name = $name.'.'.$key;
+                                if(is_array($value)) {
+                                    $origin_named = $container->hasParameter($sub_name) ? $container->getParameter($sub_name) : [];
+                                    if(is_array($origin_named)) {
+                                        $value = array_merge($value, $origin_named);
+                                        // print('- '.$sub_name.' : '.json_encode($value).PHP_EOL);
+                                        $container->setParameter($sub_name, $value);
+                                    }
+                                } else if (!$container->hasParameter($sub_name)) {
+                                    // print('- '.$sub_name.' : '.json_encode($value).PHP_EOL);
+                                    $container->setParameter($sub_name, $value);
+                                }
+                            }
+                        } else if(!$container->hasParameter($name)) {
+                            // print('- '.$name.' : '.json_encode($data).PHP_EOL);
+                            $container->setParameter($name, $data);
+                        }
+                    }
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are configured onlyu for prepend!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                }
+                break;
+            case 'Siteparams':
+                if($asPrepend) {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured for prepend!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                     return;
                 }
@@ -147,6 +174,21 @@ Class WireConfigurators
         return false;
     }
 
+    private static function getParameters(): array
+    {
+        return [
+            'locale' => '%env(APP_LOCALE)%',
+            'locales' => ['%env(APP_LOCALE)%'],
+            'currency' => '%env(APP_CURRENCY)%',
+            'timezone' => '%env(APP_TIMEZONE)%',        
+            'vich_dirs' => [
+                'item_photo' => '/uploads/item/photo',
+                'user_portrait' => '/uploads/user/portrait',
+                'slider_slides' => '/uploads/slider/slides',
+                'pdf' => '/uploads/pdf',
+            ],
+        ];
+    }
 
     private static function getAddedVichMappings(): array
     {

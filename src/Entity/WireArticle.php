@@ -3,10 +3,13 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
+use Aequation\WireBundle\Entity\interface\RelinkableInterface;
 use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
 use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
-use Aequation\WireBundle\Entity\trait\Screenable;
+use Aequation\WireBundle\Entity\trait\Owner;
+use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Webpageable;
 use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Repository\WireArticleRepository;
 use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
@@ -26,17 +29,13 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 abstract class WireArticle extends WireItem implements WireArticleInterface
 {
 
-    use Slug, Screenable;
+    use Slug, Owner, Webpageable, Relinkable;
 
-    public const ICON = "tabler:article";
-    public const FA_ICON = "fa-regular fa-newspaper";
+    public const ICON = [
+        'ux' => 'tabler:article',
+        'fa' => 'fa-regular fa-newspaper'
+    ];
 
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    protected ?string $title = null;
-
-    #[ORM\Column]
-    protected array $content = [];
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     protected ?\DateTimeInterface $start = null;
@@ -44,28 +43,6 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     protected ?\DateTimeInterface $end = null;
 
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): static
-    {
-        $this->title = $title;
-        return $this;
-    }
-
-    public function getContent(): array
-    {
-        return $this->content;
-    }
-
-    public function setContent(array $content): static
-    {
-        $this->content = $content;
-        return $this;
-    }
 
     public function getStart(): ?\DateTimeInterface
     {

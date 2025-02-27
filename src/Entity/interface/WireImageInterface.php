@@ -13,8 +13,6 @@ interface WireImageInterface extends WireItemInterface
     public function setFilename(?string $filename): static;
     public function getSize(): ?int;
     public function setSize(?int $size): static;
-    // public function removeLinkedto(): bool;
-    // public function getLinkedto(): ?ImageOwnerInterface;
     public function setDeleteImage(bool $deleteImage): static;
     public function isDeleteImage(): bool;
 }

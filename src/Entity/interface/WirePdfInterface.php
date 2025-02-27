@@ -1,13 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-// Symfony
-
 use Aequation\WireBundle\Component\interface\PdfizableInterface;
+// Symfony
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-interface WirePdfInterface extends WireItemInterface, TraitSlugInterface, PdfizableInterface
+interface WirePdfInterface extends WireItemInterface, PdfizableInterface
 {
     public function setFile(File $file): static;
     public function getFile(): File|null;

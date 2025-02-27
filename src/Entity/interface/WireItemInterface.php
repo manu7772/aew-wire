@@ -1,18 +1,20 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-use Aequation\WireBundle\Entity\WireEcollection;
-// Symfony
 use Doctrine\Common\Collections\Collection;
+use Gedmo\Sortable\Sortable;
 
-interface WireItemInterface extends WireEntityInterface, TraitCreatedInterface, TraitEnabledInterface, TraitUnamedInterface, TraitOwnerInterface
+interface WireItemInterface extends WireEntityInterface, Sortable, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface, TraitSlugInterface
 {
-
     public function getName(): ?string;
     public function setName(string $name): static;
-    public function addParent(WireEcollection $parent): static;
+    public function addParent(WireEcollectionInterface $parent): static;
     public function getParents(): Collection;
-    public function hasParent(WireEcollection $parent): bool;
-    public function removeParent(WireEcollection $parent): static;
+    public function hasParent(WireEcollectionInterface $parent): bool;
+    public function removeParent(WireEcollectionInterface $parent): static;
+    public function removeParents(): static;
+    // Gedmon Sortable
+    public function setPosition(int $position): void;
+    public function getPosition(): int;
 
-}
+} 

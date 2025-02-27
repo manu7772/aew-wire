@@ -3,15 +3,13 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
+use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
-use Aequation\WireBundle\Entity\trait\Screenable;
-use Aequation\WireBundle\Entity\trait\Slug;
+use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Webpageable;
 use Aequation\WireBundle\Repository\WireFactoryRepository;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 // Symfony
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
@@ -21,41 +19,15 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WireFactoryServiceInterface::class)]
 #[Slugable('name')]
-abstract class WireFactory extends WireItem implements WireFactoryInterface
+abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitRelinkableInterface
 {
 
-    use Slug, Screenable;
+    use Webpageable, Relinkable;
 
-    public const ICON = "tabler:building-factory-2";
-    public const FA_ICON = "fa-solid fa-industry";
+    public const ICON = [
+        'ux' => 'tabler:building-factory-2',
+        'fa' => 'fa-solid fa-industry'
+    ];
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    protected ?string $title = null;
-
-    #[ORM\Column]
-    protected array $content = [];
-
-    
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): static
-    {
-        $this->title = $title;
-        return $this;
-    }
-
-    public function getContent(): array
-    {
-        return $this->content;
-    }
-
-    public function setContent(array $content): static
-    {
-        $this->content = $content;
-        return $this;
-    }
 
 }

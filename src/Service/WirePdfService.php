@@ -3,31 +3,30 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\PdfizableInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
+use Aequation\WireBundle\Entity\WirePdf;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 // Symfony
-use Symfony\Component\DependencyInjection\Attribute\AsAlias;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Nucleos\DompdfBundle\Factory\DompdfFactoryInterface;
+use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 // PHP
 use DateTimeImmutable;
-use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
-#[AsAlias(WirePdfServiceInterface::class, public: true)]
-#[Autoconfigure(autowire: true, lazy: true)]
-class WirePdfService extends WireItemService implements WirePdfServiceInterface
+abstract class WirePdfService extends WireItemService implements WirePdfServiceInterface
 {
-    public const ENTITY_CLASS = WirePdfInterface::class;
+    public const ENTITY_CLASS = WirePdf::class;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService,
+        public readonly NormalizerServiceInterface $normalizer,
         protected DompdfFactoryInterface $dompdfFactory,
         protected UploaderHelper $vichHelper,
     )
     {
-        parent::__construct($appWire, $wireEntityService);
+        parent::__construct($appWire, $wireEntityService, $normalizer);
     }
 
     /**

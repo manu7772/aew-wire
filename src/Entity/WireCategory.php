@@ -1,15 +1,9 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\OnEventCall;
 use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\SlugInterface;
-use Aequation\WireBundle\Entity\interface\TraitCreatedInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
-use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
-use Aequation\WireBundle\Entity\interface\UnamedInterface;
-use Aequation\WireBundle\Entity\trait\Created;
+use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
@@ -19,9 +13,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Form\FormEvents;
-use Symfony\Component\Serializer\Attribute as Serializer;
-use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Exception;
 
@@ -33,17 +24,17 @@ use Exception;
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {
 
-    use Created, Slug, Unamed;
+    use Datetimed, Slug, Unamed;
 
-    public const ICON = "tabler:clipboard-list";
-    public const FA_ICON = "fa-solid fa-clipboard-list";
+    public const ICON = [
+        'ux' => 'tabler:clipboard-list',
+        'fa' => 'fa-solid fa-clipboard-list'
+    ];
 
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    #[Serializer\Groups(['index'])]
-    protected ?Uuid $id = null;
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    protected $id = null;
 
     #[ORM\Column(nullable: false)]
     protected ?string $name = null;
@@ -77,7 +68,6 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return $this;
     }
 
-    #[OnEventCall(events: [FormEvents::PRE_SET_DATA])]
     public function setTypeChoices(
         WireCategoryServiceInterface $service
     ): static

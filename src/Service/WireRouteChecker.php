@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Routing\Attribute\AsRoutingConditionService;
 use Symfony\Component\HttpFoundation\Request;
@@ -10,6 +11,8 @@ use Symfony\Component\HttpFoundation\Request;
 #[AsRoutingConditionService(alias: 'wire_route_checker')]
 class WireRouteChecker
 {
+
+    use TraitBaseService;
 
     // public function __construct(
     //     protected AppWireServiceInterface $appWire

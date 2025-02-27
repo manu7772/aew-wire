@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Service\interface\ExpressionLanguageServiceInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use BadMethodCallException;
 // Symfony
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -14,6 +15,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 #[Autoconfigure(autowire: true, lazy: true)]
 class ExpressionLanguageService extends ExpressionLanguage implements ExpressionLanguageServiceInterface
 {
+    use TraitBaseService;
 
     public function __construct(
         // protected KernelInterface $kernel,
@@ -33,26 +35,5 @@ class ExpressionLanguageService extends ExpressionLanguage implements Expression
         });
         return $this;
     }
-
-    public function __toString(): string
-    {
-        return $this->getName();
-    }
-
-    public function getName(): string
-    {
-        return static::class;
-    }
-
-    public function __sleep(): array
-    {
-        throw new BadMethodCallException(vsprintf('Cannot serialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
-    }
-
-    public function __wakeup(): void
-    {
-        throw new BadMethodCallException(vsprintf('Cannot unserialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
-    }
-
 
 }

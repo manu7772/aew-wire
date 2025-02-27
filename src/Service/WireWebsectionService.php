@@ -12,6 +12,7 @@ abstract class WireWebsectionService extends WireHtmlcodeService implements Wire
 {
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
+
     public const FILES_FOLDER = 'websection/';
     public const CACHE_WS_MODELS_LIFE = null;
     public const SECTION_TYPES = ['section','header','footer','banner','sidemenu','left-sidemenu','right-sidemenu','hidden'];

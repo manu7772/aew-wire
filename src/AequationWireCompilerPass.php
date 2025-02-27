@@ -13,13 +13,12 @@ class AequationWireCompilerPass implements CompilerPassInterface
 {
     public const CONFIGURES = [
         'Parameters' => false,
+        'Siteparams' => false,
         'Twig' => false,
         'Tailwind' => false,
-        'VichUploader' => false,
+        'VichUploader' => true,
         'AssetMapper' => false,
     ];
-    // public const EXECUTE_DISPATCH = true;
-    // public const REMOVE_DISPATCHEDS = true;
 
     public function Process(
         ContainerBuilder $container

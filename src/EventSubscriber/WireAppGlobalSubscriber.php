@@ -55,9 +55,9 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
             // KernelEvents::RESPONSE => 'onKernelResponse',
             KernelEvents::FINISH_REQUEST => 'onFinishRequest',
             // Login
-            CheckPassportEvent::class => ['onCheckPassport', -10],
-            LoginSuccessEvent::class => 'onLoginSuccess',
-            LoginFailureEvent::class => 'onLoginFailure',
+            // CheckPassportEvent::class => ['onCheckPassport', -10],
+            // LoginSuccessEvent::class => 'onLoginSuccess',
+            // LoginFailureEvent::class => 'onLoginFailure',
         ];
     }
 
@@ -259,40 +259,40 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     //     }
     // }
 
-    public function onCheckPassport(CheckPassportEvent $event): void
-    {
-        /** @var ?WireUserInterface */
-        $user = $this->appWire->getUser();
-        if ($user instanceof WireUserInterface && !$user->isLoggable()) {
-            throw new AccountNotVerifiedAuthenticationException();
-        }
-    }
+    // public function onCheckPassport(CheckPassportEvent $event): void
+    // {
+    //     /** @var ?WireUserInterface */
+    //     $user = $this->appWire->getUser();
+    //     if ($user instanceof WireUserInterface && !$user->isLoggable()) {
+    //         throw new AccountNotVerifiedAuthenticationException();
+    //     }
+    // }
 
-    public function onLoginSuccess(LoginSuccessEvent $event): void
-    {
-        $keys = array_keys($event->getRequest()->request->all());
-        if(count($keys) >= count(static::LOGIN_PARAMS_KEYS)) {
-            if(count(array_intersect_key($keys, static::LOGIN_PARAMS_KEYS)) >= count(static::LOGIN_PARAMS_KEYS)) {
-                /** @var WireUserInterface */
-                $user = $event->getUser();
-                // if($this->security->isGranted('ROLE_EDITOR')) {
-                //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
-                // }
-                $this->userService->updateUserLastLogin($user);
-                $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
-            }
-        }
-        return;
-    }
+    // public function onLoginSuccess(LoginSuccessEvent $event): void
+    // {
+    //     $keys = array_keys($event->getRequest()->request->all());
+    //     if(count($keys) >= count(static::LOGIN_PARAMS_KEYS)) {
+    //         if(count(array_intersect_key($keys, static::LOGIN_PARAMS_KEYS)) >= count(static::LOGIN_PARAMS_KEYS)) {
+    //             /** @var WireUserInterface */
+    //             $user = $event->getUser();
+    //             // if($this->security->isGranted('ROLE_EDITOR')) {
+    //             //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
+    //             // }
+    //             $this->userService->updateUserLastLogin($user);
+    //             $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
+    //         }
+    //     }
+    //     return;
+    // }
 
-    public function onLoginFailure(LoginFailureEvent $event): void
-    {
-        if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
-            $response = new RedirectResponse(
-                $this->router->generate('app_home')
-            );
-            $event->setResponse($response);
-        }
-    }
+    // public function onLoginFailure(LoginFailureEvent $event): void
+    // {
+    //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
+    //         $response = new RedirectResponse(
+    //             $this->router->generate('app_home')
+    //         );
+    //         $event->setResponse($response);
+    //     }
+    // }
 
 }

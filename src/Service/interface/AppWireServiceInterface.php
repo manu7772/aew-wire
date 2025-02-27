@@ -92,7 +92,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getTinyvalue(string $name, mixed $default = null): mixed;
     public function setTinyvalues(array $values): static;
     // Serialization
-    public function jsonSerialize(bool $onlySerializable = false): mixed;
+    public function jsonSerialize(): mixed;
     public function jsonUnserialize(array $data): void;
     // Twig
     public function getTwig(): Environment;
@@ -109,6 +109,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // DateTime
     public function getCurrentDatetime(): DateTimeImmutable;
     public function getCurrentDatetimeFormated(string $format = DATE_ATOM): string;
+    public function getCurrentYear(): string;
     // Environment / Security
     public function isGranted(mixed $attributes, mixed $subject = null): bool;
     public function isPublic(): bool;

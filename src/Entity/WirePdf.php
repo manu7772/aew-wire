@@ -19,7 +19,6 @@ use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\Routing\RouterInterface;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 // PHP
@@ -35,11 +34,10 @@ use Exception;
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {
 
-    use Slug;
-
-    public const ICON = 'tabler:file-type-pdf';
-    public const FA_ICON = 'fa-solid fa-file-pdf';
-
+    public const ICON = [
+        'ux' => 'tabler:file-type-pdf',
+        'fa' => 'fa-solid fa-file-pdf'
+    ];
     public const PAPERS = ['A4', 'A5', 'A6', 'letter', 'legal'];
     public const ORIENTATIONS = ['portrait', 'landscape'];
     public const SOURCETYPES = ['undefined', 'document', 'file'];
@@ -62,7 +60,6 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         mimeTypesMessage: "Format invalide, vous devez indiquer un fichier PDF",
         // binaryFormat: false,
     )]
-    #[Serializer\Ignore]
     protected File|UploadedFile|null $file = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -103,7 +100,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         $this->file = $file;
         if(HttpRequest::isCli()) {
             $filesystem = new Filesystem();
-            $dest = $filesystem->tempnam(dir: $this->_estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
+            $dest = $filesystem->tempnam(dir: $this->__estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
             $filesystem->copy($this->file->getRealPath(), $dest, true);
             try {
                 $this->file = new UploadedFile(path: $dest, originalName: $this->file->getFilename(), test: true);
@@ -123,7 +120,6 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function getFile(): File|UploadedFile|null
     {
         return $this->file;
@@ -137,7 +133,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     ): ?string
     {
         // $filter ??= $this->getLiipDefaultFilter();
-        return $this->_estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
+        return $this->__estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
     }
 
     public function updateName(): static
@@ -240,7 +236,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         string $action = 'inline'
     ): ?string
     {
-        return $this->_estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->__estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     public function getSourcetype(): int

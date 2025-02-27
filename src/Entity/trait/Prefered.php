@@ -15,9 +15,9 @@ trait Prefered
 
     public function __construct_prefered(): void
     {
+        $this->prefered = false;
         if(!($this instanceof TraitPreferedInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitPreferedInterface::class]));
     }
-
 
     public function isPrefered(): bool
     {

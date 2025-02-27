@@ -5,5 +5,5 @@ use Aequation\WireBundle\Entity\Uname;
 
 interface UnameRepositoryInterface extends BaseWireRepositoryInterface
 {
-
+    
 }

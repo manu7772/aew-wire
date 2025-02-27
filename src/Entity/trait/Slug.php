@@ -4,7 +4,6 @@ namespace Aequation\WireBundle\Entity\trait;
 use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\Validator\Constraints as Assert;
 // PHP
 use Exception;
@@ -14,7 +13,6 @@ trait Slug
 
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank(message: 'Le Slug est vide !')]
-    #[Serializer\Groups(['index'])]
     protected ?string $slug = null;
 
     protected ?bool $updateSlug = null;

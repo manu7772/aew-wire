@@ -9,32 +9,35 @@ use Aequation\WireBundle\Tools\Encoders;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
 // PHP
 use ReflectionClass;
 use Exception;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 
 #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 trait WireEntity
 {
 
+    public const ICON = [
+        'ux' => 'tabler:file',
+        'fa' => 'fa-file'
+        // Add other types and their corresponding icons here
+    ];
+    public const SERIALIZATION_PROPS = ['id'];
+
     #[ORM\Column(length: 255, updatable: false, nullable: false)]
     #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
     protected readonly string $euid;
 
     #[ORM\Column(updatable: false, nullable: false)]
     #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
     protected readonly string $classname;
 
     #[ORM\Column(length: 32, updatable: false, nullable: false)]
     #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
     protected readonly string $shortname;
 
-    #[Serializer\Ignore]
-    public readonly EntityEmbededStatusInterface $_estatus;
+    public readonly EntityEmbededStatusInterface $__estatus;
 
 
     public function __construct_entity(): void
@@ -55,33 +58,21 @@ trait WireEntity
         EntityEmbededStatusInterface $estatus
     ): void
     {
-        if(isset($this->_estatus) && !$this->_estatus->isProd()) {
-            throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->_estatus->getType(), $this->__toString(), EntityEmbededStatusInterface::class]));
+        if(!isset($this->__estatus)) {
+            $this->__estatus = $estatus;
+        } else if($this->__estatus !== $estatus) {
+            if($this->__estatus->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
         }
-        $this->_estatus = $estatus;
     }
 
-    public function getEmbededStatus(): EntityEmbededStatusInterface
+    public function hasEmbededStatus(): bool
     {
-        return $this->_estatus;
+        return $this->getEmbededStatus() instanceof EntityEmbededStatusInterface;
     }
 
-    // #[AppEvent(groups: [AppEvent::afterClone])]
-    public function _removeIsClone(): static
+    public function getEmbededStatus(): ?EntityEmbededStatusInterface
     {
-        $this->_setClone(false);
-        return $this;
-    }
-
-    public function __clone_entity(): void
-    {
-        $this->euid = $this->getNewEuid();
-        // $this->_service->setManagerToEntity($this);
-        // Other clones
-        $clone_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__clone_(?!entity)/', $method_name));
-        foreach ($clone_methods as $method) {
-            $this->$method();
-        }
+        return $this->__estatus ?? null;
     }
 
     public function getEuid(): string
@@ -92,9 +83,11 @@ trait WireEntity
     public function getUnameThenEuid(): string
     {
         if($this instanceof TraitUnamedInterface) {
-            return $this->getUname()->getUname();
+            $unameName = $this->getUname()->getUname();
         }
-        return $this->getEuid();
+        return empty($unameName)
+            ? $this->getEuid()
+            : $unameName;
     }
 
     public function defineUname(
@@ -102,7 +95,7 @@ trait WireEntity
     ): static
     {
         if($this instanceof TraitUnamedInterface) {
-            if(strlen($uname) < 3) throw new Exception(vsprintf('Error %s line %d: Uname for %s must have at least 3 lettres, got "%s"!', [__METHOD__, __LINE__, static::class, $uname]));
+            // if(strlen($uname) < 3) throw new Exception(vsprintf('Error %s line %d: Uname for %s must have at least 3 lettres, got "%s"!', [__METHOD__, __LINE__, static::class, $uname]));
             $this->updateUname($uname);
         }
         return $this;
@@ -125,6 +118,65 @@ trait WireEntity
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;
+    }
+
+    /**
+     * get serialization data
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        $array = ['id' => $this->id];
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
+        foreach (static::SERIALIZATION_PROPS as $attr) {
+            $array[$attr] = $accessor->getValue($this, $attr);
+        }
+        return $array;
+    }
+
+    /**
+     * unserialize data
+     *
+     * @param array $data
+     * @return void
+     */
+    public function __unserialize(array $data): void
+    {
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
+        foreach ($data as $attr => $value) {
+            $accessor->setValue($this, $attr, $value);
+        }
+    }
+
+    /**
+     * serialize
+     *
+     * @return string|null
+     */
+    public function serialize(): ?string
+    {
+        $array = $this->__serialize();
+        return json_encode($array);
+    }
+
+    /**
+     * unserialize
+     *
+     * @param string $data
+     * @return void
+     */
+    public function unserialize(string $data): void
+    {
+        $data = json_decode($data, true);
+        $this->__unserialize($data);
+    }
+
+    public function getIcon(
+        string $type = 'ux'
+    ): string
+    {
+        return static::ICON[$type];
     }
 
 

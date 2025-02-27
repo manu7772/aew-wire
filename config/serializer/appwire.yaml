@@ -1,0 +1,51 @@
+
+Aequation\WireBundle\Service\AppWireService:
+    attributes:
+        sessionID:
+            groups: ['for_session']
+        user:
+            groups: ['for_session']
+        environment:
+            groups: ['for_session']
+        firewallname:
+            groups: ['for_session']
+        clientIp:
+            groups: ['for_session']
+        clientIps:
+            groups: ['for_session']
+        XmlHttpRequest:
+            groups: ['for_session']
+        TurboFrameRequest:
+            groups: ['for_session']
+        TurboStreamRequest:
+            groups: ['for_session']
+        public:
+            groups: ['for_session']
+        private:
+            groups: ['for_session']
+        currentdatetime:
+            groups: ['for_session']
+        debug:
+            groups: ['for_session']
+        locale:
+            groups: ['for_session']
+        enabled_locales:
+            groups: ['for_session']
+        current_route:
+            groups: ['for_session']
+        current_route_parameters:
+            groups: ['for_session']
+        stopwatch:
+            groups: ['for_session']
+            getter: getStopwatchTime
+        Context:
+            groups: ['for_session']
+            getter: getContextAsArray
+        Headers:
+            groups: ['for_session']
+        timezone:
+            groups: ['for_session']
+        datenow:
+            groups: ['for_session']
+        tinyvalues:
+            groups: ['for_session']

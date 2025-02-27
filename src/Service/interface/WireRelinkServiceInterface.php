@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Service\interface;
 
 
-interface WireRelinkServiceInterface extends WireItemServiceInterface
+interface WireRelinkServiceInterface extends WireEntityServiceInterface
 {
     
 }

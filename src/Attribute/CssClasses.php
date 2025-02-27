@@ -102,13 +102,6 @@ class CssClasses extends BaseClassAttribute implements AppAttributeConstantInter
         return null;
     }
 
-    public function apply(
-        WireEntityEvent $event
-    ): void
-    {
-        throw new Exception(vsprintf('Error %s line %d: not implemented yet!', [__METHOD__, __LINE__]));
-    }
-
     public function getCssClasses(): array
     {
         $value = $this->getValue();

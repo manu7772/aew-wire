@@ -42,8 +42,6 @@ abstract class BasePropertyAttribute extends BaseClassAttribute implements AppAt
         $this->propertyAccessor->setValue($this->object, $this->property->name, $value);
     }
 
-    abstract public function apply(WireEntityEvent $event): void;
-
 
     public function __serialize(): array
     {

@@ -8,43 +8,46 @@ use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Repository\UnameRepository;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
+use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Exception;
 
 #[ORM\Entity(repositoryClass: UnameRepository::class)]
-#[UniqueEntity('uname', message: 'Ce uname {{ value }} est déjà utilisé !')]
-#[UniqueEntity('euidofentity', message: 'Cet euid-of-entity {{ value }} est déjà utilisé !')]
+#[ORM\Table(name: '`uname`')]
+#[UniqueEntity('id', message: 'Ce uname {{ value }} est déjà utilisé !')]
+#[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !')]
 #[ClassCustomService(UnameServiceInterface::class)]
 class Uname extends MappSuperClassEntity implements UnameInterface
 {
 
-    public const ICON = "tabler:fingerprint";
-    public const FA_ICON = "fingerprint";
+    public const ICON = [
+        'ux' => 'tabler:fingerprint',
+        'fa' => 'fa-fingerprint'
+    ];
     public const UNAME_PATTERN = '#^[\\w_-\\|\\.\\\\]{3,128}$#';
 
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    #[Serializer\Groups(['index'])]
-    protected ?Uuid $id = null;
+    // #[ORM\Id]
+    // #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    // #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    // #[ORM\Column(type: 'uuid', unique: true)]
+    // protected ?Uuid $id = null;
 
+    #[ORM\Id]
     #[ORM\Column(length: 255, updatable: false)]
     #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres')]
     #[Assert\Regex(Uname::UNAME_PATTERN)]
-    protected string $uname;
+    protected $id;
 
     #[ORM\Column(length: 255, updatable: false)]
     #[Assert\NotNull]
-    protected string $euidofentity;
+    #[Assert\Regex(Encoders::EUID_SCHEMA)]
+    protected string $entityEuid;
 
-    #[Serializer\Ignore]
     public readonly WireEntityInterface $entity;
 
     /**
@@ -54,7 +57,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function __toString(): string
     {
-        return $this->uname ?? parent::__toString();
+        return $this->id ? (string)$this->id : parent::__toString();
     }
 
     /**
@@ -79,7 +82,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function attributeEntity(
         TraitUnamedInterface $entity,
-        string $uname = null
+        ?string $uname = null
     ): static
     {
         if(!isset($this->entity)) {
@@ -87,11 +90,11 @@ class Uname extends MappSuperClassEntity implements UnameInterface
         } else if($this->entity !== $entity) {
             throw new Exception(vsprintf("Error %s line %d:%s- Can not set another entity!", [__METHOD__, __LINE__, PHP_EOL]));
         }
-        if(!empty($uname) || !isset($this->uname)) {
+        if(!empty($uname) || empty($this->id ?? null)) {
             if(empty($uname)) $uname = $this->entity->getEuid();
             $this->setUname($uname);
         }
-        $this->euidofentity = $this->entity->getEuid();
+        $this->entityEuid = $this->entity->getEuid();
         return $this;
     }
 
@@ -102,7 +105,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function getUname(): string
     {
-        return $this->uname;
+        return $this->id;
     }
 
     /**
@@ -114,24 +117,18 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     public function setUname(string $uname): static
     {
         if(!static::isValidUname($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
-        if(!$this->_estatus->isPersisted() || !static::isValidUname($this->uname)) {
-            $this->uname = $uname;
-        } else if($this->_estatus->appWire->isDev()) {
-            // Can not change Uname, except if is invalid
-            throw new Exception(vsprintf('Error %s line %d:%s- Uname can not be changed in persisted entity (%s named "%s")!', [__METHOD__, __LINE__, PHP_EOL, $this->entity->getClassname(), $this->entity->__toString()]));
-        }
+        $this->id = $uname;
         return $this;
     }
 
     /**
-     * get euidofentity
+     * get entityEuid
      * 
      * @return string
      */
-    // #[Serializer\Ignore]
-    public function getEuidofentity(): ?string
+    public function getEntityEuid(): ?string
     {
-        return $this->euidofentity;
+        return $this->entityEuid ?? null;
     }
 
 }

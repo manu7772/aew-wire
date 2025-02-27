@@ -2,14 +2,21 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
+
+use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
 use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\AttributeWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\HttpRequest;
+use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
 // Symphony
 use Symfony\Bundle\SecurityBundle\Security;
@@ -41,6 +48,7 @@ use BadMethodCallException;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use ReflectionClass;
 use UnitEnum;
 
 /**
@@ -51,6 +59,10 @@ use UnitEnum;
 #[Autoconfigure(autowire: true, lazy: false)]
 class AppWireService extends AppVariable implements AppWireServiceInterface
 {
+    use TraitBaseService;
+
+    public const SELF_SERIALIZE_GROUPS = ['for_session'];
+    public const DEFAULT_HOME_ROUTE = 'app_home';
 
     public readonly ContainerInterface $container;
     public readonly SessionInterface $session;
@@ -89,6 +101,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // public readonly NormalizerInterface $normalizer,
     ) {
         // $this->startStopwatch();
+        $this->container = $this->kernel->getContainer();
         $this->timestamp = time();
         $this->tinyvalues = static::DEFAULT_TINY_VALUES;
         $this->setTokenStorage($tokenStorage);
@@ -96,8 +109,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->setEnvironment($kernel->getEnvironment());
         $this->setDebug($kernel->isDebug());
         $this->setLocaleSwitcher($myLocaleSwitcher);
-        $this->setEnabledLocales(['fr_FR']);
-        $this->container = $this->kernel->getContainer();
+        $this->setEnabledLocales($this->container->getParameter('locales'));
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
     }
@@ -116,39 +128,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->kernel->getCharset();
     }
 
-
-
-    /************************************************************************************************************/
-    /** IMPLEMENTS AppWireServiceInterface                                                                      */
-    /************************************************************************************************************/
-
-    /**
-     * Get service as string
-     * @return string
-     */
-    public function __toString(): string
-    {
-        return $this->getName();
-    }
-
-    /**
-     * Get service name
-     * @return string
-     */
-    public function getName(): string
-    {
-        return static::class;
-    }
-
-    public function __sleep(): array
-    {
-        throw new BadMethodCallException(vsprintf('Cannot serialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
-    }
-
-    public function __wakeup(): void
-    {
-        throw new BadMethodCallException(vsprintf('Cannot unserialize %s', [static::class.(static::class !== __CLASS__ ? PHP_EOL.'(based on '.__CLASS__.')' : '')]));
-    }
 
     /**
      * Get current session
@@ -277,11 +256,28 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function getClassService(
         string|object $objectOrClass
-    ): ?object {
-        $serviceName = $this->get(AttributeWireServiceInterface::class)->getClassServiceName($objectOrClass);
-        return !empty($serviceName) && $this->has($serviceName)
-            ? $this->get($serviceName)
-            : null;
+    ): ?object
+    {
+        foreach (Objects::getClassAttributes($objectOrClass, ClassCustomService::class) as $attr) {
+            if($this->has($attr->service)) {
+                return $this->get($attr->service);
+            } else if($this->isDev()) {
+                throw new Exception(vsprintf('Error %s line %d: service %s is not available!', [__METHOD__, __LINE__, $attr->service]));
+            }
+        }
+        // $objectOrClass = is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass;
+        // if(class_exists($objectOrClass)) {
+        //     $rc = new ReflectionClass($objectOrClass);
+        //     $objectOrClass = $rc->getShortName();
+        // }
+        // $tests = ['Wire__name__ServiceInterface','Wire__name__Service','__name__ServiceInterface','__name__Service'];
+        // foreach ($tests as $test) {
+        //     $serviceName = str_replace('#__name__#', $objectOrClass, $test);
+        //     if($this->has($serviceName)) {
+        //         return $this->get($serviceName);
+        //     }
+        // }
+        return null;
     }
 
 
@@ -549,7 +545,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * 
      * @return null|array
      */
-    public function retrieveAppWire(
+    protected function retrieveAppWire(
         ?string $firewall = null
     ): ?array {
         $firewall ??= $this->getFirewallName();
@@ -564,7 +560,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function saveAppWire(): bool
     {
         if($this->isInitialized()) {
-            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(true));
+            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(/* true */));
             // if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
             return true;
         }
@@ -710,6 +706,15 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         }
         $this->datenow = $datenow;
         return $this;
+    }
+
+    /**
+     * Get current year with 4 digits
+     * @return string
+     */
+    public function getCurrentYear(): string
+    {
+        return $this->getCurrentDatetime()->format('Y');
     }
 
     /**
@@ -869,58 +874,19 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this;
     }
 
+
     /** SERIALIZE */
 
-    protected function getSerializableProperties(): array
+    public function jsonSerialize(): mixed
     {
-        return [
-            // All
-            'sessionID' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'user' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'environment' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'firewallname' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'clientIp' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'clientIps' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'XmlHttpRequest' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'TurboFrameRequest' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'TurboStreamRequest' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'public' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'private' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'currentdatetime' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'debug' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'locale' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'enabled_locales' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'current_route' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'current_route_parameters' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            'stopwatch' => ['serialize' => true, 'unserialize' => false, 'serializable' => 'getStopwatchTime'],
-            'Context' => ['serialize' => true, 'unserialize' => false, 'serializable' => 'getContextAsArray'],
-            'Headers' => ['serialize' => true, 'unserialize' => false, 'serializable' => true],
-            // To unserialize
-            'timezone' => ['serialize' => true, 'unserialize' => true, 'serializable' => true],
-            'datenow' => ['serialize' => true, 'unserialize' => true, 'serializable' => true],
-            'tinyvalues' => ['serialize' => true, 'unserialize' => 'mergeTinyvalues', 'serializable' => true],
-        ];
-    }
-
-    public function jsonSerialize(
-        bool $onlySerializable = false
-    ): mixed {
-        $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
-        $data = [];
-        foreach ($this->getSerializableProperties() as $property => $values) {
-            if(!$onlySerializable || $values['serializable']) {
-                $method = 'get'.ucfirst($property);
-                if($onlySerializable && is_string($values['serializable'])) {
-                    $data[$property] = $this->{$values['serializable']}();
-                } else if(is_string($values['serialize'])) {
-                    $data[$property] = $this->{$values['serialize']}();
-                } else if(method_exists($this, $method)) {
-                    $data[$property] = $this->{$method}();
-                } else if($values['serialize']) {
-                    $data[$property] = $propertyAccessor->getValue($this, $property);
-                }
-            }
+        /** @var NormalizerServiceInterface */
+        $normalizer = $this->get(NormalizerServiceInterface::class);
+        $user = $this->get(WireUserServiceInterface::class)?->getUser() ?? null;
+        if($user) {
+            $data = $normalizer->normalize(data: $user, context: ['groups' => 'user.index']);
         }
+        dd($data, ['groups' => 'user.index']);
+        $data = $normalizer->normalize(data: $this, context: ['groups' => static::SELF_SERIALIZE_GROUPS]);
         return $data;
     }
 
@@ -928,16 +894,17 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         array $data
     ): void {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
-        $sery = $this->getSerializableProperties();
-        foreach ($data as $property => $value) {
-            if(isset($sery[$property]) && isset($sery[$property]['unserialize'])) {
-                $method = 'set'.ucfirst($property);
-                if(is_string($sery[$property]['unserialize'])) {
-                    $this->{$sery[$property]['unserialize']}($value);
-                } else if(method_exists($this, $method)) {
-                    $data[$property] = $this->{$method}($value);
-                } else if($sery[$property]['unserialize']) {
-                    $propertyAccessor->setValue($this, $property, $value);
+        $unser = [
+            'timezone' => true,
+            'datenow' => true,
+            'tinyvalues' => 'mergeTinyvalues',
+        ];
+        foreach ($unser as $property => $method) {
+            if(isset($data[$property])) {
+                if(is_string($method)) {
+                    $this->{$method}($data[$property]);
+                } else if($method) {
+                    $propertyAccessor->setValue($this, $property, $data[$property]);
                 }
             }
         }
@@ -1213,20 +1180,33 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->get('router')->getRouteCollection();
     }
 
+    public function getPublicHomeRoute(): string
+    {
+        $route = $this->getParam('home_route', static::DEFAULT_HOME_ROUTE);
+        if($this->isDev()) {
+            if(!$this->routeExists($route)) {
+                throw new Exception(vsprintf('Error %s line %d: public home route %s does not exist!', [__METHOD__, __LINE__, $route]));
+            }
+        }
+        return $route;
+    }
+
     /**
      * route exists
      * 
      * @return bool
      */
-    public function routeExists(string $route, bool|array $control_generation = false): bool
+    public function routeExists(
+        string $route,
+        bool|array $control_generation = false
+    ): bool
     {
         $exists = $this->getRoutes()->get($route) !== null;
-        if($exists && $control_generation) {
+        if($exists && ($control_generation || $this->isDev())) {
             try {
                 $this->get('router')->generate($route, is_array($control_generation) ? $control_generation : []);
             } catch (\Throwable $th) {
-                //throw $th;
-                $exists = false;
+                return false;
             }
         }
         return $exists;
@@ -1244,8 +1224,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         mixed $param = null
     ): bool {
         // dump($this->getCurrent_route(), $this->getCurrent_route_parameters(), $param instanceof MenuInterface ? $param->getItems() : null);
-        if($param instanceof WireWebpageInterface && $param instanceof TraitPreferedInterface) {
-            if($param->isPrefered() && $this->getCurrent_route() === 'app_home') return true;
+        if($param instanceof WireWebpageInterface) {
+            if($param->isPrefered() && $this->getCurrent_route() === $this->getPublicHomeRoute()) return true;
         }
         if($route !== $this->getCurrent_route()) return false;
         if(!empty($param)) {
@@ -1253,7 +1233,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                 if($param instanceof WireWebpageInterface) {
                     if($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
                 }
-                if($param instanceof WireMenuInterface) {
+                if($param instanceof WireItemcollectionInterface) {
+                    $slugs = $this->get(WireEntityManagerInterface::class)->getRepository(WireItemcollectionInterface::class)->findChildrenSlugs($param);
                     foreach ($param->getItems() as $item) {
                         if(in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
                     }

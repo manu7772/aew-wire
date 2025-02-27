@@ -2,23 +2,35 @@
 namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\UnitOfWork;
 
-interface WireEntityServiceInterface extends WireServiceInterface
+interface WireEntityServiceInterface extends WireServiceInterface, EntityServicePaginableInterface
 {
 
+    // Services
+    public function getEntityManager(): EntityManagerInterface;
+    public function getEm(): EntityManagerInterface;
+    public function getUnitOfWork(): UnitOfWork;
+    public function getUow(): UnitOfWork;
     // New
-    public function createEntity(?string $uname = null): WireEntityInterface;
-    public function createModel(): WireEntityInterface;
-    public function createClone(WireEntityInterface $entity, ?string $uname = null, int $clone_method = 1): ?WireEntityInterface;
+    public function createEntity(
+        ?array $data = [], // ---> do not forget uname if wanted!
+        ?array $context = []
+    ): WireEntityInterface;
+    public function createModel(
+        ?array $data = [], // ---> do not forget uname if wanted!
+        ?array $context = []
+    ): WireEntityInterface;
+    public function createClone(
+        WireEntityInterface $entity,
+        ?array $changes = [], // ---> do not forget uname if wanted!
+        ?array $context = []
+    ): WireEntityInterface|false;
     // Querys
     public function getEntityClassname(): ?string;
-    public function getRepository(): BaseWireRepositoryInterface;
-    public function getEntitiesCount(array $criteria = []): int;
-    // Persit
-    public function persist(WireEntityInterface $entity, bool $flush = false): static;
-    public function update(WireEntityInterface $entity, bool $flush = false): static;
-    public function remove(WireEntityInterface $entity, bool $flush = false): static;
-    public function flush(): static;
+    public function getRepository($classname = null): ?EntityRepository;
+    public function getEntitiesCount(array $criteria = [], $classname = null): int|false;
 
 }

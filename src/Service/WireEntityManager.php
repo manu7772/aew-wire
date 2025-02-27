@@ -2,27 +2,34 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Event\WireEntityEvent;
+use Aequation\WireBundle\Component\EntityEmbededStatus;
+use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
+use Aequation\WireBundle\Serializer\EntityDenormalizer;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\EventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
@@ -35,32 +42,98 @@ use Exception;
  */
 #[AsAlias(WireEntityManagerInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: false)]
-class WireEntityManager extends BaseService implements WireEntityManagerInterface
+class WireEntityManager implements WireEntityManagerInterface
 {
+    use TraitBaseService;
 
-    public readonly ArrayCollection $createds;
-    public readonly UnitOfWork $uow;
+    protected readonly ArrayCollection $createds;
+    protected readonly UnitOfWork $uow;
 
     /**
      * constructor.
      * 
      * @param EntityManagerInterface $em
      * @param AppWireServiceInterface $appWire
-     * @param EventDispatcherInterface $eventDispatcher
      * @param UploaderHelper $vichHelper
      * @param CacheManager $liipCache
      */
     public function __construct(
         public readonly EntityManagerInterface $em,
         public readonly AppWireServiceInterface $appWire,
-        public readonly EventDispatcherInterface $eventDispatcher,
+        public readonly NormalizerServiceInterface $normalizer,
         protected UploaderHelper $vichHelper,
         protected CacheManager $liipCache
     )
     {
-        $this->uow = $this->em->getUnitOfWork();
+        // $this->uow = $this->em->getUnitOfWork();
         $this->createds = new ArrayCollection();
     }
+
+
+    /****************************************************************************************************/
+    /** CREATED                                                                                         */
+    /****************************************************************************************************/
+
+    public function addCreated(WireEntityInterface $entity): void
+    {
+        if($this->appWire->isDev()) {
+            // DEV controls
+            $this->checkIntegrity($entity, 'addCreated');
+        }
+        $index = spl_object_hash($entity);
+        if(!$this->createds->containsKey($index)) {
+            $this->createds->set($index, $entity);
+        } else if($this->appWire->isDev()) {
+            $exists = $this->createds->get($index);
+            throw new Exception(vsprintf('Error %s line %d: entity with %s already exists!%s- 1 - %s %s%s- 2 - %s %s', [__METHOD__, __LINE__, $index, PHP_EOL, $entity->getClassname(), $entity->__toString(), PHP_EOL, $exists->getClassname(), $exists->__toString()]));
+        }
+    }
+
+    public function hasCreated(WireEntityInterface $entity): bool
+    {
+        $index = spl_object_hash($entity);
+        return $this->createds->containsKey($index);
+        // return $this->createds->contains($entity);
+    }
+
+    public function clearCreateds(): bool
+    {
+        $this->createds->clear();
+        return $this->createds->isEmpty();
+    }
+
+    /**
+     * remove entity from persisted entities
+     * Returns true if createds list is empty
+     * 
+     * @param WireEntityInterface $entity
+     * @return bool
+     */
+    public function clearPersisteds(): bool
+    {
+        $this->createds = $this->createds->filter(fn($entity) => !$entity->__estatus->isContained());
+        return $this->createds->isEmpty();
+    }
+
+    public function findCreated(
+        string $euidOrUname
+    ): ?WireEntityInterface
+    {
+        foreach($this->createds as $entity) {
+            if($entity->getEuid() === $euidOrUname) {
+                return $entity;
+            }
+            if($entity instanceof TraitUnamedInterface && $entity->getUnameName() === $euidOrUname) {
+                return $entity;
+            }
+        }
+        return null;
+    }
+
+
+    /****************************************************************************************************/
+    /** SERVICES                                                                                        */
+    /****************************************************************************************************/
 
     /**
      * get AppWireService
@@ -74,176 +147,99 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
 
     /**
      * get entity service
-     * if no service found, return self as default
      *
      * @param string|WireEntityInterface $entity
-     * @return WireEntityManagerInterface|WireEntityServiceInterface
+     * @return ?WireEntityServiceInterface
      */
     public function getEntityService(
         string|WireEntityInterface $entity
-    ): WireEntityManagerInterface|WireEntityServiceInterface
+    ): ?WireEntityServiceInterface
     {
-        $service = $this->appWire->getClassService($entity);
-        return $service ? $service : $this;
+        return $this->appWire->getClassService($entity);
     }
 
-
-    /****************************************************************************************************/
-    /** PERSISTANCE                                                                                     */
-    /****************************************************************************************************/
-
-    /**
-     * persist entity
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function persist(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
+    public function getEntityManager(): EntityManagerInterface
     {
-        $service = $this->getEntityService($entity);
-        $service instanceof WireEntityServiceInterface
-            ? $service->persist($entity, $flush)
-            : $this->__innerPersist($entity, $flush);
-        return $this;
+        return $this->em;
     }
 
-    /**
-     * inner persist
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function __innerPersist(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
+    public function getEm(): EntityManagerInterface
     {
-        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_PERSIST)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_PERSIST), WireEntityEvent::BEFORE_PERSIST);
-        }
-        $this->em->persist($entity);
-        if($flush) $this->flush();
-        return $this;
+        return $this->em;
     }
 
-    /**
-     * update entity
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function update(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
+    public function getUnitOfWork(): UnitOfWork
     {
-        $service = $this->getEntityService($entity);
-        $service instanceof WireEntityServiceInterface
-            ? $service->update($entity, $flush)
-            : $this->__innerUpdate($entity, $flush);
-        return $this;
+        return $this->uow ??= $this->em->getUnitOfWork();
     }
 
-    /**
-     * inner update
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function __innerUpdate(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
+    public function getUow(): UnitOfWork
     {
-        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_UPDATE)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_UPDATE), WireEntityEvent::BEFORE_UPDATE);
-        }
-        if($flush) $this->flush();
-        return $this;
-    }
-
-    /**
-     * remove entity
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function remove(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
-    {
-        $service = $this->getEntityService($entity);
-        $service instanceof WireEntityServiceInterface
-            ? $service->remove($entity, $flush)
-            : $this->__innerRemove($entity, $flush);
-        return $this;
-    }
-
-    /**
-     * inner remove
-     * 
-     * @param WireEntityInterface $entity
-     * @param bool $flush
-     * @return static
-     */
-    public function __innerRemove(
-        WireEntityInterface $entity,
-        bool $flush = false
-    ): static
-    {
-        if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
-            $this->eventDispatcher->dispatch(new WireEntityEvent($entity, $this, WireEntityEvent::BEFORE_REMOVE), WireEntityEvent::BEFORE_REMOVE);
-        }
-        $this->em->remove($entity);
-        if($flush) $this->flush();
-        return $this;
-    }
-
-    /**
-     * flush
-     * 
-     * @return static
-     */
-    public function flush(): static
-    {
-        if($this->appWire->isDev()) {
-            foreach ($this->uow->getScheduledEntityInsertions() as $entity) {
-                if($entity instanceof WireEntityInterface) {
-                    // 
-                }
-            }
-        }
-        foreach ($this->uow->getScheduledEntityUpdates() as $entity) {
-            if($entity instanceof WireEntityInterface) {
-                if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for deletion, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
-                $entity->_estatus->applyEvents(WireEntityEvent::BEFORE_UPDATE);
-            }
-        }
-        foreach ($this->uow->getScheduledEntityDeletions() as $entity) {
-            if($entity instanceof WireEntityInterface) {
-                if($entity->_estatus->requireDispatchEvent(WireEntityEvent::BEFORE_REMOVE)) {
-                    if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: Entity %s is scheduled for deletion, but Event %s was not triggered)!', [__METHOD__, __LINE__, $entity->getClassname(), WireEntityEvent::BEFORE_UPDATE]));
-                    $entity->_estatus->applyEvents(WireEntityEvent::BEFORE_REMOVE);
-                }
-            }
-        }
-        $this->em->flush();
-        return $this;
+        return $this->getUnitOfWork();
     }
 
 
     /****************************************************************************************************/
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
+
+    /**
+     * After a new entity created, add it to createds list and more actions...
+     * 
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function postCreatedRealEntity(
+        WireEntityInterface $entity,
+        bool $asModel = false
+    ): void
+    {
+        if(!$entity->hasEmbededStatus()) {
+            new EntityEmbededStatus($entity, $this->appWire);
+        }
+        if(!$asModel) {
+            // Real entity
+            if(!$this->hasCreated($entity)) {
+                $this->addCreated($entity);
+            }
+            if($entity instanceof TraitOwnerInterface) {
+                // Owner
+                $user = $this->appWire->getUser();
+                if($user) {
+                    $entity->setOwner($user);
+                } else if($entity->isOwnerRequired()) {
+                    $userService = $this->appWire->get(WireUserServiceInterface::class);
+                    $admin = $userService->getMainAdmin();
+                    if($admin) {
+                        $entity->setOwner($admin);
+                    } else if($this->appWire->isDev()) {
+                        throw new Exception(vsprintf('Error %s line %d: entity %s %s has no owner!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
+                    }
+                }
+            }
+        } else {
+            // Model
+            $entity->__estatus->setModel(true);
+        }
+    }
+
+    protected function createNewEntity(
+        string $classname,
+        ?array $data = [], // ---> do not forget uname if wanted!
+        ?array $context = []
+    ): WireEntityInterface
+    {
+        $service = $this->getEntityService($classname);
+        if($service instanceof WireEntityServiceInterface) {
+            return $service->createEntity($data, $context);
+        }
+        if(empty($context['groups'] ?? null)) {
+            $norm_groups = EntityDenormalizer::getNormalizeGroups($classname, type: 'hydrate');
+            $context['groups'] = $norm_groups['denormalize'];
+        }
+        $entity = $this->normalizer->denormalizeEntity($data, $classname, null, $context);
+        return $entity;
+    }
 
     /**
      * create entity
@@ -254,172 +250,186 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
      */
     public function createEntity(
         string $classname,
-        ?string $uname = null
+        ?array $data = [], // ---> do not forget uname if wanted!
+        ?array $context = []
     ): WireEntityInterface
     {
-        $service = $this->getEntityService($classname);
-        return $service instanceof WireEntityServiceInterface
-            ? $service->createEntity($uname)
-            : $this->__innerCreateEntity($classname, $uname);
+        if(empty($context['groups'] ?? null)) {
+            $norm_groups = EntityDenormalizer::getNormalizeGroups($classname, type: 'hydrate');
+            $context['groups'] = $norm_groups['denormalize'];
+        }
+        $entity = $this->createNewEntity($classname, $data, $context);
+        $this->postCreatedRealEntity($entity, false);
+        // Add some stuff here...
+        return $entity;
     }
 
-    /**
-     * inner create entity
-     * 
-     * @param string $classname
-     * @param string|null $uname
-     * @return WireEntityInterface
-     */
-    public function __innerCreateEntity(
-        string $classname,
-        ?string $uname = null
-    ): WireEntityInterface
-    {
-        /** @var WireEntityInterface */
-        $new = new $classname();
-        $this->eventDispatcher->dispatch(new WireEntityEvent($new, $this, WireEntityEvent::POST_CREATE), WireEntityEvent::POST_CREATE);
-        $this->createds->set($new->getUnameThenEuid(), $new);
-        return $new;
-    }
 
     /**
      * create model
      * 
-     * @param string $classname
      * @return WireEntityInterface
      */
     public function createModel(
-        string $classname
+        string $classname,
+        ?array $data = [], // ---> do not forget uname if wanted!
+        ?array $context = []
     ): WireEntityInterface
     {
-        $service = $this->getEntityService($classname);
-        return $service instanceof WireEntityServiceInterface
-            ? $service->createModel()
-            : $this->__innerCreateModel($classname);
-    }
-
-    /**
-     * inner create model
-     * 
-     * @param string $classname
-     * @return WireEntityInterface
-     */
-    public function __innerCreateModel(
-        string $classname
-    ): WireEntityInterface
-    {
-        $model = new $classname();
-        $this->eventDispatcher->dispatch(new WireEntityEvent($model, $this, WireEntityEvent::POST_MODEL), WireEntityEvent::POST_MODEL);
+        if(empty($context['groups'] ?? null)) {
+            $norm_groups = EntityDenormalizer::getNormalizeGroups($classname, type: 'model');
+            $context['groups'] = $norm_groups['denormalize'];
+        }
+        $model = $this->createNewEntity($classname, $data, $context);
+        $this->postCreatedRealEntity($model, true);
+        // Add some stuff here...
         return $model;
     }
 
     /**
      * create clone
      * 
-     * @param WireEntityInterface $entity
-     * @param string|null $uname
-     * @param int $clone_method
      * @return WireEntityInterface|null
      */
     public function createClone(
         WireEntityInterface $entity,
-        ?string $uname = null,
-        int $clone_method = 1
-    ): ?WireEntityInterface
+        ?array $changes = [], // ---> do not forget uname if wanted!
+        ?array $context = []
+    ): WireEntityInterface|false
     {
-        $service = $this->getEntityService($entity);
-        return $service instanceof WireEntityServiceInterface
-            ? $service->createClone($entity, $uname, $clone_method)
-            : $this->__innerCreateClone($entity, $uname, $clone_method);
-    }
-
-    /**
-     * inner create clone
-     * 
-     * @param WireEntityInterface $entity
-     * @param string|null $uname
-     * @param int $clone_method
-     * @return WireEntityInterface|null
-     */
-    public function __innerCreateClone(
-        WireEntityInterface $entity,
-        ?string $uname = null,
-        int $clone_method = 1
-    ): ?WireEntityInterface
-    {
-        $clone = null;
-        if($entity->_estatus->isClonable()) {
-            /** @var WireEntityInterface|TraitClonableInteface $entity */
-            switch ($clone_method) {
-                case static::CLONE_METHOD_WIRE:
-                    $clone = clone $entity;
-                    if($clone instanceof TraitUnamedInterface && !empty($uname)) {
-                        if(Uname::isValidUname($uname)) {
-                            $clone->updateUname($uname);
-                        } else if($this->appWire->isDev()) {
-                            throw new Exception(vsprintf('Error %s line %d: this uname %s is invalid for (cloned) entity %s!', [__METHOD__, __LINE__, json_encode($uname), $clone->getClassname()]));
-                        }
-                    }
-                    break;
-                case static::CLONE_METHOD_WITH:
-                    /** @var TraitClonableInteface $entity */
-                    $data = [
-                        'id' => null,
-                        '_estatus' => null,
-                    ];
-                    $clone = $entity->with($data);
-                    break;
-                case static::CLONE_METHOD_WILD:
-                    $clone = clone $entity;
-                    break;
-            }
-            if($clone instanceof WireEntityInterface) {
-                $this->eventDispatcher->dispatch(new WireEntityEvent($clone, $this, WireEntityEvent::POST_CLONE), WireEntityEvent::POST_CLONE);
-            }
+        $classname = $entity->getClassname();
+        $norm_groups = EntityDenormalizer::getNormalizeGroups($entity, type: 'clone');
+        if(empty($context['groups'] ?? null)) {
+            $context['groups'] = $norm_groups['normalize'];
         }
+        $data = $this->normalizer->normalizeEntity($entity, null, $context);
+        $context['groups'] = $norm_groups['denormalize'];
+        $clone = $this->createEntity($classname, array_merge($data, $changes));
+        // Add some stuff here...
         return $clone;
     }
+
+
+    /****************************************************************************************************/
+    /** CHECK / INTEGRITY                                                                               */
+    /****************************************************************************************************/
+
+    /**
+     * Check integrity of entity
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkIntegrity(
+        WireEntityInterface $entity,
+        null|EventArgs|string $event = null
+    ): void
+    {
+        if($event instanceof EventArgs) {
+            $eventname = $event::class;
+        } else if(is_string($event)) {
+            // if(!is_a($event, EventArgs::class, true)) {
+            //     throw new Exception(vsprintf('Error %s line %d: %s is not an instance of %s!', [__METHOD__, __LINE__, $event, EventArgs::class]));
+            // }
+            $eventname = $event;
+        } else {
+            $eventname = null;
+        }
+        switch ($eventname) {
+            case PostLoadEventArgs::class:
+                # code...
+                break;
+            case PrePersistEventArgs::class:
+            case PreUpdateEventArgs::class:
+                // Check if entity is EmbededStatus
+                if(empty($entity->__estatus)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity has a uname
+                if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s has no uname', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity is not a model
+                if($entity->__estatus->isModel()) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s is a model', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                break;
+            case 'addCreated':
+                // Check if entity is EmbededStatus
+                if(empty($entity->__estatus)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity has a uname
+                if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s has no uname', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity is not a model
+                if($entity->__estatus->isModel()) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s is a model', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Entity must not be managed
+                if($entity->__estatus->isContained()) {
+                    throw new Exception(vsprintf('Error %s line %d: %s entity should not be managed for now!', [__METHOD__, __LINE__, $entity->getClassname()]));
+                }
+                break;
+            default:
+                // Check if entity is EmbededStatus
+                if(empty($entity->__estatus)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity has a uname
+                if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s has no uname', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                // Check if entity is not a model
+                if($entity->__estatus->isModel()) {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s %s is a model', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                }
+                break;
+        }
+    }
+
 
     /****************************************************************************************************/
     /** REPOSITORY / FIND                                                                               */
     /****************************************************************************************************/
 
-    /**
-     * get repository
-     * 
-     * @param string $classname
-     * @param string|null $field
-     * @return BaseWireRepositoryInterface
-     */
-    public function getRepository(
-        string $classname,
-        ?string $field = null // if field, find repository where is declared this $field
-    ): BaseWireRepositoryInterface
-    {
-        $cmd = $this->getClassMetadata($classname);
-        $classname = $cmd->name;
-        if($field) {
-            // Find classname where field is declared
-            if(array_key_exists($field, $cmd->fieldMappings)) {
-                $test_classname = $cmd->fieldMappings[$field]->declared ?? $classname;
-            } else if(array_key_exists($field, $cmd->associationMappings)) {
-                $test_classname = $cmd->associationMappings[$field]->declared ?? $classname;
-            } else {
-                // Not found, tant pis...
-            }
-            if(isset($test_classname)) {
-                $test_cmd = $this->getClassMetadata($test_classname);
-                if(!$test_cmd->isMappedSuperclass) $classname = $test_classname;
-            }
-        }
-        /** @var BaseWireRepositoryInterface */
-        $repo = $this->em->getRepository($classname);
-        // if(!empty($field)) dump($classname, $field, get_class($repo));
-        if($this->appWire->isDev() && !($repo instanceof BaseWireRepositoryInterface)) {
-            dd($this->__toString(), $classname, $cmd, $cmd->name, $repo);
-        }
-        return $repo;
-    }
+    // /**
+    //  * get repository
+    //  * 
+    //  * @param string $classname
+    //  * @param string|null $field
+    //  * @return BaseWireRepositoryInterface
+    //  */
+    // public function getRepository(
+    //     string $classname,
+    //     ?string $field = null // if field, find repository where is declared this $field
+    // ): BaseWireRepositoryInterface
+    // {
+    //     $cmd = $this->getClassMetadata($classname);
+    //     $classname = $cmd->name;
+    //     if($field) {
+    //         // Find classname where field is declared
+    //         if(array_key_exists($field, $cmd->fieldMappings)) {
+    //             $test_classname = $cmd->fieldMappings[$field]->declared ?? $classname;
+    //         } else if(array_key_exists($field, $cmd->associationMappings)) {
+    //             $test_classname = $cmd->associationMappings[$field]->declared ?? $classname;
+    //         } else {
+    //             // Not found, tant pis...
+    //         }
+    //         if(isset($test_classname)) {
+    //             $test_cmd = $this->getClassMetadata($test_classname);
+    //             if(!$test_cmd->isMappedSuperclass) $classname = $test_classname;
+    //         }
+    //     }
+    //     /** @var BaseWireRepositoryInterface */
+    //     $repo = $this->em->getRepository($classname);
+    //     // if(!empty($field)) dump($classname, $field, get_class($repo));
+    //     if($this->appWire->isDev() && !($repo instanceof BaseWireRepositoryInterface)) {
+    //         dd($this->__toString(), $classname, $cmd, $cmd->name, $repo);
+    //     }
+    //     return $repo;
+    // }
 
     /**
      * find entity by id
@@ -431,11 +441,11 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         string $euid
     ): ?WireEntityInterface
     {
-        
         if(false === ($entity = $this->createds->containsKey($euid) ? $this->createds->get($euid) : false)) {
+            // Try in database...
             $class = Encoders::getClassOfEuid($euid);
             /** @var BaseWireRepositoryInterface */
-            $repo = $this->getRepository($class);
+            $repo = $this->em->getRepository($class);
             $entity = $repo->findOneByEuid($euid);
         }
         return $entity instanceof WireEntityInterface ? $entity : null;
@@ -458,7 +468,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
                 if(is_a($class, TraitUnamedInterface::class, true)) {
                     /** @var string $class */
                     /** @var BaseWireRepositoryInterface */
-                    $repo = $this->getRepository($class);
+                    $repo = $this->em->getRepository($class);
                     $entity = $repo->findEntityByEuidOrUname($uname);
                 }
             }
@@ -489,7 +499,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
     ): int
     {
         /** @var BaseWireRepositoryInterface */
-        $repository = $this->getRepository($classname);
+        $repository = $this->em->getRepository($classname);
         return $repository->count($criteria);
     }
 
@@ -525,9 +535,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
         string|object $objectOrClass
     ): bool
     {
-        return is_object($objectOrClass)
-            ? $objectOrClass instanceof WireEntityInterface
-            : is_a($objectOrClass, WireEntityInterface::class, true);
+        return is_a($objectOrClass, WireEntityInterface::class, true);
     }
 
     /**
@@ -568,7 +576,7 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
      * @return bool
      */
     public function entityExists(
-        string $classname,
+        string $classname, // --> or shortname
         bool $allnamespaces = false,
         bool $onlyInstantiables = false,
     ): bool
@@ -617,31 +625,55 @@ class WireEntityManager extends BaseService implements WireEntityManagerInterfac
      */
     public function getRelateds(
         string|WireEntityInterface $objectOrClass,
-        string|array|null $relationTypes = null,
-        bool $excludeSelf = false
+        null|string|array $relationTypes = null, // -> ['ManyToMany','ManyToOne','OneToMany','OneToOne','One','OneTo','Many','ManyTo','ToOne','ToMany','',null]
+        ?bool $excludeSelf = false
     ): array
     {
+        $rt_test = $this->getRelationTypeRegex($relationTypes);
         $classname = $objectOrClass instanceof WireEntityInterface ? $objectOrClass->getClassname() : $objectOrClass;
-        if(empty($relationTypes)) $relationTypes = null;
-        if(is_string($relationTypes)) $relationTypes = [$relationTypes];
         $classnames = [];
         foreach ($this->getEntityNames(false, false, true) as $class) {
             if(!($excludeSelf && is_a($class, $classname, true))) {
                 foreach ($this->getClassMetadata($class)->associationMappings as $associationMapping) {
                     $shortname = Objects::getShortname($associationMapping);
-                    preg_match('/^((Many|One)To(Many|One))/', $shortname, $types);
-                    $type = reset($types);
-                    if(!preg_match('/^((Many|One)To(Many|One))$/', $type)) throw new Exception(vsprintf('Error %s line %d: missing %s to class %s, got %s!', [__METHOD__, __LINE__, '((Many|One)To(Many|One))', get_class($associationMapping), $type]));
-                    if(is_a($associationMapping->targetEntity, $classname, true) && (empty($relationTypes) || in_array($type, $relationTypes))) {
+                    if(preg_match($rt_test, $shortname, $types)) {
                         $classnames[$class] = [
                             'mapping_object' => $associationMapping,
-                            'mapping_type' => $type,
-                        ];
+                            'mapping_type' => $shortname,
+                        ];                        
                     }
                 }
             }
         }
         return $classnames;
+    }
+
+    protected function getRelationTypeRegex(
+        null|string|array $relationTypes
+    ): string
+    {
+        $available_types = ['ManyToMany','ManyToOne','OneToMany','OneToOne','One','OneTo','Many','ManyTo','ToOne','ToMany','',null];
+        if(!is_array($relationTypes) || empty($relationTypes)) $relationTypes = [$relationTypes];
+        $relationTypes = array_filter($relationTypes, fn($type) => (is_scalar($type) || is_null($type)) && in_array($type, $available_types));
+        if(empty($relationTypes)) $relationTypes = $available_types;
+        $from = $to = [];
+        foreach($relationTypes as $value) {
+            $$value = explode('To', (string)$value);
+            if(count($value) < 2) $value[] = '';
+            // From
+            if(in_array($value[0], ['One','Many'])) {
+                $from[$value[0]] = $value[0];
+            } else if(empty($value[0])) {
+                $from = ['One' => 'One', 'Many' => 'Many'];
+            }
+            // To
+            if(in_array($value[1], ['One','Many'])) {
+                $to[$value[1]] = $value[1];
+            } else if(empty($value[1])) {
+                $to = ['One' => 'One', 'Many' => 'Many'];
+            }
+        }
+        return '/^(('.implode('|', empty($from) ? ['One','Many'] : $from).')To('.implode('|', empty($to) ? ['One','Many'] : $to).'))/';
     }
 
 
