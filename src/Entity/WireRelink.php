@@ -6,6 +6,8 @@ use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
@@ -25,13 +27,12 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 #[UniqueEntity(['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
-    use Datetimed, Slug, Unamed;
+    use Datetimed, Unamed;
 
     public const ICON = [
         'ux' => 'tabler:link',
@@ -55,13 +56,16 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    protected $id = null;
+    #[ORM\Column(type: Types::INTEGER, unique: true)]
+    protected ?int $id = null;
 
-    public function __toString(): string
-    {
-        return (string)$this->getMainlink();
-    }
+    #[ORM\OneToMany(targetEntity: WireRelinkTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
+    protected $translations;
+
+    #[Gedmo\Translatable]
+    #[Gedmo\Slug(fields: ['mainlink'])]
+    #[ORM\Column(length: 128, unique: true)]
+    protected $slug;
 
     /**
      * Main link, regarding the static::RELINK_TYPE
@@ -93,17 +97,21 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
     // protected Collection $relinks;
 
     #[ORM\ManyToOne(targetEntity: WireItemInterface::class, inversedBy: 'relinks', fetch: 'LAZY')]
-    // #[Gedmo\SortableGroup]
-    protected WireItemInterface $itemowner;
+    #[Gedmo\SortableGroup]
+    protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
     #[ORM\Column]
     protected bool $turboenabled = true;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $name = null;
+
+    #[ORM\Column(type: Types::STRING, nullable: true)]
     protected ?string $linktitle = null;
 
     #[ORM\Column]
-    // #[Gedmo\SortablePosition]
+    #[Gedmo\SortablePosition]
     protected int $position;
 
     // /**
@@ -120,6 +128,11 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
         // $this->relinks = new ArrayCollection();
         $targets = static::TARGETS;
         $this->target = reset($targets);
+    }
+
+    public function __toString(): string
+    {
+        return (string)$this->getMainlink();
     }
 
     public function getALink(
@@ -301,6 +314,17 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
         return $this->turboenabled;
     }
 
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = trim($name);
+        return $this;
+    }
+
     public function getLinktitle(): ?string
     {
         return $this->linktitle;
@@ -364,5 +388,23 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
     //     }
     //     return $this;
     // }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function getTranslations(): Collection
+    {
+        return $this->translations;
+    }
+
+    public function addTranslation(WireTranslationInterface $t)
+    {
+        if (!$this->translations->contains($t)) {
+            $this->translations[] = $t;
+            $t->setObject($this);
+        }
+    }
 
 }

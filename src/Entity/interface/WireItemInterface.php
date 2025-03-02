@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity\interface;
 use Doctrine\Common\Collections\Collection;
 use Gedmo\Sortable\Sortable;
 
-interface WireItemInterface extends WireEntityInterface, Sortable, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface, TraitSlugInterface
+interface WireItemInterface extends WireEntityInterface, Sortable, SluggableInterface, TranslationEntityInterface, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface
 {
     public function getName(): ?string;
     public function setName(string $name): static;
@@ -13,8 +13,5 @@ interface WireItemInterface extends WireEntityInterface, Sortable, TraitEnabledI
     public function hasParent(WireEcollectionInterface $parent): bool;
     public function removeParent(WireEcollectionInterface $parent): static;
     public function removeParents(): static;
-    // Gedmon Sortable
-    public function setPosition(int $position): void;
-    public function getPosition(): int;
 
 } 

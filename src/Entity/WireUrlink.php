@@ -5,6 +5,7 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Repository\WireUrlinkRepository;
@@ -18,8 +19,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Entity(repositoryClass: WireUrlinkRepository::class)]
 #[ClassCustomService(WireUrlinkServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 class WireUrlink extends WireRelink implements WireUrlinkInterface
 {
 
@@ -29,7 +28,7 @@ class WireUrlink extends WireRelink implements WireUrlinkInterface
     public const RELINK_TYPE = 'URL';
 
     #[Gedmo\SortableGroup]
-    protected TraitRelinkableInterface $itemowner;
+    protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
     #[Gedmo\SortablePosition]
     protected int $position;

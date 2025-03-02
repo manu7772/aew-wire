@@ -9,6 +9,7 @@ use Aequation\WireBundle\Entity\trait\WireEntity;
 // Symfony
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 // use Symfony\Component\Uid\UuidV7 as Uuid;
@@ -20,6 +21,7 @@ use Throwable;
  * @package Aequation\WireBundle\Entity
  */
 #[MappedSuperclass]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 abstract class MappSuperClassEntity implements WireEntityInterface
 {
     use WireEntity;
@@ -30,7 +32,7 @@ abstract class MappSuperClassEntity implements WireEntityInterface
     // ];
     // public const SERIALIZATION_PROPS = ['id','euid','unamename','classname','shortname'];
 
-    protected $id = null;
+    // protected $id = null;
 
     /**
      * constructor.

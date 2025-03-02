@@ -37,7 +37,7 @@ class DataTableExtension extends AbstractExtension
         if ($table->getDataController()) {
             $controllers[$table->getDataController()] = [];
         }
-        $controllers['@aequation/wire/datatables'] = ['view' => $table->getOptions()];
+        $controllers['@aequation/wire/datatable'] = ['view' => $table->getOptions()];
 
         $stimulusAttributes = $this->stimulus->createStimulusAttributes();
         foreach ($controllers as $name => $controllerValues) {

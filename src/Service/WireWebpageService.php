@@ -1,26 +1,46 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
+use Aequation\WireBundle\Tools\Files;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 // PHP
 use Exception;
 
-abstract class WireWebpageService extends WireHtmlcodeService implements WireWebpageServiceInterface
+abstract class WireWebpageService extends WireEcollectionService implements WireWebpageServiceInterface
 {
 
     public const ENTITY_CLASS = WireWebpageInterface::class;
 
     public const CACHE_WP_MODELS_LIFE = null;
     public const FILES_FOLDER = 'webpage/';
+    public const SEARCH_FILES_DEPTH = ['>=0','<2'];
+
+
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        parent::checkEntity($entity);
+        if($entity instanceof WireWebpageInterface) {
+            // Check here
+        }
+    }
 
     public function getPreferedWebpage(): ?WireWebpageInterface
     {
         /** @var EntityRepository */
         $repository = $this->getRepository();
-        return $repository->findOneBy(['prefered' => true, 'enabled' => true, 'softdeleted' => false]);
+        return $repository->findOneBy(['prefered' => true, 'enabled' => true]);
     }
 
     public function getWebpagesCount(
@@ -30,7 +50,6 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
     {
         if($onlyActives) {
             $criteria['enabled'] = true;
-            $criteria['softdeleted'] = false;
         }
         return $this->getEntitiesCount($criteria);
     }
@@ -85,7 +104,7 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
                 ];
                 foreach ($paths as $path) {
                     $path = $this->appWire->getProjectDir($path);
-                    $search = $this->getNewFinder()->files()->name('*.twig')->in($path)->depth(static::SEARCH_FILES_DEPTH);
+                    $search = Files::getNewFinder()->files()->name('*.twig')->in($path)->depth(static::SEARCH_FILES_DEPTH);
                     foreach ($search as $file) {
                         $content = $file->getContents();
                         preg_match('/(\\{#\\s*description\\s*:\\s*([\\p{L}\\s\\?\\,!-:;]+)\\s*#\\})/u', $content, $description);
@@ -94,9 +113,9 @@ abstract class WireWebpageService extends WireHtmlcodeService implements WireWeb
                         if(!preg_match('/^\\s*disabled/i', $status[2] ?? '')) {
                             $choice_label = $file->getRealpath();
                             if(!$choice_label) throw new Exception(vsprintf('Error %s line %d: path "%s" is invalid', [__METHOD__, __LINE__, $path]));
-                            $choice_label = static::FILES_FOLDER.static::stripTwigfile($file, false);
-                            $files['choicelist'][ucfirst(static::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : '')] = $choice_label;
-                            $files['info'][static::stripTwigfile($file, true)] = [
+                            $choice_label = static::FILES_FOLDER.Files::stripTwigfile($file, false);
+                            $files['choicelist'][ucfirst(Files::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : '')] = $choice_label;
+                            $files['info'][Files::stripTwigfile($file, true)] = [
                                 'description' => $description[2] ?? null,
                                 'status' => $status[2] ?? 'enabled',
                                 'default' => !empty($default),

@@ -6,6 +6,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 use Aequation\WireBundle\Repository\interface\WireUserRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Doctrine\ORM\EntityManagerInterface;
 // Symfony
 use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
@@ -23,12 +24,12 @@ abstract class WireUserRepository extends WireItemRepository implements WireUser
     const ENTITY_CLASS = WireUser::class;
 
     public function __construct(
-        ManagerRegistry $registry,
+        EntityManagerInterface $em,
         protected AppWireServiceInterface $appWire,
         protected WireUserServiceInterface $userService
     )
     {
-        parent::__construct($registry, $appWire);
+        parent::__construct($em, $appWire);
     }
 
 

@@ -9,8 +9,12 @@ use Doctrine\Common\Collections\Collection;
 interface WireEcollectionInterface extends WireItemInterface
 {
 
+    public function getItemPosition(WireItemInterface $item): int|false;
+    public function setItemPosition(WireItemInterface $item, int $position): static;
+
     public function getItems(): Collection;
-    public function addItem(WireItem $item): bool;
+    public function getActiveItems(): Collection;
+    public function addItem(WireItem $item): static;
     public function removeItem(WireItem $item): static;
     public function removeItems(): static;
     public function hasItem(WireEntityInterface $item): bool;

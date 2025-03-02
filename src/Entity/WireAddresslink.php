@@ -6,6 +6,7 @@ use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Repository\WireAddresslinkRepository;
 use Aequation\WireBundle\Service\interface\WireAddresslinkServiceInterface;
@@ -19,8 +20,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Entity(repositoryClass: WireAddresslinkRepository::class)]
 #[ClassCustomService(WireAddresslinkServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 class WireAddresslink extends WireRelink implements WireAddresslinkInterface
 {
 
@@ -46,7 +45,7 @@ class WireAddresslink extends WireRelink implements WireAddresslinkInterface
     protected ?array $gps = null;
 
     #[Gedmo\SortableGroup]
-    protected TraitRelinkableInterface $itemowner;
+    protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
     #[Gedmo\SortablePosition]
     protected int $position;

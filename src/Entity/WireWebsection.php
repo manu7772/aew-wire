@@ -3,12 +3,12 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Service\WireWebsectionService;
+use Aequation\WireBundle\Tools\Files;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class WireWebsection extends WireHtmlcode implements WireWebsectionInterface
+class WireWebsection extends WireItem implements WireWebsectionInterface
 {
 
     public const ICON = [
@@ -16,9 +16,8 @@ class WireWebsection extends WireHtmlcode implements WireWebsectionInterface
         'fa' => 'fa-s'
     ];
 
-
-    #[ORM\Column(length: 255)]
-    #[Assert\Regex(pattern: WireWebsectionService::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.')]
+    #[ORM\Column()]
+    #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.')]
     protected ?string $twigfile = null;
 
     #[ORM\Column]
@@ -29,11 +28,10 @@ class WireWebsection extends WireHtmlcode implements WireWebsectionInterface
 
     protected readonly TwigfileMetadata $twigfileMetadata;
 
-    public function __construct()
-    {
-        parent::__construct();
-        // $this->categorys = new ArrayCollection();
-    }
+    // public function __construct()
+    // {
+    //     parent::__construct();
+    // }
 
 
     public function getTwigfileChoices(): array
@@ -45,7 +43,7 @@ class WireWebsection extends WireHtmlcode implements WireWebsectionInterface
     {
         return empty($this->twigfile)
             ? null
-            : WireWebsectionService::stripTwigfile($this->twigfile, true);
+            : Files::stripTwigfile($this->twigfile, true);
     }
 
     public function getTwigfile(): ?string

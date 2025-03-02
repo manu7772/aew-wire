@@ -19,3 +19,4 @@ services:
             - '../src/Component/'
             - '../src/Entity/'
             - '../src/Attribute/'
+            - '../src/Model/'

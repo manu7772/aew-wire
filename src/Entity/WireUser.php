@@ -1,26 +1,25 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
-use Aequation\WireBundle\Entity\trait\Datetimed;
-use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
-use Aequation\WireBundle\Entity\trait\Unamed;
+use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
 use DateTimeImmutable;
 
-#[MappedSuperclass()]
+// #[MappedSuperclass()]
+// #[ORM\Entity(repositoryClass: WireUserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[Slugable('email')]
 abstract class WireUser extends WireItem implements WireUserInterface
 {
     use Webpageable, Relinkable;
@@ -53,14 +52,19 @@ abstract class WireUser extends WireItem implements WireUserInterface
     // #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM, message: 'Ce mot de passe n\'est pas assez sécurisé')]
     protected ?string $plainPassword = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $firstname = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    protected ?string $lastname = null;
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $functionality = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $description = null;
 
     #[ORM\Column]
-    protected bool $darkmode = true;
+    protected bool $darkmode = false;
 
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $expiresAt = null;
@@ -79,7 +83,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function isLoggable(): bool
     {
-        return $this->isEnabled() && $this->isVerified() && !($this->isSoftdeleted() || $this->isExpired());
+        return $this->isEnabled() && $this->isVerified() && !$this->isExpired();
     }
 
     public function isEqualTo(UserInterface $user): bool
@@ -97,7 +101,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
      */
     public function getCivilName(): string
     {
-        $name = trim(str_replace(["\n", "\r"], '', $this->firstname.' '.$this->lastname));
+        $name = trim(str_replace(["\n", "\r"], '', $this->name.' '.$this->firstname));
         if(empty($name)) $name = $this->email;
         return $name;
     }
@@ -222,7 +226,6 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         $this->addRole(static::ROLE_SUPER_ADMIN);
         $this->setEnabled(true);
-        $this->setSoftdeleted(false);
         return $this;
     }
 
@@ -230,7 +233,6 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         return $this->HasRole(static::ROLE_SUPER_ADMIN)
             && $this->isEnabled()
-            && !$this->isSoftdeleted()
             && $this->isVerified();
     }
 
@@ -278,17 +280,6 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public function setFirstname(string $firstname): static
     {
         $this->firstname = $firstname;
-        return $this;
-    }
-
-    public function getLastname(): ?string
-    {
-        return $this->lastname;
-    }
-
-    public function setLastname(?string $lastname): static
-    {
-        $this->lastname = $lastname;
         return $this;
     }
 
@@ -377,4 +368,27 @@ abstract class WireUser extends WireItem implements WireUserInterface
         // If you store any temporary, sensitive data on the user, clear it here
         $this->plainPassword = null;
     }
+
+    public function getFunctionality(): ?string
+    {
+        return $this->functionality;
+    }
+
+    public function setFunctionality(?string $functionality = null): static
+    {
+        $this->functionality = $functionality;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description = null): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+
 }

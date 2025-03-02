@@ -14,7 +14,6 @@ use ReflectionClass;
 use Exception;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 trait WireEntity
 {
 
@@ -25,7 +24,7 @@ trait WireEntity
     ];
     public const SERIALIZATION_PROPS = ['id'];
 
-    #[ORM\Column(length: 255, updatable: false, nullable: false)]
+    #[ORM\Column(updatable: false, nullable: false, unique: true)]
     #[Assert\NotNull()]
     protected readonly string $euid;
 

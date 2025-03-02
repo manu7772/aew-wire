@@ -6,6 +6,7 @@ use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Repository\WireEmailinkRepository;
 use Aequation\WireBundle\Service\interface\WireEmailinkServiceInterface;
@@ -17,8 +18,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Entity(repositoryClass: WireEmailinkRepository::class)]
 #[ClassCustomService(WireEmailinkServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 class WireEmailink extends WireRelink implements WireEmailinkInterface
 {
 
@@ -28,7 +27,7 @@ class WireEmailink extends WireRelink implements WireEmailinkInterface
     public const RELINK_TYPE = 'EMAIL';
 
     #[Gedmo\SortableGroup]
-    protected TraitRelinkableInterface $itemowner;
+    protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
     #[Gedmo\SortablePosition]
     protected int $position;

@@ -40,15 +40,4 @@ trait Enabled
         return $this;
     }
 
-    public function isSoftdeleted(): bool
-    {
-        return $this->softdeleted;
-    }
-
-    public function setSoftdeleted(bool $softdeleted): static
-    {
-        $this->softdeleted = $softdeleted;
-        return $this;
-    }
-
 }

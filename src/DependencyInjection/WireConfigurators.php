@@ -92,10 +92,10 @@ Class WireConfigurators
                 }
                 break;
             case 'Twig':
+                $origin_twig = $container->hasParameter('twig') ? $container->getParameter('twig') : [];
+                $twig_config = array_merge(static::getTwigConfig(), $origin_twig);
                 if($asPrepend) {
-                    $container->prependExtensionConfig('twig', [
-                        'globals' => ['app' => '@Aequation\WireBundle\Service\interface\AppWireServiceInterface']
-                    ]);
+                    $container->prependExtensionConfig('twig', $twig_config);
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                 }
@@ -144,7 +144,8 @@ Class WireConfigurators
                                 'paths' => [
                                     'assets/' => 'assets/',
                                     AequationWireBundle::getPackagePath('/assets') => AequationWireBundle::getPackagePath('/assets'),
-                                    AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/ux-wire-utilities',
+                                    AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
+                                    // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/ux-wire-utilities',
                                 ],
                                 // 'importmap_path' => AequationWireBundle::getPackagePath('/assets/wire_importmap.php'),
                             ],
@@ -169,7 +170,11 @@ Class WireConfigurators
         if(interface_exists(AssetMapperInterface::class)) {
             // check that FrameworkBundle 6.3 or higher is installed
             $bundlesMetadata = $container->getParameter('kernel.bundles_metadata');
-            return isset($bundlesMetadata['FrameworkBundle']) && is_file($bundlesMetadata['FrameworkBundle']['path'].'/Resources/config/asset_mapper.php');
+            if(isset($bundlesMetadata['FrameworkBundle'])) {
+                $file = $bundlesMetadata['FrameworkBundle']['path'].'/Resources/config/asset_mapper.php';
+                // dd($file, is_file($file));
+                return is_file($file);
+            }
         }
         return false;
     }
@@ -186,6 +191,18 @@ Class WireConfigurators
                 'user_portrait' => '/uploads/user/portrait',
                 'slider_slides' => '/uploads/slider/slides',
                 'pdf' => '/uploads/pdf',
+            ],
+            'main_sadmin' => 'manu7772@gmail.com',
+        ];
+    }
+
+    private static function getTwigConfig(): array
+    {
+        return [
+            'file_name_pattern' => '*.twig',
+            'form_themes' => ['@AequationWire/form/tailwind_wire_layout.html.twig'],
+            'globals' => [
+                'app' => '@Aequation\WireBundle\Service\interface\AppWireServiceInterface'
             ],
         ];
     }

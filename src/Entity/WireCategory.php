@@ -3,28 +3,33 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
+use Aequation\WireBundle\Entity\interface\WireCategoryTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
 #[MappedSuperclass]
-#[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà pour ce type')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
+#[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà')]
 #[HasLifecycleCallbacks]
-#[Slugable(property: 'name')]
+#[Gedmo\TranslationEntity(class: WireCategoryTranslationInterface::class)]
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {
 
-    use Datetimed, Slug, Unamed;
+    use Datetimed, Unamed;
 
     public const ICON = [
         'ux' => 'tabler:clipboard-list',
@@ -33,10 +38,11 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    protected $id = null;
+    #[ORM\Column(type: Types::INTEGER, unique: true)]
+    protected ?int $id = null;
 
     #[ORM\Column(nullable: false)]
+    #[Gedmo\Translatable]
     protected ?string $name = null;
 
     #[ORM\Column(updatable: false, nullable: false)]
@@ -44,7 +50,17 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     protected array $typeChoices;
 
     #[ORM\Column(length: 64, nullable: true)]
+    #[Gedmo\Translatable]
     protected ?string $description = null;
+
+    #[ORM\OneToMany(targetEntity: WireCategoryTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
+    private $translations;
+
+    #[Gedmo\Translatable]
+    #[Gedmo\Slug(fields: ['name'])]
+    #[ORM\Column(length: 128, unique: true)]
+    protected $slug;
+
 
     public function __construct()
     {
@@ -132,5 +148,22 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return $this;
     }
 
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function getTranslations(): Collection
+    {
+        return $this->translations;
+    }
+
+    public function addTranslation(WireTranslationInterface $t)
+    {
+        if (!$this->translations->contains($t)) {
+            $this->translations[] = $t;
+            $t->setObject($this);
+        }
+    }
 
 }

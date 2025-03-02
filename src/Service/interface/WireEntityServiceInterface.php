@@ -14,6 +14,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
+    public function checkEntity(WireEntityInterface $entity): void;
     // New
     public function createEntity(
         ?array $data = [], // ---> do not forget uname if wanted!

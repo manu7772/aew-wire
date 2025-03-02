@@ -9,6 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Repository\UnameRepository;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
+use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -19,7 +20,7 @@ use Exception;
 
 #[ORM\Entity(repositoryClass: UnameRepository::class)]
 #[ORM\Table(name: '`uname`')]
-#[UniqueEntity('id', message: 'Ce uname {{ value }} est déjà utilisé !')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 #[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !')]
 #[ClassCustomService(UnameServiceInterface::class)]
 class Uname extends MappSuperClassEntity implements UnameInterface
@@ -31,19 +32,14 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     ];
     public const UNAME_PATTERN = '#^[\\w_-\\|\\.\\\\]{3,128}$#';
 
-    // #[ORM\Id]
-    // #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    // #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
-    // #[ORM\Column(type: 'uuid', unique: true)]
-    // protected ?Uuid $id = null;
-
     #[ORM\Id]
-    #[ORM\Column(length: 255, updatable: false)]
+    // #[ORM\GeneratedValue(strategy: "NONE")]
+    #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
     #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres')]
     #[Assert\Regex(Uname::UNAME_PATTERN)]
-    protected $id;
+    protected ?string $id = null;
 
-    #[ORM\Column(length: 255, updatable: false)]
+    #[ORM\Column(updatable: false, unique: true)]
     #[Assert\NotNull]
     #[Assert\Regex(Encoders::EUID_SCHEMA)]
     protected string $entityEuid;

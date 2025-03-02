@@ -46,7 +46,7 @@ class WireEntityManager implements WireEntityManagerInterface
 {
     use TraitBaseService;
 
-    protected readonly ArrayCollection $createds;
+    protected ArrayCollection $createds;
     protected readonly UnitOfWork $uow;
 
     /**
@@ -120,6 +120,7 @@ class WireEntityManager implements WireEntityManagerInterface
     ): ?WireEntityInterface
     {
         foreach($this->createds as $entity) {
+            /** @var WireEntityInterface $entity */
             if($entity->getEuid() === $euidOrUname) {
                 return $entity;
             }
@@ -216,6 +217,9 @@ class WireEntityManager implements WireEntityManagerInterface
                         throw new Exception(vsprintf('Error %s line %d: entity %s %s has no owner!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
                     }
                 }
+            }
+            if($entity instanceof TraitUnamedInterface) {
+                $this->postCreatedRealEntity($entity->getUname(), $asModel);
             }
         } else {
             // Model
@@ -325,6 +329,8 @@ class WireEntityManager implements WireEntityManagerInterface
         null|EventArgs|string $event = null
     ): void
     {
+        if($this->appWire->isProd()) return;
+        // Only for dev
         if($event instanceof EventArgs) {
             $eventname = $event::class;
         } else if(is_string($event)) {

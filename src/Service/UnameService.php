@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -43,6 +45,20 @@ class UnameService implements UnameServiceInterface
         return (string)static::ENTITY_CLASS;
     }
 
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        if($entity instanceof UnameInterface) {
+            // Check here
+        }
+    }
 
     /****************************************************************************************************/
     /** PAGINABLE                                                                                       */

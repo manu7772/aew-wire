@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface WireWebsectionInterface extends WireHtmlcodeInterface
+interface WireWebsectionInterface extends WireItemInterface
 {
     public function getTwigfile(): ?string;
 }

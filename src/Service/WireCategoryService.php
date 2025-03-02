@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\WireCategory;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -16,7 +18,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     USE TraitBaseService;
     use TraitBaseEntityService;
     
-    public const ENTITY_CLASS = WireCategory::class;
+    public const ENTITY_CLASS = WireCategoryInterface::class;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
@@ -24,6 +26,22 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         protected PaginatorInterface $paginator,
         public readonly NormalizerServiceInterface $normalizer
     ) {
+    }
+
+
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        if($entity instanceof WireCategoryInterface) {
+            // Check here
+        }
     }
 
     /**

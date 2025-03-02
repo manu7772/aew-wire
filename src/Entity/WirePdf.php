@@ -2,35 +2,28 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\WireItem;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
-use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Repository\WirePdfRepository;
 use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RouterInterface;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
 #[ORM\Entity(repositoryClass: WirePdfRepository::class)]
-#[ORM\HasLifecycleCallbacks]
-// #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WirePdfServiceInterface::class)]
+#[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
-#[Slugable('name')]
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {
 
@@ -46,10 +39,11 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     protected int $sourcetype = 0;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $description = null;
 
     // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $filename = null;
 
     #[Vich\UploadableField(mapping: 'pdf', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname')]
@@ -68,10 +62,10 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     #[ORM\Column]
     protected ?int $size = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $mime = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $originalname = null;
 
     #[ORM\Column(length: 32)]

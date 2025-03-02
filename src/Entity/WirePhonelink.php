@@ -5,6 +5,7 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Repository\WirePhonelinkRepository;
@@ -17,8 +18,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Entity(repositoryClass: WirePhonelinkRepository::class)]
 #[ClassCustomService(WirePhonelinkServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 class WirePhonelink extends WireRelink implements WirePhonelinkInterface
 {
 
@@ -28,12 +27,12 @@ class WirePhonelink extends WireRelink implements WirePhonelinkInterface
     public const RELINK_TYPE = 'PHONE';
 
     #[Gedmo\SortableGroup]
-    protected TraitRelinkableInterface $itemowner;
+    protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
     #[Gedmo\SortablePosition]
     protected int $position;
 
-    
+
     public function setPhone(string $phone): static
     {
         $this->mainlink = preg_replace('/[^0-9\+]/', '', $phone);

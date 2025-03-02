@@ -1,14 +1,16 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
+use Aequation\WireBundle\Tools\Files;
 // Symfony
 use Symfony\Component\Yaml\Yaml;
 // PHP
 use Exception;
 
-abstract class WireWebsectionService extends WireHtmlcodeService implements WireWebsectionServiceInterface
+abstract class WireWebsectionService extends WireItemService implements WireWebsectionServiceInterface
 {
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
@@ -16,12 +18,30 @@ abstract class WireWebsectionService extends WireHtmlcodeService implements Wire
     public const FILES_FOLDER = 'websection/';
     public const CACHE_WS_MODELS_LIFE = null;
     public const SECTION_TYPES = ['section','header','footer','banner','sidemenu','left-sidemenu','right-sidemenu','hidden'];
+    public const SEARCH_FILES_DEPTH = ['>=0','<2'];
+
+
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        parent::checkEntity($entity);
+        if($entity instanceof WireWebsectionInterface) {
+            // Check here
+        }
+    }
 
     public function getPreferedWebsections(): array
     {
         /** @var ServiceEntityRepository */
         $repository = $this->getRepository();
-        return $repository->findBy(['prefered' => true, 'enabled' => true, 'softdeleted' => false]);
+        return $repository->findBy(['prefered' => true, 'enabled' => true]);
     }
 
     public function getWebsectionsCount(
@@ -31,7 +51,6 @@ abstract class WireWebsectionService extends WireHtmlcodeService implements Wire
     {
         if($onlyActives) {
             $criteria['enabled'] = true;
-            $criteria['softdeleted'] = false;
         }
         return $this->getEntitiesCount($criteria);
     }
@@ -83,16 +102,16 @@ abstract class WireWebsectionService extends WireHtmlcodeService implements Wire
                 $files = [];
                 foreach ($paths as $path) {
                     $path = $this->appWire->getProjectDir($path);
-                    $search = $this->getNewFinder()->files()->name('*.twig')->in($path)->depth(static::SEARCH_FILES_DEPTH);
+                    $search = Files::getNewFinder()->files()->name('*.twig')->in($path)->depth(static::SEARCH_FILES_DEPTH);
                     foreach ($search as $file) {
-                        // $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.static::stripTwigfile($file, true).'.yaml');
-                        // if(!$file->getRealpath()) $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.static::stripTwigfile($file, true).'.yml');
+                        // $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yaml');
+                        // if(!$file->getRealpath()) $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yml');
                         if($file->getRealpath()) {
-                            $index = static::stripTwigfile($file, true);
+                            $index = Files::stripTwigfile($file, true);
                             $files[$index] = Yaml::parseFile($file->getRealPath());
                             // $files[$index] = $this->appService->get('Tool:Files')->readYamlFile($yaml_file);
-                            $files[$index]['choice_value'] = static::FILES_FOLDER.static::stripTwigfile($file, false);
-                            $files[$index]['choice_label'] ??= ucfirst(static::stripTwigfile($file, true)).(isset($files[$index]['description']) ? '<i class="text-muted"> - '.$files[$index]['description'].'</i>' : '');
+                            $files[$index]['choice_value'] = static::FILES_FOLDER.Files::stripTwigfile($file, false);
+                            $files[$index]['choice_label'] ??= ucfirst(Files::stripTwigfile($file, true)).(isset($files[$index]['description']) ? '<i class="text-muted"> - '.$files[$index]['description'].'</i>' : '');
                         } else {
                             $content = $file->getContents();
                             preg_match('/(\{#\s*description\s*:\s*([\p{L}\s\?\,!-:;]+)\s*#\})/u', $content, $description);
@@ -103,15 +122,15 @@ abstract class WireWebsectionService extends WireHtmlcodeService implements Wire
                                 $choice_value = $file->getRealpath();
                                 if(!$choice_value) throw new Exception(vsprintf('Error %s line %d: path "%s" is invalid', [__METHOD__, __LINE__, $path]));
                                 if(count($sectiontype) < 3) throw new Exception(vsprintf('Error %s line %d: section type (from %s) not found in section file "%s"', [__METHOD__, __LINE__, json_encode($sectiontype), $path]));
-                                $choice_value = static::FILES_FOLDER.static::stripTwigfile($file, false);
-                                $files[static::stripTwigfile($file, true)] = [
+                                $choice_value = static::FILES_FOLDER.Files::stripTwigfile($file, false);
+                                $files[Files::stripTwigfile($file, true)] = [
                                     'sectiontype' => trim($sectiontype[2]),
                                     'description' => trim($description[2]) ?? null,
                                     'status' => trim($status[2] ?? 'enabled'),
                                     'default' => !empty($default),
                                     'content' => $content,
                                     'choice_value' => $choice_value,
-                                    'choice_label' => ucfirst(static::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : ''),
+                                    'choice_label' => ucfirst(Files::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : ''),
                                 ];
                             }
                         }

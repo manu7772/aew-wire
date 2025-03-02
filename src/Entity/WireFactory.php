@@ -11,14 +11,12 @@ use Aequation\WireBundle\Repository\WireFactoryRepository;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Doctrine\DBAL\Types\Types;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: WireFactoryRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-// #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WireFactoryServiceInterface::class)]
-#[Slugable('name')]
 abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitRelinkableInterface
 {
 
@@ -29,5 +27,35 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface, Tra
         'fa' => 'fa-solid fa-industry'
     ];
 
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $functionality = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $description = null;
+
+
+    public function getFunctionality(): ?string
+    {
+        return $this->functionality;
+    }
+
+    public function setFunctionality(?string $functionality = null): static
+    {
+        $this->functionality = $functionality;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description = null): static
+    {
+        $this->description = $description;
+        return $this;
+    }
 
 }

@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\RelationOrder;
+use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\TraitHasOrderedInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -24,6 +25,7 @@ use Exception;
  * @see https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/sortable.md
  */
 #[ORM\Entity(repositoryClass: WireEcollectionRepository::class)]
+#[ORM\Table(name: 'ecollection')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
@@ -39,7 +41,7 @@ class WireEcollection extends WireItem implements WireEcollectionInterface
         'items' => [WireItemInterface::class],
     ];
 
-    #[ORM\ManyToMany(targetEntity: WireItemInterface::class, mappedBy: 'parents', cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'ecollection', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $items;
 
@@ -49,49 +51,67 @@ class WireEcollection extends WireItem implements WireEcollectionInterface
         $this->items = new ArrayCollection();
     }
 
-
-    public function getItems(
-        bool $filterActives = false
-    ): Collection
+    // Position
+    public function getItemPosition(WireItemInterface $item): int|false
     {
-        return $this->items->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()); });
-        // return $this->items;
+        foreach ($this->items as $ic) {
+            if($ic->getItem() === $item) return $ic->getPosition();
+        }
+        return false;
+    }
+
+    public function setItemPosition(WireItemInterface $item, int $position): static
+    {
+        foreach ($this->items as $ic) {
+            if($ic->getItem() === $item) {
+                $ic->setPosition($position);
+                return $this;
+            }
+        }
+        return $this;
+    }
+
+    public function getItems(): Collection
+    {
+        return $this->items->map(
+            fn(ItemCollectionInterface $ic) => $ic->getItem()
+        );
     }
 
     public function getActiveItems(): Collection
     {
-        return $this->items->filter(fn($item) => $item->isActive());
+        return $this->items
+            ->map(fn(ItemCollectionInterface $ic) => $ic->getItem())
+            ->filter(fn(WireItemInterface $item) => $item->isActive());
     }
 
-    public function addItem(WireItemInterface $item): bool
+    public function addItem(WireItemInterface $item): static
     {
-        if($this->isAcceptsItemForEcollection($item, 'items')) {
-            if (!$this->hasItem($item)) $this->items->add($item);
-            if(!$item->hasParent($this)) $item->addParent($this);
+        if($item !== $this && !$this->hasItem($item)) {
+            $ic = new ItemCollection($this, $item);
+            $this->items->add($ic);
         } else {
-            // not acceptable
             $this->removeItem($item);
         }
-        return $this->hasItem($item);
+        return $this;
     }
 
     public function hasItem(WireEntityInterface $item): bool
     {
-        return $this->items->contains($item);
+        return $this->getItems()->contains($item);
     }
 
     public function removeItem(WireItemInterface $item): static
     {
-        $this->items->removeElement($item);
-        if($item->hasParent($this)) $item->removeParent($this);
+        $this->items = $this->items->filter(
+            fn(ItemCollectionInterface $ic) => $ic->getItem() !== $item
+        );
         return $this;
     }
 
     public function removeItems(): static
     {
-        foreach ($this->items->toArray() as $item) {
-            $this->removeItem($item);
-        }
+        $this->items->clear();
         return $this;
     }
 

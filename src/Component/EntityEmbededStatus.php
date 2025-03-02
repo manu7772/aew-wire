@@ -21,7 +21,6 @@ use Exception;
 class EntityEmbededStatus implements EntityEmbededStatusInterface
 {
 
-    protected int $status;
     public readonly WireEntityManagerInterface $wireEntityManager;
     public readonly WireEntityServiceInterface $service;
     public readonly EntityManagerInterface $em;

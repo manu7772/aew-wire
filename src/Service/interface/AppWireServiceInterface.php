@@ -31,7 +31,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public const STOPWATCH_MAIN_NAME = "stw_main";
     public const DEFAULT_TIMEZONE = 'Europe/Paris';
     public const DEFAULT_DATENOW = 'NOW';
-    public const DEFAULT_TINY_VALUES = ['darkmode' => true];
+    public const DEFAULT_TINY_VALUES = [];
     public const PUBLIC_FIREWALLS = ['main'];
     public const EXCLUDED_FIREWALLS = ['dev','tmp','image_resolver','uploads','secured_area'];
     // public const EXCLUDED_FIREWALLS_FOR_INIT = ['tmp','image_resolver','uploads','secured_area'];
@@ -46,6 +46,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function setEnabledLocales(array $enabledLocales): void;
     public function getToken(): ?TokenInterface;
     public function getUser(): ?UserInterface;
+    public function getUserService(): WireUserServiceInterface;
     public function getRequest(): ?Request;
     public function getSession(): ?SessionInterface;
     public function getEnvironment(): string;
@@ -97,6 +98,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // Twig
     public function getTwig(): Environment;
     public function getTwigLoader(): LoaderInterface;
+    // Darkmode
+    public function getDarkmode(): bool;
+    public function setDarkmode(bool $darkmode): bool;
+    // Timestamp
     // Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
     public function getDefaultTimezone(): DateTimeZone;
@@ -112,6 +117,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getCurrentYear(): string;
     // Environment / Security
     public function isGranted(mixed $attributes, mixed $subject = null): bool;
+    public function isUserGranted(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;
     public function isPublic(): bool;
     public function isPrivate(): bool;
     public function isDev(): bool;
@@ -119,6 +125,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isTest(): bool;
     public function getFirewalls(): array;
     public function getFirewallName(): ?string;
+    public function getPublicFirewalls(): array;
     public function getMainFirewalls(): array;
     public function getFirewallChoices(bool $onlyMains = true): array;
     // Routes

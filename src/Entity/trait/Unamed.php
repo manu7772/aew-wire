@@ -13,10 +13,10 @@ use Exception;
 trait Unamed
 {
 
-    #[ORM\OneToOne(cascade: ['persist'], orphanRemoval: true, fetch: 'LAZY')]
+    #[ORM\OneToOne(targetEntity: UnameInterface::class, cascade: ['persist'], orphanRemoval: true, fetch: 'LAZY')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\Valid()]
-    protected Uname $uname;
+    protected UnameInterface $uname;
 
 
     public function __construct_unamed(): void

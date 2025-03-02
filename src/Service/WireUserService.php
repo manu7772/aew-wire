@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -54,6 +55,22 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         parent::__construct($subhierarchy);
     }
 
+
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        if($entity instanceof WireUserInterface) {
+            // Check here
+        }
+    }
+
     /**
      * Get entity classname
      *
@@ -74,13 +91,38 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         return $this->getSecurity()->getUser();
     }
 
+    public function createDefaultSuperAdmin(): WireUserInterface
+    {
+        $repository = $this->getRepository();
+        $admin_email = $this->appWire->getParam('main_sadmin');
+        if(empty($admin_email)) {
+            throw new Exception(vsprintf('Error %s line %d: main_sadmin parameter not found!', [__METHOD__, __LINE__]));
+        }
+        $sadmin = $repository->findOneBy(['email' => $admin_email]);
+        if(!$sadmin){
+            $data = [
+                'email' => $admin_email,
+                'name' => 'Dujardin',
+                'firstname' => 'Emmanuel',
+                'plainPassword' => 'sadmin',
+                'darkmode' => true,
+                'roles' => ['ROLE_SUPER_ADMIN'],
+            ];
+            /** @var WireUserInterface */
+            $sadmin = $this->createEntity($data);
+            $sadmin->setSuperadmin();
+            $this->saveUser($sadmin);
+        }
+        return $sadmin;
+    }
+
     public function getMainAdminUser(
         bool $findSadminIfNotFound = false
     ): ?WireUserInterface {
         $admin_email = $this->appWire->getParam('main_admin');
         /** @var EntityRepository */
         $repository = $this->getRepository();
-        $user = $repository->findOneByEmail($admin_email);
+        $user = $repository->findOneBy(['email' => $admin_email]);
         return empty($user) && $findSadminIfNotFound
             ? $this->getMainSAdminUser()
             : $user;
@@ -88,15 +130,17 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
 
     public function getMainSAdminUser(): ?WireUserInterface
     {
-        $admin_email = $this->appWire->getParam('main_sadmin');
+        $sadmin_email = $this->appWire->getParam('main_sadmin');
         /** @var EntityRepository */
         $repository = $this->getRepository();
-        return $repository->findOneByEmail($admin_email);
+        $sadmin = $repository->findOneBy(['email' => $sadmin_email]);
+        $sadmin ??= $this->createDefaultSuperAdmin();
+        return $sadmin;
     }
 
     /**
      * Check if main SUPER ADMIN user (Webmaster) is still ROLE_SUPER_ADMIN
-     * Check if enabled, not softdeleted et verified, too
+     * Check if enabled and verified, too
      * If not, restore ROLE_SUPER_ADMIN status and FLUSH changes in database
      * 
      * @return WireUserInterface|null
@@ -104,11 +148,12 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
     public function checkMainSuperadmin(): ?WireUserInterface
     {
         /** @var WireUserInterface&TraitEnabledInterface */
-        $admin = $this->getMainSAdminUser();
-        if($admin && !$admin->isValidSuperadmin()) {
-            $admin->setSuperadmin();
-            $this->em->flush();
-            return $admin;
+        $sadmin = $this->getMainSAdminUser();
+        $sadmin ??= $this->createDefaultSuperAdmin();
+        if($sadmin && !$sadmin->isValidSuperadmin()) {
+            $sadmin->setSuperadmin();
+            $this->saveUser($sadmin);
+            return $sadmin;
         }
         return null;
     }
@@ -134,7 +179,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         WireUserInterface $user
     ): static {
         $user->updateLastLogin();
-        $this->em->flush();
+        $this->saveUser($user);
         return $this;
     }
 
@@ -161,26 +206,28 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
      * @param ?UserInterface $user
      * @param [type] $attributes
      * @param [type] $object
-     * @param string $firewallName = 'main'
+     * @param ?string $firewallName = null
      * @return boolean
      */
     public function isUserGranted(
         ?UserInterface $user,
         $attributes,
         $object = null,
-        ?string $firewallName = 'main'
+        ?string $firewallName = null
     ): bool
     {
-        if(empty($firewallName)) {
-            $firewallName = 'main';
+        $user ??= $this->getUser();
+        if(empty($user)) {
+            return $this->isGranted($attributes, $object);
         }
-        if(empty($user)) return false;
-        // if(!in_array($firewallName, array_merge(['main'], static::PUBLIC_FIREWALLS))) {
-        //     if($this->isDev()) {
-        //         throw new Exception(vsprintf('Error %s line %d: could not determine user for firewall %s!', [__METHOD__, __LINE__, $firewallName]));
-        //     }
-        //     return false;
-        // }
+        $firewallName ??= $this->appWire->getFirewallName();
+        $publics = $this->appWire->getPublicFirewalls();
+        if(!in_array($firewallName, $publics)) {
+            if($this->appWire->isDev()) {
+                throw new Exception(vsprintf('Error %s line %d: could not determine user for firewall %s!', [__METHOD__, __LINE__, $firewallName]));
+            }
+            $firewallName = $this->appWire->getFirewallName();
+        }
         $attributes = (array)$attributes;
         $token = new UsernamePasswordToken($user, $firewallName, $user->getRoles());
         return $this->accessDecisionManager->decide($token, $attributes, $object);
@@ -313,61 +360,28 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
      * QUERYS
      */
 
+    public function saveUser(
+        WireUserInterface $user
+    ): static
+    {
+        if(!$user->__estatus->isContained()) {
+            $this->getEm()->persist($user);
+        }
+        $this->em->flush();
+        return $this;
+    }
+
+     public function getSuperadmins(): array
+     {
+         // return $this->getRepository()->findAll();
+         return $this->getRepository()->findGranted('ROLE_ADMIN');
+     }
+
      public function getAdmins(): array
      {
          // return $this->getRepository()->findAll();
          return $this->getRepository()->findGranted('ROLE_ADMIN');
      }
- 
-
-     public function getDarkmode(
-        WireUserInterface $user = null,
-    ): bool
-    {
-        $user ??= $this->getUser();
-        if($user instanceof WireUserInterface) {
-            return $user->isDarkmode();
-        }
-        $session = $this->appWire->getSession();
-        if($session) {
-            return $session->get('darkmode', is_bool($this->darkmode) ? $this->darkmode : false);
-        }
-        return false;
-    }
-
-    public function setDarkmode(?bool $darkmode): ?bool
-    {
-        $this->darkmode = is_bool($darkmode) ? $darkmode : null;
-        return $this->darkmode;
-    }
-
-    public function createDefaultSuperAdmin(): bool
-    {
-        $repository = $this->getRepository();
-        dump($repository);
-        $sadmin = $repository->findOneBy(['email' => 'manu7772@gmail.com']);
-        if(!$sadmin){
-            $data = [
-                'email' => 'manu7772@gmail.com',
-                'name' => 'Dujardin',
-                'firstname' => 'Emmanuel',
-                'plainPassword' => 'sadmin',
-                'roles' => ['ROLE_SUPER_ADMIN'],
-            ];
-            /** @var WireUserInterface */
-            $sadmin = $this->createEntity($data);
-            // $sadmin = new User();
-            // $sadmin->setEmail('manu7772@gmail.com');
-            // $sadmin->setName('Dujardin');
-            // $sadmin->setFirstname('Emmanuel');
-            // $sadmin->setPlainPassword('sadmin');
-            // $sadmin->setRoles(['ROLE_SUPER_ADMIN']);
-            $this->getEm()->persist($sadmin);
-            $this->getEm()->flush();
-            return true;
-        }
-        return false;
-    }
 
 
     /****************************************************************************************************/
@@ -384,7 +398,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         ?Request $request = null
     ): array
     {
-        // $request ??= $this->appWire->getRequest();
+        $request ??= $this->appWire->getRequest();
         $fields =  [
             'id' => [
                 'classes' => ['text-center','w-0'],

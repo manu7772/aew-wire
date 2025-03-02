@@ -3,9 +3,10 @@ namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
-use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\DBAL\Types\Types;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
@@ -18,13 +19,16 @@ trait Webpageable
     #[ORM\JoinColumn(nullable: true)]
     protected ?WireWebpageInterface $webpage = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     protected ?string $linktitle = null;
 
     #[ORM\Column]
+    #[Gedmo\Translatable]
     protected array $content = [];
 
 

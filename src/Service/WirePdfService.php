@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\PdfizableInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\WirePdf;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -27,6 +28,23 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
     )
     {
         parent::__construct($appWire, $wireEntityService, $normalizer);
+    }
+
+    
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        parent::checkEntity($entity);
+        if($entity instanceof WirePdfInterface) {
+            // Check here
+        }
     }
 
     /**

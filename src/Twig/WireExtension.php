@@ -23,6 +23,7 @@ class WireExtension extends AbstractExtension
     {
         $functions = [
             new TwigFunction('current_year', [$this->appWire, 'getCurrentYear']),
+            new TwigFunction('user_granted', [$this->appWire, 'isUserGranted']),
             // TURBO-UX
             new TwigFunction('turbo_memory', [$this, 'turboMemory']),
             new TwigFunction('turbo_preload', [$this, 'turboPreload']),

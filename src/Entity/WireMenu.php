@@ -2,37 +2,24 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\RelationOrder;
-use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
-use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Webpageable;
-use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Repository\WireMenuRepository;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 // Symfony
-use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
-use Exception;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: WireMenuRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-// #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ClassCustomService(WireMenuServiceInterface::class)]
-#[Slugable('name')]
 abstract class WireMenu extends WireEcollection implements WireMenuInterface
 {
 
-    use Slug, Prefered, Webpageable;
+    use Prefered, Webpageable;
 
     public const ICON = [
         'ux' => 'tabler:list',

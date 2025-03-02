@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -37,5 +39,19 @@ abstract class WireRelinkService implements WireRelinkServiceInterface
         return (string)static::ENTITY_CLASS;
     }
 
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntity(
+        WireEntityInterface $entity
+    ): void
+    {
+        if($entity instanceof WireRelinkInterface) {
+            // Check here
+        }
+    }
 
 }

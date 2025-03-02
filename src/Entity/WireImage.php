@@ -15,6 +15,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
@@ -36,7 +37,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public const THUMBNAIL_LIIP_FILTER = 'miniature_q';
 
     // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $filename = null;
 
     #[Vich\UploadableField(mapping: '@vichmapping', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname', dimensions: 'dimensions')]
@@ -48,22 +49,23 @@ abstract class WireImage extends WireItem implements WireImageInterface
     )]
     protected File|UploadedFile|null $file = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected string $vichmapping = 'photo';
 
     #[ORM\Column]
     protected ?int $size = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $mime = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $originalname = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $dimensions = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     protected ?string $description = null;
 
     protected bool $deleteImage = false;

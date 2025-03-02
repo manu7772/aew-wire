@@ -4,12 +4,12 @@ namespace Aequation\WireBundle\Service;
 // Aequation
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
+use Aequation\WireBundle\Entity\interface\SluggableInterface;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\AttributeWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -49,6 +49,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use ReflectionClass;
+use Symfony\Component\Security\Core\User\UserInterface;
 use UnitEnum;
 
 /**
@@ -61,8 +62,14 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 {
     use TraitBaseService;
 
-    public const SELF_SERIALIZE_GROUPS = ['for_session'];
     public const DEFAULT_HOME_ROUTE = 'app_home';
+    public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
+    public const UNSERIALIZE_PROPERTIES = [
+        'darkmode' => true,
+        'timezone' => true,
+        'datenow' => true,
+        'tinyvalues' => 'mergeTinyvalues',
+    ];
 
     public readonly ContainerInterface $container;
     public readonly SessionInterface $session;
@@ -77,6 +84,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private string $datenow;
     private string $firewallname;
     private array $tinyvalues = [];
+    private bool $darkmode;
 
     /**
      * AppWireService constructor.
@@ -106,14 +114,20 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->tinyvalues = static::DEFAULT_TINY_VALUES;
         $this->setTokenStorage($tokenStorage);
         $this->setRequestStack($requestStack);
-        $this->setEnvironment($kernel->getEnvironment());
-        $this->setDebug($kernel->isDebug());
+        $this->setEnvironment($this->kernel->getEnvironment());
+        $this->setDebug($this->kernel->isDebug());
         $this->setLocaleSwitcher($myLocaleSwitcher);
         $this->setEnabledLocales($this->container->getParameter('locales'));
+        $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
     }
 
+
+    public function getUserService(): WireUserServiceInterface
+    {
+        return $this->get(WireUserServiceInterface::class);
+    }
 
     /************************************************************************************************************/
     /** HTTP Kernal shortcuts                                                                                   */
@@ -156,7 +170,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * get Symfony info
      * @return array
      */
-    public function getSymfony(): array
+    public function getSymfonyInfo(): array
     {
         if(!isset($this->symfony)) {
             /** @var App/Kernel $kernel */
@@ -186,7 +200,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * get PHP info
      * @return array
      */
-    public function getPhp(): array
+    public function getPhpInfo(): array
     {
         if(!isset($this->php)) {
             // PHP INFO / in MB : memory_get_usage() / 1048576
@@ -265,18 +279,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                 throw new Exception(vsprintf('Error %s line %d: service %s is not available!', [__METHOD__, __LINE__, $attr->service]));
             }
         }
-        // $objectOrClass = is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass;
-        // if(class_exists($objectOrClass)) {
-        //     $rc = new ReflectionClass($objectOrClass);
-        //     $objectOrClass = $rc->getShortName();
-        // }
-        // $tests = ['Wire__name__ServiceInterface','Wire__name__Service','__name__ServiceInterface','__name__Service'];
-        // foreach ($tests as $test) {
-        //     $serviceName = str_replace('#__name__#', $objectOrClass, $test);
-        //     if($this->has($serviceName)) {
-        //         return $this->get($serviceName);
-        //     }
-        // }
         return null;
     }
 
@@ -560,9 +562,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function saveAppWire(): bool
     {
         if($this->isInitialized()) {
-            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize(/* true */));
+            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize());
             // if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
             return true;
+        } else {
+            if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized!', [__METHOD__, __LINE__]));
         }
         return false;
     }
@@ -609,6 +613,45 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     {
         return $this->context_initialized;
     }
+
+    /** DARKMODE */
+
+    public function getDarkmode(): bool
+    {
+        $user = $this->getUser();
+        if($user instanceof WireUserInterface) {
+            return $this->darkmode = $user->isDarkmode();
+        }
+        // $session = $this->appWire->getSession();
+        // if($session) {
+        //     return $session->get('darkmode', is_bool($this->darkmode) ? $this->darkmode : false);
+        // }
+        $this->darkmode ??= $this->appWire->getParameter('darkmode', false);
+        return $this->darkmode;
+    }
+
+    public function setDarkmode(bool $darkmode): bool
+    {
+        $user = $this->getUser();
+        if($user instanceof WireUserInterface) {
+            $user->setDarkmode($darkmode);
+            $this->getUserService()->saveUser($user);
+            $this->darkmode = $user->isDarkmode();
+        } else {
+            $this->darkmode = $darkmode;
+        }
+        // $session = $this->appWire->getSession();
+        // if($session) {
+        //     return $session->set('darkmode', $this->darkmode);
+        // }
+        return $this->darkmode;
+    }
+
+    public function getDarkmodeClass(): string
+    {
+        return $this->getDarkmode() ? 'dark' : '';
+    }
+
 
     /** TIMEZONE */
 
@@ -881,12 +924,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     {
         /** @var NormalizerServiceInterface */
         $normalizer = $this->get(NormalizerServiceInterface::class);
-        $user = $this->get(WireUserServiceInterface::class)?->getUser() ?? null;
-        if($user) {
-            $data = $normalizer->normalize(data: $user, context: ['groups' => 'user.index']);
-        }
-        dd($data, ['groups' => 'user.index']);
+        // if($this->getUser()) {
+        //     $data = $normalizer->normalize(data: $this->getUser(), context: ['groups' => 'user.index']);
+        //     // dd($data, ['groups' => 'user.index']);
+        // }
+        // dd('Stopped '.__METHOD__.' line '.__LINE__, ['groups' => static::SELF_SERIALIZE_GROUPS]);
         $data = $normalizer->normalize(data: $this, context: ['groups' => static::SELF_SERIALIZE_GROUPS]);
+        // dd($data, ['groups' => static::SELF_SERIALIZE_GROUPS]);
         return $data;
     }
 
@@ -894,12 +938,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         array $data
     ): void {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
-        $unser = [
-            'timezone' => true,
-            'datenow' => true,
-            'tinyvalues' => 'mergeTinyvalues',
-        ];
-        foreach ($unser as $property => $method) {
+        foreach (static::UNSERIALIZE_PROPERTIES as $property => $method) {
             if(isset($data[$property])) {
                 if(is_string($method)) {
                     $this->{$method}($data[$property]);
@@ -988,7 +1027,27 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         mixed $attributes,
         mixed $subject = null
     ): bool {
-        return $this->security->isGranted($attributes, $subject);
+        return $this->getUserService()->isGranted($attributes, $subject);
+    }
+
+    /**
+     * Is user granted for attributes
+     * @see https://www.remipoignon.fr/symfony-comment-verifier-le-role-dun-utilisateur-en-respectant-la-hierarchie-des-roles/
+     *
+     * @param ?UserInterface $user
+     * @param [type] $attributes
+     * @param [type] $object
+     * @param string $firewallName = 'main'
+     * @return boolean
+     */
+    public function isUserGranted(
+        ?UserInterface $user,
+        $attributes,
+        $object = null,
+        ?string $firewallName = null
+    ): bool
+    {
+        return $this->getUserService()->isUserGranted($user, $attributes, $object, $firewallName);
     }
 
     /**
@@ -998,7 +1057,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function isPublic(): bool
     {
-        return in_array(strtolower($this->getFirewallName()), static::PUBLIC_FIREWALLS);
+        $publics = $this->getPublicFirewalls();
+        return in_array(strtolower($this->getFirewallName()), $publics);
     }
 
     /**
@@ -1129,6 +1189,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return array_filter($firewalls, fn($fw) => !in_array($fw, static::EXCLUDED_FIREWALLS));
     }
 
+    public function getPublicFirewalls(): array
+    {
+        $firewalls = $this->getFirewalls();
+        $publics = $this->getParameter('public_firewalls', static::PUBLIC_FIREWALLS);
+        return array_filter($firewalls, fn($fw) => in_array($fw, $publics));
+    }
+
     /**
      * get firewall choices
      * 
@@ -1229,12 +1296,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         }
         if($route !== $this->getCurrent_route()) return false;
         if(!empty($param)) {
-            if($param instanceof TraitSlugInterface) {
+            if($param instanceof SluggableInterface) {
                 if($param instanceof WireWebpageInterface) {
                     if($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
                 }
-                if($param instanceof WireItemcollectionInterface) {
-                    $slugs = $this->get(WireEntityManagerInterface::class)->getRepository(WireItemcollectionInterface::class)->findChildrenSlugs($param);
+                if($param instanceof WireEcollectionInterface) {
                     foreach ($param->getItems() as $item) {
                         if(in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
                     }
