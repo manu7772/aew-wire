@@ -112,7 +112,9 @@ class ObjectHydrator implements ObjectHydratorInterface
         $progress = $io ? $io->progressIterate($items) : $items;
         foreach ($progress as $uname => $item_data) {
             // Add Uname if not present
-            // $item_data['uname'] ??= $uname;
+            if(is_string($uname)) {
+                $item_data['uname'] ??= $uname;
+            }
             // Create entity
             $entity = $this->wire_em->createEntity($classname, $item_data);
             $errors = $this->validator->validate($entity);
@@ -121,7 +123,7 @@ class ObjectHydrator implements ObjectHydratorInterface
                 continue;
             }
             $em->persist($entity);
-            $opresult->addSuccess(vsprintf('L\'entité %s %s a été enregistrée', [$entity->getShortname(), $uname]));
+            $opresult->addSuccess(vsprintf('L\'entité %s %s [%s] a été enregistrée', [$entity->getShortname(), $entity->__toString(), $uname]));
             sleep(1);
         }
         // $em->flush();

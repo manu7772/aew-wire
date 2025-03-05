@@ -15,10 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-#[ORM\Entity(repositoryClass: WireEmailinkRepository::class)]
-#[ClassCustomService(WireEmailinkServiceInterface::class)]
-#[ORM\HasLifecycleCallbacks]
-class WireEmailink extends WireRelink implements WireEmailinkInterface
+abstract class WireEmailink extends WireRelink implements WireEmailinkInterface
 {
 
     public const ICON = 'tabler:mail';
@@ -26,11 +23,11 @@ class WireEmailink extends WireRelink implements WireEmailinkInterface
 
     public const RELINK_TYPE = 'EMAIL';
 
-    #[Gedmo\SortableGroup]
-    protected WireItemInterface & TraitRelinkableInterface $itemowner;
+    // #[Gedmo\SortableGroup]
+    // protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
-    #[Gedmo\SortablePosition]
-    protected int $position;
+    // #[Gedmo\SortablePosition]
+    // protected int $position;
 
 
     public function setEmail(string $email): static

@@ -11,7 +11,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Sortable\Entity\Repository\SortableRepository;
 
 #[ORM\Entity(repositoryClass: SortableRepository::class)]
-#[ORM\Table(name: '`item_collection`')]
+#[ORM\Table(name: '`item_ecollection`')]
 class ItemCollection implements ItemCollectionInterface
 {
 

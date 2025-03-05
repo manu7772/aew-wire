@@ -25,7 +25,7 @@ use Exception;
  * @see https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/sortable.md
  */
 #[ORM\Entity(repositoryClass: WireEcollectionRepository::class)]
-#[ORM\Table(name: 'ecollection')]
+#[ORM\Table(name: 'w_ecollection')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]

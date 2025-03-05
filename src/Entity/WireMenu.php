@@ -13,9 +13,6 @@ use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: WireMenuRepository::class)]
-#[ORM\HasLifecycleCallbacks]
-#[ClassCustomService(WireMenuServiceInterface::class)]
 abstract class WireMenu extends WireEcollection implements WireMenuInterface
 {
 

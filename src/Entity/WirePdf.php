@@ -20,9 +20,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
-#[ORM\Entity(repositoryClass: WirePdfRepository::class)]
-#[ClassCustomService(WirePdfServiceInterface::class)]
-#[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {

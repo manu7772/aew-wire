@@ -10,4 +10,5 @@ interface WireArticleInterface extends WireItemInterface, TraitOwnerInterface, T
     public function setStart(?DateTimeInterface $start): static;
     public function getEnd(): ?DateTimeInterface;
     public function setEnd(?DateTimeInterface $end): static;
+    public function isDeprecated(?DateTimeInterface $now = null): bool;
 }

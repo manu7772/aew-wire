@@ -142,8 +142,12 @@ trait WireEntity
      */
     public function __unserialize(array $data): void
     {
-        $accessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
         foreach ($data as $attr => $value) {
+            if($attr === 'id') {
+                $this->id = $value;
+                continue;
+            }
             $accessor->setValue($this, $attr, $value);
         }
     }

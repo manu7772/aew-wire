@@ -23,12 +23,13 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: WireRelinkRepository::class)]
+#[ORM\Table(name: 'w_relink')]
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', repositoryMethod: 'findBy')]
+#[UniqueEntity(fields: ['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
-#[UniqueEntity(['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
@@ -55,7 +56,7 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
     public const RELINK_TYPE = null;
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     #[ORM\Column(type: Types::INTEGER, unique: true)]
     protected ?int $id = null;
 

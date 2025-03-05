@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface TraitWebpageableInterface extends TraitInterface
+interface TraitWebpageableInterface extends TraitEntityInterface
 {
 
     public function __construct_webpageable(): void;

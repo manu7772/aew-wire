@@ -3,11 +3,18 @@
     "description": "DataTables integration for Symfony",
     "license": "MIT",
     "version": "1.0.0",
+    "keywords": [
+        "symfony-ux"
+    ],
     "type": "module",
+    "files": [
+        "dist"
+    ],
+    "main": "dist/controller.js",
     "symfony": {
         "controllers": {
-            "datatables": {
-                "main": "dist/dt_controller.js",
+            "datatable": {
+                "main": "dist/controller.js",
                 "fetch": "eager",
                 "webpackMode": "eager",
                 "enabled": true,
@@ -18,18 +25,18 @@
         },
         "importmap": {
             "@hotwired/stimulus": "^3.2.2",
-            "flowbite": "^2.5.2",
-            "simple-datatables": "9.2.1"
+            "flowbite": "^3.1.2",
+            "simple-datatables": "10.0.0"
         }
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.2.2",
-        "flowbite": "^2.5.2",
-        "simple-datatables": "9.2.1"
+        "flowbite": "^3.1.2",
+        "simple-datatables": "10.0.0"
     },
     "devDependencies": {
         "@hotwired/stimulus": "^3.2.2",
-        "flowbite": "^2.5.2",
-        "simple-datatables": "9.2.1"
+        "flowbite": "^3.1.2",
+        "simple-datatables": "10.0.0"
     }
 }

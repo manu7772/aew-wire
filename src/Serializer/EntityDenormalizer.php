@@ -24,6 +24,9 @@ class EntityDenormalizer implements DenormalizerInterface
 {
 
     public const ENABLED = true;
+    public const NOT_CONTROLLED_CLASSES = [
+        Uname::class,
+    ];
     public const NORMALIZATION_GROUPS = [
         'hydrate' => [
             'normalize' => ['identifier','__shortname__.hydrate','hydrate'],
@@ -105,11 +108,21 @@ class EntityDenormalizer implements DenormalizerInterface
     {
         $this->currentContext = $context;
         if(is_array($data) && is_a($type, WireEntityInterface::class, true)) {
+            $uname = null;
+            if(!empty($data['uname'] ?? null)) {
+                // dump($data['uname']);
+                $uname = $data['uname'];
+                unset($data['uname']);
+            }
             /** @var WireEntityInterface */
             $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
             if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
                 // dump($entity->getUnameName());
                 throw new Exception(vsprintf('Error %s line %d: Entity %s has no Uname!', [__METHOD__, __LINE__, $entity->getShortname()]));
+            }
+            // Uname on new entity
+            if($uname && $entity instanceof TraitUnamedInterface) {
+                $entity->setUname($uname);
             }
             $cmd = $this->getEntityManager()->getClassMetadata($entity->getClassname());
             foreach ($cmd->getAssociationMappings() as $field => $relation) {
@@ -158,10 +171,7 @@ class EntityDenormalizer implements DenormalizerInterface
                     throw new Exception(vsprintf('Error %s line %d: ToMany relation field %s needs iterable data, got %s!', [__METHOD__, __LINE__, $field, gettype($data)]));
                 }
                 $relatedEntitys = new ArrayCollection();
-                foreach ($data as $key => $value) {
-                    if(is_string($key) && is_array($value) && !array_is_list($value)) {
-                        $value['uname'] ??= $key; // --> Key can be the Uname
-                    }
+                foreach ($data as $value) {
                     if($relatedEntity = $this->FindOrCreateOneEntity($value, $target_class)) {
                         if(!$relatedEntitys->contains($relatedEntity)) $relatedEntitys->add($relatedEntity);
                     }
@@ -198,7 +208,7 @@ class EntityDenormalizer implements DenormalizerInterface
                     break;
                 case is_string($identifier):
                     // Load related entity different searchs
-                    foreach (static::SEARCH_KEYS as $key) {
+                    foreach ($this->getAvailableSearchKeys($target_class) as $key) {
                         if($test = $target_repo->findOneBy([$key => $identifier])) {
                             $relatedEntity = $test;
                             break;
@@ -215,7 +225,7 @@ class EntityDenormalizer implements DenormalizerInterface
                     break;
                 case is_array($identifier):
                     // Load related entity by search key
-                    $id_keys = array_intersect(static::SEARCH_KEYS, array_keys($identifier));
+                    $id_keys = array_intersect($this->getAvailableSearchKeys($target_class), array_keys($identifier));
                     if(count($id_keys) > 0) {
                         foreach ($id_keys as $key) {
                             if($test = $this->FindOrCreateOneEntity($identifier[$key], $target_class)) {
@@ -240,19 +250,33 @@ class EntityDenormalizer implements DenormalizerInterface
         bool $exception = true
     ): bool
     {
-        if(empty($entity)) {
-            if($exception) throw new Exception(vsprintf('Error %s line %d: Entity of class %s not found!', [__METHOD__, __LINE__, $target_class]));
-            return false;
-        }
-        if(!$entity->__estatus->isContained()) {
-            if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not managed by EntityManager!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString()]));                    
-            return false;
-        }
-        if(!is_a($entity, $target_class)) {
-            if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not instance of %s!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString(), $target_class]));
-            return false;
+        if(!in_array($target_class, static::NOT_CONTROLLED_CLASSES)) {
+            if(empty($entity)) {
+                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity of class %s not found!', [__METHOD__, __LINE__, $target_class]));
+                return false;
+            }
+            if(!$entity->__estatus->isContained()) {
+                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not managed by EntityManager!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString()]));                    
+                return false;
+            }
+            if(!is_a($entity, $target_class)) {
+                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not instance of %s!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString(), $target_class]));
+                return false;
+            }
         }
         return true;
+    }
+
+    /**
+     * Get available search keys for a class
+     * @param string $class
+     */
+    public function getAvailableSearchKeys(
+        string $class
+    ): array
+    {
+        $cmd = $this->getEntityManager()->getClassMetadata($class);
+        return array_intersect(static::SEARCH_KEYS, array_keys($cmd->fieldMappings));
     }
 
     /**

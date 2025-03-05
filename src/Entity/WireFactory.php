@@ -14,9 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-#[ORM\Entity(repositoryClass: WireFactoryRepository::class)]
-#[ORM\HasLifecycleCallbacks]
-#[ClassCustomService(WireFactoryServiceInterface::class)]
 abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitRelinkableInterface
 {
 

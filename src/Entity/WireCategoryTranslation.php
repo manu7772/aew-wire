@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Translatable\Entity\MappedSuperclass\AbstractPersonalTranslation;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'wirecategory_translations')]
+#[ORM\Table(name: 'translations_category')]
 #[ORM\UniqueConstraint(name: 'lookup_unique_idx', columns: ['locale', 'object_id', 'field'])]
 class WireCategoryTranslation extends AbstractPersonalTranslation implements WireCategoryTranslationInterface
 {

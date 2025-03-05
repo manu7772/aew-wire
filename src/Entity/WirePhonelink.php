@@ -15,10 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-#[ORM\Entity(repositoryClass: WirePhonelinkRepository::class)]
-#[ClassCustomService(WirePhonelinkServiceInterface::class)]
-#[ORM\HasLifecycleCallbacks]
-class WirePhonelink extends WireRelink implements WirePhonelinkInterface
+abstract class WirePhonelink extends WireRelink implements WirePhonelinkInterface
 {
 
     public const ICON = 'tabler:phone';
@@ -26,11 +23,11 @@ class WirePhonelink extends WireRelink implements WirePhonelinkInterface
 
     public const RELINK_TYPE = 'PHONE';
 
-    #[Gedmo\SortableGroup]
-    protected WireItemInterface & TraitRelinkableInterface $itemowner;
+    // #[Gedmo\SortableGroup]
+    // protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
-    #[Gedmo\SortablePosition]
-    protected int $position;
+    // #[Gedmo\SortablePosition]
+    // protected int $position;
 
 
     public function setPhone(string $phone): static

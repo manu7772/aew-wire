@@ -107,6 +107,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
                 'plainPassword' => 'sadmin',
                 'darkmode' => true,
                 'roles' => ['ROLE_SUPER_ADMIN'],
+                'uname' => 'super_admin_manu',
             ];
             /** @var WireUserInterface */
             $sadmin = $this->createEntity($data);
@@ -156,6 +157,16 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
             return $sadmin;
         }
         return null;
+    }
+
+    public function loginUser(
+        WireUserInterface|string $user
+    ): ?Response
+    {
+        if(is_string($user)) {
+            $user = $this->getRepository()->findOneBy(['email' => $user]);
+        }
+        return $user ? $this->getSecurity()->login($user, 'form_login', null) : null;
     }
 
     /**
@@ -364,7 +375,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         WireUserInterface $user
     ): static
     {
-        if(!$user->__estatus->isContained()) {
+        if(isset($user->__estatus) && !$user->__estatus->isContained()) {
             $this->getEm()->persist($user);
         }
         $this->em->flush();

@@ -13,14 +13,9 @@ use Aequation\WireBundle\Service\interface\WireAddresslinkServiceInterface;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-#[ORM\Entity(repositoryClass: WireAddresslinkRepository::class)]
-#[ClassCustomService(WireAddresslinkServiceInterface::class)]
-#[ORM\HasLifecycleCallbacks]
-class WireAddresslink extends WireRelink implements WireAddresslinkInterface
+abstract class WireAddresslink extends WireRelink implements WireAddresslinkInterface
 {
 
     public const ICON = 'tabler:map-pin';
@@ -29,26 +24,22 @@ class WireAddresslink extends WireRelink implements WireAddresslinkInterface
     public const RELINK_TYPE = 'ADDRESS';
 
     #[ORM\Column(type: Types::STRING, nullable: true)]
-    #[Serializer\Groups(['index'])]
     protected ?string $ville = null;
 
     #[ORM\Column(type: Types::STRING, length: 5, nullable: true)]
-    #[Serializer\Groups(['index'])]
     protected ?string $codePostal = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Serializer\Groups(['index'])]
     protected ?string $url = null;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]
-    #[Serializer\Groups(['index'])]
     protected ?array $gps = null;
 
-    #[Gedmo\SortableGroup]
-    protected WireItemInterface & TraitRelinkableInterface $itemowner;
+    // #[Gedmo\SortableGroup]
+    // protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
-    #[Gedmo\SortablePosition]
-    protected int $position;
+    // #[Gedmo\SortablePosition]
+    // protected int $position;
 
 
     public function getAddressLines(bool $joinCPandVille = true): array

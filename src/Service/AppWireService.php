@@ -130,6 +130,26 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     }
 
     /************************************************************************************************************/
+    /** AppVariable overrides                                                                                   */
+    /************************************************************************************************************/
+    // Needed for serialization
+
+    public function getEnabledLocales(): array
+    {
+        return $this->getEnabled_locales();
+    }
+
+    public function getCurrentRoute(): ?string
+    {
+        return $this->getCurrent_route();
+    }
+
+    public function getCurrentRouteParameters(): array
+    {
+        return $this->getCurrent_route_parameters();
+    }
+
+    /************************************************************************************************************/
     /** HTTP Kernal shortcuts                                                                                   */
     /************************************************************************************************************/
 
@@ -530,7 +550,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             if($session instanceof SessionInterface) {
                 if(!$this->isCurrentFirewallAvailableForInit()) {
                     $this->context_initialized = false;
-                    // if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: initialization is forbidden in this firewall %s!', [__METHOD__, __LINE__, $this->getFirewallName()]));
                 } else {
                     $this->session ??= $session;
                     $session_data = $this->retrieveAppWire();
@@ -562,11 +581,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function saveAppWire(): bool
     {
         if($this->isInitialized()) {
-            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $this->jsonSerialize());
-            // if($this->isDev()) dump($this->session->get(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName()));
+            $self_serialized = $this->jsonSerialize();
+            $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $self_serialized);
             return true;
-        } else {
-            if($this->isDev()) throw new Exception(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized!', [__METHOD__, __LINE__]));
+        } else if($this->isDev() && $this->isCurrentFirewallAvailableForInit()) {
+            // throw new Exception(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized!', [__METHOD__, __LINE__]));
+            trigger_error(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized (firewall: %s)!', [__METHOD__, __LINE__, $this->getFirewallName()]), E_USER_WARNING);
         }
         return false;
     }
@@ -1218,8 +1238,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function isCurrentFirewallAvailableForInit(): bool
     {
-        $firewalls = $this->getFirewalls();
-        $firewalls = array_filter($firewalls, fn($fw) => !in_array($fw, static::EXCLUDED_FIREWALLS));
+        $firewalls = $this->getMainFirewalls();
         return in_array($this->getFirewallName(), $firewalls);
     }
 

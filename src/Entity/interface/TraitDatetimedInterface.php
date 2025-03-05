@@ -6,7 +6,7 @@ use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 
-interface TraitDatetimedInterface extends TraitInterface, TimezoneInterface
+interface TraitDatetimedInterface extends TraitEntityInterface, TimezoneInterface
 {
     public function __construct_datetimed(): void;
     public function getUpdatedAt(): ?DateTimeImmutable;

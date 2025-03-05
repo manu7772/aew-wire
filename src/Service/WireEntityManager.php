@@ -346,17 +346,17 @@ class WireEntityManager implements WireEntityManagerInterface
                 # code...
                 break;
             case PrePersistEventArgs::class:
-            case PreUpdateEventArgs::class:
                 // Check if entity is EmbededStatus
                 if(empty($entity->__estatus)) {
                     throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
                 }
+            case PreUpdateEventArgs::class:
                 // Check if entity has a uname
                 if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
                     throw new Exception(vsprintf('Error %s line %d: entity %s %s has no uname', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
                 }
                 // Check if entity is not a model
-                if($entity->__estatus->isModel()) {
+                if(isset($entity->__estatus) && $entity->__estatus->isModel()) {
                     throw new Exception(vsprintf('Error %s line %d: entity %s %s is a model', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
                 }
                 break;
@@ -380,15 +380,15 @@ class WireEntityManager implements WireEntityManagerInterface
                 break;
             default:
                 // Check if entity is EmbededStatus
-                if(empty($entity->__estatus)) {
-                    throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
-                }
+                // if(empty($entity->__estatus)) {
+                //     throw new Exception(vsprintf('Error %s line %d: entity %s %s EmbededStatus is missing', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
+                // }
                 // Check if entity has a uname
                 if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
                     throw new Exception(vsprintf('Error %s line %d: entity %s %s has no uname', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
                 }
                 // Check if entity is not a model
-                if($entity->__estatus->isModel()) {
+                if(isset($entity->__estatus) && $entity->__estatus->isModel()) {
                     throw new Exception(vsprintf('Error %s line %d: entity %s %s is a model', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));  
                 }
                 break;

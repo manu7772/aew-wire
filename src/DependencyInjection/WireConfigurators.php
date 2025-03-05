@@ -141,12 +141,7 @@ Class WireConfigurators
                     if($asPrepend) {
                         $container->prependExtensionConfig('framework', [
                             'asset_mapper' => [
-                                'paths' => [
-                                    'assets/' => 'assets/',
-                                    AequationWireBundle::getPackagePath('/assets') => AequationWireBundle::getPackagePath('/assets'),
-                                    AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
-                                    // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/ux-wire-utilities',
-                                ],
+                                'paths' => static::getAssetMapperPaths(),
                                 // 'importmap_path' => AequationWireBundle::getPackagePath('/assets/wire_importmap.php'),
                             ],
                         ]);
@@ -154,9 +149,11 @@ Class WireConfigurators
                         // dd($config);
                     } else {
                         trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                        throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]));
                     }
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]));
                 }
                 break;
             default:
@@ -172,10 +169,10 @@ Class WireConfigurators
             $bundlesMetadata = $container->getParameter('kernel.bundles_metadata');
             if(isset($bundlesMetadata['FrameworkBundle'])) {
                 $file = $bundlesMetadata['FrameworkBundle']['path'].'/Resources/config/asset_mapper.php';
-                // dd($file, is_file($file));
                 return is_file($file);
             }
         }
+        dd('AssetMapperInterface not available');
         return false;
     }
 
@@ -251,6 +248,17 @@ Class WireConfigurators
                 'delete_on_remove' => true,
             ],
         ];
+    }
+
+    private static function getAssetMapperPaths(): array
+    {
+        $paths = [
+            'assets/' => 'assets/',
+            // AequationWireBundle::getPackagePath('/assets') => AequationWireBundle::getPackagePath('/assets'),
+            AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
+            // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/ux-wire-utilities',
+        ];
+        return $paths;
     }
 
 }

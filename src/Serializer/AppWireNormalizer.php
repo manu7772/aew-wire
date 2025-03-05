@@ -30,11 +30,17 @@ class AppWireNormalizer implements NormalizerInterface
 
     public function normalize(mixed $object, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
+        /** @var AppWireServiceInterface $object */
         // Do something here...
-        dump($object);
+        // dump($object);
+        // if($object->isDev() && empty($object->getUser())) {
+        //     $sadmin = $object->getUserService()->getMainSAdminUser();
+        //     $object->getUserService()->loginUser($sadmin);
+        //     dump($sadmin, $object->getUser());
+        // }
         $data = $this->normalizer->normalize($object, $format, $context);
         // Or do something here...
-        dd($data);
+        // dd($data);
         return $data;
     }
 

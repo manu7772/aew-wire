@@ -16,10 +16,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-#[ORM\Entity(repositoryClass: WireUrlinkRepository::class)]
-#[ClassCustomService(WireUrlinkServiceInterface::class)]
-#[ORM\HasLifecycleCallbacks]
-class WireUrlink extends WireRelink implements WireUrlinkInterface
+abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
 {
 
     public const ICON = 'tabler:link';
@@ -27,11 +24,11 @@ class WireUrlink extends WireRelink implements WireUrlinkInterface
 
     public const RELINK_TYPE = 'URL';
 
-    #[Gedmo\SortableGroup]
-    protected WireItemInterface & TraitRelinkableInterface $itemowner;
+    // #[Gedmo\SortableGroup]
+    // protected WireItemInterface & TraitRelinkableInterface $itemowner;
 
-    #[Gedmo\SortablePosition]
-    protected int $position;
+    // #[Gedmo\SortablePosition]
+    // protected int $position;
 
 
     public function setUrl(?string $url): static

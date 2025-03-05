@@ -14,6 +14,7 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 // PHP
 use ArrayObject;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 /**
  * Normalizer service
@@ -73,7 +74,6 @@ class NormalizerService implements NormalizerServiceInterface
         if(empty($context['groups'] ?? [])) {
             $context['groups'] = EntityDenormalizer::getNormalizeGroups($entity);
         }
-        // $context['groups'] = array_merge($context['groups'] ?? [], EntityDenormalizer::getNormalizeGroups($entity));
         return $this->normalize($entity, $format, $context);
     }
 
@@ -81,13 +81,16 @@ class NormalizerService implements NormalizerServiceInterface
         mixed $data,
         string $type,
         ?string $format = null,
-        ?array $context = []
+        ?array $context = [],
+        ?WireEntityInterface $entity = null // for denormalize an existing entity
     ): WireEntityInterface
     {
         if(empty($context['groups'] ?? [])) {
             $context['groups'] = EntityDenormalizer::getNormalizeGroups($type);
         }
-        // $context['groups'] = array_merge($context['groups'] ?? [], EntityDenormalizer::getNormalizeGroups($type));
+        if($entity) {
+            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $entity;
+        }
         /** @var DenormalizerInterface */
         $denormalizer = $this->serializer;
         return $denormalizer->denormalize($data, $type, $format, $context);

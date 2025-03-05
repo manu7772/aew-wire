@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Translatable\Entity\MappedSuperclass\AbstractPersonalTranslation;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'wirerelink_translations')]
+#[ORM\Table(name: 'translations_relink')]
 #[ORM\UniqueConstraint(name: 'lookup_unique_idx', columns: ['locale', 'object_id', 'field'])]
 class WireRelinkTranslation extends AbstractPersonalTranslation implements WireRelinkTranslationInterface
 {

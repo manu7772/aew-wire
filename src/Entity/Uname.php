@@ -19,7 +19,7 @@ use Symfony\Component\Uid\UuidV7 as Uuid;
 use Exception;
 
 #[ORM\Entity(repositoryClass: UnameRepository::class)]
-#[ORM\Table(name: '`uname`')]
+#[ORM\Table(name: '`u_name`')]
 #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 #[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !')]
 #[ClassCustomService(UnameServiceInterface::class)]

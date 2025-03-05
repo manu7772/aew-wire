@@ -103,7 +103,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         $name = trim(str_replace(["\n", "\r"], '', $this->name.' '.$this->firstname));
         if(empty($name)) $name = $this->email;
-        return $name;
+        return (string)$name;
     }
 
     public function getEmail(): ?string
@@ -264,7 +264,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function autoGeneratePassword(
         int $length = 32,
-        string $chars = null,
+        ?string $chars = null,
         bool $replace = true
     ): static
     {

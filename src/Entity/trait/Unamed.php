@@ -26,12 +26,17 @@ trait Unamed
     }
 
     public function updateUname(
-        string $uname = null
+        ?string $uname = null
     ): static
     {
         $this->uname ??= new Uname();
         $this->uname->attributeEntity($this, $uname);
         return $this;
+    }
+
+    public function setUname(string $uname): static
+    {
+        return $this->updateUname($uname);
     }
 
     public function getUname(): ?UnameInterface

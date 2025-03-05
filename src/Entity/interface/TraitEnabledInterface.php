@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-interface TraitEnabledInterface extends TraitInterface
+interface TraitEnabledInterface extends TraitEntityInterface
 {
     public function __construct_enabled(): void;
     public function isActive(): bool;

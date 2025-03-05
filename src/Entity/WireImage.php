@@ -19,11 +19,6 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
-#[ORM\Entity(repositoryClass: WireImageRepository::class)]
-#[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
-#[ORM\InheritanceType('JOINED')]
-#[ORM\HasLifecycleCallbacks]
-#[ClassCustomService(WireImageServiceInterface::class)]
 #[Vich\Uploadable]
 abstract class WireImage extends WireItem implements WireImageInterface
 {
