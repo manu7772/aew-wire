@@ -34,6 +34,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function clearPersisteds(): bool;
     public function findCreated(string $euidOrUname): ?WireEntityInterface;
     public function postCreatedRealEntity(WireEntityInterface $entity, bool $asModel = false): void;
+    public function checkEntityBase(WireEntityInterface $entity): void;
     public function createEntity(string $classname, ?array $data = [], ?array $context = []): WireEntityInterface;
     public function createModel(string $classname,?array $data = [], ?array $context = []): WireEntityInterface;
     public function createClone(WireEntityInterface $entity, ?array $changes = [], ?array $context = []): WireEntityInterface|false;

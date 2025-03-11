@@ -84,7 +84,7 @@ class BasicsCommand extends Command
         $lines = [];
         foreach ($data as $filename => $d) {
             $count = count($d['items'] ?? []);
-            $available = $count > 0 && class_exists($d['entity']) && in_array($d['entity'], $classnames);
+            $available = $count > 0 && class_exists($d['entity']) && in_array($d['entity'], $classnames) && ($d['enabled'] ?? true);
             if($available) $entities_data[$d['entity']] = $d;
             $start = $available ? '' : '<fg=gray>';
             $end = $available ? '' : '</>';
@@ -95,10 +95,11 @@ class BasicsCommand extends Command
                 $start.(class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???').$end,
                 $start.$count.$end,
                 $available ? '<fg=green>Oui</>' : $start.'Non'.$end,
+                $d['enabled'] ?? true ? '<fg=green>Oui</>' : '<fg=red>Non</>',
             ];
         }
         $io->table(
-            ['Ord','File','Classname','Name','Count','Available'],
+            ['Ord','File','Classname','Name','Count','Available','Enabled'],
             $lines
         );
 
@@ -148,12 +149,39 @@ class BasicsCommand extends Command
                 $io
             );
             if($opresult->isSuccess()) {
-                $io->success(vsprintf('Entités générées pour %s', [$class]));
+                // $io->success(vsprintf('Entités générées pour %s', [$class]));
             } else {
                 $io->error(vsprintf('Erreur(s) lors de la génération des entités pour %s', [$class]));
-                dd($opresult->getMessages());
+                // dd($opresult->getMessages());
+                foreach ($opresult->getMessages() as $type => $messages) {
+                    foreach ($messages as $message) {
+                        switch ($type) {
+                            case 'dev':
+                            case 'danger':
+                                $io->error($message);
+                                break;
+                            case 'undone':
+                            case 'warning':
+                                $io->warning($message);
+                                break;
+                            default:
+                                $io->info($message);
+                                break;
+                        }
+                    }
+                }
+                $io->warning('Process aborted.');
+                return Command::FAILURE;
             }
-            $wire_em->getEm()->flush();
+            try {
+                $wire_em->getEm()->flush();
+                $io->success(vsprintf('Entités générées pour %s', [$class]));
+            } catch (\Throwable $th) {
+                $io->error(vsprintf('Erreur lors de l\'enregistrement des entités pour %s%s%s', [$class, PHP_EOL, $th->getMessage()]));
+                $io->warning('Process aborted.');
+                dd($opresult->getData());
+                return Command::FAILURE;
+            }
         }
 
         // // Print all messages

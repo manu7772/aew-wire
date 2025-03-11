@@ -5,6 +5,7 @@ use BadMethodCallException;
 
 trait TraitBaseService
 {
+
     public function __toString(): string
     {
         return $this->getName();

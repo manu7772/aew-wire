@@ -28,17 +28,25 @@ class EntityDenormalizer implements DenormalizerInterface
         Uname::class,
     ];
     public const NORMALIZATION_GROUPS = [
-        'hydrate' => [
-            'normalize' => ['identifier','__shortname__.hydrate','hydrate'],
-            'denormalize' => ['__shortname__.hydrate','hydrate'],
+        '_default' => [
+            'normalize' => ['identifier','__shortname__.__name__','__name__'],
+            'denormalize' => ['__shortname__.__name__','__name__'],
         ],
-        'model' => [
-            'normalize' => ['identifier','__shortname__.model','model'],
-            'denormalize' => ['__shortname__.model','model'],
-        ],
-        'clone' => [
-            'normalize' => ['identifier','__shortname__.clone','clone'],
-            'denormalize' => ['__shortname__.clone','clone'],
+        // 'hydrate' => [
+        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
+        //     'denormalize' => ['__shortname__.__name__','__name__'],
+        // ],
+        // 'model' => [
+        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
+        //     'denormalize' => ['__shortname__.__name__','__name__'],
+        // ],
+        // 'clone' => [
+        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
+        //     'denormalize' => ['__shortname__.__name__','__name__'],
+        // ],
+        'debug' => [
+            'normalize' => ['identifier','__shortname__.__name__','__name__'],
+            'denormalize' => ['__shortname__.__name__','__name__'],
         ],
     ];
     public const SEARCH_KEYS = ['id','slug','euid'];
@@ -79,7 +87,7 @@ class EntityDenormalizer implements DenormalizerInterface
      */
     public static function getNormalizeGroups(
         string|WireEntityInterface $class,
-        string $type = 'hydrate', // ['hydrate','model','clone']
+        string $type = 'hydrate', // ['hydrate','model','clone','debug'...]
     ): array
     {
         if($class instanceof WireEntityInterface) {
@@ -91,14 +99,15 @@ class EntityDenormalizer implements DenormalizerInterface
         } else {
             throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, WireEntityInterface::class]));
         }
-        $type = static::NORMALIZATION_GROUPS[$type];
+        $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
+        if($type === '_default') $type = 'hydrate';
         $groups = [
             'normalize' => [],
             'denormalize' => [],
         ];
-        foreach ($type as $name => $values) {
+        foreach ($types as $name => $values) {
             foreach ($values as $group_name) {
-                $groups[$name][] = str_replace('__shortname__', strtolower($class), $group_name);
+                $groups[$name][] = preg_replace(['/__shortname__/', '/__name__/'], [strtolower($class), $type], $group_name);
             }
         }
         return $groups;
@@ -132,7 +141,9 @@ class EntityDenormalizer implements DenormalizerInterface
             }
             return $entity;
         }
-        return $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
+        $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
+        dd($data, $type, $format, $context, $entity);
+        return $entity;
     }
 
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
@@ -197,7 +208,7 @@ class EntityDenormalizer implements DenormalizerInterface
                     // Is already entity
                     $relatedEntity = $identifier;
                     break;
-                case Encoders::isEuidFormatValid($identifier):
+                case is_string($identifier) && Encoders::isEuidFormatValid($identifier):
                     // Load related entity by Euid
                     $relatedEntity = $target_repo->findOneBy(['euid' => $identifier]);
                     break;

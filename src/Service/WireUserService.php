@@ -66,19 +66,10 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         WireEntityInterface $entity
     ): void
     {
+        $this->wireEntityService->checkEntityBase($entity);
         if($entity instanceof WireUserInterface) {
             // Check here
         }
-    }
-
-    /**
-     * Get entity classname
-     *
-     * @return string|null
-     */
-    public function getEntityClassname(): ?string
-    {
-        return (string)static::ENTITY_CLASS;
     }
 
     public function getSecurity(): Security
@@ -93,12 +84,11 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
 
     public function createDefaultSuperAdmin(): WireUserInterface
     {
-        $repository = $this->getRepository();
         $admin_email = $this->appWire->getParam('main_sadmin');
         if(empty($admin_email)) {
             throw new Exception(vsprintf('Error %s line %d: main_sadmin parameter not found!', [__METHOD__, __LINE__]));
         }
-        $sadmin = $repository->findOneBy(['email' => $admin_email]);
+        $sadmin = $this->getRepository()->findOneBy(['email' => $admin_email]);
         if(!$sadmin){
             $data = [
                 'email' => $admin_email,
@@ -121,9 +111,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         bool $findSadminIfNotFound = false
     ): ?WireUserInterface {
         $admin_email = $this->appWire->getParam('main_admin');
-        /** @var EntityRepository */
-        $repository = $this->getRepository();
-        $user = $repository->findOneBy(['email' => $admin_email]);
+        $user = $this->getRepository()->findOneBy(['email' => $admin_email]);
         return empty($user) && $findSadminIfNotFound
             ? $this->getMainSAdminUser()
             : $user;
@@ -132,9 +120,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
     public function getMainSAdminUser(): ?WireUserInterface
     {
         $sadmin_email = $this->appWire->getParam('main_sadmin');
-        /** @var EntityRepository */
-        $repository = $this->getRepository();
-        $sadmin = $repository->findOneBy(['email' => $sadmin_email]);
+        $sadmin = $this->getRepository()->findOneBy(['email' => $sadmin_email]);
         $sadmin ??= $this->createDefaultSuperAdmin();
         return $sadmin;
     }

@@ -30,6 +30,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', repositoryMethod: 'findBy')]
 #[UniqueEntity(fields: ['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
 #[ORM\HasLifecycleCallbacks]
+#[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
 class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
@@ -100,6 +101,9 @@ class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
     #[ORM\ManyToOne(targetEntity: WireItemInterface::class, inversedBy: 'relinks', fetch: 'LAZY')]
     #[Gedmo\SortableGroup]
     protected WireItemInterface & TraitRelinkableInterface $itemowner;
+
+    #[Gedmo\SortableGroup]
+    protected readonly string $shortname;
 
     #[ORM\Column]
     protected bool $turboenabled = true;

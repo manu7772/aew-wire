@@ -2,7 +2,11 @@
 namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Doctrine\Common\Collections\Collection;
 
 trait Relinkable
@@ -36,6 +40,26 @@ trait Relinkable
         $this->relinks->removeElement($relink);
         // if($relink->getItemowner() === $this) $relink->setItemowner(null);
         return $this;
+    }
+
+    public function getAddresses(): Collection
+    {
+        return $this->relinks->filter(fn($relink) => $relink instanceof WireAddresslinkInterface);
+    }
+
+    public function getPhones(): Collection
+    {
+        return $this->relinks->filter(fn($relink) => $relink instanceof WirePhonelinkInterface);
+    }
+
+    public function getEmails(): Collection
+    {
+        return $this->relinks->filter(fn($relink) => $relink instanceof WireEmailinkInterface);
+    }
+
+    public function getUrls(): Collection
+    {
+        return $this->relinks->filter(fn($relink) => $relink instanceof WireUrlinkInterface);
     }
 
 

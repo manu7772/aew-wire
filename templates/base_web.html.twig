@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app.locale }}" class="{{ app.darkmodeClass }}">
+<html lang="{{ app.locale }}" {{ component('html_element_attributes') }}>
 	<head>
 		<meta charset="{{ app.charset }}">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
 			{% block title %}Website{% endblock %}
 		</title>
 		{% block favicon %}
-		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}">
+		{# <link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}"> #}
 		{% endblock %}
         {% block stylesheets %}
 		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}
@@ -17,25 +17,9 @@
 		{% endblock %}
 		{{ app.getTurboMetas() }}
 	</head>
-	{% block body_outer %}
-	{# <body id="app"{{ app.getDataTurboBodyAttrs() }} data-app="{{ app.appParams(true, 'public_app') }}" class="nav-fixed" {{ stimulus_controller('globalapp') }}> #}
 	<body id="app">
-		{% block body_inner %}
-		<div class="container mx-auto">
-			{% block navbar %}
-				{% if menu is defined %}
-				{% include "@AequationWire/webpage/bases/_navbar.html.twig" with {menu: menu} %}
-				{% endif %}
-			{% endblock %}
-			{% block body %}
-				{# main content here #}
-			{% endblock %}
-		</div>
-		{% endblock %}
-		{% block after_container %}
-			{# commands, modals, etc. content here #}
-            {% include '@AequationWire/partials/_flashes.html.twig' %}
+		{% block body %}
+
 		{% endblock %}
 	</body>
-	{% endblock %}
 </html>

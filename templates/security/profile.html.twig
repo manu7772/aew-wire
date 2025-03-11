@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+{% import 'public/partials/_elements.html.twig' as elements %}
+{% set trans_domain = app.user ? app.user.shortname : 'User' %}
+
+{% block title %}{{ 'account.name'|trans({}, trans_domain) }}{% endblock %}
+
+{% block body %}
+    <div class="mx-auto max-w-4xl mt-6 mb-32">
+        <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-6">
+            <div class="flex gap-2 font-extrabold text-3xl text-mdark-950 dark:text-mdark-500">
+                <h1 class="text-mdark-950 dark:text-mdark-500"><twig:ux:icon name="tabler:user-filled" class="w-8 h-8 inline" /> {{ 'account.name'|trans({}, trans_domain) }}</h1>
+            </div>
+            <div class="flex gap-2">
+                {% if not is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_profile_delete') }}" class="btn-danger opacity-40 hover:opacity-100">{{ 'account.delete'|trans({}, trans_domain) }}</a>
+                {% endif %}
+                <a href="{{ path('app_profile_edit') }}" class="btn-secondary">{{ 'account.edit'|trans({}, trans_domain) }}</a>
+            </div>
+        </div>
+
+        {% if app.user %}
+        <table class="table w-full mb-2">
+            <tbody>
+                <tr>
+                    <th class="text-right">{{ 'fields.email'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.email }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.name'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.name }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.firstname'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.firstname }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.createdAt'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.createdAt|date('Y-m-d H:i:s') }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.lastLogin'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.lastLogin ? app.user.lastLogin|date('Y-m-d H:i:s') : '...' }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.darkmode'|trans({}, trans_domain) }}</th>
+                    <td data-darkmode-switcher class="cursor-pointer">
+                        <twig:ux:icon name="tabler:moon" class="w-6 hidden dark:inline" />
+                        <twig:ux:icon name="tabler:sun" class="w-6 dark:hidden" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if is_granted('ROLE_ADMIN') %}
+        <h2 class="font-semibold text-xl text-mdark-950 dark:text-mdark-500 mt-6">{{ 'admin_info'|trans }}</h2>
+        <table class="table w-full my-2">
+            <tbody>
+                <tr>
+                    <th class="text-right">{{ 'fields.roles'|trans({}, trans_domain) }}</th>
+                    <td>{{ list_roles(app.user) }}</td>
+                </tr>
+                <tr>
+                    <th class="text-right">{{ 'fields.updatedAt'|trans({}, trans_domain) }}</th>
+                    <td>{{ app.user.updatedAt ? app.user.updatedAt|date('Y-m-d H:i:s') : '...' }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% else %}
+        {{ elements.alert_danger('actions.login_required'|trans({}, trans_domain)) }}
+        {% endif %}
+
+    </div>
+{% endblock %}

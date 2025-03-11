@@ -7,7 +7,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
 // use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 // #[AutoconfigureTag('doctrine.repository_service')]
-interface BaseWireRepositoryInterface extends ServiceEntityRepositoryInterface
+interface BaseWireRepositoryInterface
 {
 
     // Base tools

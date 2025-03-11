@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-interface WireCategoryInterface extends WireEntityInterface, TraitDatetimedInterface, TranslationEntityInterface, SluggableInterface, TraitUnamedInterface
+interface WireCategoryInterface extends WireEntityInterface, TranslationEntityInterface, SluggableInterface, TraitUnamedInterface
 {
 
     public const DEFAULT_TYPE = 'default';

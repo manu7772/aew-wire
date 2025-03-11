@@ -10,14 +10,15 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
-use Exception;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Symfony\Component\HttpFoundation\Request;
+// PHP
+use Exception;
 
 trait TraitBaseEntityService
 {
 
-    // public const ENTITY_CLASS = null;
+    // public const ENTITY_CLASS = WireEntityInterface::class;
 
     protected readonly EntityManagerInterface $em;
     protected readonly UnitOfWork $uow;
@@ -62,6 +63,7 @@ trait TraitBaseEntityService
             $context['groups'] = $norm_groups['denormalize'];
         }
         $entity = $this->normalizer->denormalizeEntity($data, $classname, null, $context);
+        // dd($data, $classname, $context, $entity);
         return $entity;
     }
 
@@ -115,6 +117,16 @@ trait TraitBaseEntityService
         $clone = $this->createEntity(array_merge($data, $changes));
         // Add some stuff here...
         return $clone;
+    }
+
+    /**
+     * Get entity classname
+     *
+     * @return string|null
+     */
+    public function getEntityClassname(): ?string
+    {
+        return static::ENTITY_CLASS;
     }
 
     /**

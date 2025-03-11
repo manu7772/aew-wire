@@ -36,16 +36,6 @@ class UnameService implements UnameServiceInterface
     }
 
     /**
-     * Get entity classname
-     *
-     * @return string|null
-     */
-    public function getEntityClassname(): ?string
-    {
-        return (string)static::ENTITY_CLASS;
-    }
-
-    /**
      * Check entity after any changes.
      *
      * @param WireEntityInterface $entity
@@ -55,6 +45,7 @@ class UnameService implements UnameServiceInterface
         WireEntityInterface $entity
     ): void
     {
+        $this->wireEntityService->checkEntityBase($entity);
         if($entity instanceof UnameInterface) {
             // Check here
         }

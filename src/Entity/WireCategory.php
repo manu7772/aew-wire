@@ -29,7 +29,7 @@ use Exception;
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {
 
-    use Datetimed, Unamed;
+    use Unamed;
 
     public const ICON = [
         'ux' => 'tabler:clipboard-list',
@@ -54,7 +54,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     protected ?string $description = null;
 
     #[ORM\OneToMany(targetEntity: WireCategoryTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    private $translations;
+    protected $translations;
 
     #[Gedmo\Translatable]
     #[Gedmo\Slug(fields: ['name'])]

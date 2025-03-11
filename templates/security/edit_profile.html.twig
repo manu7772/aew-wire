@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier mon profil{% endblock %}
+
+{% block body %}
+    <div class="mx-auto max-w-4xl mt-6 mb-32">
+        <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-6">
+            <div class="flex gap-2 font-extrabold text-3xl text-mdark-950 dark:text-mdark-500">
+                <twig:ux:icon name="tabler:user-edit" class="w-8" />
+                <h1 class="text-mdark-950 dark:text-mdark-500">Modifier mon profil</h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ path('app_account') }}" class="btn-secondary" title="Retour à la liste">Annuler</a>
+            </div>
+        </div>
+
+        {{ form(userForm) }}
+
+    </div>
+{% endblock %}

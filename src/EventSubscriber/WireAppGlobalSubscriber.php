@@ -5,6 +5,7 @@ use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 // use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,6 +22,7 @@ use function Symfony\Component\String\u;
 // PHP
 use DateTime;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Security\Http\Event\CheckPassportEvent;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
@@ -61,13 +63,21 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         ];
     }
 
+    public static function isWdtRequest(
+        KernelEvent $event
+    ): bool
+    {
+        return preg_match(AppWireServiceInterface::SECONDARY_PATHS_PATTERN, $event->getRequest()->getPathInfo());
+    }
+
     public function onRequest(RequestEvent $event): void
     {
+        // Check if main superadmin exists
+        $this->userService->checkMainSuperadmin();
         if($event->isMainRequest()) {
-            $this->appWire->initialize();
             // LOGOUT INVALID USER IMMEDIATLY!!!
             $user = $this->userService->getUser();
-            if($user && !$user->isLoggable() && !preg_match('/^\\/_wdt\\//', $event->getRequest()->getPathInfo())) {
+            if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {
                 // $route_logged_out = $this->router->generate('app_logged_out');
                 if($this->appWire->getCurrent_route() !== 'app_logged_out') {
                     // if(!$user->isLoggable()) {
@@ -77,8 +87,9 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
                     // }
                 }
             }
-        } else if($this->appWire->isDev()) {
-            // dd(vsprintf('DEV TEST (%s line %d) : not main request with route %s and URL %s', [__METHOD__, __LINE__, $this->appWire->getCurrent_route(), $event->getRequest()->getPathInfo()]));
+        }
+        if($this->appWire->isRequiredInitialization($event)) {
+            $this->appWire->initialize($event);
         }
     }
 
@@ -133,20 +144,22 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     // public function onKernelResponse(ResponseEvent $event): void
     // {
-    //     if(!$event->isMainRequest()) return;
+    //     if(!$this->appWire->isRequiredInitialization($event)) return;
     //     dump($this->appWire->jsonSerialize());
     // }
 
     public function onFinishRequest(FinishRequestEvent $event): void
     {
-        if(!$event->isMainRequest()) return;
-        $this->appWire->saveAppWire();
+        if($this->appWire->isInitializable($event) && $this->appWire->isInitialized()) {
+            $this->appWire->saveAppWire($event);
+        }
     }
 
     public function onController(ControllerEvent $event): void
     {
-        $this->appWire->initialize();
-        if(!$event->isMainRequest()) return;
+        if($this->appWire->isRequiredInitialization($event)) {
+            $this->appWire->initialize($event);
+        }
         // dump($this->appWire->jsonSerialize());
         return;
 
@@ -289,7 +302,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     // {
     //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
     //         $response = new RedirectResponse(
-    //             $this->router->generate('app_home')
+    //             $this->router->generate('app_home' --> appWire->getPublicHomeRoute())
     //         );
     //         $event->setResponse($response);
     //     }

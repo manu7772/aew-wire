@@ -12,8 +12,10 @@ use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 // Symfony
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
-abstract class WireRelinkService implements WireRelinkServiceInterface
+#[AsAlias(WireRelinkServiceInterface::class, public: true)]
+class WireRelinkService implements WireRelinkServiceInterface
 {
 
     USE TraitBaseService;
@@ -30,16 +32,6 @@ abstract class WireRelinkService implements WireRelinkServiceInterface
     }
 
     /**
-     * Get entity classname
-     *
-     * @return string|null
-     */
-    public function getEntityClassname(): ?string
-    {
-        return (string)static::ENTITY_CLASS;
-    }
-
-    /**
      * Check entity after any changes.
      *
      * @param WireEntityInterface $entity
@@ -49,6 +41,7 @@ abstract class WireRelinkService implements WireRelinkServiceInterface
         WireEntityInterface $entity
     ): void
     {
+        $this->wireEntityService->checkEntityBase($entity);
         if($entity instanceof WireRelinkInterface) {
             // Check here
         }

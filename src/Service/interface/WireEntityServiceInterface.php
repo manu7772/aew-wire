@@ -9,6 +9,8 @@ use Doctrine\ORM\UnitOfWork;
 interface WireEntityServiceInterface extends WireServiceInterface, EntityServicePaginableInterface
 {
 
+    public const ENTITY_CLASS = WireEntityInterface::class;
+
     // Services
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;

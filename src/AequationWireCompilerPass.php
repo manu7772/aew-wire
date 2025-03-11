@@ -14,9 +14,12 @@ class AequationWireCompilerPass implements CompilerPassInterface
     public const CONFIGURES = [
         // 'Parameters' => false,
         // 'Siteparams' => false,
+        // 'Framework' => false,
         // 'Twig' => false,
+        // 'TwigComponent' => false,
         // 'Tailwind' => false,
         'VichUploader' => true,
+        // 'LiipImagine' => false,
         // 'AssetMapper' => false,
     ];
 

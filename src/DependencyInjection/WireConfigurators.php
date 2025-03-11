@@ -32,6 +32,7 @@ Class WireConfigurators
                                     $origin_named = $container->hasParameter($sub_name) ? $container->getParameter($sub_name) : [];
                                     if(is_array($origin_named)) {
                                         $value = array_merge($value, $origin_named);
+                                        if(array_is_list($value)) $value = array_unique($value);
                                         // print('- '.$sub_name.' : '.json_encode($value).PHP_EOL);
                                         $container->setParameter($sub_name, $value);
                                     }
@@ -91,16 +92,48 @@ Class WireConfigurators
                     $container->setParameter($param['name'], $param['paramvalue']);
                 }
                 break;
+            case 'Framework':
+                $origin_framework = $container->hasParameter('Framework') ? $container->getParameter('Framework') : [];
+                $framework_config = array_merge(static::getFrameworkConfig(), $origin_framework);
+                if($asPrepend) {
+                    $container->prependExtensionConfig('Framework', $framework_config);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                }
+                break;
             case 'Twig':
                 $origin_twig = $container->hasParameter('twig') ? $container->getParameter('twig') : [];
                 $twig_config = array_merge(static::getTwigConfig(), $origin_twig);
                 if($asPrepend) {
                     $container->prependExtensionConfig('twig', $twig_config);
                 } else {
-                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                }
+                break;
+            case 'TwigComponent':
+                // Aequation\WireBundle\Twig\Components\: '@AequationWire/components/'
+                if($asPrepend) {
+                    $container->prependExtensionConfig('twig_component', [
+                        'defaults' => [
+                            'Aequation\\WireBundle\\Twig\\Components\\' => '@AequationWire/components/',
+                        ],
+                    ]);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                }
+                break;
+            case 'LiipImagine':
+                $origin_twig = $container->hasParameter('liip_imagine') ? $container->getParameter('liip_imagine') : [];
+                $liip_config = array_merge(static::getLiipImagineConfig(), $origin_twig);
+                if($asPrepend) {
+                    $container->prependExtensionConfig('liip_imagine', $liip_config);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    $container->setParameter('liip_imagine', $liip_config);
                 }
                 break;
             case 'Tailwind':
+                trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available for now.', [__METHOD__, __LINE__]), E_USER_ERROR);
                 $input_css = $container->hasParameter('symfonycasts_tailwind.input_css') ? $container->getParameter('symfonycasts_tailwind.input_css') : [];
                 $input_css = array_unique(array_merge(['./vendor/aequation/wire/assets/styles/wire.css'], $input_css));
                 if($asPrepend) {
@@ -116,7 +149,7 @@ Class WireConfigurators
                         // ],
                     ]);
                 } else {
-                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                     $container->setParameter('symfonycasts_tailwind.input_css', $input_css);
                 }
                 break;
@@ -137,6 +170,7 @@ Class WireConfigurators
                 }
                 break;
             case 'AssetMapper':
+                trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available for now.', [__METHOD__, __LINE__]), E_USER_ERROR);
                 if(static::isAssetMapperAvailable($container)) {
                     if($asPrepend) {
                         $container->prependExtensionConfig('framework', [
@@ -148,8 +182,8 @@ Class WireConfigurators
                         // $config = $container->getExtensionConfig('framework');
                         // dd($config);
                     } else {
-                        trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
-                        throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured in not preprend mode!', [__METHOD__, __LINE__, $name]));
+                        trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                        throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]));
                     }
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
@@ -193,6 +227,13 @@ Class WireConfigurators
         ];
     }
 
+    private static function getFrameworkConfig(): array
+    {
+        return [
+            'csrf_protection' => true,
+        ];
+    }
+
     private static function getTwigConfig(): array
     {
         return [
@@ -200,6 +241,16 @@ Class WireConfigurators
             'form_themes' => ['@AequationWire/form/tailwind_wire_layout.html.twig'],
             'globals' => [
                 'app' => '@Aequation\WireBundle\Service\interface\AppWireServiceInterface'
+            ],
+        ];
+    }
+
+    private static function getLiipImagineConfig(): array
+    {
+        return [
+            'driver' => "gd",
+            'twig' => [
+                'mode' => 'lazy',
             ],
         ];
     }
@@ -255,8 +306,7 @@ Class WireConfigurators
         $paths = [
             'assets/' => 'assets/',
             // AequationWireBundle::getPackagePath('/assets') => AequationWireBundle::getPackagePath('/assets'),
-            AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
-            // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/ux-wire-utilities',
+            // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
         ];
         return $paths;
     }

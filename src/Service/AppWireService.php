@@ -9,6 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
@@ -49,6 +50,8 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use ReflectionClass;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
+use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\User\UserInterface;
 use UnitEnum;
 
@@ -62,18 +65,10 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 {
     use TraitBaseService;
 
-    public const DEFAULT_HOME_ROUTE = 'app_home';
-    public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
-    public const UNSERIALIZE_PROPERTIES = [
-        'darkmode' => true,
-        'timezone' => true,
-        'datenow' => true,
-        'tinyvalues' => 'mergeTinyvalues',
-    ];
-
     public readonly ContainerInterface $container;
     public readonly SessionInterface $session;
     private bool $context_initialized = false;
+    private bool $context_locked = false;
     private readonly array $symfony;
     private readonly array $php;
     private readonly Stopwatch $stopwatch;
@@ -296,7 +291,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             if($this->has($attr->service)) {
                 return $this->get($attr->service);
             } else if($this->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: service %s is not available!', [__METHOD__, __LINE__, $attr->service]));
+                throw new Exception(vsprintf('Error %s line %d: service %s not found with %s %s!', [__METHOD__, __LINE__, $attr->service, gettype($objectOrClass), is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass]));
             }
         }
         return null;
@@ -538,27 +533,75 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     /************************************************************************************************************/
 
     /**
+     * Context is initializable
+     */
+    public function isInitializable(
+        KernelEvent $event
+    ): bool
+    {
+        $session = $event->getRequest()?->getSession() ?? null;
+        return $session instanceof SessionInterface
+            && $event->isMainRequest()
+            && $this->isMainFirewall()
+            && !HttpRequest::isCli()
+            && !WireAppGlobalSubscriber::isWdtRequest($event)
+            ;
+    }
+
+    /**
+     * Context is required initialization
+     */
+    public function isRequiredInitialization(
+        KernelEvent $event
+    ): bool
+    {
+        return !$this->isInitialized()
+            && !$this->isLocked()
+            && $this->isInitializable($event)
+            ;
+    }
+
+    /**
      * initialize service
      * 
      * @return bool
      */
-    public function initialize(): bool
+    public function initialize(
+        KernelEvent $event
+    ): bool
     {
-        $this->startStopwatch();
-        if(!$this->isInitialized()) {
-            $session = $this->getSession();
-            if($session instanceof SessionInterface) {
-                if(!$this->isCurrentFirewallAvailableForInit()) {
-                    $this->context_initialized = false;
-                } else {
-                    $this->session ??= $session;
-                    $session_data = $this->retrieveAppWire();
-                    $this->jsonUnserialize($session_data);
-                    $this->context_initialized = true;
-                }
+        if($this->isDev()) {
+            if($this->isLocked()) {
+                throw new Exception(vsprintf('Error %s line %d: can not initialize AppWire data while it is locked (firewall: %s / path: %s)!', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
+            }
+            if(HttpRequest::isCli()) {
+                throw new Exception(vsprintf('Error %s line %d: CLI request is not available for initialization!', [__METHOD__, __LINE__]));
+            }
+            if(WireAppGlobalSubscriber::isWdtRequest($event)) {
+                throw new Exception(vsprintf('Error %s line %d: WDT request (path: %s) is not available for initialization!', [__METHOD__, __LINE__, $event->getRequest()->getPathInfo()]));
             }
         }
+        if($this->isRequiredInitialization($event)) {
+            // $session = $this->getSession();
+            $this->session ??= $event->getRequest()->getSession();
+            $session_data = $this->retrieveAppWire();
+            $this->jsonUnserialize($session_data);
+            $user = $this->getUser();
+            if($user instanceof WireUserInterface) {
+                $this->integrateUserContext($user);
+            }
+            $this->context_initialized = true;
+            // dump(vsprintf('Info %s line %d: firewall %s (path: %s) is available for initialization.', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
+        }
         return $this->isInitialized();
+    }
+
+    public function integrateUserContext(
+        WireUserInterface $user
+    ): void
+    {
+        $this->setTimezone($user->getTimezone());
+        $this->setDarkmode($user->isDarkmode());
     }
 
     /**
@@ -578,15 +621,23 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * 
      * @return bool
      */
-    public function saveAppWire(): bool
+    public function saveAppWire(
+        KernelEvent $event
+    ): bool
     {
+        if($this->isLocked()) {
+            throw new Exception(vsprintf('Error %s line %d: can not save AppWire data while it is locked (firewall: %s / path: %s)!', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
+        }
         if($this->isInitialized()) {
             $self_serialized = $this->jsonSerialize();
             $this->session->set(static::APP_WIRE_SESSION_PREFIX.$this->getFirewallName(), $self_serialized);
+            $this->context_locked = true;
             return true;
-        } else if($this->isDev() && $this->isCurrentFirewallAvailableForInit()) {
-            // throw new Exception(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized!', [__METHOD__, __LINE__]));
-            trigger_error(vsprintf('Error %s line %d: can not save AppWire data while it is not initialized (firewall: %s)!', [__METHOD__, __LINE__, $this->getFirewallName()]), E_USER_WARNING);
+        } else if($this->isDev() && $this->isInitializable($event)) {
+            $error_message = vsprintf('Error %s line %d: can not save AppWire data while it is not initialized (firewall: %s / path: %s)!', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]);
+            throw new Exception($error_message);
+            dump($error_message);
+            trigger_error($error_message, E_USER_WARNING);
         }
         return false;
     }
@@ -615,11 +666,14 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * 
      * @return bool
      */
-    public function resetAppWire(): bool
+    public function resetAppWire(
+        KernelEvent $event
+    ): bool
     {
         if($this->clearAppWire()) {
             $this->context_initialized = false;
-            return $this->initialize();
+            $this->context_locked = false;
+            return $this->initialize($event);
         }
         return false;
     }
@@ -634,37 +688,41 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->context_initialized;
     }
 
+    /**
+     * is service initialized
+     * 
+     * @return bool
+     */
+    public function isLocked(): bool
+    {
+        return $this->context_locked;
+    }
+
     /** DARKMODE */
 
     public function getDarkmode(): bool
     {
         $user = $this->getUser();
-        if($user instanceof WireUserInterface) {
-            return $this->darkmode = $user->isDarkmode();
-        }
-        // $session = $this->appWire->getSession();
-        // if($session) {
-        //     return $session->get('darkmode', is_bool($this->darkmode) ? $this->darkmode : false);
-        // }
-        $this->darkmode ??= $this->appWire->getParameter('darkmode', false);
+        $this->darkmode ??= $user instanceof WireUserInterface
+            ? $user->isDarkmode()
+            : $this->appWire->getParameter('darkmode', false);
         return $this->darkmode;
     }
 
-    public function setDarkmode(bool $darkmode): bool
+    public function setDarkmode(?bool $darkmode = null): bool
     {
+        if(!is_bool($darkmode)) {
+            $darkmode = !$this->getDarkmode();
+        }
         $user = $this->getUser();
         if($user instanceof WireUserInterface) {
-            $user->setDarkmode($darkmode);
-            $this->getUserService()->saveUser($user);
-            $this->darkmode = $user->isDarkmode();
-        } else {
-            $this->darkmode = $darkmode;
+            if($user->isDarkmode() !== $darkmode) {
+                $user->setDarkmode($darkmode);
+                $this->getUserService()->saveUser($user);
+            }
+            return $this->darkmode = $user->isDarkmode();
         }
-        // $session = $this->appWire->getSession();
-        // if($session) {
-        //     return $session->set('darkmode', $this->darkmode);
-        // }
-        return $this->darkmode;
+        return $this->darkmode = $darkmode;
     }
 
     public function getDarkmodeClass(): string
@@ -1232,11 +1290,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     }
 
     /**
-     * is current firewall available for initialization
+     * is current firewall a main firewall (main, admin, and others if added)
      * 
      * @return bool
      */
-    public function isCurrentFirewallAvailableForInit(): bool
+    public function isMainFirewall(): bool
     {
         $firewalls = $this->getMainFirewalls();
         return in_array($this->getFirewallName(), $firewalls);
@@ -1398,4 +1456,70 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         }
         return $url ?? null;
     }
+
+    public function getActionRoute(
+        string|object $subject,
+        string $action,
+        ?string $firewall = null,
+        ?WireUserInterface $user = null
+    ): string|false
+    {
+        $route = false;
+        $name = is_object($subject) ? $subject->getShortname() : $subject;
+        if(class_exists($name)) {
+            $name = Objects::getShortname($name, true);
+        }
+        $name = strtolower($name);
+        $user ??= $this->userService->getUser();
+        $action = strtolower($action);
+        $is_public = $firewall
+            ? in_array($firewall, static::PUBLIC_FIREWALLS)
+            : $this->isPublicFirewall();
+        if($this->userService->isUserGranted($user, $action, $subject, $firewall)) {
+            $prefix = $is_public ? 'app_' : 'admin_';
+            $route = $prefix.$name.'_'.$action;
+            if($this->routeExists($route)) return $route;
+        }
+        return false;
+    }
+
+    public function getActionPath(
+        string|object $subject,
+        string $action,
+        array $route_params = [],
+        ?string $firewall = null,
+        ?WireUserInterface $user = null,
+        ?bool $absolute_path = true
+    ): string|false
+    {
+        if($route = $this->getActionRoute($subject, $action, $firewall, $user)) {
+            $referenceType = $absolute_path ? Router::ABSOLUTE_PATH : Router::RELATIVE_PATH;
+            if(in_array($action, ['show','edit','delete']) && is_object($subject) && !isset($route_params['id'])) {
+                $route_params['id'] = $subject->getId();
+            }
+            $url = $this->router->generate($route, $route_params, $referenceType);
+            return empty($url) ? false : $url;
+        }
+        return false;
+    }
+
+    public function getActionUrl(
+        string|object $subject,
+        string $action,
+        array $route_params = [],
+        ?string $firewall = null,
+        ?WireUserInterface $user = null
+    ): string|false
+    {
+        if($route = $this->getActionRoute($subject, $action, $firewall, $user)) {
+            $referenceType = Router::ABSOLUTE_URL;
+            if(in_array($action, ['show','edit','delete']) && is_object($subject) && !isset($route_params['id'])) {
+                $route_params['id'] = $subject->getId();
+            }
+            $url = $this->router->generate($route, $route_params, $referenceType);
+            return empty($url) ? false : $url;
+        }
+        return false;
+    }
+
 }

@@ -227,6 +227,24 @@ class WireEntityManager implements WireEntityManagerInterface
         }
     }
 
+    /**
+     * Check entity after any changes.
+     *
+     * @param WireEntityInterface $entity
+     * @return void
+     */
+    public function checkEntityBase(
+        WireEntityInterface $entity
+    ): void
+    {
+        // Check integrity
+        if(!$entity->hasEmbededStatus()) {
+            new EntityEmbededStatus($entity, $this->appWire);
+        }
+        if($entity->__estatus->isModel()) return;
+        // Check here
+    }
+
     protected function createNewEntity(
         string $classname,
         ?array $data = [], // ---> do not forget uname if wanted!
@@ -472,10 +490,12 @@ class WireEntityManager implements WireEntityManagerInterface
             $classes = $this->getEntityNames(false, false, true);
             foreach ($classes as $class) {
                 if(is_a($class, TraitUnamedInterface::class, true)) {
-                    /** @var string $class */
-                    /** @var BaseWireRepositoryInterface */
                     $repo = $this->em->getRepository($class);
-                    $entity = $repo->findEntityByEuidOrUname($uname);
+                    if($repo instanceof BaseWireRepositoryInterface) {
+                        $entity = $repo->findEntityByEuidOrUname($uname);
+                    } else {
+                        throw new Exception(vsprintf('Error %s line %d: for class %s, repository %s is not an instance of %s!', [__METHOD__, __LINE__, $class, gettype($repo) === 'object' ? $repo::class : json_encode($repo), BaseWireRepositoryInterface::class]));
+                    }
                 }
             }
         }

@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Service\interface;
 
 // Symfony
+
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -16,6 +18,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Stopwatch\Stopwatch;
@@ -27,6 +30,15 @@ use Twig\Markup;
 interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
 {
 
+    public const DEFAULT_HOME_ROUTE = 'app_home';
+    public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
+    public const UNSERIALIZE_PROPERTIES = [
+        'darkmode' => true,
+        'timezone' => true,
+        'datenow' => true,
+        'tinyvalues' => 'mergeTinyvalues',
+    ];
+    public const SECONDARY_PATHS_PATTERN = '#^\\/(_(profiler|wdt)|css|images|js|assets)\\/#';
     public const APP_WIRE_SESSION_PREFIX = 'appwire_';
     public const STOPWATCH_MAIN_NAME = "stw_main";
     public const DEFAULT_TIMEZONE = 'Europe/Paris';
@@ -62,11 +74,14 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function get(string $id, int $invalidBehavior = ContainerInterface::NULL_ON_INVALID_REFERENCE): ?object;
     public function getClassService(string|object $objectOrClass): ?object;
     // Initialized
-    public function initialize(): bool;
+    public function isInitializable(KernelEvent $event): bool;
+    public function isRequiredInitialization(KernelEvent $event): bool;
+    public function initialize(KernelEvent $event): bool;
     public function isInitialized(): bool;
-    public function saveAppWire(): bool;
-    public function clearAppWire(): bool;
-    public function resetAppWire(): bool;
+    public function integrateUserContext(WireUserInterface $user): void;
+    public function saveAppWire(KernelEvent $event): bool;
+    public function clearAppWire(?string $firewall = null): bool;
+    public function resetAppWire(KernelEvent $event): bool;
     // Request / Session
     public function isXmlHttpRequest(): bool;
     public function isTurboFrameRequest(): bool;
@@ -100,7 +115,8 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getTwigLoader(): LoaderInterface;
     // Darkmode
     public function getDarkmode(): bool;
-    public function setDarkmode(bool $darkmode): bool;
+    public function setDarkmode(?bool $darkmode = null): bool;
+    public function getDarkmodeClass(): string;
     // Timestamp
     // Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
@@ -128,8 +144,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getPublicFirewalls(): array;
     public function getMainFirewalls(): array;
     public function getFirewallChoices(bool $onlyMains = true): array;
+    public function isMainFirewall(): bool;
     // Routes
     public function getRoutes(): RouteCollection;
+    public function getPublicHomeRoute(): string;
     public function routeExists(string $route, bool|array $control_generation = false): bool;
     public function getUrlIfExists(string $route, array $parameters = [], ?int $referenceType = null, null|array|string $methods = null): ?string;
 

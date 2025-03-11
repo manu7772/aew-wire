@@ -48,15 +48,14 @@ class SecuritySubscriber implements EventSubscriberInterface
         /** @var wireUserInterface */
         $user = $event->getUser();
         $this->userService->updateUserLastLogin($user);
-        $this->appWire->setTimezone($user->getTimezone());
-        $event->getRequest()->getSession()->set('darkmode', $user->isDarkmode());
+        // $this->appWire->integrateUserContext($user);
     }
 
     // public function onLoginFailure(LoginFailureEvent $event): void
     // {
     //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
     //         $response = new RedirectResponse(
-    //             $this->router->generate('app_home')
+    //             $this->router->generate('app_home' --> appWire->getPublicHomeRoute())
     //         );
     //         $event->setResponse($response);
     //     }

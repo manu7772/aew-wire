@@ -29,16 +29,6 @@ abstract class WireItemService implements WireItemServiceInterface
     }
 
     /**
-     * Get entity classname
-     *
-     * @return string|null
-     */
-    public function getEntityClassname(): ?string
-    {
-        return (string)static::ENTITY_CLASS;
-    }
-
-    /**
      * Check entity after any changes.
      *
      * @param WireEntityInterface $entity
@@ -48,6 +38,7 @@ abstract class WireItemService implements WireItemServiceInterface
         WireEntityInterface $entity
     ): void
     {
+        $this->wireEntityService->checkEntityBase($entity);
         if($entity instanceof WireEntityInterface) {
             // Check here
         }

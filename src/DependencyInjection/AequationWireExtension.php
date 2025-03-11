@@ -19,10 +19,13 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
     public const CONFIGURES = [
         'Parameters' => true,
         // 'Siteparams' => false,
+        "Framework" => true,
         'Twig' => true,
-        'Tailwind' => true,
+        'TwigComponent' => true,
+        'Tailwind' => false, // --> disabled for now
         // 'VichUploader' => false,
-        'AssetMapper' => true,
+        'LiipImagine' => true,
+        'AssetMapper' => false, // --> disabled for now
     ];
 
     public function load(array $configs, ContainerBuilder $container): void

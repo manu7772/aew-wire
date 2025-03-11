@@ -49,15 +49,15 @@ trait BaseTraitWireRepository
     }
 
     public function findEntityByEuidOrUname(
-        string $uname
+        string $euidOrUname
     ): ?WireEntityInterface
     {
         $qb = $this->createQueryBuilder(static::alias())
-            ->where(static::alias().'.euid = :uname')
-            ->setParameter('uname', $uname);
+            ->where(static::alias().'.euid = :euidOrUname')
+            ->setParameter('euidOrUname', $euidOrUname);
         if($this->hasRelation('uname')) {
             $qb->leftJoin(static::alias().'.uname', 'uname')
-                ->orWhere('uname.uname = :uname');
+                ->orWhere('uname.id = :euidOrUname');
         }
         return $qb->getQuery()->getOneOrNullResult();
     }

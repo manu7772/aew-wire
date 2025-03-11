@@ -6,8 +6,8 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 use Aequation\WireBundle\Repository\interface\WireUserRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
-use Doctrine\ORM\EntityManagerInterface;
 // Symfony
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
@@ -24,12 +24,12 @@ abstract class WireUserRepository extends WireItemRepository implements WireUser
     const ENTITY_CLASS = WireUser::class;
 
     public function __construct(
-        EntityManagerInterface $em,
+        ManagerRegistry $registry,
         protected AppWireServiceInterface $appWire,
         protected WireUserServiceInterface $userService
     )
     {
-        parent::__construct($em, $appWire);
+        parent::__construct($registry, $appWire);
     }
 
 
