@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
@@ -8,16 +9,20 @@ use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 // Symfony
 use Doctrine\Common\EventArgs;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
 
+    public function getNormaliserService(): NormalizerServiceInterface;
     public function getAppWireService(): AppWireServiceInterface;
     public function getEntityService(string|WireEntityInterface $entity): ?WireEntityServiceInterface;
     public function getClassMetadata(null|string|WireEntityInterface $objectOrClass = null): ?ClassMetadata;
+    public function getRepository(string|WireEntityInterface $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
     public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
@@ -33,10 +38,11 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function clearCreateds(): bool;
     public function clearPersisteds(): bool;
     public function findCreated(string $euidOrUname): ?WireEntityInterface;
-    public function postCreatedRealEntity(WireEntityInterface $entity, bool $asModel = false): void;
+    public function postLoadedRealEntity(WireEntityInterface $entity): void;
+    public function postCreatedRealEntity(WireEntityInterface $entity): void;
     public function checkEntityBase(WireEntityInterface $entity): void;
     public function createEntity(string $classname, ?array $data = [], ?array $context = []): WireEntityInterface;
-    public function createModel(string $classname,?array $data = [], ?array $context = []): WireEntityInterface;
+    public function createModel(string $classname, ?array $data = [], ?array $context = []): WireEntityInterface;
     public function createClone(WireEntityInterface $entity, ?array $changes = [], ?array $context = []): WireEntityInterface|false;
 
     // Find
@@ -57,5 +63,4 @@ interface WireEntityManagerInterface extends WireServiceInterface
         $resolver = null,
         $referenceType = UrlGeneratorInterface::ABSOLUTE_URL
     ): ?string;
-
 }

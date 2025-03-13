@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
@@ -36,8 +37,13 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     public function __construct(
         public readonly WireEntityInterface $entity,
         public readonly AppWireServiceInterface $appWire
-    )
-    {
+    ) {
+        if (!isset($entity->__selfstate)) {
+            throw new Exception(vsprintf('Error %s line %d: %s %s (id: %s) does not contain self state %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity, $entity->getId() ?? 'NULL', EntitySelfState::class]));
+        }
+        if ($entity->__selfstate->isModel()) {
+            $this->setModel();
+        }
         $this->wireEntityManager = $this->appWire->get(WireEntityManagerInterface::class);
         $this->em = $this->wireEntityManager->getEm();
         $this->uow = $this->wireEntityManager->getUow();
@@ -77,6 +83,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     public function setModel(): static
     {
         $this->model = true;
+        $this->entity->__selfstate->setModel();
         return $this;
     }
 
@@ -147,6 +154,4 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     {
         return $this->uow->isScheduledForDelete($this->entity);
     }
-
-
 }

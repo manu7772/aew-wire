@@ -1,24 +1,22 @@
 <?php
+
 namespace Aequation\WireBundle\Serializer;
 
-use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ToOneAssociationMapping;
 use Doctrine\ORM\Mapping\ToManyAssociationMapping;
-// PHP
-use Exception;
-use ReflectionClass;
 
 class EntityDenormalizer implements DenormalizerInterface
 {
@@ -27,131 +25,93 @@ class EntityDenormalizer implements DenormalizerInterface
     public const NOT_CONTROLLED_CLASSES = [
         Uname::class,
     ];
-    public const NORMALIZATION_GROUPS = [
-        '_default' => [
-            'normalize' => ['identifier','__shortname__.__name__','__name__'],
-            'denormalize' => ['__shortname__.__name__','__name__'],
-        ],
-        // 'hydrate' => [
-        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
-        //     'denormalize' => ['__shortname__.__name__','__name__'],
-        // ],
-        // 'model' => [
-        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
-        //     'denormalize' => ['__shortname__.__name__','__name__'],
-        // ],
-        // 'clone' => [
-        //     'normalize' => ['identifier','__shortname__.__name__','__name__'],
-        //     'denormalize' => ['__shortname__.__name__','__name__'],
-        // ],
-        'debug' => [
-            'normalize' => ['identifier','__shortname__.__name__','__name__'],
-            'denormalize' => ['__shortname__.__name__','__name__'],
-        ],
-    ];
-    public const SEARCH_KEYS = ['id','slug','euid'];
+    public const SEARCH_KEYS = ['id', 'slug', 'euid'];
 
-    public readonly EntityManagerInterface $em;
-    public readonly WireEntityManagerInterface $wire_em;
     public array $currentContext = [];
+    public bool $currentIsModel = false;
+    private readonly NormalizerServiceInterface $normService;
 
     public function __construct(
         #[Autowire(service: 'serializer.normalizer.object')]
         private readonly DenormalizerInterface $denormalizer,
-        private readonly AppWireServiceInterface $appWire
+        private readonly WireEntityManagerInterface $wireEm
     ) {}
+
+    public function getNormaliserService(): NormalizerServiceInterface
+    {
+        return $this->normService ??= $this->wireEm->getNormaliserService();
+    }
 
     public static function isEnabled(): bool
     {
         return static::ENABLED;
     }
 
-    public function getWireEntityManager(): WireEntityManagerInterface
-    {
-        return $this->wire_em ??= $this->appWire->get(WireEntityManagerInterface::class);
-    }
-
-    public function getEntityManager(): EntityManagerInterface
-    {
-        return $this->em ??= $this->getWireEntityManager()->getEntityManager();
-    }
-
-    /**
-     * Get normalization groups for a class
-     * returns array of 2 named elements:
-     *      - ["normalize" => <normalization groups>]
-     *      - ["denormalize" => <denormalization groups>]
-     * @param string|WireEntityInterface $class
-     * @param string $type
-     * @return array
-     */
-    public static function getNormalizeGroups(
-        string|WireEntityInterface $class,
-        string $type = 'hydrate', // ['hydrate','model','clone','debug'...]
-    ): array
-    {
-        if($class instanceof WireEntityInterface) {
-            $class = $class->getClassname();
-        }
-        if(class_exists($class) && is_a($class, WireEntityInterface::class, true)) {
-            $rc = new ReflectionClass($class);
-            $class = $rc->getShortName();
-        } else {
-            throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, WireEntityInterface::class]));
-        }
-        $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
-        if($type === '_default') $type = 'hydrate';
-        $groups = [
-            'normalize' => [],
-            'denormalize' => [],
-        ];
-        foreach ($types as $name => $values) {
-            foreach ($values as $group_name) {
-                $groups[$name][] = preg_replace(['/__shortname__/', '/__name__/'], [strtolower($class), $type], $group_name);
-            }
-        }
-        return $groups;
-    }
-
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
         $this->currentContext = $context;
-        if(is_array($data) && is_a($type, WireEntityInterface::class, true)) {
-            $uname = null;
-            if(!empty($data['uname'] ?? null)) {
-                // dump($data['uname']);
-                $uname = $data['uname'];
-                unset($data['uname']);
+        // Check real/model entity
+        if (isset($this->currentContext[NormalizerService::CONTEXT_AS_MODEL])) {
+            $this->currentIsModel = $this->currentContext[NormalizerService::CONTEXT_AS_MODEL];
+            unset($this->currentContext[NormalizerService::CONTEXT_AS_MODEL]);
+            dd($this->currentContext, $this->currentIsModel);
+        }
+        // Existing entity to populate
+        if ($existing_entity = $this->getNormaliserService()->cleanAndPrepareDataToDeserialize($data, $type)) {
+            if (empty($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] ?? null)) {
+                $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] = $existing_entity;
             }
-            /** @var WireEntityInterface */
-            $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
-            if($entity instanceof TraitUnamedInterface && empty($entity->getUname())) {
-                // dump($entity->getUnameName());
-                throw new Exception(vsprintf('Error %s line %d: Entity %s has no Uname!', [__METHOD__, __LINE__, $entity->getShortname()]));
+        }
+        // If MODEL
+        if ($this->currentIsModel) {
+            if (isset($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE]) && $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] instanceof WireEntityInterface) {
+                $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->wireEm->createClone($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE]);
             }
-            // Uname on new entity
-            if($uname && $entity instanceof TraitUnamedInterface) {
-                $entity->setUname($uname);
-            }
-            $cmd = $this->getEntityManager()->getClassMetadata($entity->getClassname());
-            foreach ($cmd->getAssociationMappings() as $field => $relation) {
-                if(!empty($data[$field] ?? null)) {
-                    $this->loadRelated($entity, $field, $data[$field], $relation['targetEntity'], $cmd);
+        }
+
+        /** @var WireEntityInterface */
+        $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
+
+        $cmd = $this->wireEm->getClassMetadata($entity->getClassname());
+        foreach ($cmd->getAssociationMappings() as $field => $relation) {
+            $target_entity = $relation['targetEntity'];
+            if (!empty($data[$field] ?? null)) {
+                // $this->loadRelated($entity, $field, $data[$field], $relation['targetEntity'], $cmd);
+                switch (true) {
+                    case $relation instanceof ToOneAssociationMapping:
+                        // ToOne Relation
+                        if ($relatedEntity = $this->FindOrCreateEntity($data[$field], $target_entity)) {
+                            $cmd->setFieldValue($entity, $field, $relatedEntity);
+                        }
+                        break;
+                    case $relation instanceof ToManyAssociationMapping:
+                        // ToMany Relation
+                        $relatedEntitys = new ArrayCollection();
+                        foreach ($data as $index => $value) {
+                            if (is_string($index) && is_array($value) && Uname::isValidUname($index)) {
+                                $value['uname'] ??= $index;
+                            }
+                            $relatedEntity = $this->FindOrCreateEntity($value, $target_entity);
+                            if ($relatedEntity && !$relatedEntitys->contains($relatedEntity)) {
+                                $relatedEntitys->add($relatedEntity);
+                            }
+                        }
+                        if (!$relatedEntitys->isEmpty()) $cmd->setFieldValue($entity, $field, $relatedEntitys);
+                        break;
                 }
             }
-            return $entity;
         }
-        $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
-        dd($data, $type, $format, $context, $entity);
+
         return $entity;
     }
 
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
-        return static::isEnabled()
-            ? is_a($type, WireEntityInterface::class, true)
-            // && isset($data['classname'])
-            : false;
+        $supports = static::isEnabled()
+            && is_array($data)
+            && is_a($type, WireEntityInterface::class, true)
+            && !is_a($type, UnameInterface::class, true);
+        return $supports;
     }
 
     public function getSupportedTypes(?string $format): array
@@ -159,176 +119,23 @@ class EntityDenormalizer implements DenormalizerInterface
         return static::isEnabled() ? [WireEntityInterface::class => true] : [];
     }
 
-    protected function loadRelated(
-        WireEntityInterface $entity,
-        string $field,
-        WireEntityInterface|iterable|int|string $data,
-        string $target_class,
-        ClassMetadata $cmd
-    ): void
-    {
-        $cmd = $this->getEntityManager()->getClassMetadata($entity->getClassname());
-        $relation = $cmd->getAssociationMapping($field);
-        switch (true) {
-            case $relation instanceof ToOneAssociationMapping:
-                // ToOne Relation
-                if($relatedEntity = $this->FindOrCreateOneEntity($data, $target_class)) {
-                    $cmd->setFieldValue($entity, $field, $relatedEntity);
-                }
-                break;
-            case $relation instanceof ToManyAssociationMapping:
-                // ToMany Relation
-                if(!is_iterable($data)) {
-                    throw new Exception(vsprintf('Error %s line %d: ToMany relation field %s needs iterable data, got %s!', [__METHOD__, __LINE__, $field, gettype($data)]));
-                }
-                $relatedEntitys = new ArrayCollection();
-                foreach ($data as $value) {
-                    if($relatedEntity = $this->FindOrCreateOneEntity($value, $target_class)) {
-                        if(!$relatedEntitys->contains($relatedEntity)) $relatedEntitys->add($relatedEntity);
-                    }
-                }
-                if(!$relatedEntitys->isEmpty()) $cmd->setFieldValue($entity, $field, $relatedEntitys);
-                break;
+
+    /****************************************************************************************************/
+    /** INTERNALS                                                                                       */
+    /****************************************************************************************************/
+
+    private function FindOrCreateEntity(
+        iterable|int|string $data,
+        string $classname
+    ): ?WireEntityInterface {
+        if (Encoders::isEuidFormatValid($data)) {
+            $data = ['euid' => $data];
+        } else if (Uname::isValidUname($data)) {
+            $data = ['uname' => $data];
+        } else if (preg_match('/^\d+$/', (string)$data) && intval($data) > 0) {
+            $data = ['id' => intval($data)];
         }
+        $entity = $this->getNormaliserService()->denormalizeEntity($data, $classname);
+        return $entity;
     }
-
-    public function FindOrCreateOneEntity(
-        WireEntityInterface|iterable|int|string $identifier,
-        string $target_class
-    ): ?WireEntityInterface
-    {
-        $relatedEntity = null;
-        // Try find just created entity in memory
-        if(is_string($identifier) && $justcreated = $this->getWireEntityManager()->findCreated($identifier)) {
-            $relatedEntity = $justcreated;
-        } else {
-            $target_repo = $this->getEntityManager()->getRepository($target_class);
-            switch (true) {
-                case $identifier instanceof WireEntityInterface:
-                    // Is already entity
-                    $relatedEntity = $identifier;
-                    break;
-                case is_string($identifier) && Encoders::isEuidFormatValid($identifier):
-                    // Load related entity by Euid
-                    $relatedEntity = $target_repo->findOneBy(['euid' => $identifier]);
-                    break;
-                case is_int($identifier):
-                    if($test = $target_repo->findOneBy(['id' => $identifier])) {
-                        $relatedEntity = $test;
-                    }
-                    break;
-                case is_string($identifier):
-                    // Load related entity different searchs
-                    foreach ($this->getAvailableSearchKeys($target_class) as $key) {
-                        if($test = $target_repo->findOneBy([$key => $identifier])) {
-                            $relatedEntity = $test;
-                            break;
-                        }
-                    }
-                    if(empty($relatedEntity)) {
-                        // Load related entity by uname or Euid
-                        /** @var Uname */
-                        $uname = $this->getEntityManager()->getRepository(Uname::class)->findOneBy(['id' => $identifier]);
-                        if(!empty($uname)) {
-                            $relatedEntity = $target_repo->findOneBy(['euid' => $uname->getEntityEuid()]);
-                        }
-                    }
-                    break;
-                case is_array($identifier):
-                    // Load related entity by search key
-                    $id_keys = array_intersect($this->getAvailableSearchKeys($target_class), array_keys($identifier));
-                    if(count($id_keys) > 0) {
-                        foreach ($id_keys as $key) {
-                            if($test = $this->FindOrCreateOneEntity($identifier[$key], $target_class)) {
-                                $relatedEntity = $test;
-                                break;
-                            }
-                        }
-                    } else {
-                        // No identifier found: create new Entity
-                        $relatedEntity = $this->getWireEntityManager()->createEntity($target_class, $identifier, $this->currentContext);
-                    }
-                    break;
-            }
-        }
-        $this->controlEntity($relatedEntity, $target_class, true);
-        return $relatedEntity;
-    }
-
-    public function controlEntity(
-        ?WireEntityInterface $entity,
-        string $target_class,
-        bool $exception = true
-    ): bool
-    {
-        if(!in_array($target_class, static::NOT_CONTROLLED_CLASSES)) {
-            if(empty($entity)) {
-                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity of class %s not found!', [__METHOD__, __LINE__, $target_class]));
-                return false;
-            }
-            if(!$entity->__estatus->isContained()) {
-                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not managed by EntityManager!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString()]));                    
-                return false;
-            }
-            if(!is_a($entity, $target_class)) {
-                if($exception) throw new Exception(vsprintf('Error %s line %d: Entity %s "%s" is not instance of %s!', [__METHOD__, __LINE__, $entity->getShortname(), $entity->__toString(), $target_class]));
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Get available search keys for a class
-     * @param string $class
-     */
-    public function getAvailableSearchKeys(
-        string $class
-    ): array
-    {
-        $cmd = $this->getEntityManager()->getClassMetadata($class);
-        return array_intersect(static::SEARCH_KEYS, array_keys($cmd->fieldMappings));
-    }
-
-    /**
-     * Test if $id is set and is an integer or a string of numbers only.
-     * If yes, set $id to integer.
-     * @param mixed $id
-     * @return boolean
-     */
-    public static function isIdsoSetInt(
-        mixed &$id
-    ): bool
-    {
-        if(is_int($id) && $id > 0) return true;
-        if(is_string($id) && preg_match('/^\d+$/', $id)) {
-            $id2 = (int)$id;
-            if($id2 > 0) {
-                $id = $id2;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Test if $data is an array of managed entity.
-     * @param array|int $data
-     * @return boolean
-     */
-    protected function arrayIsAManagedEntity(
-        array|int $data
-    ): bool
-    {
-        if(static::isIdsoSetInt($data)) return true;
-        $keys = is_array($data) ? array_keys($data) : ['id'];
-        $has_indexes = count(array_intersect(static::SEARCH_KEYS, $keys)) > 0;
-        if($has_indexes) {
-            foreach (static::SEARCH_KEYS as $key) {
-                if(!empty($data[$key] ?? null)) return true;
-            }
-        }
-        return false;
-    }
-
 }

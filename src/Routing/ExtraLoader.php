@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Routing;
 
 use Aequation\WireBundle\Controller\API\AppWireController;
@@ -24,9 +25,8 @@ class ExtraLoader implements LoaderInterface
     private array $routenames = [];
 
     public function __construct(
-       private WireEntityManagerInterface $wire_em
-    ) {
-    }
+        private WireEntityManagerInterface $wire_em
+    ) {}
 
     public function load($resource, $type = null): mixed
     {
@@ -39,7 +39,7 @@ class ExtraLoader implements LoaderInterface
         // Darkmode Switcher
         $path = '/api/darkmode/{darkmode}';
         $defaults = [
-            '_controller' => AppWireController::class.'::darkmodeSwitcher',
+            '_controller' => AppWireController::class . '::darkmodeSwitcher',
             'darkmode' => 'auto',
         ];
         $requirements = ['darkmode' => '/(on|off|auto)/'];
@@ -51,19 +51,19 @@ class ExtraLoader implements LoaderInterface
         // Security
         // Login
         $path = '/login';
-        $defaults = ['_controller' => SecurityController::class.'::login'];
+        $defaults = ['_controller' => SecurityController::class . '::login'];
         $route = new Route(path: $path, defaults: $defaults);
         $this->routenames['app_login'] = $route;
         $routes->add('app_login', $route);
         // Logout
         $path = '/logout';
-        $defaults = ['_controller' => SecurityController::class.'::logout'];
+        $defaults = ['_controller' => SecurityController::class . '::logout'];
         $route = new Route(path: $path, defaults: $defaults);
         $this->routenames['app_logout'] = $route;
         $routes->add('app_logout', $route);
         // Register
         $path = '/register';
-        $defaults = ['_controller' => RegistrationController::class.'::register'];
+        $defaults = ['_controller' => RegistrationController::class . '::register'];
         $route = new Route(path: $path, defaults: $defaults);
         $this->routenames['app_register'] = $route;
         $routes->add('app_register', $route);
@@ -71,7 +71,7 @@ class ExtraLoader implements LoaderInterface
         // Admin entities
         $reflectionClass = new ReflectionClass(EntityAdminController::class);
         $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
-        foreach ($methods as $method) {     
+        foreach ($methods as $method) {
             $attributes = $method->getAttributes(AttributeRoute::class);
             foreach ($attributes as $attribute) {
                 $routeAttr = $attribute->newInstance();
@@ -90,6 +90,7 @@ class ExtraLoader implements LoaderInterface
             }
         }
         $this->loaded = true;
+        // dump(array_keys($this->routenames));
         return $routes;
     }
 
@@ -110,5 +111,4 @@ class ExtraLoader implements LoaderInterface
         // same as above
         $this->loderResolver = $resolver;
     }
-
 }

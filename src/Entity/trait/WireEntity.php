@@ -1,18 +1,19 @@
 <?php
+
 namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
+use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 // PHP
 use ReflectionClass;
 use Exception;
-use Symfony\Component\PropertyAccess\PropertyAccess;
 
 trait WireEntity
 {
@@ -37,10 +38,11 @@ trait WireEntity
     protected readonly string $shortname;
 
     public readonly EntityEmbededStatusInterface $__estatus;
-
+    public readonly EntitySelfState $__selfstate;
 
     public function __construct_entity(): void
     {
+        $this->doInitializeSelfState();
         $rc = new ReflectionClass(static::class);
         $this->classname = $rc->getName();
         $this->shortname = $rc->getShortName();
@@ -50,17 +52,41 @@ trait WireEntity
         foreach ($construct_methods as $method) {
             $this->$method();
         }
-        if(!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
+        if (!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
     }
+
+
+    /*************************************************************************************
+     * SELF STATE
+     *************************************************************************************/
+
+    public function doInitializeSelfState(
+        string $state = 'auto',
+        bool|string $debug = 'auto'
+    ): void {
+        if ('auto' === $state) {
+            $state = empty($this->getId()) ? 'new' : 'loaded';
+        }
+        $this->__selfstate ??= new EntitySelfState($this, $state, $debug);
+    }
+
+    public function getSelfState(): ?EntitySelfState
+    {
+        return $this->__selfstate ?? null;
+    }
+
+
+    /*************************************************************************************
+     * EMBEDED STATUS
+     *************************************************************************************/
 
     public function setEmbededStatus(
         EntityEmbededStatusInterface $estatus
-    ): void
-    {
-        if(!isset($this->__estatus)) {
+    ): void {
+        if (!isset($this->__estatus)) {
             $this->__estatus = $estatus;
-        } else if($this->__estatus !== $estatus) {
-            if($this->__estatus->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
+        } else if ($this->__estatus !== $estatus) {
+            if ($this->__estatus->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
         }
     }
 
@@ -81,7 +107,7 @@ trait WireEntity
 
     public function getUnameThenEuid(): string
     {
-        if($this instanceof TraitUnamedInterface) {
+        if ($this instanceof TraitUnamedInterface) {
             $unameName = $this->getUname()->getUname();
         }
         return empty($unameName)
@@ -91,9 +117,8 @@ trait WireEntity
 
     public function defineUname(
         string $uname
-    ): static
-    {
-        if($this instanceof TraitUnamedInterface) {
+    ): static {
+        if ($this instanceof TraitUnamedInterface) {
             // if(strlen($uname) < 3) throw new Exception(vsprintf('Error %s line %d: Uname for %s must have at least 3 lettres, got "%s"!', [__METHOD__, __LINE__, static::class, $uname]));
             $this->updateUname($uname);
         }
@@ -102,7 +127,7 @@ trait WireEntity
 
     private function getNewEuid(): string
     {
-        return Encoders::geUniquid($this->classname.'|');
+        return Encoders::geUniquid($this->classname . '|');
     }
 
     public function getClassname(): string
@@ -112,8 +137,7 @@ trait WireEntity
 
     public function getShortname(
         bool $lowercase = false
-    ): string
-    {
+    ): string {
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;
@@ -144,7 +168,7 @@ trait WireEntity
     {
         $accessor = PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
         foreach ($data as $attr => $value) {
-            if($attr === 'id') {
+            if ($attr === 'id') {
                 $this->id = $value;
                 continue;
             }
@@ -177,10 +201,7 @@ trait WireEntity
 
     public function getIcon(
         string $type = 'ux'
-    ): string
-    {
+    ): string {
         return static::ICON[$type];
     }
-
-
 }

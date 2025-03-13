@@ -1,9 +1,12 @@
 <?php
+
 namespace Aequation\WireBundle\Service\trait;
 
+use Aequation\WireBundle\Component\NormalizeOptionsContainer;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Serializer\EntityDenormalizer;
+use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Service\WireEntityManager;
 // Symfony
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -14,6 +17,7 @@ use Knp\Component\Pager\Pagination\PaginationInterface;
 use Symfony\Component\HttpFoundation\Request;
 // PHP
 use Exception;
+use ReflectionClassConstant;
 
 trait TraitBaseEntityService
 {
@@ -55,29 +59,19 @@ trait TraitBaseEntityService
     protected function createNewEntity(
         ?array $data = [], // ---> do not forget uname if wanted!
         ?array $context = []
-    ): WireEntityInterface
-    {
+    ): WireEntityInterface {
         $classname = $this->getEntityClassname();
-        if(empty($context['groups'] ?? null)) {
-            $norm_groups = EntityDenormalizer::getNormalizeGroups($classname, type: 'hydrate');
-            $context['groups'] = $norm_groups['denormalize'];
-        }
-        $entity = $this->normalizer->denormalizeEntity($data, $classname, null, $context);
-        // dd($data, $classname, $context, $entity);
+        $normalizeContainer = new NormalizeOptionsContainer(context: $context);
+        $entity = $this->normalizer->denormalizeEntity($data, $classname, null, $normalizeContainer->getContext());
         return $entity;
     }
 
     public function createEntity(
         ?array $data = [], // ---> do not forget uname if wanted!
         ?array $context = []
-    ): WireEntityInterface
-    {
-        if(empty($context['groups'] ?? null)) {
-            $norm_groups = EntityDenormalizer::getNormalizeGroups($this->getEntityClassname(), type: 'hydrate');
-            $context['groups'] = $norm_groups['denormalize'];
-        }
-        $entity = $this->createNewEntity($data, $context);
-        $this->wireEntityService->postCreatedRealEntity($entity, false);
+    ): WireEntityInterface {
+        $normalizeContainer = new NormalizeOptionsContainer(true, false, $context);
+        $entity = $this->createNewEntity($data, $normalizeContainer->getContext());
         // Add some stuff here...
         return $entity;
     }
@@ -90,14 +84,11 @@ trait TraitBaseEntityService
     public function createModel(
         ?array $data = [], // ---> do not forget uname if wanted!
         ?array $context = []
-    ): WireEntityInterface
-    {
-        if(empty($context['groups'] ?? null)) {
-            $norm_groups = EntityDenormalizer::getNormalizeGroups($this->getEntityClassname(), type: 'model');
-            $context['groups'] = $norm_groups['denormalize'];
+    ): WireEntityInterface {
+        if (empty($context['groups'] ?? null)) {
+            $context['groups'] = NormalizerService::getDenormalizeGroups($this->getEntityClassname(), type: 'model');
         }
         $model = $this->createNewEntity($data, $context);
-        $this->wireEntityService->postCreatedRealEntity($model, true);
         // Add some stuff here...
         return $model;
     }
@@ -106,14 +97,12 @@ trait TraitBaseEntityService
         WireEntityInterface $entity,
         ?array $changes = [], // ---> do not forget uname if wanted!
         ?array $context = []
-    ): WireEntityInterface|false
-    {
-        $norm_groups = EntityDenormalizer::getNormalizeGroups($entity, type: 'clone');
-        if(empty($context['groups'] ?? null)) {
-            $context['groups'] = $norm_groups['normalize'];
+    ): WireEntityInterface|false {
+        if (empty($context['groups'] ?? null)) {
+            $context['groups'] = NormalizerService::getNormalizeGroups($entity, type: 'clone');
         }
         $data = $this->normalizer->normalizeEntity($entity, null, $context);
-        $context['groups'] = $norm_groups['denormalize'];
+        $context['groups'] = NormalizerService::getDenormalizeGroups($entity, type: 'clone');
         $clone = $this->createEntity(array_merge($data, $changes));
         // Add some stuff here...
         return $clone;
@@ -124,9 +113,10 @@ trait TraitBaseEntityService
      *
      * @return string|null
      */
-    public function getEntityClassname(): ?string
+    public function getEntityClassname(): string
     {
-        return static::ENTITY_CLASS;
+        $rconstant = new ReflectionClassConstant(static::class, 'ENTITY_CLASS');
+        return $rconstant->getValue();
     }
 
     /**
@@ -135,9 +125,8 @@ trait TraitBaseEntityService
      * @return EntityRepository
      */
     public function getRepository(
-        $classname = null
-    ): ?EntityRepository
-    {
+        ?string $classname = null
+    ): ?EntityRepository {
         $classname ??= $this->getEntityClassname();
         return $this->getEm()?->getRepository($classname) ?: null;
     }
@@ -150,9 +139,8 @@ trait TraitBaseEntityService
      */
     public function getEntitiesCount(
         array $criteria = [],
-        $classname = null
-    ): int|false
-    {
+        ?string $classname = null
+    ): int|false {
         /** @var EntityRepository */
         $repository = $this->getRepository($classname);
         return $repository ? $repository->count($criteria) : false;
@@ -175,10 +163,9 @@ trait TraitBaseEntityService
         ?int $page = null,
         ?string $method = null,
         array $parameters = []
-    ): PaginationInterface
-    {
-        if(empty($page)) $page = $this->appWire->getRequest()->query->getInt('page', 1);
-        if(empty($method)) $method = 'findPaginated';
+    ): PaginationInterface {
+        if (empty($page)) $page = $this->appWire->getRequest()->query->getInt('page', 1);
+        if (empty($method)) $method = 'findPaginated';
         $query = $this->getRepository()->$method(...$parameters);
         return $this->paginator->paginate($query, $page);
     }
@@ -191,10 +178,8 @@ trait TraitBaseEntityService
      */
     public function getPaginatedContextData(
         ?Request $request = null
-    ): array
-    {
+    ): array {
         // $request ??= $this->appWire->getRequest();
         throw new Exception(vsprintf('Method %s not implemented yet.', [__METHOD__]));
     }
-
 }

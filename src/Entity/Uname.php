@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
@@ -62,11 +63,11 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      * @param string $uname
      * @return bool
      */
+    #[Assert\IsTrue()]
     public static function isValidUname(
-        string $uname
-    ): bool
-    {
-        return preg_match(static::UNAME_PATTERN, $uname);
+        mixed $uname
+    ): bool {
+        return is_string($uname) && preg_match(static::UNAME_PATTERN, $uname) && !preg_match('/^\\d+$/', $uname);
     }
 
     /**
@@ -79,15 +80,14 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     public function attributeEntity(
         TraitUnamedInterface $entity,
         ?string $uname = null
-    ): static
-    {
-        if(!isset($this->entity)) {
+    ): static {
+        if (!isset($this->entity)) {
             $this->entity = $entity;
-        } else if($this->entity !== $entity) {
+        } else if ($this->entity !== $entity) {
             throw new Exception(vsprintf("Error %s line %d:%s- Can not set another entity!", [__METHOD__, __LINE__, PHP_EOL]));
         }
-        if(!empty($uname) || empty($this->id ?? null)) {
-            if(empty($uname)) $uname = $this->entity->getEuid();
+        if (!empty($uname) || empty($this->id ?? null)) {
+            if (empty($uname)) $uname = $this->entity->getEuid();
             $this->setUname($uname);
         }
         $this->entityEuid = $this->entity->getEuid();
@@ -112,7 +112,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function setUname(string $uname): static
     {
-        if(!static::isValidUname($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
+        if (!static::isValidUname($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
         $this->id = $uname;
         return $this;
     }
@@ -126,5 +126,4 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     {
         return $this->entityEuid ?? null;
     }
-
 }

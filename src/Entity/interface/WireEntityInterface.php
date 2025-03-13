@@ -1,7 +1,10 @@
 <?php
+
 namespace Aequation\WireBundle\Entity\interface;
 
 // Aequation
+
+use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 // Symfony
 // use Symfony\Component\Uid\UuidV7 as Uuid;
@@ -10,9 +13,11 @@ use Stringable;
 
 interface WireEntityInterface extends Stringable, TraitSerializableInterface
 {
-
     // public function __toString(): string;
     public function __construct_entity(): void;
+    // Entity self state
+    public function doInitializeSelfState(string $state = 'auto', bool|string $debug = 'auto'): void;
+    public function getSelfState(): ?EntitySelfState;
     // Embeded Status
     public function setEmbededStatus(EntityEmbededStatusInterface $estatus): void;
     public function hasEmbededStatus(): bool;
@@ -33,5 +38,4 @@ interface WireEntityInterface extends Stringable, TraitSerializableInterface
     public function __unserialize(array $data): void;
     // Icon
     public function getIcon(string $type = 'ux'): string;
-
 }

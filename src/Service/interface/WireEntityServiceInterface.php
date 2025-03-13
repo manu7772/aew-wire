@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -32,8 +33,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
         ?array $context = []
     ): WireEntityInterface|false;
     // Querys
-    public function getEntityClassname(): ?string;
-    public function getRepository($classname = null): ?EntityRepository;
-    public function getEntitiesCount(array $criteria = [], $classname = null): int|false;
-
+    public function getEntityClassname(): string;
+    public function getRepository(?string $classname = null): ?EntityRepository;
+    public function getEntitiesCount(array $criteria = [], ?string $classname = null): int|false;
 }

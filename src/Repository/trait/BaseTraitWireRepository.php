@@ -1,4 +1,5 @@
 <?php
+
 namespace Aequation\WireBundle\Repository\trait;
 
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -36,7 +37,7 @@ trait BaseTraitWireRepository
         /** @var From */
         $from = reset($from);
         $aliases = $qb->getRootAliases();
-        if($from instanceof From) return $from->getAlias();
+        if ($from instanceof From) return $from->getAlias();
         return count($aliases) ? reset($aliases) : static::getDefaultAlias();
     }
 
@@ -50,21 +51,14 @@ trait BaseTraitWireRepository
 
     public function findEntityByEuidOrUname(
         string $euidOrUname
-    ): ?WireEntityInterface
-    {
+    ): ?WireEntityInterface {
         $qb = $this->createQueryBuilder(static::alias())
-            ->where(static::alias().'.euid = :euidOrUname')
+            ->where(static::alias() . '.euid = :euidOrUname')
             ->setParameter('euidOrUname', $euidOrUname);
-        if($this->hasRelation('uname')) {
-            $qb->leftJoin(static::alias().'.uname', 'uname')
+        if ($this->hasRelation('uname')) {
+            $qb->leftJoin(static::alias() . '.uname', 'uname')
                 ->orWhere('uname.id = :euidOrUname');
         }
         return $qb->getQuery()->getOneOrNullResult();
     }
-
-    public function findOneByEuid(string $euid): ?WireEntityInterface
-    {
-        return $this->findOneByEuid($euid);
-    }
-
 }

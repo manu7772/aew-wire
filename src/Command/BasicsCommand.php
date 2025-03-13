@@ -1,22 +1,20 @@
 <?php
+
 namespace Aequation\WireBundle\Command;
 
 // Aequation
 
-use Aequation\WireBundle\Service\interface\ObjectHydratorInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use Aequation\WireBundle\Service\Opresult;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Console\Helper\HelperInterface;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
@@ -33,12 +31,13 @@ class BasicsCommand extends Command
     // public readonly string $path;
 
     public function __construct(
-        protected ObjectHydratorInterface $hydrator,
-    )
-    {
+        protected NormalizerServiceInterface $hydrator,
+        protected WireEntityManagerInterface $wireEm,
+        // protected AppWireServiceInterface $appWire,
+    ) {
         parent::__construct();
     }
-    
+
     protected function configure(): void
     {
         // $this->path = static::DEFAULT_DATA_PATH;
@@ -47,8 +46,6 @@ class BasicsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $appWire = $this->hydrator->getAppWire();
-        $wire_em = $this->hydrator->getWireEntityManager();
 
         /**
          * @see https://symfony.com/doc/current/components/console/helpers/questionhelper.html
@@ -66,47 +63,47 @@ class BasicsCommand extends Command
         $question = new Question(vsprintf('Indiquez le chemin vers les données (default: %s) :', [static::DEFAULT_DATA_PATH]), static::DEFAULT_DATA_PATH);
         $question->setAutocompleterValues($paths);
         $path = $helper->ask($input, $output, $question);
-        $io->writeln(vsprintf('- Chemin vers les données de génération : %s', [$appWire->getProjectDir($path)]));
+        $io->writeln(vsprintf('- Chemin vers les données de génération : %s', [$this->wireEm->appWire->getProjectDir($path)]));
         /** Get YAML files data */
         $data = $this->hydrator->getPathYamlData($path);
-        if(false === $data) {
+        if (false === $data) {
             $io->error(vsprintf('Le chemin de répertoire %s est invalide', [$path]));
             return Command::FAILURE;
-        } else if(empty($data)) {
+        } else if (empty($data)) {
             $io->warning(vsprintf('Aucun fichier de données n\'a été trouvé dans le répertoire %s', [$path]));
             return Command::INVALID;
         }
         $io->writeln(vsprintf('<info>- Fichiers de données trouvés : %d</info>', [count($data)]));
 
         // Print results
-        $classnames = $wire_em->getEntityNames(false, false, true);
+        $classnames = $this->wireEm->getEntityNames(false, false, true);
         $entities_data = [];
         $lines = [];
         foreach ($data as $filename => $d) {
             $count = count($d['items'] ?? []);
             $available = $count > 0 && class_exists($d['entity']) && in_array($d['entity'], $classnames) && ($d['enabled'] ?? true);
-            if($available) $entities_data[$d['entity']] = $d;
+            if ($available) $entities_data[$d['entity']] = $d;
             $start = $available ? '' : '<fg=gray>';
             $end = $available ? '' : '</>';
             $lines[] = [
-                $start.($d['order'] ?? '?').$end,
-                $start.$filename.$end,
-                $start.$d['entity'].$end,
-                $start.(class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???').$end,
-                $start.$count.$end,
-                $available ? '<fg=green>Oui</>' : $start.'Non'.$end,
+                $start . ($d['order'] ?? '?') . $end,
+                $start . $filename . $end,
+                $start . $d['entity'] . $end,
+                $start . (class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???') . $end,
+                $start . $count . $end,
+                $available ? '<fg=green>Oui</>' : $start . 'Non' . $end,
                 $d['enabled'] ?? true ? '<fg=green>Oui</>' : '<fg=red>Non</>',
             ];
         }
         $io->table(
-            ['Ord','File','Classname','Name','Count','Available','Enabled'],
+            ['Ord', 'File', 'Classname', 'Name', 'Count', 'Available', 'Enabled'],
             $lines
         );
 
         /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
         // $allClassnames = array_filter(
-        //     $wire_em->getEntityNames(false, false, true),
+        //     $this->wireEm->getEntityNames(false, false, true),
         //     fn($classname) => preg_match('/^App\\\\Entity\\\\/', $classname)
         // );
         $question = new ChoiceQuestion(
@@ -116,7 +113,7 @@ class BasicsCommand extends Command
         );
         $question->setMultiselect(true);
         $classnames = $helper->ask($input, $output, $question);
-        if(in_array(static::ALL_CLASSES, $classnames)) $classnames = array_keys($entities_data);
+        if (in_array(static::ALL_CLASSES, $classnames)) $classnames = array_keys($entities_data);
         // Filter data
         $entities_data = array_filter($entities_data, fn($d) => in_array($d['entity'], $classnames));
         $lines = [];
@@ -136,7 +133,7 @@ class BasicsCommand extends Command
         $question = new ConfirmationQuestion('Remplace si existante (oui/non) (défaut: oui) ? ', true, '/^(o|oui|y|yes)/i');
         $replace = $helper->ask($input, $output, $question);
         $io->writeln(vsprintf('- Remplace : %s', [$replace ? 'Oui' : 'Non']));
-        if($replace) {
+        if ($replace) {
             $io->note('Remplace si existant.');
             // sleep(1);
         }
@@ -148,7 +145,7 @@ class BasicsCommand extends Command
                 $replace,
                 $io
             );
-            if($opresult->isSuccess()) {
+            if ($opresult->isSuccess()) {
                 // $io->success(vsprintf('Entités générées pour %s', [$class]));
             } else {
                 $io->error(vsprintf('Erreur(s) lors de la génération des entités pour %s', [$class]));
@@ -174,7 +171,7 @@ class BasicsCommand extends Command
                 return Command::FAILURE;
             }
             try {
-                $wire_em->getEm()->flush();
+                $this->wireEm->getEm()->flush();
                 $io->success(vsprintf('Entités générées pour %s', [$class]));
             } catch (\Throwable $th) {
                 $io->error(vsprintf('Erreur lors de l\'enregistrement des entités pour %s%s%s', [$class, PHP_EOL, $th->getMessage()]));
@@ -201,6 +198,5 @@ class BasicsCommand extends Command
         //     return Command::FAILURE;
         // }
         return Command::SUCCESS;
-
     }
 }
