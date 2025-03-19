@@ -75,7 +75,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         KernelEvent $event
     ): bool
     {
-        return $event->isMainRequest() && !static::isWdtRequest($event);
+        return $event->isMainRequest() && !HttpRequest::isCli() && !static::isWdtRequest($event);
     }
 
     public function onRequest(RequestEvent $event): void

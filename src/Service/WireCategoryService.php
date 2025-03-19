@@ -2,8 +2,6 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\WireCategory;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 // use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
