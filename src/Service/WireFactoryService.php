@@ -11,20 +11,5 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
 
     public const ENTITY_CLASS = WireFactory::class;
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireFactoryInterface) {
-            // Check here
-        }
-    }
 
 }

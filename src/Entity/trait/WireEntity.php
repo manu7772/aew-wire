@@ -107,19 +107,15 @@ trait WireEntity
 
     public function getUnameThenEuid(): string
     {
-        if ($this instanceof TraitUnamedInterface) {
-            $unameName = $this->getUname()->getUname();
-        }
-        return empty($unameName)
-            ? $this->getEuid()
-            : $unameName;
+        return $this instanceof TraitUnamedInterface
+            ? $this->getUnameName()
+            : $this->getEuid();
     }
 
     public function defineUname(
         string $uname
     ): static {
         if ($this instanceof TraitUnamedInterface) {
-            // if(strlen($uname) < 3) throw new Exception(vsprintf('Error %s line %d: Uname for %s must have at least 3 lettres, got "%s"!', [__METHOD__, __LINE__, static::class, $uname]));
             $this->updateUname($uname);
         }
         return $this;
@@ -199,7 +195,7 @@ trait WireEntity
         $this->__unserialize($data);
     }
 
-    public function getIcon(
+    public static function getIcon(
         string $type = 'ux'
     ): string {
         return static::ICON[$type];

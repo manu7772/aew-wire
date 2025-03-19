@@ -31,13 +31,12 @@ class Uname extends MappSuperClassEntity implements UnameInterface
         'ux' => 'tabler:fingerprint',
         'fa' => 'fa-fingerprint'
     ];
-    public const UNAME_PATTERN = '#^[\\w_-\\|\\.\\\\]{3,128}$#';
 
     #[ORM\Id]
     // #[ORM\GeneratedValue(strategy: "NONE")]
     #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
     #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres')]
-    #[Assert\Regex(Uname::UNAME_PATTERN)]
+    #[Assert\Regex(Encoders::UNAME_SCHEMA)]
     protected ?string $id = null;
 
     #[ORM\Column(updatable: false, unique: true)]
@@ -57,17 +56,10 @@ class Uname extends MappSuperClassEntity implements UnameInterface
         return $this->id ? (string)$this->id : parent::__toString();
     }
 
-    /**
-     * is valid uname
-     * 
-     * @param string $uname
-     * @return bool
-     */
     #[Assert\IsTrue()]
-    public static function isValidUname(
-        mixed $uname
-    ): bool {
-        return is_string($uname) && preg_match(static::UNAME_PATTERN, $uname) && !preg_match('/^\\d+$/', $uname);
+    public function isValid(): bool
+    {
+        return Encoders::isUnameFormatValid($this->id);
     }
 
     /**
@@ -112,7 +104,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function setUname(string $uname): static
     {
-        if (!static::isValidUname($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
+        if (!Encoders::isUnameFormatValid($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
         $this->id = $uname;
         return $this;
     }
@@ -125,5 +117,10 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     public function getEntityEuid(): ?string
     {
         return $this->entityEuid ?? null;
+    }
+
+    public function getEntity(): ?WireEntityInterface
+    {
+        return $this->entity;
     }
 }

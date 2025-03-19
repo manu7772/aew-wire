@@ -8,7 +8,7 @@ use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+// use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 abstract class WireUserService extends RoleHierarchy implements WireUserServiceInterface
 {
@@ -45,7 +46,8 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService,
         protected PaginatorInterface $paginator,
-        public readonly NormalizerServiceInterface $normalizer,
+        public readonly ValidatorInterface $validator,
+        // // public readonly NormalizerServiceInterface $normalizer,
         public readonly Security $security,
         public readonly AccessDecisionManagerInterface $accessDecisionManager,
         #[Autowire(param: 'security.role_hierarchy.roles')]
@@ -55,22 +57,6 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         parent::__construct($subhierarchy);
     }
 
-
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        $this->wireEntityService->checkEntityBase($entity);
-        if($entity instanceof WireUserInterface) {
-            // Check here
-        }
-    }
 
     public function getSecurity(): Security
     {
@@ -339,13 +325,13 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
     }
 
     public function compareUsers(
-        WireUserInterface $inferior,
-        WireUserInterface $manager
+        WireUserInterface $manager,
+        WireUserInterface $subordinate
     ): bool
     {
         throw new Exception(vsprintf('Error %s line %d: method %s not implemented!', [__METHOD__, __LINE__, __METHOD__]));
         // if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
-        //     foreach ($inferior->getRoles() as $role) {
+        //     foreach ($subordinate->getRoles() as $role) {
         //         if(!$this->isUserGranted($manager, $role)) return false;
         //     }
         // }
@@ -361,8 +347,13 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         WireUserInterface $user
     ): static
     {
-        if(isset($user->__estatus) && !$user->__estatus->isContained()) {
+
+        if(empty($user->getId() && !$user->__estatus->isContained())) {
             $this->getEm()->persist($user);
+        }
+        $errors = $this->validator->validate($user);
+        if(count($errors) > 0) {
+            throw new Exception(vsprintf('Error %s line %d: %s', [__METHOD__, __LINE__, $errors]));
         }
         $this->em->flush();
         return $this;

@@ -3,14 +3,13 @@
 namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
-use Aequation\WireBundle\Entity\interface\TraitClonableInterface;
+use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Event\WireEntityEvent;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
-use Doctrine\ORM\EntityManagerInterface;
 // Symfony
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 // PHP
 use Exception;
@@ -27,6 +26,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     public readonly EntityManagerInterface $em;
     public readonly UnitOfWork $uow;
     public readonly bool $model;
+    public readonly EntitySelfStateInterface $selfstate;
 
     /**
      * Constructor
@@ -38,17 +38,17 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         public readonly WireEntityInterface $entity,
         public readonly AppWireServiceInterface $appWire
     ) {
-        if (!isset($entity->__selfstate)) {
-            throw new Exception(vsprintf('Error %s line %d: %s %s (id: %s) does not contain self state %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity, $entity->getId() ?? 'NULL', EntitySelfState::class]));
-        }
-        if ($entity->__selfstate->isModel()) {
+        $this->selfstate = $entity->__selfstate;
+        // if (!isset($entity->__selfstate)) {
+        //     throw new Exception(vsprintf('Error %s line %d: %s %s (id: %s) does not contain self state %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity, $entity->getId() ?? 'NULL', EntitySelfState::class]));
+        // }
+        if ($this->selfstate->isModel()) {
             $this->setModel();
         }
         $this->wireEntityManager = $this->appWire->get(WireEntityManagerInterface::class);
         $this->em = $this->wireEntityManager->getEm();
         $this->uow = $this->wireEntityManager->getUow();
-        $service = $this->wireEntityManager->getEntityService($this->entity);
-        $this->service = $service;
+        $this->service = $this->wireEntityManager->getEntityService($this->entity);
         $entity->setEmbededStatus($this);
     }
 

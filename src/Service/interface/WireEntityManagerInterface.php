@@ -7,13 +7,14 @@ use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 // Symfony
-use Doctrine\Common\EventArgs;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
-use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Twig\Markup;
+// PHP
+use Closure;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
@@ -25,9 +26,12 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getRepository(string|WireEntityInterface $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
     public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
+    public function getEntityNamesChoices(bool $asHtml = false, string|false $icon_type = 'fa', bool $allnamespaces = false, bool $onlyInstantiables = false): array;
+    public function getEntityNameAsHtml(string|WireEntityInterface $classOrEntity, string|false $icon_type = false, bool $addClassname = true): Markup;
+    public function getEntityClassesOfInterface(string|array $interfaces, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
     public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
-    public function getRelateds(string|WireEntityInterface $objectOrClass, null|string|array $relationTypes = null, ?bool $excludeSelf = false): array;
+    public function getRelateds(string|WireEntityInterface $objectOrClass, ?Closure $filter = null, bool $excludeSelf = false): array;
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
@@ -38,12 +42,13 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function clearCreateds(): bool;
     public function clearPersisteds(): bool;
     public function findCreated(string $euidOrUname): ?WireEntityInterface;
-    public function postLoadedRealEntity(WireEntityInterface $entity): void;
-    public function postCreatedRealEntity(WireEntityInterface $entity): void;
-    public function checkEntityBase(WireEntityInterface $entity): void;
-    public function createEntity(string $classname, ?array $data = [], ?array $context = []): WireEntityInterface;
-    public function createModel(string $classname, ?array $data = [], ?array $context = []): WireEntityInterface;
-    public function createClone(WireEntityInterface $entity, ?array $changes = [], ?array $context = []): WireEntityInterface|false;
+    // public function checkEntityBase(WireEntityInterface $entity): void;
+    public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
+    public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
+    public function createClone(WireEntityInterface $entity, array $changes = [], array $context = [], bool $tryService = true): WireEntityInterface|false;
+    // Entity Events
+    public function postLoaded(WireEntityInterface $entity): void;
+    public function postCreated(WireEntityInterface $entity): void;
 
     // Find
     // public function getRepository(string $classname, ?string $field = null): BaseWireRepositoryInterface;
@@ -53,7 +58,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getEntitiesCount(string $classname, array $criteria = []): int;
 
     // Check
-    public function checkIntegrity(WireEntityInterface $entity, null|EventArgs|string $event = null): void;
+    // public function checkIntegrity(WireEntityInterface $entity, null|EventArgs|string $event = null): void;
 
     // Liip
     public function getBrowserPath(

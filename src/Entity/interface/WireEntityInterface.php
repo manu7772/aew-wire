@@ -37,5 +37,5 @@ interface WireEntityInterface extends Stringable, TraitSerializableInterface
     public function __serialize(): array;
     public function __unserialize(array $data): void;
     // Icon
-    public function getIcon(string $type = 'ux'): string;
+    public static function getIcon(string $type = 'ux'): string;
 }

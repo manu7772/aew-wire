@@ -21,22 +21,6 @@ abstract class WireWebsectionService extends WireItemService implements WireWebs
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireWebsectionInterface) {
-            // Check here
-        }
-    }
-
     public function getPreferedWebsections(): array
     {
         /** @var ServiceEntityRepository */

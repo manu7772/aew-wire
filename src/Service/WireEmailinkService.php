@@ -11,20 +11,5 @@ class WireEmailinkService extends WireRelinkService implements WireEmailinkServi
 
     const ENTITY_CLASS = WireEmailink::class;
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireEmailinkInterface) {
-            // Check here
-        }
-    }
 
 }

@@ -18,9 +18,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: WireItemRepository::class)]
 #[ORM\Table(name: 'w_item')]
@@ -45,6 +45,7 @@ class WireItem extends MappSuperClassEntity implements WireItemInterface
     protected ?int $id = null;
 
     #[ORM\Column()]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
     protected ?string $name = null;
 

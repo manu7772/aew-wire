@@ -35,22 +35,6 @@ class UnameService implements UnameServiceInterface
     ) {
     }
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        $this->wireEntityService->checkEntityBase($entity);
-        if($entity instanceof UnameInterface) {
-            // Check here
-        }
-    }
-
     /****************************************************************************************************/
     /** PAGINABLE                                                                                       */
     /****************************************************************************************************/

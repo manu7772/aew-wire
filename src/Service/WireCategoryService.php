@@ -5,7 +5,7 @@ use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\WireCategory;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+// use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
@@ -24,32 +24,33 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService,
         protected PaginatorInterface $paginator,
-        public readonly NormalizerServiceInterface $normalizer
     ) {
     }
 
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
+    public function getCategoryTypeChoices(
+        bool $asHtml = false,
+        bool $allnamespaces = false,
+        bool $onlyInstantiables = true
+    ): array
     {
-        $this->wireEntityService->checkEntityBase($entity);
-        if($entity instanceof WireCategoryInterface) {
-            // Check here
+        // $list = $this->wireEntityService->getEntityClassesOfInterface(WireCategoryInterface::class, false, $onlyInstantiables);
+        // $class = reset($list);
+        $class = static::ENTITY_CLASS;
+        if(!empty($class)) {
+            $relateds = $this->wireEntityService->getRelateds($class, null, false);
+            $entities = $asHtml
+                ? $this->wireEntityService->getEntityNamesChoices(true, true, $allnamespaces, $onlyInstantiables)
+                : $this->wireEntityService->getEntityNames(false, $allnamespaces, $onlyInstantiables);
+            $list = array_filter(
+                $entities,
+                function($class) use ($relateds) {
+                    // return !is_a($class, static::class, true);
+                    return array_key_exists($class, $relateds);
+                }
+            );
         }
-    }
-
-    public function getCategoryTypeChoices(): array
-    {
-        $choices = [];
-        
-        return $choices;
+        return $list;
     }
 
 }

@@ -86,12 +86,12 @@ class BasicsCommand extends Command
             $start = $available ? '' : '<fg=gray>';
             $end = $available ? '' : '</>';
             $lines[] = [
-                $start . ($d['order'] ?? '?') . $end,
-                $start . $filename . $end,
-                $start . $d['entity'] . $end,
-                $start . (class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???') . $end,
-                $start . $count . $end,
-                $available ? '<fg=green>Oui</>' : $start . 'Non' . $end,
+                $start.($d['order'] ?? '?').$end,
+                $start.$filename.$end,
+                $start.$d['entity'].$end,
+                $start.(class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???').$end,
+                $start.$count.$end,
+                $available ? '<fg=green>Oui</>' : $start.'Non'.$end,
                 $d['enabled'] ?? true ? '<fg=green>Oui</>' : '<fg=red>Non</>',
             ];
         }

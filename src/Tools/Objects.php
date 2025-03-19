@@ -49,6 +49,106 @@ class Objects implements ToolInterface
 
 
     /*************************************************************************************
+     * FIND CLASSES
+     *************************************************************************************/
+
+     /**
+     * Retrieve class or parent class that contains the DECLARED property
+     * @param object|string $class
+     * @param string $propertyName
+     * @return ReflectionClass|false
+     */
+    public static function getClassDeclaratorOfProperty(
+        object|string $class,
+        string $propertyName
+    ): ReflectionClass|false
+    {
+        $reflClass = new ReflectionClass($class);
+        while (!$reflClass->hasProperty($propertyName)) {
+            $parent = $reflClass->getParentClass();
+            if(!$parent) return false;
+            $reflClass = $parent;
+        }
+        return $reflClass;
+    }
+
+    /**
+     * Get filtered list of classes
+     * param $listOfClasses can be:
+     * - single => classname, object or regex
+     * - array of classnames or objects
+     * - empty (null or []) => uses all declared classes (get_declared_classes())
+     * @param array|object|string|null &$listOfClasses
+     * @return void
+     */
+    public static function filterDeclaredClasses(
+        null|array|object|string &$listOfClasses = null,
+        bool $sort = false
+    ): void
+    {
+        if(empty($listOfClasses)) $listOfClasses = get_declared_classes();
+        if(is_string($listOfClasses) && !class_exists($listOfClasses)) {
+            // filter with REGEX
+            $regex = $listOfClasses;
+            $listOfClasses = [];
+            foreach (get_declared_classes() as $class) {
+                if(preg_match($regex, $class)) $listOfClasses[] = $class;
+            }
+        }
+        if(!is_array($listOfClasses)) $listOfClasses = [$listOfClasses];
+        if($sort) sort($listOfClasses);
+    }
+
+    /**
+     * Get filtered list of classes
+     * param $interfaces can be:
+     * - single => classname or regex
+     * - array of interfaces classnames
+     * - empty (null or []) => uses all declared interfaces (get_declared_interfaces())
+     * @param array|object|string|null &$interfaces
+     * @return void
+     */
+    public static function filterDeclaredInterfaces(
+        null|array|object|string &$interfaces = null,
+        bool $sort = false
+    ): void
+    {
+        if(empty($interfaces)) $interfaces = get_declared_interfaces();
+        if(is_string($interfaces) && !interface_exists($interfaces)) {
+            // filter with REGEX
+            $regex = $interfaces;
+            $interfaces = [];
+            foreach (get_declared_interfaces() as $class) {
+                if(preg_match($regex, $class)) $interfaces[] = $class;
+            }
+        }
+        if(!is_array($interfaces)) $interfaces = [$interfaces];
+        if($sort) sort($interfaces);
+    }
+
+    /**
+     * Get classes of interface
+     * @param string|array $interfaces
+     * @param array|null $listOfClasses
+     * @return array
+     */
+    public static function filterByInterface(
+        string|array $interfaces,
+        null|array|object|string $listOfClasses = null
+    ): array
+    {
+        static::filterDeclaredInterfaces($interfaces);
+        static::filterDeclaredClasses($listOfClasses);
+        return array_filter($listOfClasses, function ($classname) use ($interfaces) {
+            foreach ($interfaces as $interface) {
+                if(is_a($classname, $interface, true)) return true;
+            }
+            return false;
+        });
+    }
+
+
+    /*************************************************************************************
      * ATTRIBUTES
      *************************************************************************************/
 

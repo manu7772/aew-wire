@@ -2,7 +2,7 @@
 
 namespace Aequation\WireBundle\Service\trait;
 
-use Aequation\WireBundle\Component\NormalizeOptionsContainer;
+use Aequation\WireBundle\Component\NormalizeDataContainer;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Serializer\EntityDenormalizer;
@@ -56,22 +56,11 @@ trait TraitBaseEntityService
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
-    protected function createNewEntity(
-        ?array $data = [], // ---> do not forget uname if wanted!
-        ?array $context = []
-    ): WireEntityInterface {
-        $classname = $this->getEntityClassname();
-        $normalizeContainer = new NormalizeOptionsContainer(context: $context);
-        $entity = $this->normalizer->denormalizeEntity($data, $classname, null, $normalizeContainer->getContext());
-        return $entity;
-    }
-
     public function createEntity(
-        ?array $data = [], // ---> do not forget uname if wanted!
-        ?array $context = []
+        array|false $data = false, // ---> do not forget uname if wanted!
+        array $context = []
     ): WireEntityInterface {
-        $normalizeContainer = new NormalizeOptionsContainer(true, false, $context);
-        $entity = $this->createNewEntity($data, $normalizeContainer->getContext());
+        $entity = $this->wireEntityService->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $entity;
     }
@@ -82,28 +71,22 @@ trait TraitBaseEntityService
      * @return WireEntityInterface
      */
     public function createModel(
-        ?array $data = [], // ---> do not forget uname if wanted!
-        ?array $context = []
-    ): WireEntityInterface {
-        if (empty($context['groups'] ?? null)) {
-            $context['groups'] = NormalizerService::getDenormalizeGroups($this->getEntityClassname(), type: 'model');
-        }
-        $model = $this->createNewEntity($data, $context);
+        array|false $data = false,
+        array $context = []
+    ): WireEntityInterface
+    {
+        $model = $this->wireEntityService->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $model;
     }
 
     public function createClone(
         WireEntityInterface $entity,
-        ?array $changes = [], // ---> do not forget uname if wanted!
-        ?array $context = []
-    ): WireEntityInterface|false {
-        if (empty($context['groups'] ?? null)) {
-            $context['groups'] = NormalizerService::getNormalizeGroups($entity, type: 'clone');
-        }
-        $data = $this->normalizer->normalizeEntity($entity, null, $context);
-        $context['groups'] = NormalizerService::getDenormalizeGroups($entity, type: 'clone');
-        $clone = $this->createEntity(array_merge($data, $changes));
+        array $changes = [], // ---> do not forget uname if wanted!
+        array $context = []
+    ): WireEntityInterface|false
+    {
+        $clone = $this->wireEntityService->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $clone;
     }

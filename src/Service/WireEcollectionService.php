@@ -11,20 +11,5 @@ abstract class WireEcollectionService extends WireItemService implements WireEco
 
     public const ENTITY_CLASS = WireEcollection::class;
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireEcollectionInterface) {
-            // Check here
-        }
-    }
 
 }

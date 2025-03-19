@@ -1,22 +1,19 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
-use Aequation\WireBundle\Entity\trait\Datetimed;
-use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
-use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 // Symfony
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
@@ -42,14 +39,17 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     protected ?int $id = null;
 
     #[ORM\Column(nullable: false)]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
     protected ?string $name = null;
 
     #[ORM\Column(updatable: false, nullable: false)]
+    #[Assert\NotBlank(message: 'Le type est obligatoire', groups: ['persist','update'])]
     protected ?string $type;
     protected array $typeChoices;
 
     #[ORM\Column(length: 64, nullable: true)]
+    #[Assert\Length(max: 64, maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères', groups: ['persist','update'])]
     #[Gedmo\Translatable]
     protected ?string $description = null;
 
@@ -70,7 +70,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     public function __toString(): string
     {
-        return (string)$this->name;
+        return $this->name;
     }
 
     public function getName(): string
@@ -84,17 +84,9 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return $this;
     }
 
-    public function setTypeChoices(
-        WireCategoryServiceInterface $service
-    ): static
-    {
-        $this->typeChoices = $service->getCategoryTypeChoices();
-        return $this;
-    }
-
     public function getTypeChoices(): array
     {
-        return $this->typeChoices;
+        return $this->typeChoices ??= $this->__estatus->service->getCategoryTypeChoices();
     }
 
     public function getType(): string
@@ -107,7 +99,16 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return Objects::getShortname($this->type);
     }
 
-    public function setType(string $type): static
+    /**
+     * Set type
+     * 
+     * @param string $type - classname or shortname
+     * @return static
+     * @throws Exception
+     */
+    public function setType(
+        string $type
+    ): static
     {
         $availables = $this->getAvailableTypes();
         if(!array_key_exists($type, $availables)) {

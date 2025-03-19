@@ -26,7 +26,7 @@ interface WireUserServiceInterface extends WireItemServiceInterface, RoleHierarc
     public static function filterChoiceRoles(array|WireUserInterface $roles): array;
     public function getAvailableRoles(string|array|WireUserInterface $roles, bool $filter_main_roles = true): array;
     public function getUpperRoleNames(string|array|WireUserInterface $roles, bool $filter_main_roles = true): array;
-    public function compareUsers(WireUserInterface $inferior, WireUserInterface $manager): bool;
+    public function compareUsers(WireUserInterface $manager, WireUserInterface $subordinate): bool;
     public function saveUser(WireUserInterface $user): static;
     public function createDefaultSuperAdmin(): WireUserInterface;
     public function getSuperadmins(): array;

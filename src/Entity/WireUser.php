@@ -12,6 +12,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
@@ -20,6 +22,7 @@ use DateTimeImmutable;
 // #[MappedSuperclass()]
 // #[ORM\Entity(repositoryClass: WireUserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'])]
 abstract class WireUser extends WireItem implements WireUserInterface
 {
     use Webpageable, Relinkable;
@@ -30,6 +33,8 @@ abstract class WireUser extends WireItem implements WireUserInterface
     ];
 
     #[ORM\Column(length: 180)]
+    #[Assert\Email(groups: ['registration','persist','update'], message: 'Cet email n\'est pas valide')]
+    #[Assert\NotBlank(groups: ['registration','persist','update'], message: 'Cet email est obligatoire')]
     protected ?string $email = null;
 
     /**
@@ -48,8 +53,9 @@ abstract class WireUser extends WireItem implements WireUserInterface
      * @see https://symfony.com/doc/current/reference/constraints/PasswordStrength.html
      * @see https://github.com/symfony/symfony/blob/7.0/src/Symfony/Component/Validator/Constraints/PasswordStrength.php
      */
-    #[SecurityAssert\UserPassword(message: 'Votre mot de passe n\'est pas valable', groups: ['registration'])]
     // #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM, message: 'Ce mot de passe n\'est pas assez sécurisé')]
+    // #[SecurityAssert\UserPassword(message: 'Votre mot de passe n\'est pas valable', groups: ['registration','persist'])]
+    #[Assert\NotBlank(groups: ['registration','persist'], message: 'Le mot de passe est obligatoire')]
     protected ?string $plainPassword = null;
 
     #[ORM\Column(nullable: true)]
@@ -81,9 +87,14 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return $this->getCivilName().' ['.$this->email.']';
     }
 
+    public function isActive(): bool
+    {
+        return $this->isEnabled() && !$this->isExpired();
+    }
+
     public function isLoggable(): bool
     {
-        return $this->isEnabled() && $this->isVerified() && !$this->isExpired();
+        return $this->isActive() && $this->isVerified();
     }
 
     public function isEqualTo(UserInterface $user): bool
@@ -232,8 +243,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public function isValidSuperadmin(): bool
     {
         return $this->HasRole(static::ROLE_SUPER_ADMIN)
-            && $this->isEnabled()
-            && $this->isVerified();
+            && $this->isLoggable();
     }
 
     /**

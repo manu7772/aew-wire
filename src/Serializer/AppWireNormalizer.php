@@ -23,7 +23,7 @@ class AppWireNormalizer implements NormalizerInterface
         private readonly NormalizerInterface $normalizer
     ) {}
 
-    public static function isEnabled(): bool
+    public function isEnabled(): bool
     {
         return static::ENABLED;
     }
@@ -46,14 +46,14 @@ class AppWireNormalizer implements NormalizerInterface
 
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
-        return static::isEnabled() ? $data instanceof AppWireServiceInterface : false;
+        return $this->isEnabled() ? $data instanceof AppWireServiceInterface : false;
     }
 
     public function getSupportedTypes(?string $format): array
     {
-        return static::isEnabled() ? [
+        return $this->isEnabled() ? [
             AppWireServiceInterface::class => true,
-            AppWireService::class => true,
+            // AppWireService::class => true,
         ] : [];
     }
 

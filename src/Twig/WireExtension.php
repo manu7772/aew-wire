@@ -186,7 +186,7 @@ class WireExtension extends AbstractExtension
     }
 
     /**
-     * Removed dump() function to prevent error when production environment
+     * Remove dump() function to prevent error when production environment
      * @param mixed $value
      * @return null
      */

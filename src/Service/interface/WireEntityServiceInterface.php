@@ -17,20 +17,20 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
-    public function checkEntity(WireEntityInterface $entity): void;
+    // public function checkEntity(WireEntityInterface $entity): void;
     // New
     public function createEntity(
-        ?array $data = [], // ---> do not forget uname if wanted!
-        ?array $context = []
+        array|false $data = false, // ---> do not forget uname if wanted!
+        array $context = []
     ): WireEntityInterface;
     public function createModel(
-        ?array $data = [], // ---> do not forget uname if wanted!
-        ?array $context = []
+        array|false $data = false, // ---> do not forget uname if wanted!
+        array $context = []
     ): WireEntityInterface;
     public function createClone(
         WireEntityInterface $entity,
-        ?array $changes = [], // ---> do not forget uname if wanted!
-        ?array $context = []
+        array $changes = [], // ---> do not forget uname if wanted!
+        array $context = []
     ): WireEntityInterface|false;
     // Querys
     public function getEntityClassname(): string;

@@ -20,22 +20,6 @@ abstract class WireWebpageService extends WireEcollectionService implements Wire
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireWebpageInterface) {
-            // Check here
-        }
-    }
-
     public function getPreferedWebpage(): ?WireWebpageInterface
     {
         /** @var EntityRepository */

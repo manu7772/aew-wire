@@ -11,20 +11,5 @@ abstract class WireArticleService extends WireItemService implements WireArticle
 
     public const ENTITY_CLASS = WireArticle::class;
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WireArticleInterface) {
-            // Check here
-        }
-    }
 
 }

@@ -46,8 +46,7 @@ class GlobalDoctrineListener
         /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
-        $entity->doInitializeSelfState('auto', 'auto');
-        $this->wireEm->checkIntegrity($entity, $event);
+        $this->wireEm->postLoaded($entity);
     }
 
     public function prePersist(PrePersistEventArgs $event): void
@@ -55,7 +54,7 @@ class GlobalDoctrineListener
         /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
-        $this->wireEm->checkIntegrity($entity, $event);
+        $this->checkIntegrity($entity, __METHOD__, __LINE__);
         switch (true) {
             case $entity instanceof WireUserInterface:
                 $plainPassword = $entity->getPlainPassword();
@@ -78,7 +77,7 @@ class GlobalDoctrineListener
         /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
-        $this->wireEm->checkIntegrity($entity, $event);
+        $this->checkIntegrity($entity, __METHOD__, __LINE__);
         switch (true) {
             case $entity instanceof WireUserInterface:
                 $plainPassword = $entity->getPlainPassword();
@@ -133,4 +132,18 @@ class GlobalDoctrineListener
     ): void {
         $this->wireEm->clearCreateds();
     }
+
+
+    private function checkIntegrity(
+        WireEntityInterface $entity,
+        string $method = __METHOD__,
+        int $line = __LINE__
+    ): void
+    {
+        if($entity->__selfstate->isModel()) {
+            // dump($entity);
+            throw new Exception(vsprintf('Error %s line %d: %s %s is a model!', [$method, $line, $entity->getClassname(), $entity]));
+        }
+    }
+
 }

@@ -27,6 +27,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Security\Http\Event\CheckPassportEvent;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class WireAppGlobalSubscriber implements EventSubscriberInterface
 {
@@ -70,22 +71,28 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         return preg_match(AppWireServiceInterface::SECONDARY_PATHS_PATTERN, $event->getRequest()->getPathInfo());
     }
 
+    private function isAvailableActions(
+        KernelEvent $event
+    ): bool
+    {
+        return $event->isMainRequest() && !static::isWdtRequest($event);
+    }
+
     public function onRequest(RequestEvent $event): void
     {
+        if(!$this->isAvailableActions($event)) return;
         // Check if main superadmin exists
         $this->userService->checkMainSuperadmin();
-        if($event->isMainRequest()) {
-            // LOGOUT INVALID USER IMMEDIATLY!!!
-            $user = $this->userService->getUser();
-            if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {
-                // $route_logged_out = $this->router->generate('app_logged_out');
-                if($this->appWire->getCurrent_route() !== 'app_logged_out') {
-                    // if(!$user->isLoggable()) {
-                        $response = $this->userService->logoutCurrentUser(false);
-                        $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
-                        $event->setResponse($response);
-                    // }
-                }
+        // LOGOUT INVALID USER IMMEDIATLY!!!
+        $user = $this->userService->getUser();
+        if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {
+            // $route_logged_out = $this->router->generate('app_logged_out');
+            if($this->appWire->getCurrent_route() !== 'app_logged_out') {
+                // if(!$user->isLoggable()) {
+                    $response = $this->userService->logoutCurrentUser(false);
+                    $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
+                    $event->setResponse($response);
+                // }
             }
         }
         if($this->appWire->isRequiredInitialization($event)) {
@@ -95,6 +102,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onException(ExceptionEvent $event): void
     {
+        return;
         // Disable control
         if(!$this->appWire->isProd()) return;
         if($event->getRequest()->query->get('debug', 0) === "1") {
@@ -150,6 +158,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onFinishRequest(FinishRequestEvent $event): void
     {
+        if(!$this->isAvailableActions($event)) return;
         if($this->appWire->isInitializable($event) && $this->appWire->isInitialized()) {
             $this->appWire->saveAppWire($event);
         }
@@ -157,6 +166,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onController(ControllerEvent $event): void
     {
+        if(!$this->isAvailableActions($event)) return;
         if($this->appWire->isRequiredInitialization($event)) {
             $this->appWire->initialize($event);
         }

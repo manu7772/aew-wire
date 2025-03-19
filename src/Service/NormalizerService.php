@@ -3,13 +3,15 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
-use Aequation\WireBundle\Component\NormalizeOptionsContainer;
+use Aequation\WireBundle\Component\NormalizeDataContainer;
 use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
+use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Files;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
@@ -57,46 +59,6 @@ class NormalizerService implements NormalizerServiceInterface
     /****************************************************************************************************/
 
     /**
-     * Prepare data for deserialize
-     * Return entity object if already exists
-     *
-     * @param array $data
-     * @param string $classname
-     * @return WireEntityInterface|null
-     */
-    public function cleanAndPrepareDataToDeserialize(
-        array &$data,
-        string $classname,
-        ?string $uname = null
-    ): ?WireEntityInterface {
-        // Uname
-        if (isset($data['unameName'])) {
-            $data['uname'] ??= $data['unameName'];
-            unset($data['unameName']);
-        }
-        if (is_string($uname)) {
-            $data['uname'] = $uname;
-        }
-        // Try find entity if exists
-        $entity = null;
-        if (!empty($data['id'] ?? null)) {
-            $repo = $this->wireEm->getRepository($classname);
-            $entity = $repo->find($data['id']);
-        }
-        if (!$entity && !empty($data['euid'] ?? null)) {
-            $entity = $this->wireEm->findEntityByEuid($data['euid']);
-        }
-        if (!$entity && !empty($data['uname'] ?? null)) {
-            $entity = $this->wireEm->findEntityByUname($data['uname']);
-        }
-        if ($entity instanceof WireEntityInterface) {
-            $this->wireEm->postLoadedRealEntity($entity); // --> IMPORTANT!!!
-            return $entity;
-        }
-        return null;
-    }
-
-    /**
      * Get (de)normalization groups for a class
      * returns array of 2 named elements:
      *      - ["normalize" => <normalization groups>]
@@ -112,21 +74,34 @@ class NormalizerService implements NormalizerServiceInterface
         if ($class instanceof WireEntityInterface) {
             $class = $class->getClassname();
         }
-        if (class_exists($class) && is_a($class, WireEntityInterface::class, true)) {
-            $rc = new ReflectionClass($class);
-            $class = $rc->getShortName();
+        if (class_exists($class)) {
+            $shortname = Objects::getShortname($class, true);
         } else {
             throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, WireEntityInterface::class]));
         }
         $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
-        if ($type === '_default') $type = static::MAIN_GROUP;
+        if (empty($type) || $type === '_default') $type = static::MAIN_GROUP;
         $groups = [
             'normalize' => [],
             'denormalize' => [],
         ];
         foreach ($types as $name => $values) {
             foreach ($values as $group_name) {
-                $groups[$name][] = preg_replace(['/__shortname__/', '/__name__/'], [strtolower($class), $type], $group_name);
+                $groups[$name][] = preg_replace(['/__shortname__/', '/__type__/'], [$shortname, $type], $group_name);
+            }
+        }
+        // Control
+        foreach ($groups as $n => $grps) {
+            if(empty($grps)) {
+                throw new Exception(vsprintf('Error %s line %d: in %s context, no groups found for %s with type "%s"!', [__METHOD__, __LINE__, $n, $class, $type]));
+            }
+            foreach ($grps as $grp) {
+                if(!is_string($grp)) {
+                    throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is not a string, got %s!', [__METHOD__, __LINE__, $n, $class, $type, gettype($grp)]));
+                }
+                if(empty($grp) || preg_match('/\\.$/', $grp)) {
+                    throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is empty or not valid. Got "%s"!', [__METHOD__, __LINE__, $n, $class, $type, $grp]));
+                }
             }
         }
         return $groups;
@@ -142,8 +117,7 @@ class NormalizerService implements NormalizerServiceInterface
         string|WireEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
-        $groups = static::_getGroups($class, $type ?? static::MAIN_GROUP);
-        return $groups['normalize'];
+        return static::_getGroups($class, $type)['normalize'];
     }
 
     /**
@@ -156,8 +130,7 @@ class NormalizerService implements NormalizerServiceInterface
         string|WireEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
-        $groups = static::_getGroups($class, $type ?? static::MAIN_GROUP);
-        return $groups['denormalize'];
+        return static::_getGroups($class, $type)['denormalize'];
     }
 
     /****************************************************************************************************/
@@ -177,15 +150,15 @@ class NormalizerService implements NormalizerServiceInterface
 
     public function denormalize(
         mixed $data,
-        string $type,
+        string $classname,
         ?string $format = null,
         ?array $context = []
     ): mixed {
-        if (is_a($type, WireEntityInterface::class, true)) {
+        if (is_a($classname, WireEntityInterface::class, true)) {
             // throw new Exception(vsprintf('Error %s line %d: please, use method denormalizeEntity() to denormalize entities!', [__METHOD__, __LINE__]));
-            return $this->denormalizeEntity($data, $type, $format, $context);
+            return $this->denormalizeEntity($data, $classname, $format, $context);
         }
-        return $this->getSerializer()->denormalize($data, $type, $format, $context);
+        return $this->getSerializer()->denormalize($data, $classname, $format, $context);
     }
 
     /****************************************************************************************************/
@@ -197,32 +170,22 @@ class NormalizerService implements NormalizerServiceInterface
         ?string $format = null,
         ?array $context = []
     ): array|string|int|float|bool|ArrayObject|null {
-        $normalizeContainer = new NormalizeOptionsContainer(context: $context);
-        return $this->normalize($entity, $format, $normalizeContainer->getContext());
+        return $this->normalize($entity, $format, $context);
     }
 
     public function denormalizeEntity(
-        mixed $data,
-        string $type,
+        array|NormalizeDataContainer $data,
+        string $classname,
         ?string $format = null,
-        ?array $context = [],
-        ?string $uname = null
+        ?array $context = []
     ): WireEntityInterface {
-        $normalizeContainer = new NormalizeOptionsContainer(context: $context);
-        $entity = $this->cleanAndPrepareDataToDeserialize($data, $type, $uname);
-        if ($entity && empty($context[AbstractNormalizer::OBJECT_TO_POPULATE] ?? null)) {
-            // Found entity
-            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $entity;
+        if(!($data instanceof NormalizeDataContainer)) {
+            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
         }
-        $entity = $this->getSerializer()->denormalize($data, $type, $format, $normalizeContainer->getContext());
-        // Check entity
-        if ($service = $this->wireEm->getEntityService($type)) {
-            $service->checkEntity($entity);
-        } else {
-            $this->wireEm->checkEntityBase($entity);
-        }
+        $entity = $this->getSerializer()->denormalize($data, $classname, $format, $data->getContext());
         return $entity;
     }
+
 
     /****************************************************************************************************/
     /** SERIALIZER                                                                                      */
@@ -370,37 +333,41 @@ class NormalizerService implements NormalizerServiceInterface
         bool $replace = false,
         ?SymfonyStyle $io = null
     ): OpresultInterface {
-        if (!$this->wireEm->entityExists($classname)) {
-            throw new Exception(vsprintf('La classe %s n\'est pas une entité valide', [$classname]));
+        if (!$this->wireEm->entityExists($classname, false, true)) {
+            throw new Exception(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
         }
-        // $service = $this->wireEm->getEntityService($classname);
         $opresult = new Opresult();
         if ($io) $io->writeln(vsprintf('- Génération de <info>%s</info> entités pour <info>%s</info>', [count($items), $classname]));
         $progress = $io ? $io->progressIterate($items) : $items;
         $count = 0;
         foreach ($progress as $uname => $data) {
-            // $context = ['groups' => static::getDenormalizeGroups($classname, type: static::MAIN_GROUP)];
-            $entity = $this->denormalizeEntity($data, $classname, null, $context ?? [], is_string($uname) ? $uname : null);
-            if (!$replace && $entity->getEmbededStatus()->isContained()) {
-                if ($this->appWire->isDev() && empty($entity->getId())) {
-                    throw new Exception(vsprintf('Error %s line %d: this %s %s looks managed, but has no id!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
-                }
+            if(is_string($uname)) {
+                $data['uname'] ??= $uname;
+            }
+            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, create_only: false);
+            /** @var WireEntityInterface $entity */
+            $entity = $this->denormalizeEntity($data, $classname);
+            if (!$replace
+                && $entity->getSelfState()->isLoaded()
+                // && $entity->getEmbededStatus()->isContained()
+            ) {
                 $opresult->addWarning(vsprintf('L\'entité %s %s [%s] existe déjà, elle ne sera pas modifiée.', [$entity->getShortname(), $entity->__toString(), $uname]));
                 continue;
             }
             // Validation
-            $errors = $this->validator->validate($entity);
+            $errors = $this->validator->validate($entity, null, $entity->__selfstate->isNew() ? ['persist'] : ['update']);
             if (count($errors) > 0) {
                 $messages = [];
                 foreach ($errors as $error) {
                     $messages[] = $error->getMessage();
                 }
                 $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s %s :%s- %s', [$entity->getShortname(), $uname, PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
+                $opresult->addData($entity->getUnameThenEuid(), $entity);
                 continue;
             }
             $this->wireEm->getEm()->persist($entity);
             $opresult->addSuccess(vsprintf('L\'entité %s %s [%s] a été enregistrée', [$entity->getShortname(), $entity->__toString(), $uname]));
-            $opresult->addData($entity->getUnameThenEuid(), $this->normalizeEntity($entity, context: ['groups' => static::getNormalizeGroups($classname, type: 'debug')]));
+            $opresult->addData($entity->getUnameThenEuid(), $entity);
             // sleep(1);
             $count++;
         }

@@ -11,20 +11,5 @@ class WirePhonelinkService extends WireRelinkService implements WirePhonelinkSer
 
     const ENTITY_CLASS = WirePhonelink::class;
 
-    /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WirePhonelinkInterface) {
-            // Check here
-        }
-    }
 
 }

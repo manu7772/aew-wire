@@ -9,6 +9,7 @@ use Symfony\Component\String\ByteString;
 class Encoders implements ToolInterface
 {
     public const EUID_SCHEMA = '/^([a-zA-Z0-9\\\\]+)\\|([a-f0-9]{14}\\.\\d{8})$/';
+    public const UNAME_SCHEMA = '#^[\\w_-\\|\\.\\\\]{3,128}$#';
 
     public function __toString(): string
     {
@@ -71,6 +72,23 @@ class Encoders implements ToolInterface
         return !empty($euid) && static::isEuidFormatValid($euid)
             ? preg_replace(static::EUID_SCHEMA, '$1', $euid)
             : null;
+    }
+
+
+    /*************************************************************************************
+     * UNAME
+     *************************************************************************************/
+
+    /**
+     * is valid uname
+     * 
+     * @param string $uname
+     * @return bool
+     */
+    public static function isUnameFormatValid(
+        mixed $uname
+    ): bool {
+        return is_string($uname) && preg_match(static::UNAME_SCHEMA, $uname) && !preg_match('/^\\d+$/', $uname);
     }
 
 

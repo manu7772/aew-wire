@@ -32,22 +32,6 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
 
     
     /**
-     * Check entity after any changes.
-     *
-     * @param WireEntityInterface $entity
-     * @return void
-     */
-    public function checkEntity(
-        WireEntityInterface $entity
-    ): void
-    {
-        parent::checkEntity($entity);
-        if($entity instanceof WirePdfInterface) {
-            // Check here
-        }
-    }
-
-    /**
      * Output a PDF from HTML content
      * 
      * @param string $htmlContent

@@ -22,7 +22,7 @@ class EntityNormalizer implements NormalizerInterface
         private readonly EntityManagerInterface $entityManager
     ) {}
 
-    public static function isEnabled(): bool
+    public function isEnabled(): bool
     {
         return static::ENABLED;
     }
@@ -56,12 +56,12 @@ class EntityNormalizer implements NormalizerInterface
 
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
-        return static::isEnabled() ? $data instanceof WireEntityInterface : false;
+        return $this->isEnabled() ? $data instanceof WireEntityInterface : false;
     }
 
     public function getSupportedTypes(?string $format): array
     {
-        return static::isEnabled() ? [WireEntityInterface::class => true] : [];
+        return $this->isEnabled() ? [WireEntityInterface::class => true] : [];
     }
 
 }

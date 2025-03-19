@@ -2,6 +2,8 @@
 
 namespace Aequation\WireBundle\Serializer;
 
+use Aequation\WireBundle\Component\NormalizeDataContainer;
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
@@ -17,17 +19,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ToOneAssociationMapping;
 use Doctrine\ORM\Mapping\ToManyAssociationMapping;
+use Doctrine\ORM\Mapping\AssociationMapping;
 
 class EntityDenormalizer implements DenormalizerInterface
 {
 
     public const ENABLED = true;
-    public const NOT_CONTROLLED_CLASSES = [
-        Uname::class,
-    ];
-    public const SEARCH_KEYS = ['id', 'slug', 'euid'];
 
-    public array $currentContext = [];
+    public ?NormalizeDataContainer $currentContainer = null;
     public bool $currentIsModel = false;
     private readonly NormalizerServiceInterface $normService;
 
@@ -42,63 +41,42 @@ class EntityDenormalizer implements DenormalizerInterface
         return $this->normService ??= $this->wireEm->getNormaliserService();
     }
 
-    public static function isEnabled(): bool
+    public function isEnabled(): bool
     {
         return static::ENABLED;
     }
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        $this->currentContext = $context;
-        // Check real/model entity
-        if (isset($this->currentContext[NormalizerService::CONTEXT_AS_MODEL])) {
-            $this->currentIsModel = $this->currentContext[NormalizerService::CONTEXT_AS_MODEL];
-            unset($this->currentContext[NormalizerService::CONTEXT_AS_MODEL]);
-            dd($this->currentContext, $this->currentIsModel);
-        }
-        // Existing entity to populate
-        if ($existing_entity = $this->getNormaliserService()->cleanAndPrepareDataToDeserialize($data, $type)) {
-            if (empty($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] ?? null)) {
-                $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] = $existing_entity;
-            }
-        }
-        // If MODEL
-        if ($this->currentIsModel) {
-            if (isset($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE]) && $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] instanceof WireEntityInterface) {
-                $this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->wireEm->createClone($this->currentContext[AbstractNormalizer::OBJECT_TO_POPULATE]);
-            }
-        }
-
+        /** @var NormalizeDataContainer $data */
+        $this->currentContainer = $data;
+        $data = $this->currentContainer->getData();
         /** @var WireEntityInterface */
-        $entity = $this->denormalizer->denormalize($data, $type, $format, $this->currentContext);
-
-        $cmd = $this->wireEm->getClassMetadata($entity->getClassname());
-        foreach ($cmd->getAssociationMappings() as $field => $relation) {
-            $target_entity = $relation['targetEntity'];
-            if (!empty($data[$field] ?? null)) {
-                // $this->loadRelated($entity, $field, $data[$field], $relation['targetEntity'], $cmd);
-                switch (true) {
-                    case $relation instanceof ToOneAssociationMapping:
-                        // ToOne Relation
-                        if ($relatedEntity = $this->FindOrCreateEntity($data[$field], $target_entity)) {
-                            $cmd->setFieldValue($entity, $field, $relatedEntity);
+        $entity = $this->denormalizer->denormalize($data, $this->currentContainer->getType(), $format, $this->currentContainer->getDenormalizationContext());
+        $this->currentContainer->setEntity($entity);
+        foreach ($this->currentContainer->getAssociationMappings() as $field => $mapping) {
+            /** @var AssociationMapping $mapping */
+            switch (true) {
+                case $mapping->isToOne():
+                    // ToOne Relation
+                    if ($relatedEntity = $this->FindOrCreateEntity($data[$field], $mapping, $this->currentContainer, $format)) {
+                        $this->currentContainer->setFieldValue($field, $relatedEntity);
+                    }
+                    break;
+                case $mapping->isToMany():
+                    // ToMany Relation
+                    $relatedEntitys = new ArrayCollection();
+                    foreach ($data as $index => $value) {
+                        if (is_array($value) && Encoders::isUnameFormatValid($index)) {
+                            $value['uname'] ??= $index;
                         }
-                        break;
-                    case $relation instanceof ToManyAssociationMapping:
-                        // ToMany Relation
-                        $relatedEntitys = new ArrayCollection();
-                        foreach ($data as $index => $value) {
-                            if (is_string($index) && is_array($value) && Uname::isValidUname($index)) {
-                                $value['uname'] ??= $index;
-                            }
-                            $relatedEntity = $this->FindOrCreateEntity($value, $target_entity);
-                            if ($relatedEntity && !$relatedEntitys->contains($relatedEntity)) {
-                                $relatedEntitys->add($relatedEntity);
-                            }
+                        $relatedEntity = $this->FindOrCreateEntity($value, $mapping, $this->currentContainer, $format);
+                        if ($relatedEntity && !$relatedEntitys->contains($relatedEntity)) {
+                            $relatedEntitys->add($relatedEntity);
                         }
-                        if (!$relatedEntitys->isEmpty()) $cmd->setFieldValue($entity, $field, $relatedEntitys);
-                        break;
-                }
+                    }
+                    if (!$relatedEntitys->isEmpty()) $this->currentContainer->setFieldValue($field, $relatedEntitys);
+                    break;
             }
         }
 
@@ -107,16 +85,17 @@ class EntityDenormalizer implements DenormalizerInterface
 
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
-        $supports = static::isEnabled()
-            && is_array($data)
-            && is_a($type, WireEntityInterface::class, true)
-            && !is_a($type, UnameInterface::class, true);
+        $supports = $this->isEnabled()
+            && $data instanceof NormalizeDataContainer
+            // && is_a($type, WireEntityInterface::class, true)
+            // && !is_a($type, UnameInterface::class, true)
+            ;
         return $supports;
     }
 
     public function getSupportedTypes(?string $format): array
     {
-        return static::isEnabled() ? [WireEntityInterface::class => true] : [];
+        return $this->isEnabled() ? [WireEntityInterface::class => true] : [];
     }
 
 
@@ -126,16 +105,24 @@ class EntityDenormalizer implements DenormalizerInterface
 
     private function FindOrCreateEntity(
         iterable|int|string $data,
-        string $classname
+        AssociationMapping $mapping,
+        NormalizeDataContainer $container,
+        ?string $format = null
     ): ?WireEntityInterface {
-        if (Encoders::isEuidFormatValid($data)) {
-            $data = ['euid' => $data];
-        } else if (Uname::isValidUname($data)) {
-            $data = ['uname' => $data];
-        } else if (preg_match('/^\d+$/', (string)$data) && intval($data) > 0) {
-            $data = ['id' => intval($data)];
+        if(is_scalar($data)) {
+            if(Encoders::isEuidFormatValid($data)) {
+                $data = ['euid' => $data];
+            } else if(Encoders::isUnameFormatValid($data)) {
+                $data = ['uname' => $data];
+            } else if(preg_match('/^\d+$/', (string)$data) && intval($data) > 0) {
+                $data = ['id' => intval($data)];
+            } else {
+                return null;
+            }
         }
-        $entity = $this->getNormaliserService()->denormalizeEntity($data, $classname);
+        /** @var NormalizeDataContainer $nc */
+        $nc = new NormalizeDataContainer($this->wireEm, $mapping->targetEntity, $data, create_only: $mapping->orphanRemoval, is_model: $container->isModel());
+        $entity = $this->getNormaliserService()->denormalizeEntity($nc, $nc->getType(), $format);
         return $entity;
     }
 }
