@@ -155,7 +155,7 @@ class BasicsCommand extends BaseCommand
                 return Command::FAILURE;
             }
             try {
-                $this->wireEm->getEm()->flush();
+                // $this->wireEm->getEm()->flush();
                 $io->success(vsprintf('Entités générées pour %s: %d', [$class, count($opresult->getData())]));
             } catch (\Throwable $th) {
                 $io->error(vsprintf('Erreur lors de l\'enregistrement des entités pour %s%s%s', [$class, PHP_EOL, $th->getMessage()]));
@@ -165,22 +165,6 @@ class BasicsCommand extends BaseCommand
             }
         }
 
-        // // Print all messages
-        // $result->printMessages($io);
-        // // Report
-        // if($result->isUndone()) {
-        //     $io->warning(vsprintf('Aucune action n\'a été effectuée%s', [PHP_EOL.$result->getMessagesAsString(false)]));
-        //     return Command::INVALID;
-        // } else if($result->isSuccess()) {
-        //     $io->success(vsprintf('Les entités ont été générées/mises à jour : %d entité(s) enregistrée(s) sur %d', [$result->getActions(Opresult::ACTION_SUCCESS), $result->getData('total')]));
-        //     return Command::SUCCESS;
-        // } else if($result->hasSuccess()) {
-        //     $io->warning(vsprintf('Les entités ont été générées/mises à jour, certaines n\'ont pu être générées : %d entité(s) enregistrée(s) sur %d', [$result->getActions(Opresult::ACTION_SUCCESS), $result->getData('total')]));
-        //     return Command::INVALID;
-        // } else {
-        //     $io->error(vsprintf('Génération échouée : %d. %d entité(s) enregistrée(s) sur %d', [$result->getActions([Opresult::ACTION_DANGER, Opresult::ACTION_WARNING]), $result->getActions(Opresult::ACTION_SUCCESS), $result->getData('total')]));
-        //     return Command::FAILURE;
-        // }
         return Command::SUCCESS;
     }
 

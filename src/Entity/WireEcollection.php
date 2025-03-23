@@ -28,8 +28,8 @@ use Exception;
 #[ORM\Table(name: 'w_ecollection')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
+#[ORM\HasLifecycleCallbacks]
 abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
 

@@ -19,6 +19,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
+#[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
 abstract class WireImage extends WireItem implements WireImageInterface
 {

@@ -13,7 +13,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
+#[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[ORM\HasLifecycleCallbacks]
 abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitRelinkableInterface, TraitCategorizedInterface
 {
 

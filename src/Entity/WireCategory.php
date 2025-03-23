@@ -19,9 +19,8 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Exception;
 
 #[MappedSuperclass]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 #[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà', groups: ['persist','update'])]
-#[HasLifecycleCallbacks]
+#[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireCategoryTranslationInterface::class)]
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {

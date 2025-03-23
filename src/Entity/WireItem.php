@@ -26,9 +26,9 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Table(name: 'w_item')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
-#[Gedmo\TranslationEntity(class: WireItemTranslationInterface::class)]
 #[ClassCustomService(WireItemServiceInterface::class)]
+#[Gedmo\TranslationEntity(class: WireItemTranslationInterface::class)]
+// #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
 {

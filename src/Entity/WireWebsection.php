@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[UniqueEntity(fields: ['name'], groups: ['persist','update'])]
+#[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 class WireWebsection extends WireItem implements WireWebsectionInterface
 {
@@ -31,15 +31,10 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
 
     protected readonly TwigfileMetadata $twigfileMetadata;
 
-    // public function __construct()
-    // {
-    //     parent::__construct();
-    // }
-
 
     public function getTwigfileChoices(): array
     {
-        return $this->__estatus->service->getWebsectionModels($this);
+        return $this->getEmbededStatus()->service->getWebsectionModels($this);
     }
 
     public function getTwigfileName(): ?string
@@ -57,7 +52,7 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
     public function setTwigfile(string $twigfile): static
     {
         $this->twigfile = $twigfile;
-        $sectiontype = $this->__estatus->service->getSectiontypeOfFile($this->twigfile);
+        $sectiontype = $this->getEmbededStatus()->service->getSectiontypeOfFile($this->twigfile);
         if(empty($sectiontype)) {
             throw new \InvalidArgumentException(vsprintf('Error %s line %d: The sectiontype in file %s was not found.', [__FILE__, __LINE__, $this->twigfile]));
         }

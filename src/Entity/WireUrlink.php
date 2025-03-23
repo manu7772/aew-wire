@@ -2,20 +2,15 @@
 namespace Aequation\WireBundle\Entity;
 
 // Aequation
-use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
-use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\WireRelink;
-use Aequation\WireBundle\Repository\WireUrlinkRepository;
-use Aequation\WireBundle\Service\interface\WireUrlinkServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
-use Gedmo\Mapping\Annotation as Gedmo;
 
+#[UniqueEntity(fields: ['name','itemowner'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[ORM\HasLifecycleCallbacks]
 abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
 {
 

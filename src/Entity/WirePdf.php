@@ -1,11 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
-use Aequation\WireBundle\Repository\WirePdfRepository;
-use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
 use Doctrine\DBAL\Types\Types;
@@ -15,11 +12,14 @@ use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
+#[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {

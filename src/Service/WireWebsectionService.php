@@ -9,6 +9,7 @@ use Aequation\WireBundle\Tools\Files;
 use Symfony\Component\Yaml\Yaml;
 // PHP
 use Exception;
+use SplFileInfo;
 
 abstract class WireWebsectionService extends WireItemService implements WireWebsectionServiceInterface
 {
@@ -99,16 +100,21 @@ abstract class WireWebsectionService extends WireItemService implements WireWebs
                     $path = $this->appWire->getProjectDir($path);
                     $search = Files::getNewFinder()->files()->name('*.twig')->in($path)->depth(static::SEARCH_FILES_DEPTH);
                     foreach ($search as $file) {
-                        // $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yaml');
-                        // if(!$file->getRealpath()) $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yml');
+                        $file2 = $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yaml');
+                        if(!$file->getRealpath()) $file = new SplFileInfo($file->getPath().DIRECTORY_SEPARATOR.Files::stripTwigfile($file, true).'.yml');
                         if($file->getRealpath()) {
                             $index = Files::stripTwigfile($file, true);
-                            $files[$index] = Yaml::parseFile($file->getRealPath());
+                            try {
+                                $files[$index] = Yaml::parseFile($file->getRealPath());
+                            } catch (\Throwable $th) {
+                                throw new Exception(vsprintf('Error %s line %d: in file %s, an error occured%s- %s', [__METHOD__, __LINE__, $file->getRealPath(), PHP_EOL, $th->getMessage()]));
+                            }
                             // $files[$index] = $this->appService->get('Tool:Files')->readYamlFile($yaml_file);
                             $files[$index]['choice_value'] = static::FILES_FOLDER.Files::stripTwigfile($file, false);
                             $files[$index]['choice_label'] ??= ucfirst(Files::stripTwigfile($file, true)).(isset($files[$index]['description']) ? '<i class="text-muted"> - '.$files[$index]['description'].'</i>' : '');
                         } else {
-                            $content = $file->getContents();
+                            $file = $file2;
+                            $content = file_get_contents($file->getRealpath());
                             preg_match('/(\{#\s*description\s*:\s*([\p{L}\s\?\,!-:;]+)\s*#\})/u', $content, $description);
                             preg_match('/(\{#\s*status\s*:\s*([\p{L}\s\?\,!-:;]+)\s*#\})/u', $content, $status);
                             preg_match('/(\{#\s*sectiontype\s*:\s*([\p{L}\s\?\,!-:;]+)\s*#\})/u', $content, $sectiontype);

@@ -1,20 +1,19 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Owner;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
-use Aequation\WireBundle\Repository\WireArticleRepository;
-use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
-use DateTimeInterface;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+// PHP
+use DateTimeInterface;
 
+#[ORM\HasLifecycleCallbacks]
 abstract class WireArticle extends WireItem implements WireArticleInterface, TraitCategorizedInterface
 {
 

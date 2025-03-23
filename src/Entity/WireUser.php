@@ -23,10 +23,9 @@ use DateInterval;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\Collection;
 
-// #[MappedSuperclass()]
-// #[ORM\Entity(repositoryClass: WireUserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'])]
+#[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
+#[ORM\HasLifecycleCallbacks]
 abstract class WireUser extends WireItem implements WireUserInterface, TraitCategorizedInterface
 {
     use Webpageable, Relinkable, Categorized;

@@ -363,19 +363,24 @@ class NormalizerService implements NormalizerServiceInterface
                 foreach ($errors as $error) {
                     $messages[] = $error->getMessage();
                 }
-                $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s %s :%s- %s', [$entity->getShortname(), $uname, PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
+                $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s [id:%s/U:%s] :%s- %s', [$entity->getShortname(), $entity->getId(), $uname, PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
                 $opresult->addData($entity->getUnameThenEuid(), $entity);
                 // dd($this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
                 continue;
             }
-            $this->wireEm->getEm()->persist($entity);
-            $opresult->addSuccess(vsprintf('L\'entité %s %s [%s] a été enregistrée', [$entity->getShortname(), $entity->__toString(), $uname]));
+            if($entity->getSelfState()->isNew()) {
+                $this->wireEm->getEm()->persist($entity);
+                $opresult->addSuccess(vsprintf('L\'entité %s %s [id:%s/U:%s] a été CRÉÉE', [$entity->getShortname(), $entity->__toString(), $entity->getId(), $uname]));
+            } else {
+                $action = $this->wireEm->getEm()->getUnitOfWork()->isScheduledForUpdate($entity) ? 'MODIFIÉE' : 'NON MODIFIÉE';
+                $opresult->addSuccess(vsprintf('L\'entité %s %s [id:%s/U:%s] a été %s', [$entity->getShortname(), $entity->__toString(), $entity->getId(), $uname, $action]));
+            }
             $opresult->addData($entity->getUnameThenEuid(), $entity);
             // sleep(1);
             $count++;
         }
         if ($count > 0) {
-            // $this->wireEm->getEm()->flush();
+            $this->wireEm->getEm()->flush();
         }
         return $opresult;
     }
