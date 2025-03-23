@@ -30,7 +30,7 @@ use Exception;
 #[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
-class WireEcollection extends WireItem implements WireEcollectionInterface
+abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
 
     public const ICON = [

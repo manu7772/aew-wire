@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -24,9 +26,20 @@ abstract class WireItemService implements WireItemServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService,
         protected PaginatorInterface $paginator,
-        public readonly NormalizerServiceInterface $normalizer
+        protected NormalizerServiceInterface $normalizer
     ) {
     }
 
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->wireEntityService->incDebugMode();
+        $opresult ??= new Opresult();
+        // Check all WireItemInterface entities
+        $this->wireEntityService->decDebugMode();
+        return $opresult;
+    }
 
 }

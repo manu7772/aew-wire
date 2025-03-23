@@ -2,6 +2,7 @@
 
 namespace Aequation\WireBundle\Service\interface;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -32,6 +33,8 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
         array $changes = [], // ---> do not forget uname if wanted!
         array $context = []
     ): WireEntityInterface|false;
+    // Maintain database
+    public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Querys
     public function getEntityClassname(): string;
     public function getRepository(?string $classname = null): ?EntityRepository;

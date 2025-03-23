@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Command;
 
 // Aequation
 
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
@@ -23,7 +23,7 @@ use Symfony\Component\Console\Question\Question;
     name: 'app:basics',
     description: 'Génère des entités d\'après des fichiers de description',
 )]
-class BasicsCommand extends Command
+class BasicsCommand extends BaseCommand
 {
     public const DEFAULT_DATA_PATH = '/src/DataBasics/data/';
     protected const ALL_CLASSES = 'Toute les classes';
@@ -150,33 +150,17 @@ class BasicsCommand extends Command
             } else {
                 $io->error(vsprintf('Erreur(s) lors de la génération des entités pour %s', [$class]));
                 // dd($opresult->getMessages());
-                foreach ($opresult->getMessages() as $type => $messages) {
-                    foreach ($messages as $message) {
-                        switch ($type) {
-                            case 'dev':
-                            case 'danger':
-                                $io->error($message);
-                                break;
-                            case 'undone':
-                            case 'warning':
-                                $io->warning($message);
-                                break;
-                            default:
-                                $io->info($message);
-                                break;
-                        }
-                    }
-                }
+                $this->printMessages($opresult, $io);
                 $io->warning('Process aborted.');
                 return Command::FAILURE;
             }
             try {
                 $this->wireEm->getEm()->flush();
-                $io->success(vsprintf('Entités générées pour %s', [$class]));
+                $io->success(vsprintf('Entités générées pour %s: %d', [$class, count($opresult->getData())]));
             } catch (\Throwable $th) {
                 $io->error(vsprintf('Erreur lors de l\'enregistrement des entités pour %s%s%s', [$class, PHP_EOL, $th->getMessage()]));
                 $io->warning('Process aborted.');
-                dd($opresult->getData());
+                // dd($opresult->getData());
                 return Command::FAILURE;
             }
         }
@@ -199,4 +183,5 @@ class BasicsCommand extends Command
         // }
         return Command::SUCCESS;
     }
+
 }

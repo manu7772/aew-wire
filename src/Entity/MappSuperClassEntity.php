@@ -21,7 +21,7 @@ use Throwable;
  * @package Aequation\WireBundle\Entity
  */
 #[MappedSuperclass]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 abstract class MappSuperClassEntity implements WireEntityInterface
 {
     use WireEntity;
@@ -30,7 +30,7 @@ abstract class MappSuperClassEntity implements WireEntityInterface
     //     'ux' => 'tabler:question-mark',
     //     'fa' => 'fa-question'
     // ];
-    // public const SERIALIZATION_PROPS = ['id','euid','unamename','classname','shortname'];
+    // public const SERIALIZATION_PROPS = ['id','euid','classname','shortname'];
 
     // protected $id = null;
 
@@ -51,16 +51,6 @@ abstract class MappSuperClassEntity implements WireEntityInterface
     {
         return $this->id ?? null;
     }
-
-    // /**
-    //  * get self
-    //  *
-    //  * @return static
-    //  */
-    // public function getSelf(): static
-    // {
-    //     return $this;
-    // }
 
     /**
      * get as string

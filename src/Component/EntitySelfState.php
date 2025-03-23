@@ -29,7 +29,7 @@ class EntitySelfState implements EntitySelfStateInterface
     {
         $report = [
             // state
-            '_state' => $this->state,
+            '_state' => Encoders::toBin($this->state),
             'state_new'       => $this->isNew(),
             'state_loaded'    => $this->isLoaded(),
             'state_persisted' => $this->isPersisted(),
@@ -38,7 +38,7 @@ class EntitySelfState implements EntitySelfStateInterface
             'state_detached'  => $this->isDetached(),
             'state_model'     => $this->isModel(),
             // event
-            '_event' => $this->event,
+            '_event' => Encoders::toBin($this->event),
             'event_post_created' => $this->isPostCreated(),
             'event_post_loaded' => $this->isPostLoaded(),
             'event_post_persisted' => $this->isPostPersisted(),
@@ -138,6 +138,11 @@ class EntitySelfState implements EntitySelfStateInterface
     public function isDetached(): bool
     {
         return ($this->state & static::STATES['detached']) > 0;
+    }
+
+    public function isEntity(): bool
+    {
+        return !$this->isModel();
     }
 
     public function setModel(): static
@@ -240,7 +245,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function isPostCreated(): bool
     {
-        return $this->event & static::POST_CREATED > 0;
+        return ($this->event & static::POST_CREATED) > 0;
     }
 
     public function setPostLoaded(): static
@@ -252,7 +257,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function isPostLoaded(): bool
     {
-        return $this->event & static::POST_LOADED > 0;
+        return ($this->event & static::POST_LOADED) > 0;
     }
 
     public function setPostPersisted(): static
@@ -264,7 +269,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function isPostPersisted(): bool
     {
-        return $this->event & static::POST_PERSISTED > 0;
+        return ($this->event & static::POST_PERSISTED) > 0;
     }
 
     public function setPostUpdated(): static
@@ -276,7 +281,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function isPostUpdated(): bool
     {
-        return $this->event & static::POST_UPDATED > 0;
+        return ($this->event & static::POST_UPDATED) > 0;
     }
 
     

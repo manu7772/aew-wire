@@ -19,7 +19,7 @@ interface EntitySelfStateInterface
     public const POST_PERSISTED = 0b00000100;
     public const POST_UPDATED   = 0b00001000;
 
-    public function getReport(): array|string;
+    public function getReport(bool $asString = false): array|string;
     public function isDebug(): bool;
     public function setNew(): static;
     public function isNew(): bool;
@@ -33,6 +33,7 @@ interface EntitySelfStateInterface
     public function isRemoved(): bool;
     public function setDetached(): static;
     public function isDetached(): bool;
+    public function isEntity(): bool;
     public function setModel(): static;
     public function isModel(): bool;
 

@@ -3,6 +3,8 @@
 namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
+
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
@@ -12,12 +14,17 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Twig\Markup;
 // PHP
 use Closure;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
+
+    // Debug mode
+    public function isDebugMode(): bool;
+    public function incDebugMode(): bool;
+    public function decDebugMode(): bool;
+    public function resetDebugMode(): bool;
 
     public function getNormaliserService(): NormalizerServiceInterface;
     public function getAppWireService(): AppWireServiceInterface;
@@ -26,8 +33,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getRepository(string|WireEntityInterface $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
     public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
-    public function getEntityNamesChoices(bool $asHtml = false, string|false $icon_type = 'fa', bool $allnamespaces = false, bool $onlyInstantiables = false): array;
-    public function getEntityNameAsHtml(string|WireEntityInterface $classOrEntity, string|false $icon_type = false, bool $addClassname = true): Markup;
+    public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
     public function getEntityClassesOfInterface(string|array $interfaces, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
     public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
@@ -42,23 +48,23 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function clearCreateds(): bool;
     public function clearPersisteds(): bool;
     public function findCreated(string $euidOrUname): ?WireEntityInterface;
-    // public function checkEntityBase(WireEntityInterface $entity): void;
+    public function insertEmbededStatus(WireEntityInterface $entity): void;
     public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
     public function createClone(WireEntityInterface $entity, array $changes = [], array $context = [], bool $tryService = true): WireEntityInterface|false;
+    // Maintain database
+    // Maintain database
+    public function checkAllDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
+    public function checkDatabase(string $classname, ?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Entity Events
     public function postLoaded(WireEntityInterface $entity): void;
     public function postCreated(WireEntityInterface $entity): void;
 
     // Find
-    // public function getRepository(string $classname, ?string $field = null): BaseWireRepositoryInterface;
     public function findEntityByEuid(string $euid): ?WireEntityInterface;
     public function findEntityByUname(string $uname): ?WireEntityInterface;
     public function findEntityByUniqueValue(string $value): ?WireEntityInterface;
     public function getEntitiesCount(string $classname, array $criteria = []): int;
-
-    // Check
-    // public function checkIntegrity(WireEntityInterface $entity, null|EventArgs|string $event = null): void;
 
     // Liip
     public function getBrowserPath(

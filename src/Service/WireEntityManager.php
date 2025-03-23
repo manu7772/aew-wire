@@ -4,8 +4,11 @@ namespace Aequation\WireBundle\Service;
 
 // Aequation
 use Aequation\WireBundle\Component\EntityEmbededStatus;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\NormalizeDataContainer;
+use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
+use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -20,6 +23,7 @@ use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Encoders;
+use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
 // Symfony
@@ -55,6 +59,7 @@ class WireEntityManager implements WireEntityManagerInterface
     protected ArrayCollection $createds;
     protected NormalizerServiceInterface $normalizer;
     protected readonly UnitOfWork $uow;
+    protected int $debug_mode = 0;
 
     /**
      * constructor.
@@ -72,6 +77,7 @@ class WireEntityManager implements WireEntityManagerInterface
     ) {
         // $this->uow = $this->em->getUnitOfWork();
         $this->createds = new ArrayCollection();
+        // $this->debug_mode = HttpRequest::isCli();
     }
 
 
@@ -79,6 +85,35 @@ class WireEntityManager implements WireEntityManagerInterface
     {
         return $this->normalizer ??= $this->appWire->get(NormalizerServiceInterface::class);
     }
+
+
+    /****************************************************************************************************/
+    /** DEBUG MODE                                                                                      */
+    /****************************************************************************************************/
+
+    public function isDebugMode(): bool
+    {
+        return $this->debug_mode > 0 || HttpRequest::isCli();
+    }
+
+    public function incDebugMode(): bool
+    {
+        $this->debug_mode++;
+        return $this->isDebugMode();
+    }
+
+    public function decDebugMode(): bool
+    {
+        $this->debug_mode--;
+        return $this->isDebugMode();
+    }
+
+    public function resetDebugMode(): bool
+    {
+        $this->debug_mode = 0;
+        return $this->isDebugMode();
+    }
+
 
     /****************************************************************************************************/
     /** CREATED                                                                                         */
@@ -133,7 +168,7 @@ class WireEntityManager implements WireEntityManagerInterface
             if ($entity->getEuid() === $euidOrUname) {
                 return $entity;
             }
-            if ($entity instanceof TraitUnamedInterface && $entity->getUnameName() === $euidOrUname) {
+            if ($entity instanceof TraitUnamedInterface && $entity->getUname()->getId() === $euidOrUname) {
                 return $entity;
             }
         }
@@ -192,7 +227,7 @@ class WireEntityManager implements WireEntityManagerInterface
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
-    protected function insertEmbededStatus(
+    public function insertEmbededStatus(
         WireEntityInterface $entity
     ): void {
         if (!$entity->hasEmbededStatus()) {
@@ -247,7 +282,7 @@ class WireEntityManager implements WireEntityManagerInterface
         }
         if(!$data || empty($data)) {
             $model = new $classname();
-            $model->__selfstate->setModel();
+            $model->getSelfState()->setModel();
             $this->postCreated($model);
         } else {
             // Denormalize
@@ -287,6 +322,82 @@ class WireEntityManager implements WireEntityManagerInterface
 
 
     /****************************************************************************************************/
+    /** MAINTAIN DATABASE                                                                               */
+    /****************************************************************************************************/
+
+    public function checkAllDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $opresult ??= new Opresult();
+        foreach ($this->getEntityNames(false, false, true) as $classname) {
+            $this->checkDatabase($classname, $opresult, $repair);
+        }
+        return $opresult;
+    }
+
+    public function checkDatabase(
+        string $classname,
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->incDebugMode();
+        $opresult ??= new Opresult();
+        // Check prefered
+        if(is_a($classname, TraitPreferedInterface::class, true)) {
+            $this->database_check_prefered($classname, $opresult, $repair);
+        }
+        // Check others...
+        // ...
+        // Check specific functionalities for entity
+        if($service = $this->getEntityService($classname)) {
+            /** @var WireEntityServiceInterface $service */
+            $service->checkDatabase($opresult, $repair);
+        }
+        $this->decDebugMode();
+        return $opresult;
+    }
+
+    /**
+     * Check TraitPreferedInterface
+     */
+    public function database_check_prefered(
+        string $classname,
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->incDebugMode();
+        $opresult ??= new Opresult();
+        if(is_a($classname, TraitPreferedInterface::class, true)) {
+            $repo = $this->getRepository($classname);
+            $prefered = $repo->findBy(['prefered' => true]);
+            if(count($prefered) > 1) {
+                $opresult->addDanger(vsprintf('Error %s line %d: %s has more than one prefered (found %d)!', [__METHOD__, __LINE__, $classname, count($prefered)]));
+                if($repair) {
+                    $prefered = array_slice($prefered, 1);
+                    foreach ($prefered as $entity) {
+                        $entity->setPrefered(false);
+                    }
+                    $this->em->flush();
+                    $this->em->clear();
+                    $prefered = $repo->findBy(['prefered' => true]);
+                    if(count($prefered) > 1) {
+                        $opresult->addDanger(vsprintf('Error %s line %d: %s has more than one prefered after repair (still found %d)!', [__METHOD__, __LINE__, $classname, count($prefered)]));
+                    } else {
+                        $opresult->addSuccess(vsprintf('Success %s line %d: %s has been repaired!', [__METHOD__, __LINE__, $classname]));
+                    }
+                }
+            }
+        }
+        $this->decDebugMode();
+        return $opresult;
+    }
+
+
+    /****************************************************************************************************/
     /** ENTITY EVENTS                                                                                   */
     /****************************************************************************************************/
 
@@ -299,9 +410,12 @@ class WireEntityManager implements WireEntityManagerInterface
     public function postLoaded(
         WireEntityInterface $entity
     ): void {
-        if(isset($entity->__selfstate) && $entity->__selfstate->isPostLoaded() ?? false) return;
+        if($entity->getSelfState() && $entity->getSelfState()?->isPostLoaded() ?? false) return;
         $entity->doInitializeSelfState('loaded', 'auto');
-        $entity->__selfstate->setPostLoaded();
+        $entity->getSelfState()->setPostLoaded();
+        if($this->isDebugMode()) {
+            $this->insertEmbededStatus($entity);
+        }
     }
 
     /**
@@ -313,9 +427,9 @@ class WireEntityManager implements WireEntityManagerInterface
     public function postCreated(
         WireEntityInterface $entity
     ): void {
-        if($entity->__selfstate->isPostCreated()) return;
+        if($entity->getSelfState()?->isPostCreated() ?? false) return;
         $this->insertEmbededStatus($entity);
-        if (!$entity->__selfstate->isModel()) {
+        if ($entity->getSelfState()->isEntity()) {
             // Save entity
             if (!$this->hasCreated($entity)) {
                 $this->addCreated($entity);
@@ -345,7 +459,7 @@ class WireEntityManager implements WireEntityManagerInterface
         } else {
             // Model
         }
-        $entity->__selfstate->setPostCreated();
+        $entity->getSelfState()->setPostCreated();
     }
 
 
@@ -594,7 +708,8 @@ class WireEntityManager implements WireEntityManagerInterface
         bool $asShortnames = false,
         bool $allnamespaces = false,
         bool $onlyInstantiables = false,
-    ): array {
+    ): array
+    {
         $names = [];
         // or $this->em->getConfiguration()->getEntityNamespaces() as $classname
         foreach ($this->em->getMetadataFactory()->getAllMetadata() as $cmd) {
@@ -610,44 +725,59 @@ class WireEntityManager implements WireEntityManagerInterface
         return $names;
     }
 
-    public function getEntityNamesChoices(
-        bool $asHtml = false,
-        string|false $icon_type = 'fa', // only if $asHtml is true
+    public function getFinalEntities(
+        bool $asShortnames = false,
         bool $allnamespaces = false,
-        bool $onlyInstantiables = false
     ): array
     {
-        return array_flip(
-            array_map(
-                fn($name) => $asHtml ? $this->getEntityNameAsHtml($name, $icon_type) : $name,
-                $this->getEntityNames(false, $allnamespaces, $onlyInstantiables)
-            )
-        );
+        $finals = [];
+        foreach ($this->getEntityNames($asShortnames, $allnamespaces, false) as $name => $shortname) {
+            $cmd = $this->getClassMetadata($name);
+            if (count($cmd->subClasses) === 0 && !$cmd->isMappedSuperclass) {
+                $finals[$name] = $shortname;
+            }
+        }
+        return $finals;
     }
 
-    public function getEntityNameAsHtml(
-        string|WireEntityInterface $classOrEntity,
-        string|false $icon_type = false,
-        bool $addClassname = true
-    ): Markup
-    {
-        $classOrEntity = $classOrEntity instanceof WireEntityInterface
-            ? $classOrEntity->getClassname()
-            : $classOrEntity;
-        switch ($icon_type) {
-            case 'ux':
-                $icon_type = '<twig:ux:icon name="'.$classOrEntity::getIcon($icon_type).'" />&nbsp;&nbsp;';
-                break;
-            case 'fa':
-                $icon_type = '<i class="fa '.$classOrEntity::getIcon($icon_type).' fa-fw text-info"></i>&nbsp;&nbsp;';
-                break;
-            default:
-                $icon_type = '';
-                break;
-        }
-        $html = $icon_type.'<strong>'.Objects::getShortname($classOrEntity).'</strong>'.($addClassname ? '&nbsp;<small><i class="text-muted">'.$classOrEntity.'</i></small>' : '');
-        return Strings::markup($html);
-    }
+    // public function getEntityNamesChoices(
+    //     bool $asHtml = false,
+    //     string|false $icon_type = 'fa', // only if $asHtml is true
+    //     bool $allnamespaces = false,
+    //     bool $onlyInstantiables = false
+    // ): array
+    // {
+    //     return array_flip(
+    //         array_map(
+    //             fn($name) => $asHtml ? $this->getEntityNameAsHtml($name, $icon_type) : $name,
+    //             $this->getEntityNames(false, $allnamespaces, $onlyInstantiables)
+    //         )
+    //     );
+    // }
+
+    // public function getEntityNameAsHtml(
+    //     string|WireEntityInterface $classOrEntity,
+    //     string|false $icon_type = false,
+    //     bool $addClassname = true
+    // ): Markup
+    // {
+    //     $classOrEntity = $classOrEntity instanceof WireEntityInterface
+    //         ? $classOrEntity->getClassname()
+    //         : $classOrEntity;
+    //     switch ($icon_type) {
+    //         case 'ux':
+    //             $icon_type = '<twig:ux:icon name="'.$classOrEntity::getIcon($icon_type).'" />&nbsp;&nbsp;';
+    //             break;
+    //         case 'fa':
+    //             $icon_type = '<i class="fa '.$classOrEntity::getIcon($icon_type).' fa-fw text-info"></i>&nbsp;&nbsp;';
+    //             break;
+    //         default:
+    //             $icon_type = '';
+    //             break;
+    //     }
+    //     $html = $icon_type.'<strong>'.Objects::getShortname($classOrEntity).'</strong>'.($addClassname ? '&nbsp;<small><i class="text-muted">'.$classOrEntity.'</i></small>' : '');
+    //     return Strings::markup($html);
+    // }
 
     /**
      * Get all entity classnames of interfaces
@@ -715,11 +845,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
     /**
      * Get Doctrine relations of entity
-     * Returns array of:
-     * classname => [
-     *      'mapping_object' => $associationMapping,
-     *      'mapping_type' => $shortname,
-     * ]
      * 
      * @param string|WireEntityInterface $objectOrClass
      * @param null|Closure $filter
@@ -730,18 +855,17 @@ class WireEntityManager implements WireEntityManagerInterface
         string|WireEntityInterface $objectOrClass,
         ?Closure $filter = null,
         bool $excludeSelf = false
-    ): array {
+    ): array
+    {
         $classname = $objectOrClass instanceof WireEntityInterface ? $objectOrClass->getClassname() : $objectOrClass;
         $classnames = [];
         foreach ($this->getEntityNames(false, false, true) as $class) {
             if (!($excludeSelf && is_a($class, $classname, true))) {
-                foreach ($this->getClassMetadata($class)->associationMappings as $associationMapping) {
-                    $include = is_callable($filter)
-                        ? $filter($associationMapping)
-                        : true;
-                    if ($include) {
+                $cmd = $this->getClassMetadata($class);
+                foreach ($cmd->associationMappings as $mapping) {
+                    if(is_a($mapping->targetEntity, $classname, true) && (is_callable($filter) ? $filter($mapping, $cmd) : true)) {
                         $classnames[$class] ??= [];
-                        $classnames[$class][] = $associationMapping;
+                        $classnames[$class][] = $mapping;
                     }
                 }
             }

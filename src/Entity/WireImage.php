@@ -31,7 +31,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
     public const DEFAULT_LIIP_FILTER = "photo_q";
     public const THUMBNAIL_LIIP_FILTER = 'miniature_q';
 
-    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
+    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null', groups: ['persist','update'])]
     #[ORM\Column()]
     protected ?string $filename = null;
 
@@ -40,7 +40,8 @@ abstract class WireImage extends WireItem implements WireImageInterface
         maxSize: '12M',
         maxSizeMessage: 'Le fichier ne peut pas dépasser la taille de {{ limit }}{{ suffix }} : votre fichier fait {{ size }}{{ suffix }}',
         mimeTypes: ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"],
-        mimeTypesMessage: "Format invalide. Formats valides : JPEG, PNG, GIF, WEBP"
+        mimeTypesMessage: "Format invalide. Formats valides : JPEG, PNG, GIF, WEBP",
+        groups: ['persist','update'],
     )]
     protected File|UploadedFile|null $file = null;
 

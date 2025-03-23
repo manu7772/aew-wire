@@ -226,16 +226,16 @@ class NormalizerService implements NormalizerServiceInterface
         bool $dir_wanted = false
     ): void {
         $names = $this->wireEm->getEntityNames(true, false, true);
-        if (in_array($path, $names) || array_key_exists($path, $names)) {
+        if ($path instanceof SplFileInfo) {
+            // SplFileInfo given
+            $path = $path->getPathname();
+        } else if (in_array($path, $names) || array_key_exists($path, $names)) {
             // Classname or shortname given
             if (array_key_exists($path, $names)) {
                 $path = Objects::getShortname($path);
             }
             $path = $this->appWire->getProjectDir(static::DEFAULT_DATA_PATH . ltrim($path, '/'));
             $path = file_exists($path . '.yaml') ? $path . '.yaml' : $path . '.yml';
-        } else if ($path instanceof SplFileInfo) {
-            // SplFileInfo given
-            $path = $path->getPathname();
         } else {
             // string path given
             $m_path = $path;
@@ -344,9 +344,11 @@ class NormalizerService implements NormalizerServiceInterface
             if(is_string($uname)) {
                 $data['uname'] ??= $uname;
             }
+            // dd($data);
             $data = new NormalizeDataContainer($this->wireEm, $classname, $data, create_only: false);
             /** @var WireEntityInterface $entity */
             $entity = $this->denormalizeEntity($data, $classname);
+            // dd($this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
             if (!$replace
                 && $entity->getSelfState()->isLoaded()
                 // && $entity->getEmbededStatus()->isContained()
@@ -363,6 +365,7 @@ class NormalizerService implements NormalizerServiceInterface
                 }
                 $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s %s :%s- %s', [$entity->getShortname(), $uname, PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
                 $opresult->addData($entity->getUnameThenEuid(), $entity);
+                // dd($this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
                 continue;
             }
             $this->wireEm->getEm()->persist($entity);

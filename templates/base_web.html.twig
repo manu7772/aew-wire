@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ app.locale }}" {{ component('html_element_attributes') }}>
+<html{{ component('html_element_attributes') }}>
 	<head>
 		<meta charset="{{ app.charset }}">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>
-			{% block title %}Website{% endblock %}
-		</title>
+		<title>{% block title %}Website{% endblock %}</title>
 		{% block favicon %}
-		{# <link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}"> #}
+		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', asset('favicons/favicon.svg'))) }}{% endblock %}">
 		{% endblock %}
         {% block stylesheets %}
 		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}

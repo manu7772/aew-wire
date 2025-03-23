@@ -3,15 +3,16 @@ namespace Aequation\WireBundle\Controller;
 
 use Aequation\WireBundle\Form\UserDeleteType;
 use Aequation\WireBundle\Form\UserType;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\HttpFoundation\JsonResponse;
 // PHP
 use Exception;
 
@@ -44,7 +45,7 @@ class SecurityController extends AbstractController
         return $this->render('@AequationWire/security/profile.html.twig');
     }
 
-    #[Route('/profile/delete', name: 'app_profile_delete')]
+    // #[Route('/profile/delete', name: 'app_profile_delete')]
     public function delete(
         Request $request,
         Security $security,
@@ -86,8 +87,8 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    #[Route('/profile/edit', name: 'app_profile_edit')]
-    public function register(
+    // #[Route('/profile/edit', name: 'app_profile_edit')]
+    public function edit(
         Request $request,
         EntityManagerInterface $entityManager
     ): Response
@@ -109,6 +110,32 @@ class SecurityController extends AbstractController
         return $this->render('@AequationWire/security/edit_profile.html.twig', [
             'userForm' => $form,
         ]);
+    }
+
+
+    /*********************************************************************************************
+     * SECURITY SPECIAL ACTIONS
+     */
+
+    // #[Route('/security/commands', name: 'app_security_commands')]
+    public function commands(): JsonResponse
+    {
+        return new JsonResponse([
+            'commands' => [
+                '/security/check-sadmin' => 'Check if main superadmin exists, and restore it if not',
+            ]
+        ]);
+    }
+
+    // #[Route('/security/check-sadmin', name: 'app_security_check_sadmin')]
+    public function checkSadmin(
+        WireUserServiceInterface $userService
+    ): Response
+    {
+        // Check if main superadmin exists
+        $userService->checkMainSuperadmin();
+        $this->addFlash('success', 'Superadmin checked');
+        return $this->redirectToRoute('app_login');
     }
 
 }

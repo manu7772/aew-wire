@@ -53,6 +53,7 @@ use ReflectionClass;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use UnitEnum;
 
 /**
@@ -1003,12 +1004,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         /** @var NormalizerServiceInterface */
         $normalizer = $this->get(NormalizerServiceInterface::class);
         // if($this->getUser()) {
-        //     $data = $normalizer->normalize(data: $this->getUser(), context: ['groups' => 'user.index']);
-        //     // dd($data, ['groups' => 'user.index']);
+        //     $data = $normalizer->normalize(data: $this->getUser(), context: [AbstractNormalizer::GROUPS => 'user.index']);
+        //     // dd($data, [AbstractNormalizer::GROUPS => 'user.index']);
         // }
-        // dd('Stopped '.__METHOD__.' line '.__LINE__, ['groups' => static::SELF_SERIALIZE_GROUPS]);
-        $data = $normalizer->normalize(data: $this, context: ['groups' => static::SELF_SERIALIZE_GROUPS]);
-        // dd($data, ['groups' => static::SELF_SERIALIZE_GROUPS]);
+        // dd('Stopped '.__METHOD__.' line '.__LINE__, [AbstractNormalizer::GROUPS => static::SELF_SERIALIZE_GROUPS]);
+        $data = $normalizer->normalize(data: $this, context: [AbstractNormalizer::GROUPS => static::SELF_SERIALIZE_GROUPS]);
+        // dd($data, [AbstractNormalizer::GROUPS => static::SELF_SERIALIZE_GROUPS]);
         return $data;
     }
 

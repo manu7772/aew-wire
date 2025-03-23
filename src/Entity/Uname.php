@@ -21,8 +21,8 @@ use Exception;
 
 #[ORM\Entity(repositoryClass: UnameRepository::class)]
 #[ORM\Table(name: '`u_name`')]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
-#[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
+#[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !', groups: ['persist','update'])]
 #[ClassCustomService(UnameServiceInterface::class)]
 class Uname extends MappSuperClassEntity implements UnameInterface
 {
@@ -35,13 +35,13 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     #[ORM\Id]
     // #[ORM\GeneratedValue(strategy: "NONE")]
     #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
-    #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres')]
-    #[Assert\Regex(Encoders::UNAME_SCHEMA)]
+    #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres', groups: ['persist','update'])]
+    #[Assert\Regex(Encoders::UNAME_SCHEMA, groups: ['persist','update'])]
     protected ?string $id = null;
 
     #[ORM\Column(updatable: false, unique: true)]
-    #[Assert\NotNull]
-    #[Assert\Regex(Encoders::EUID_SCHEMA)]
+    #[Assert\NotNull(groups: ['persist','update'])]
+    #[Assert\Regex(Encoders::EUID_SCHEMA, groups: ['persist','update'])]
     protected string $entityEuid;
 
     public readonly WireEntityInterface $entity;
@@ -53,10 +53,10 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function __toString(): string
     {
-        return $this->id ? (string)$this->id : parent::__toString();
+        return (string)$this->id;
     }
 
-    #[Assert\IsTrue()]
+    #[Assert\IsTrue(groups: ['persist','update'])]
     public function isValid(): bool
     {
         return Encoders::isUnameFormatValid($this->id);
@@ -73,12 +73,11 @@ class Uname extends MappSuperClassEntity implements UnameInterface
         TraitUnamedInterface $entity,
         ?string $uname = null
     ): static {
-        if (!isset($this->entity)) {
-            $this->entity = $entity;
-        } else if ($this->entity !== $entity) {
+        $this->entity ??= $entity;
+        if ($this->entity !== $entity) {
             throw new Exception(vsprintf("Error %s line %d:%s- Can not set another entity!", [__METHOD__, __LINE__, PHP_EOL]));
         }
-        if (!empty($uname) || empty($this->id ?? null)) {
+        if (!empty($uname) || empty($this->id)) {
             if (empty($uname)) $uname = $this->entity->getEuid();
             $this->setUname($uname);
         }
@@ -105,6 +104,9 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     public function setUname(string $uname): static
     {
         if (!Encoders::isUnameFormatValid($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
+        if(strtolower($uname) === 'uname') {
+            throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is reserved!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
+        }
         $this->id = $uname;
         return $this;
     }
@@ -121,6 +123,12 @@ class Uname extends MappSuperClassEntity implements UnameInterface
 
     public function getEntity(): ?WireEntityInterface
     {
-        return $this->entity;
+        if(!isset($this->entity)) {
+            $entity = $this->getEmbededStatus()?->wireEntityManager->getEntityByEuid($this->entityEuid) ?? null;
+            if($entity instanceof WireEntityInterface) {
+                $this->entity = $entity;
+            }
+        }
+        return $this->entity ?? null;
     }
 }

@@ -75,6 +75,13 @@ trait WireEntity
         return $this->__selfstate ?? null;
     }
 
+    public function getSelfStateReport(
+        bool $asString = false
+    ): array|string
+    {
+        return $this->getSelfState()->getReport($asString);
+    }
+
 
     /*************************************************************************************
      * EMBEDED STATUS
@@ -85,8 +92,8 @@ trait WireEntity
     ): void {
         if (!isset($this->__estatus)) {
             $this->__estatus = $estatus;
-        } else if ($this->__estatus !== $estatus) {
-            if ($this->__estatus->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
+        } else if ($this->getEmbededStatus() !== $estatus) {
+            if ($this->getEmbededStatus()->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
         }
     }
 
@@ -107,9 +114,7 @@ trait WireEntity
 
     public function getUnameThenEuid(): string
     {
-        return $this instanceof TraitUnamedInterface
-            ? $this->getUnameName()
-            : $this->getEuid();
+        return $this instanceof TraitUnamedInterface ? $this->getUname()->getId() : $this->getEuid();
     }
 
     public function defineUname(

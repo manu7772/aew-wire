@@ -1,8 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\PdfizableInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\WirePdf;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -14,6 +14,7 @@ use Nucleos\DompdfBundle\Factory\DompdfFactoryInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 // PHP
 use DateTimeImmutable;
+use Knp\Component\Pager\PaginatorInterface;
 
 abstract class WirePdfService extends WireItemService implements WirePdfServiceInterface
 {
@@ -22,15 +23,27 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
     public function __construct(
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEntityService,
-        public readonly NormalizerServiceInterface $normalizer,
+        protected PaginatorInterface $paginator,
+        protected NormalizerServiceInterface $normalizer,
         protected DompdfFactoryInterface $dompdfFactory,
         protected UploaderHelper $vichHelper,
     )
     {
-        parent::__construct($appWire, $wireEntityService, $normalizer);
+        parent::__construct($appWire, $wireEntityService, $paginator, $normalizer);
     }
 
-    
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->wireEntityService->incDebugMode();
+        $opresult = parent::checkDatabase($opresult, $repair);
+        // Check all WirePdfInterface entities
+        $this->wireEntityService->decDebugMode();
+        return $opresult;
+    }
+
     /**
      * Output a PDF from HTML content
      * 

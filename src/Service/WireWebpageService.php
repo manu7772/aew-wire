@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Tools\Files;
@@ -19,6 +19,17 @@ abstract class WireWebpageService extends WireEcollectionService implements Wire
     public const FILES_FOLDER = 'webpage/';
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->wireEntityService->incDebugMode();
+        $opresult = parent::checkDatabase($opresult, $repair);
+        // Check all WireWebpageInterface entities
+        $this->wireEntityService->decDebugMode();
+        return $opresult;
+    }
 
     public function getPreferedWebpage(): ?WireWebpageInterface
     {

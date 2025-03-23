@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 // Symfony
 
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -35,10 +36,15 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function setSuperadmin(): static;
     public function isValidSuperadmin(): bool;
     public function eraseCredentials(): void;
-    public function autoGeneratePassword(int $length = 32, string $chars = null, bool $replace = true): static;
+    public function autoGeneratePassword(int $length = 32, ?string $chars = null, bool $replace = true): static;
     // Darkmode
     public function isDarkmode(): bool;
     public function setDarkmode(bool $darkmode): static;
+    // Factorys
+    public function getFactorys(): Collection;
+    public function addFactory(WireFactoryInterface $factory): static;
+    public function removeFactory(WireFactoryInterface $factory): static;
+    public function hasFactory(WireFactoryInterface $factory): bool;
 
 
 }

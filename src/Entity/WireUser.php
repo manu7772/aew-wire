@@ -1,7 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
 use Aequation\WireBundle\Repository\WireUserRepository;
@@ -18,14 +21,15 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\Collection;
 
 // #[MappedSuperclass()]
 // #[ORM\Entity(repositoryClass: WireUserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'])]
-abstract class WireUser extends WireItem implements WireUserInterface
+abstract class WireUser extends WireItem implements WireUserInterface, TraitCategorizedInterface
 {
-    use Webpageable, Relinkable;
+    use Webpageable, Relinkable, Categorized;
 
     public const ICON = [
         'ux' => 'tabler:user-filled',
@@ -81,6 +85,12 @@ abstract class WireUser extends WireItem implements WireUserInterface
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $lastLogin = null;
 
+    /**
+     * @var Collection<int, WireUserInterface>
+     */
+    #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'associates')]
+    protected Collection $factorys;
+
 
     public function __toString(): string
     {
@@ -94,7 +104,9 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function isLoggable(): bool
     {
-        return $this->isActive() && $this->isVerified();
+        return $this->isActive()
+            // && $this->isVerified()
+            ;
     }
 
     public function isEqualTo(UserInterface $user): bool
@@ -401,4 +413,33 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return $this;
     }
 
+    public function getFactorys(): Collection
+    {
+        return $this->factorys;
+    }
+
+    public function addFactory(WireFactoryInterface $factory): static
+    {
+        if (!$this->factorys->contains($factory)) {
+            $this->factorys->add($factory);
+        }
+        if(!$factory->hasAssociate($this)) {
+            $factory->addAssociate($this);
+        }
+        return $this;
+    }
+
+    public function removeFactory(WireFactoryInterface $factory): static
+    {
+        $this->factorys->removeElement($factory);
+        if($factory->hasAssociate($this)) {
+            $factory->removeAssociate($this);
+        }
+        return $this;
+    }
+
+    public function hasFactory(WireFactoryInterface $factory): bool
+    {
+        return $this->factorys->contains($factory);
+    }
 }

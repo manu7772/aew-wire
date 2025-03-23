@@ -2,7 +2,9 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
+use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Owner;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
@@ -13,10 +15,10 @@ use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-abstract class WireArticle extends WireItem implements WireArticleInterface
+abstract class WireArticle extends WireItem implements WireArticleInterface, TraitCategorizedInterface
 {
 
-    use Owner, Webpageable, Relinkable;
+    use Owner, Webpageable, Relinkable, Categorized;
 
     public const ICON = [
         'ux' => 'tabler:article',

@@ -2,19 +2,18 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\Slugable;
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
+use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Datetimed;
-use Aequation\WireBundle\Entity\trait\Slug;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
 // Symfony
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -27,14 +26,14 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', repositoryMethod: 'findBy')]
-#[UniqueEntity(fields: ['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', repositoryMethod: 'findBy', groups: ['persist','update'])]
+#[UniqueEntity(fields: ['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
-class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
+abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInterface, TraitCategorizedInterface
 {
 
-    use Datetimed, Unamed;
+    use Datetimed, Unamed, Categorized;
 
     public const ICON = [
         'ux' => 'tabler:link',

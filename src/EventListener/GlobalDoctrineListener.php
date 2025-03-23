@@ -41,25 +41,26 @@ class GlobalDoctrineListener
         // private AppWireServiceInterface $appWire,
     ) {}
 
-    public function postLoad(PostLoadEventArgs $event): void
+    public function postLoad(
+        PostLoadEventArgs $event
+    ): void
     {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         $this->wireEm->postLoaded($entity);
     }
 
-    public function prePersist(PrePersistEventArgs $event): void
+    public function prePersist(
+        PrePersistEventArgs $event
+    ): void
     {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         $this->checkIntegrity($entity, __METHOD__, __LINE__);
-        switch (true) {
-            case $entity instanceof WireUserInterface:
-                $plainPassword = $entity->getPlainPassword();
-                $entity->setPassword($this->userPasswordHasher->hashPassword($entity, $plainPassword));
-                break;
+        // User
+        if($entity instanceof WireUserInterface) {
+            $plainPassword = $entity->getPlainPassword();
+            $entity->setPassword($this->userPasswordHasher->hashPassword($entity, $plainPassword));
         }
     }
 
@@ -72,34 +73,33 @@ class GlobalDoctrineListener
         $entity->__selfstate->setPersisted();
     }
 
-    public function preUpdate(PreUpdateEventArgs $event): void
+    public function preUpdate(
+        PreUpdateEventArgs $event
+    ): void
     {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         $this->checkIntegrity($entity, __METHOD__, __LINE__);
-        switch (true) {
-            case $entity instanceof WireUserInterface:
-                $plainPassword = $entity->getPlainPassword();
-                if (!empty((string)$plainPassword)) {
-                    $entity->setPassword($this->userPasswordHasher->hashPassword($entity, $plainPassword));
-                }
-                break;
+        if($entity instanceof WireUserInterface) {
+            $plainPassword = $entity->getPlainPassword();
+            if (!empty($plainPassword)) {
+                $entity->setPassword($this->userPasswordHasher->hashPassword($entity, $plainPassword));
+            }
         }
     }
 
     public function postUpdate(
         PostUpdateEventArgs $event
     ): void {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         $entity->__selfstate->setUpdated();
     }
 
-    public function preRemove(PreRemoveEventArgs $event): void
+    public function preRemove(
+        PreRemoveEventArgs $event
+    ): void
     {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         switch (true) {
@@ -114,7 +114,6 @@ class GlobalDoctrineListener
     public function postRemove(
         PostRemoveEventArgs $event
     ): void {
-        /** @var WireEntityInterface */
         $entity = $event->getObject();
         if (!($entity instanceof WireEntityInterface)) return;
         $entity->__selfstate->setRemoved();

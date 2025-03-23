@@ -39,7 +39,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     #[Gedmo\Translatable]
     private ?string $description = null;
 
-    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
+    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null', groups: ['persist','update'])]
     #[ORM\Column()]
     protected ?string $filename = null;
 
@@ -49,6 +49,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         maxSizeMessage: 'Le fichier ne peut pas dépasser la taille de {{ limit }}{{ suffix }} : votre fichier fait {{ size }}{{ suffix }}',
         mimeTypes: ["application/pdf"],
         mimeTypesMessage: "Format invalide, vous devez indiquer un fichier PDF",
+        groups: ['persist','update'],
         // binaryFormat: false,
     )]
     protected File|UploadedFile|null $file = null;

@@ -6,8 +6,11 @@ use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Tools\Files;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[UniqueEntity(fields: ['name'], groups: ['persist','update'])]
+#[ORM\HasLifecycleCallbacks]
 class WireWebsection extends WireItem implements WireWebsectionInterface
 {
 
@@ -17,7 +20,7 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
     ];
 
     #[ORM\Column()]
-    #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.')]
+    #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
     protected ?string $twigfile = null;
 
     #[ORM\Column]

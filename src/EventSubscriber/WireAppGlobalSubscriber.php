@@ -81,8 +81,6 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     public function onRequest(RequestEvent $event): void
     {
         if(!$this->isAvailableActions($event)) return;
-        // Check if main superadmin exists
-        $this->userService->checkMainSuperadmin();
         // LOGOUT INVALID USER IMMEDIATLY!!!
         $user = $this->userService->getUser();
         if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {

@@ -61,12 +61,38 @@ class ExtraLoader implements LoaderInterface
         $route = new Route(path: $path, defaults: $defaults);
         $this->routenames['app_logout'] = $route;
         $routes->add('app_logout', $route);
+        // profile/delete
+        $path = '/profile/delete';
+        $defaults = ['_controller' => SecurityController::class . '::delete'];
+        $route = new Route(path: $path, defaults: $defaults);
+        $this->routenames['app_profile_delete'] = $route;
+        $routes->add('app_profile_delete', $route);
+        // profile/edit
+        $path = '/profile/edit';
+        $defaults = ['_controller' => SecurityController::class . '::edit'];
+        $route = new Route(path: $path, defaults: $defaults);
+        $this->routenames['app_profile_edit'] = $route;
+        $routes->add('app_profile_edit', $route);
+
         // Register
         $path = '/register';
         $defaults = ['_controller' => RegistrationController::class . '::register'];
         $route = new Route(path: $path, defaults: $defaults);
         $this->routenames['app_register'] = $route;
         $routes->add('app_register', $route);
+
+        // Security/commands
+        $path = '/security/commands';
+        $defaults = ['_controller' => SecurityController::class . '::commands'];
+        $route = new Route(path: $path, defaults: $defaults);
+        $this->routenames['app_security_commands'] = $route;
+        $routes->add('app_security_commands', $route);
+        // Security/check-superadmin
+        $path = '/security/check-sadmin';
+        $defaults = ['_controller' => SecurityController::class . '::checkSadmin'];
+        $route = new Route(path: $path, defaults: $defaults);
+        $this->routenames['app_security_check_sadmin'] = $route;
+        $routes->add('app_security_check_sadmin', $route);
 
         // Admin entities
         $reflectionClass = new ReflectionClass(EntityAdminController::class);

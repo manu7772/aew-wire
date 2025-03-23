@@ -2,34 +2,30 @@
 
 namespace Aequation\WireBundle\Service;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-// use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
-use DateTimeImmutable;
 // Symfony
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Role\RoleHierarchy;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\EntityRepository;
-use Exception;
-use Knp\Component\Pager\Pagination\PaginationInterface;
-use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Knp\Component\Pager\PaginatorInterface;
+// PHP
+use Exception;
 
 abstract class WireUserService extends RoleHierarchy implements WireUserServiceInterface
 {
@@ -57,6 +53,17 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         parent::__construct($subhierarchy);
     }
 
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->wireEntityService->incDebugMode();
+        $opresult ??= new Opresult();
+        // Check all WireUserInterface entities
+        $this->wireEntityService->decDebugMode();
+        return $opresult;
+    }
 
     public function getSecurity(): Security
     {

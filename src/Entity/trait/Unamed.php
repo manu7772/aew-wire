@@ -39,6 +39,11 @@ trait Unamed
         return $this->updateUname($uname);
     }
 
+    // public function setUnameName(string $uname): static
+    // {
+    //     return $this->updateUname($uname);
+    // }
+
     public function getUname(): ?UnameInterface
     {
         return $this->uname ?? null;
@@ -46,7 +51,7 @@ trait Unamed
 
     public function getUnameName(): ?string
     {
-        return isset($this->uname) ? $this->uname->getUname() : null;
+        return $this->uname->getUname();
     }
 
 }

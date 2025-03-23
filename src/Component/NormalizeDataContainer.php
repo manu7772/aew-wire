@@ -2,6 +2,7 @@
 
 namespace Aequation\WireBundle\Component;
 
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -26,11 +27,13 @@ class NormalizeDataContainer
     private string $main_group;
     private readonly bool $create_only;
     private PropertyAccessorInterface $accessor;
+    private array $data;
+    private ?string $uname = null;
 
     public function __construct(
         private readonly WireEntityManagerInterface $wireEm,
         string|WireEntityInterface $classOrEntity,
-        private array $data,
+        array $data,
         private array $context = [],
         ?string $main_group = null,
         bool $create_only = true,
@@ -39,6 +42,7 @@ class NormalizeDataContainer
         $this->setMainGroup((string)$main_group);
         if($classOrEntity instanceof WireEntityInterface) $this->entity = $classOrEntity;
         $this->classname = is_string($classOrEntity) ? $classOrEntity : $classOrEntity->getClassname();
+        $this->setData($data);
         // if($this->isCreateOrFind() && !$this->isModel()) {
         //     $this->findEntity();
         // }
@@ -79,6 +83,13 @@ class NormalizeDataContainer
             throw new Exception(vsprintf('Error %s line %d: entity %s %s (id: %s) is already set!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->entity, $this->entity->getId() ?? 'NULL']));
         }
         $this->entity ??= $entity;
+        if($this->entity->getSelfState()->isLoaded()) {
+            $this->wireEm->insertEmbededStatus($this->entity);
+        }
+        // Set Uname name
+        if(Encoders::isUnameFormatValid($this->uname) && $this->entity->getSelfState()->isNew() && $this->entity instanceof TraitUnamedInterface) {
+            $this->entity->setUname($this->uname);
+        }
         $this->controlContainer(true);
         return $this;
     }
@@ -146,8 +157,8 @@ class NormalizeDataContainer
         $this->controlContainer(true);
         $context = $this->context;
         // Define groups if not
-        if (empty($context['groups'] ?? [])) {
-            $context['groups'] = NormalizerService::getNormalizeGroups($this->getType(), $this->getMainGroup());
+        if (empty($context[AbstractNormalizer::GROUPS] ?? [])) {
+            $context[AbstractNormalizer::GROUPS] = NormalizerService::getNormalizeGroups($this->getType(), $this->getMainGroup());
         }
         return $context;
     }
@@ -157,8 +168,8 @@ class NormalizeDataContainer
         $this->controlContainer(true);
         $context = $this->context;
         // Define groups if not
-        if (empty($context['groups'] ?? [])) {
-            $context['groups'] = NormalizerService::getDenormalizeGroups($this->getType(), $this->getMainGroup());
+        if (empty($context[AbstractNormalizer::GROUPS] ?? [])) {
+            $context[AbstractNormalizer::GROUPS] = NormalizerService::getDenormalizeGroups($this->getType(), $this->getMainGroup());
         }
         // Object to populate
         if($this->findEntity()) {
@@ -256,18 +267,28 @@ class NormalizeDataContainer
         array $data
     ): static
     {
-        $this->data = $data;
+        $this->data = [];
+        foreach ($data as $key => $value) {
+            switch ($key) {
+                case 'uname':
+                    $this->uname = $value;
+                    break;
+                default:
+                    $this->data[$key] = $value;
+                    break;
+            }
+        }
         return $this;
     }
 
     private function getCompiledData(): array
     {
         $data = $this->data;
-        // Uname
-        if (isset($data['unameName'])) {
-            $data['uname'] ??= $data['unameName'];
-            unset($data['unameName']);
-        }
+        // Compile here...
+        // if (isset($data['unameName'])) {
+        //     $data['uname'] ??= $data['unameName'];
+        //     unset($data['unameName']);
+        // }
         return $data;
     }
 
@@ -287,8 +308,8 @@ class NormalizeDataContainer
             if (!$entity && Encoders::isEuidFormatValid($data['euid'] ?? null)) {
                 $entity = $this->wireEm->findEntityByEuid($data['euid']);
             }
-            if (!$entity && Encoders::isUnameFormatValid($data['uname'] ?? null)) {
-                $entity = $this->wireEm->findEntityByUname($data['uname']);
+            if (!$entity && Encoders::isUnameFormatValid($this->uname)) {
+                $entity = $this->wireEm->findEntityByUname($this->uname);
             }
             if($entity instanceof WireEntityInterface) {
                 $this->setEntity($entity);

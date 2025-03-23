@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Tools\Files;
@@ -20,6 +20,17 @@ abstract class WireWebsectionService extends WireItemService implements WireWebs
     public const SECTION_TYPES = ['section','header','footer','banner','sidemenu','left-sidemenu','right-sidemenu','hidden'];
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $this->wireEntityService->incDebugMode();
+        $opresult = parent::checkDatabase($opresult, $repair);
+        // Check all WireWebsectionInterface entities
+        $this->wireEntityService->decDebugMode();
+        return $opresult;
+    }
 
     public function getPreferedWebsections(): array
     {

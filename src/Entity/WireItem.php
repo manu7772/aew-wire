@@ -26,11 +26,11 @@ use Gedmo\Mapping\Annotation as Gedmo;
 #[ORM\Table(name: 'w_item')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 #[Gedmo\TranslationEntity(class: WireItemTranslationInterface::class)]
 #[ClassCustomService(WireItemServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-class WireItem extends MappSuperClassEntity implements WireItemInterface
+abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
 {
     use Datetimed, Enabled, Unamed;
 

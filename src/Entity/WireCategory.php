@@ -19,8 +19,8 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Exception;
 
 #[MappedSuperclass]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
-#[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà')]
+#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
+#[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà', groups: ['persist','update'])]
 #[HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireCategoryTranslationInterface::class)]
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
@@ -43,7 +43,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     #[Gedmo\Translatable]
     protected ?string $name = null;
 
-    #[ORM\Column(updatable: false, nullable: false)]
+    #[ORM\Column(nullable: false)]
     #[Assert\NotBlank(message: 'Le type est obligatoire', groups: ['persist','update'])]
     protected ?string $type;
     protected array $typeChoices;
@@ -65,7 +65,6 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     public function __construct()
     {
         parent::__construct();
-        $this->type = static::DEFAULT_TYPE;
     }
 
     public function __toString(): string
@@ -86,12 +85,12 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     public function getTypeChoices(): array
     {
-        return $this->typeChoices ??= $this->__estatus->service->getCategoryTypeChoices();
+        return $this->typeChoices ??= $this->getEmbededStatus()->service->getCategoryTypeChoices(false, false, true);
     }
 
-    public function getType(): string
+    public function getType(): ?string
     {
-        return $this->type;
+        return $this->type ?? null;
     }
 
     public function getTypeShortname(): string
@@ -111,13 +110,11 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     ): static
     {
         $availables = $this->getAvailableTypes();
-        if(!array_key_exists($type, $availables)) {
-            $memtype = $type;
-            if(false === ($type = array_search($type, $availables))) {
-                throw new Exception(vsprintf('Error %s line %d: type "%s" not found!', [__METHOD__, __LINE__, $memtype]));
-            }
+        if(!array_key_exists($type, $availables) && !in_array($type, $availables)) {
+            throw new Exception(vsprintf('Error %s line %d: type "%s" not found!%sUse one of these types:%s', [__METHOD__, __LINE__, $type, PHP_EOL, PHP_EOL.'- '.join(PHP_EOL.'- ', $availables).join(PHP_EOL.'- ', array_keys($availables))]));
         }
-        $this->type = $type;
+        $this->type = $availables[$type] ?? $type;
+        // dump($this->name.' ==> '.$this->type);
         return $this;
     }
 
@@ -131,8 +128,8 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     public function getAvailableTypes(): array
     {
         $types = [];
-        foreach ($this->getTypeChoices() as $classname => $values) {
-            $types[$classname] = Objects::getShortname($values, false);
+        foreach ($this->getTypeChoices() as $classname) {
+            $types[Objects::getShortname($classname, false)] = $classname;
         }
         return $types;
     }

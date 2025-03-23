@@ -1,22 +1,21 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
-use Exception;
-use Knp\Component\Pager\Pagination\PaginationInterface;
-use Knp\Component\Pager\PaginatorInterface;
 // Symfony
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
-use Symfony\Component\HttpFoundation\Request;
+use Knp\Component\Pager\PaginatorInterface;
+// PHP
+use Exception;
 
 #[AsAlias(UnameServiceInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: true)]
@@ -33,6 +32,16 @@ class UnameService implements UnameServiceInterface
         protected PaginatorInterface $paginator,
         public readonly NormalizerServiceInterface $normalizer,
     ) {
+    }
+
+    public function checkDatabase(
+        ?OpresultInterface $opresult = null,
+        bool $repair = false
+    ): OpresultInterface
+    {
+        $opresult ??= new Opresult();
+        // Check all UnameInterface entities
+        return $opresult;
     }
 
     /****************************************************************************************************/
