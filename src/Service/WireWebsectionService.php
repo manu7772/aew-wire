@@ -145,20 +145,21 @@ abstract class WireWebsectionService extends WireItemService implements WireWebs
             $filter_types = (array)$filter_types;
             $files = array_filter($files, function($model) use ($filter_types) { return in_array($model['sectiontype'], $filter_types); });
         }
-        if(!$asChoiceList) return $files;
         $choicelist = [];
         foreach ($files as $model) {
             $choicelist[$model['choice_label']] = $model['choice_value'];
         }
-        return $choicelist;
+        // dump($choicelist, $files);
+        return $asChoiceList ? $choicelist : $files;
     }
 
     public function getSectiontypeOfFile(
         string $filename
     ): ?string
     {
-        foreach ($this->listWebsectionModels() as $model) {
-            if($filename === $model['choice_value']) return $model['sectiontype'];
+        foreach ($this->listWebsectionModels(false) as $model) {
+            // Try find by html.twig or yaml file
+            if($filename === $model['choice_value'] || $filename === $model['file']) return $model['sectiontype'];
         }
         return null;
     }

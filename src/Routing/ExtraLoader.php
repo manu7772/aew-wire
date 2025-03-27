@@ -1,5 +1,4 @@
 <?php
-
 namespace Aequation\WireBundle\Routing;
 
 use Aequation\WireBundle\Controller\API\AppWireController;
@@ -7,17 +6,29 @@ use Aequation\WireBundle\Controller\EntityAdminController;
 use Aequation\WireBundle\Controller\RegistrationController;
 use Aequation\WireBundle\Controller\SecurityController;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use ReflectionClass;
-use ReflectionMethod;
 // Symfony
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Config\Loader\LoaderResolverInterface;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
-// PHP
-use RuntimeException;
 use Symfony\Component\Routing\Attribute\Route as AttributeRoute;
+// PHP
+use ReflectionClass;
+use ReflectionMethod;
+use RuntimeException;
 
+/**
+ * Route ExtraLoader
+ * 
+ * Please add the following to your config/routes/framework.yaml file:
+ *
+ * AequationWireBundle_Extra:
+ *      resource: .
+ *      type: extra
+ * 
+ * @see https://symfony.com/doc/current/routing/custom_route_loader.html
+ * @see https://symfony-docs-zh-cn.readthedocs.io/cookbook/routing/custom_route_loader.html
+ */
 class ExtraLoader implements LoaderInterface
 {
     private $loaded = false;

@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Tools\Files;
@@ -8,6 +9,8 @@ use Aequation\WireBundle\Tools\Files;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
+// PHP
+use InvalidArgumentException;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
@@ -54,7 +57,7 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
         $this->twigfile = $twigfile;
         $sectiontype = $this->getEmbededStatus()->service->getSectiontypeOfFile($this->twigfile);
         if(empty($sectiontype)) {
-            throw new \InvalidArgumentException(vsprintf('Error %s line %d: The sectiontype in file %s was not found.', [__FILE__, __LINE__, $this->twigfile]));
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: The sectiontype for file %s was not found.', [__FILE__, __LINE__, $this->twigfile]));
         }
         $this->setSectiontype($sectiontype);
         return $this;
@@ -80,6 +83,13 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
     public function getSectiontype(): string
     {
         return $this->sectiontype ??= $this->getTwigfileMetadata()->getDefaultSectiontype();
+    }
+
+    #[PostEmbeded(on: ['create'])]
+    public function setDefaultSectiontype(): static
+    {
+        $this->sectiontype ??= $this->getTwigfileMetadata()->getDefaultSectiontype();
+        return $this;
     }
 
     public function setSectiontype(string $sectiontype): static

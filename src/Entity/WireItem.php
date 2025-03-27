@@ -49,8 +49,11 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     #[Gedmo\Translatable]
     protected ?string $name = null;
 
-    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'item', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'child', cascade: ['persist'], orphanRemoval: true)]
     protected Collection $parents;
+
+    #[ORM\ManyToOne(targetEntity: WireEcollectionInterface::class)]
+    protected ?WireEcollectionInterface $mainparent = null;
 
     #[ORM\OneToMany(targetEntity: WireRelinkInterface::class, mappedBy: 'itemowner', orphanRemoval: true, cascade: ['persist'])]
     #[ORM\OrderBy(['position' => 'ASC'])]
@@ -89,6 +92,43 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this;
     }
 
+    public function getMainparent(): ?WireEcollectionInterface
+    {
+        return $this->mainparent;
+    }
+
+    public function setParent(?WireEcollectionInterface $mainparent): bool
+    {
+        $this->addParent($mainparent);
+        $this->mainparent = $mainparent;
+        $this->attributeDefaultMainparent();
+        return $this->mainparent === $mainparent;
+    }
+
+    public function removeMainparent(): bool
+    {
+        if($this->mainparent) {
+            $this->removeParent($this->mainparent);
+        }
+        $this->attributeDefaultMainparent();
+        return empty($this->mainparent);
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    protected function attributeDefaultMainparent(): static
+    {
+        $parents = $this->getParents();
+        if($this->mainparent && !$parents->contains($this->mainparent)) {
+            $this->mainparent = null;
+        }
+        if(empty($this->mainparent) && $parents->count() > 0) {
+            $mainparent = $parents->first();
+            $this->mainparent = !empty($mainparent) ? $mainparent : null;
+        }
+        return $this;
+    }
+
     public function addParent(WireEcollectionInterface $parent): static
     {
         if($parent !== $this && !$this->hasParent($parent)) {
@@ -97,13 +137,14 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         } else {
             $this->removeParent($parent);
         }
+        $this->attributeDefaultMainparent();
         return $this;
     }
 
     public function getParents(): Collection
     {
         return $this->parents->map(
-            fn(ItemCollectionInterface $ic) => $ic->getEcollection()
+            fn(ItemCollectionInterface $ic) => $ic->getParent()
         );
     }
 
@@ -115,8 +156,12 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     public function removeParent(WireEcollectionInterface $parent): static
     {
         $this->parents = $this->parents->filter(
-            fn(ItemCollectionInterface $ic) => $ic->getEcollection() !== $parent
+            fn(ItemCollectionInterface $ic) => $ic->getParent() !== $parent
         );
+        if($this->mainparent === $parent) {
+            $this->mainparent = null;
+        }
+        $this->attributeDefaultMainparent();
         return $this;
     }
 

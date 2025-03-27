@@ -10,15 +10,13 @@ use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
-use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
-#[MappedSuperclass]
+#[ORM\MappedSuperclass]
 #[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireCategoryTranslationInterface::class)]

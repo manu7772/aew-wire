@@ -2,23 +2,18 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\RelationOrder;
+use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
 use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
-use Aequation\WireBundle\Entity\interface\TraitHasOrderedInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
-use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Entity\trait\HasOrdered;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-// PHP
-use Exception;
 
 /**
  * Use Gedmo extension for sortable
@@ -30,6 +25,7 @@ use Exception;
 #[ORM\InheritanceType('JOINED')]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
+#[SerializationMapping(WireEcollection::ITEMS_ACCEPT)]
 abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
 
@@ -38,32 +34,41 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         'fa' => 'fa-folder'
     ];
     public const ITEMS_ACCEPT = [
-        'items' => [WireItemInterface::class],
+        'childs' => [WireItemInterface::class],
     ];
+    public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = false;
 
-    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'ecollection', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'parent', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
-    protected Collection $items;
+    protected Collection $childs;
 
     public function __construct()
     {
         parent::__construct();
-        $this->items = new ArrayCollection();
+        $this->childs = new ArrayCollection();
+    }
+
+    // Sortgroup
+    public function getSortgroup(
+        ?BetweenManyChildInterface $child = null
+    ): string
+    {
+        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
 
     // Position
     public function getItemPosition(WireItemInterface $item): int|false
     {
-        foreach ($this->items as $ic) {
-            if($ic->getItem() === $item) return $ic->getPosition();
+        foreach ($this->childs as $ic) {
+            if($ic->getChild() === $item) return $ic->getPosition();
         }
         return false;
     }
 
     public function setItemPosition(WireItemInterface $item, int $position): static
     {
-        foreach ($this->items as $ic) {
-            if($ic->getItem() === $item) {
+        foreach ($this->childs as $ic) {
+            if($ic->getChild() === $item) {
                 $ic->setPosition($position);
                 return $this;
             }
@@ -73,15 +78,15 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
 
     public function getItems(): Collection
     {
-        return $this->items->map(
-            fn(ItemCollectionInterface $ic) => $ic->getItem()
+        return $this->childs->map(
+            fn(ItemCollectionInterface $ic) => $ic->getChild()
         );
     }
 
     public function getActiveItems(): Collection
     {
-        return $this->items
-            ->map(fn(ItemCollectionInterface $ic) => $ic->getItem())
+        return $this->childs
+            ->map(fn(ItemCollectionInterface $ic) => $ic->getChild())
             ->filter(fn(WireItemInterface $item) => $item->isActive());
     }
 
@@ -89,7 +94,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     {
         if($item !== $this && !$this->hasItem($item)) {
             $ic = new ItemCollection($this, $item);
-            $this->items->add($ic);
+            $this->childs->add($ic);
         } else {
             $this->removeItem($item);
         }
@@ -103,19 +108,25 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
 
     public function removeItem(WireItemInterface $item): static
     {
-        $this->items = $this->items->filter(
-            fn(ItemCollectionInterface $ic) => $ic->getItem() !== $item
-        );
+        // $this->childs = $this->childs->filter(
+        //     fn(ItemCollectionInterface $ic) => $ic->getChild() !== $item
+        // );
+        foreach ($this->childs as $child) {
+            if($child->getChild() === $item) {
+                $this->childs->removeElement($child);
+                break;
+            }
+        }
         return $this;
     }
 
     public function removeItems(): static
     {
-        $this->items->clear();
+        $this->childs->clear();
         return $this;
     }
 
-    public function isAcceptsItemForEcollection(
+    public function isAcceptsChildForParent(
         WireEntityInterface $item,
         string $property
     ): bool
@@ -128,12 +139,12 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return false;
     }
 
-    public function filterAcceptedItemsForEcollection(
+    public function filterAcceptedChildsForParent(
         Collection $items,
         string $property
     ): Collection
     {
-        return $items->filter(fn($item) => $item !== $this && $this->isAcceptsItemForEcollection($item, $property));
+        return $items->filter(fn($item) => $item !== $this && $this->isAcceptsChildForParent($item, $property));
     }
 
 }

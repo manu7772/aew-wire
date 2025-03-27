@@ -15,8 +15,8 @@ class TwigfileMetadata
         public readonly string|array|null $paths = null
     )
     {
-        $this->sectiontypes = $this->websection->_service->getSectiontypes();
-        $this->models = $this->websection->_service->listWebsectionModels(false, null, $paths);
+        $this->sectiontypes = $this->websection->getEmbededStatus()->service->getSectiontypes();
+        $this->models = $this->websection->getEmbededStatus()->service->listWebsectionModels(false, null, $paths);
     }
 
     public function getModelData(

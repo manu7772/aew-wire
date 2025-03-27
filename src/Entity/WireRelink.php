@@ -44,7 +44,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
      */
     public const TARGETS = [
         'Même page' => '_self',
-        'Nouvel onglet' => '_blank',
+        'Nouvelle page' => '_blank',
     ];
     public const RELINK_TYPES = [
         'Url' => 'URL',
@@ -93,7 +93,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     //  * @var Collection<int, LaboRelink>
     //  */
     // #[ORM\OneToMany(targetEntity: LaboRelink::class, mappedBy: 'parentrelink', fetch: 'EXTRA_LAZY')]
-    // #[RelationOrder()]
     // protected Collection $relinks;
 
     #[ORM\ManyToOne(targetEntity: WireItemInterface::class, inversedBy: 'relinks', fetch: 'LAZY')]

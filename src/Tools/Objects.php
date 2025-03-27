@@ -6,11 +6,15 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 // PHP
 use Attribute;
+use Exception;
 use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
+use Stringable;
+use Twig\Markup;
 
 class Objects implements ToolInterface
 {
@@ -45,6 +49,45 @@ class Objects implements ToolInterface
     {
         $RC = new ReflectionClass($classname);
         return $RC->isInstantiable();
+    }
+
+
+    /*************************************************************************************
+     * DEBUG PRINT
+     *************************************************************************************/
+
+    public static function toDebugString(
+        mixed $something,
+        bool $expanded = false
+    ): Markup
+    {
+        switch (true) {
+            case is_null($something):
+                $string = '[null]';
+                break;
+            case is_bool($something):
+                $string = $something ? '[bool]true' : '[bool]false';
+                break;
+            case is_object($something) && $something instanceof WireEntityInterface:
+                $string = vsprintf('%s "%s" (#%d)', [$something->getClassname(), $something, $something->getId() ?? 'null']);
+                break;
+            case is_object($something) && $something instanceof Stringable:
+                $string = vsprintf('%s "%s"', [$something::class, $something]);
+                break;
+            case is_object($something):
+                $string = $something::class;
+                break;
+            case is_iterable($something):
+                $string = vsprintf('[%s] %s', [gettype($something), $expanded ? json_encode($something, JSON_PRETTY_PRINT) : count($something).' items']);
+                break;
+            case is_scalar($something):
+                $string = vsprintf('[%s] %s', [gettype($something), $something]);
+                break;
+            default:
+                $string = gettype($something);
+                break;
+        }
+        return Strings::markup($string);
     }
 
 
@@ -147,6 +190,16 @@ class Objects implements ToolInterface
         });
     }
 
+    public static function isAlmostOneOfIntefaces(
+        object|string $class,
+        string|array $interfaces
+    ): bool
+    {
+        foreach ((array)$interfaces as $interface) {
+            if(is_a($class, $interface, true)) return true;
+        }
+        return false;
+    }
 
     /*************************************************************************************
      * ATTRIBUTES
@@ -154,8 +207,7 @@ class Objects implements ToolInterface
 
     public static function getClassAttributes(
         object|string $objectOrClass,
-        ?string $attributeClass = null,
-        bool $searchInParents = true,
+        ?string $attributeClass = null
     ): array
     {
         if($objectOrClass instanceof ReflectionClass) {
@@ -164,17 +216,18 @@ class Objects implements ToolInterface
         } else {
             $reflClass = new ReflectionClass($objectOrClass);
         }
-        $attributes = $reflClass->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF);
-        foreach ($attributes as $key => $attr) {
-            if($attr->getTarget() & Attribute::TARGET_CLASS === Attribute::TARGET_CLASS) {
-                $attributes[$key] = $attr = $attr->newInstance();
-                if($attr instanceof AppAttributeClassInterface) $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
+        $attributes = [];
+        /** @var ReflectionClass $reflClass */
+        foreach ($reflClass->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+            $attribute = $attribute->newInstance();
+            if($attribute instanceof AppAttributeClassInterface) {
+                $attribute->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
             }
+            $attributes[] = $attribute;
         }
-        if(empty($attributes) && $searchInParents) {
-            // Try find in parent class (recursively)
-            $parent = $reflClass->getParentClass();
-            if($parent) return static::getClassAttributes($parent, $attributeClass, true);
+        if(empty($attributes) && $parent = $reflClass->getParentClass()) {
+            // Try find in parent classes (recursively)
+            $attributes = static::getClassAttributes($parent, $attributeClass);
         }
         return $attributes;
     }
@@ -185,42 +238,43 @@ class Objects implements ToolInterface
         bool $searchInParents = true,
     ): array
     {
-        if($objectOrClass instanceof ReflectionClass) {
-            $reflClass = $objectOrClass;
-            $objectOrClass = $reflClass->name;
-        } else {
-            $reflClass = new ReflectionClass($objectOrClass);
-        }
-        $propertys = $reflClass->getProperties();
-        $attributes = [];
-        foreach ($propertys as $property) {
-            foreach ($property->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attr) {
-                if($attr->getTarget() & Attribute::TARGET_PROPERTY === Attribute::TARGET_PROPERTY) {
-                    $attr = $attr->newInstance();
-                    if($attr instanceof AppAttributePropertyInterface) {
-                        $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
-                        $attr->setProperty($property);
-                    }
-                    $attributes[$property->name] ??= [];
-                    $attributes[$property->name][] = $attr;
-                }
-            }
-        }
-        if($searchInParents) {
-            // Try find in parent class (recursively)
-            if($parent = $reflClass->getParentClass()) {
-                foreach (static::getPropertyAttributes($parent, $attributeClass, true) as $attrname => $attr) {
-                    $attributes[$attrname] ??= $attr;
-                }
-            }
-        }
-        return $attributes;
+        throw new Exception('Method not implemented yet!');
+        // if($objectOrClass instanceof ReflectionClass) {
+        //     $reflClass = $objectOrClass;
+        //     $objectOrClass = $reflClass->name;
+        // } else {
+        //     $reflClass = new ReflectionClass($objectOrClass);
+        // }
+        // $propertys = $reflClass->getProperties();
+        // $attributes = [];
+        // foreach ($propertys as $property) {
+        //     foreach ($property->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attr) {
+        //         if($attr->getTarget() & Attribute::TARGET_PROPERTY === Attribute::TARGET_PROPERTY) {
+        //             $attr = $attr->newInstance();
+        //             if($attr instanceof AppAttributePropertyInterface) {
+        //                 $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
+        //                 $attr->setProperty($property);
+        //             }
+        //             $attributes[$property->name] ??= [];
+        //             $attributes[$property->name][] = $attr;
+        //         }
+        //     }
+        // }
+        // if($searchInParents) {
+        //     // Try find in parent class (recursively)
+        //     if($parent = $reflClass->getParentClass()) {
+        //         foreach (static::getPropertyAttributes($parent, $attributeClass, true) as $attrname => $attr) {
+        //             $attributes[$attrname] ??= $attr;
+        //         }
+        //     }
+        // }
+        // return $attributes;
     }
 
     public static function getMethodAttributes(
         object|string $objectOrClass,
         ?string $attributeClass = null,
-        bool $searchInParents = true,
+        ?int $filter = null
     ): array
     {
         if($objectOrClass instanceof ReflectionClass) {
@@ -229,27 +283,17 @@ class Objects implements ToolInterface
         } else {
             $reflClass = new ReflectionClass($objectOrClass);
         }
-        $methods = $reflClass->getMethods();
+        $methods = $reflClass->getMethods($filter);
         $attributes = [];
         foreach ($methods as $method) {
-            foreach ($method->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attr) {
-                if($attr->getTarget() & Attribute::TARGET_METHOD === Attribute::TARGET_METHOD) {
-                    $attr = $attr->newInstance();
-                    if($attr instanceof AppAttributeMethodInterface) {
-                        $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
-                        $attr->setMethod($method);
-                    }
-                    $attributes[$method->name] ??= [];
-                    $attributes[$method->name][] = $attr;
+            foreach ($method->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+                $attribute = $attribute->newInstance();
+                if($attribute instanceof AppAttributeMethodInterface) {
+                    $attribute->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
+                    $attribute->setMethod($method);
                 }
-            }
-        }
-        if($searchInParents) {
-            // Try find in parent class (recursively)
-            if($parent = $reflClass->getParentClass()) {
-                foreach (static::getMethodAttributes($parent, $attributeClass, true) as $attrname => $attr) {
-                    $attributes[$attrname] ??= $attr;
-                }
+                $attributes[$method->name] ??= [];
+                $attributes[$method->name][] = $attribute;
             }
         }
         return $attributes;
@@ -261,39 +305,40 @@ class Objects implements ToolInterface
         bool $searchInParents = true,
     ): array
     {
-        if($objectOrClass instanceof ReflectionClass) {
-            $reflClass = $objectOrClass;
-            $objectOrClass = $reflClass->name;
-        } else {
-            $reflClass = new ReflectionClass($objectOrClass);
-        }
-        $constants = $reflClass->getConstants();
-        $attributes = [];
-        foreach ($constants as $name => $value) {
-            $reflClassConstant = new ReflectionClassConstant($objectOrClass, $name);
-            foreach ($reflClassConstant->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attr) {
-                if($attr->getTarget() & Attribute::TARGET_CLASS_CONSTANT === Attribute::TARGET_CLASS_CONSTANT) {
-                    $attr = $attr->newInstance();
-                    if($attr instanceof AppAttributeConstantInterface) {
-                        // $attr->setConstant($constant);
-                        $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
-                        $attr->setConstant($reflClassConstant);
-                        // $attr->setValue($value);
-                    }
-                    $attributes[$reflClassConstant->name] ??= [];
-                    $attributes[$reflClassConstant->name][] = $attr;
-                }
-            }
-        }
-        if($searchInParents) {
-            // Try find in parent class (recursively)
-            if($parent = $reflClass->getParentClass()) {
-                foreach (static::getConstantAttributes($parent, $attributeClass, true) as $attrname => $attr) {
-                    $attributes[$attrname] ??= $attr;
-                }
-            }
-        }
-        return $attributes;
+        throw new Exception('Method not implemented yet!');
+        // if($objectOrClass instanceof ReflectionClass) {
+        //     $reflClass = $objectOrClass;
+        //     $objectOrClass = $reflClass->name;
+        // } else {
+        //     $reflClass = new ReflectionClass($objectOrClass);
+        // }
+        // $constants = $reflClass->getConstants();
+        // $attributes = [];
+        // foreach ($constants as $name => $value) {
+        //     $reflClassConstant = new ReflectionClassConstant($objectOrClass, $name);
+        //     foreach ($reflClassConstant->getAttributes($attributeClass, ReflectionAttribute::IS_INSTANCEOF) as $attr) {
+        //         if($attr->getTarget() & Attribute::TARGET_CLASS_CONSTANT === Attribute::TARGET_CLASS_CONSTANT) {
+        //             $attr = $attr->newInstance();
+        //             if($attr instanceof AppAttributeConstantInterface) {
+        //                 // $attr->setConstant($constant);
+        //                 $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
+        //                 $attr->setConstant($reflClassConstant);
+        //                 // $attr->setValue($value);
+        //             }
+        //             $attributes[$reflClassConstant->name] ??= [];
+        //             $attributes[$reflClassConstant->name][] = $attr;
+        //         }
+        //     }
+        // }
+        // if($searchInParents) {
+        //     // Try find in parent class (recursively)
+        //     if($parent = $reflClass->getParentClass()) {
+        //         foreach (static::getConstantAttributes($parent, $attributeClass, true) as $attrname => $attr) {
+        //             $attributes[$attrname] ??= $attr;
+        //         }
+        //     }
+        // }
+        // return $attributes;
     }
 
 }

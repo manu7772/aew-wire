@@ -178,7 +178,7 @@ class EntitySelfState implements EntitySelfStateInterface
                 return $this->isNew() && !$this->isRemoved() && !$this->isModel();
                 break;
             case 'updated':
-                return $this->isLoaded() && !$this->isRemoved() && !$this->isModel();
+                return ($this->isLoaded() || $this->isPersisted()) && !$this->isRemoved() && !$this->isModel();
                 break;
             case 'removed':
                 return ((0b00000111 & $this->state) > 0) && !$this->isModel();

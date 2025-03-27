@@ -74,7 +74,7 @@ class NormalizerService implements NormalizerServiceInterface
         if ($class instanceof WireEntityInterface) {
             $class = $class->getClassname();
         }
-        if (class_exists($class)) {
+        if (class_exists($class) || interface_exists($class)) {
             $shortname = Objects::getShortname($class, true);
         } else {
             throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, WireEntityInterface::class]));
@@ -158,7 +158,10 @@ class NormalizerService implements NormalizerServiceInterface
             // throw new Exception(vsprintf('Error %s line %d: please, use method denormalizeEntity() to denormalize entities!', [__METHOD__, __LINE__]));
             return $this->denormalizeEntity($data, $classname, $format, $context);
         }
-        return $this->getSerializer()->denormalize($data, $classname, $format, $context);
+        $this->wireEm->incDebugMode();
+        $data = $this->getSerializer()->denormalize($data, $classname, $format, $context);
+        $this->wireEm->decDebugMode();
+        return $data;
     }
 
     /****************************************************************************************************/
@@ -182,7 +185,9 @@ class NormalizerService implements NormalizerServiceInterface
         if(!($data instanceof NormalizeDataContainer)) {
             $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
         }
+        $this->wireEm->incDebugMode();
         $entity = $this->getSerializer()->denormalize($data, $classname, $format, $data->getContext());
+        $this->wireEm->decDebugMode();
         return $entity;
     }
 
@@ -208,7 +213,10 @@ class NormalizerService implements NormalizerServiceInterface
         string $format,
         ?array $context = []
     ): mixed {
-        return $this->getSerializer()->deserialize($data, $type, $format, $context);
+        $this->wireEm->incDebugMode();
+        $data = $this->getSerializer()->deserialize($data, $type, $format, $context);
+        $this->wireEm->decDebugMode();
+        return $data;
     }
 
 
@@ -348,12 +356,16 @@ class NormalizerService implements NormalizerServiceInterface
             $data = new NormalizeDataContainer($this->wireEm, $classname, $data, create_only: false);
             /** @var WireEntityInterface $entity */
             $entity = $this->denormalizeEntity($data, $classname);
+            if(!$entity) {
+                $opresult->addDanger(vsprintf('Erreur de dénormalisation de l\'entité %s avec les données %s', [$classname, json_encode($data)]));
+                continue;
+            }
             // dd($this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
             if (!$replace
                 && $entity->getSelfState()->isLoaded()
                 // && $entity->getEmbededStatus()->isContained()
             ) {
-                $opresult->addWarning(vsprintf('L\'entité %s %s [%s] existe déjà, elle ne sera pas modifiée.', [$entity->getShortname(), $entity->__toString(), $uname]));
+                $opresult->addWarning(vsprintf('L\'entité %s existe déjà, elle ne sera pas modifiée.', [Objects::toDebugString($entity)]));
                 continue;
             }
             // Validation
@@ -363,23 +375,24 @@ class NormalizerService implements NormalizerServiceInterface
                 foreach ($errors as $error) {
                     $messages[] = $error->getMessage();
                 }
-                $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s [id:%s/U:%s] :%s- %s', [$entity->getShortname(), $entity->getId(), $uname, PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
+                $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s :%s- %s', [Objects::toDebugString($entity), PHP_EOL, implode(PHP_EOL . '- ', $messages)]));
                 $opresult->addData($entity->getUnameThenEuid(), $entity);
                 // dd($this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
                 continue;
             }
             if($entity->getSelfState()->isNew()) {
                 $this->wireEm->getEm()->persist($entity);
-                $opresult->addSuccess(vsprintf('L\'entité %s %s [id:%s/U:%s] a été CRÉÉE', [$entity->getShortname(), $entity->__toString(), $entity->getId(), $uname]));
+                $opresult->addSuccess(vsprintf('L\'entité %s a été CRÉÉE', [Objects::toDebugString($entity)]));
             } else {
                 $action = $this->wireEm->getEm()->getUnitOfWork()->isScheduledForUpdate($entity) ? 'MODIFIÉE' : 'NON MODIFIÉE';
-                $opresult->addSuccess(vsprintf('L\'entité %s %s [id:%s/U:%s] a été %s', [$entity->getShortname(), $entity->__toString(), $entity->getId(), $uname, $action]));
+                $opresult->addSuccess(vsprintf('L\'entité %s a été %s', [Objects::toDebugString($entity), $action]));
             }
-            $opresult->addData($entity->getUnameThenEuid(), $entity);
-            // sleep(1);
+            $opresult->addData($entity->getUnameThenEuid(), $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
+            // $opresult->addData($entity->getUnameThenEuid(), $entity);
             $count++;
         }
         if ($count > 0) {
+            // dd($opresult->getData());
             $this->wireEm->getEm()->flush();
         }
         return $opresult;

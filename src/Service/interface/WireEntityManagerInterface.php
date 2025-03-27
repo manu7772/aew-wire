@@ -63,6 +63,8 @@ interface WireEntityManagerInterface extends WireServiceInterface
     // Find
     public function findEntityByEuid(string $euid): ?WireEntityInterface;
     public function findEntityByUname(string $uname): ?WireEntityInterface;
+    public function getClassnameByUname(string $uname): ?string;
+    public function getClassnameByEuidOrUname(string $euidOrUname): ?string;
     public function findEntityByUniqueValue(string $value): ?WireEntityInterface;
     public function getEntitiesCount(string $classname, array $criteria = []): int;
 

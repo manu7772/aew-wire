@@ -21,7 +21,7 @@ use Exception;
 
 #[ORM\Entity(repositoryClass: UnameRepository::class)]
 #[ORM\Table(name: '`u_name`')]
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
+// #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 #[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !', groups: ['persist','update'])]
 #[ClassCustomService(UnameServiceInterface::class)]
 class Uname extends MappSuperClassEntity implements UnameInterface
@@ -33,7 +33,6 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     ];
 
     #[ORM\Id]
-    // #[ORM\GeneratedValue(strategy: "NONE")]
     #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
     #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres', groups: ['persist','update'])]
     #[Assert\Regex(Encoders::UNAME_SCHEMA, groups: ['persist','update'])]
@@ -53,7 +52,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
      */
     public function __toString(): string
     {
-        return (string)$this->id;
+        return $this->getUname();
     }
 
     #[Assert\IsTrue(groups: ['persist','update'])]

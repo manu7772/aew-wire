@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
@@ -13,6 +14,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
+#[SerializationMapping(WireMenu::ITEMS_ACCEPT)]
 abstract class WireMenu extends WireEcollection implements WireMenuInterface
 {
 
@@ -24,7 +26,7 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
     ];
     public const ITEMS_ACCEPT = [
         'items'         => [WireMenuInterface::class, WireWebpageInterface::class],
-        'categorys'     => [WireCategoryInterface::class],
+        // 'categorys'     => [WireCategoryInterface::class],
     ];
 
     // /**
@@ -55,7 +57,7 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
         bool $filterActives = false
     ): ArrayCollection
     {
-        return $this->items->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireMenuInterface; });
+        return $this->childs->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireMenuInterface; });
     }
 
     // /**
@@ -68,7 +70,7 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
 
     // public function addCategory(WireCategoryInterface $category): static
     // {
-    //     if($this->isAcceptsItemForEcollection($category, 'categorys') && is_a($this, $category->getType())) {
+    //     if($this->isAcceptsChildForParent($category, 'categorys') && is_a($this, $category->getType())) {
     //         if (!$this->categorys->contains($category)) {
     //             $this->categorys->add($category);
     //         }

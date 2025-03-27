@@ -99,7 +99,8 @@ trait WireEntity
 
     public function hasEmbededStatus(): bool
     {
-        return $this->getEmbededStatus() instanceof EntityEmbededStatusInterface;
+        $__estatus = $this->__estatus ?? null;
+        return $__estatus instanceof EntityEmbededStatusInterface;
     }
 
     public function getEmbededStatus(): ?EntityEmbededStatusInterface

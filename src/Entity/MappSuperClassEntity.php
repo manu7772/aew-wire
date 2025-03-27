@@ -1,26 +1,17 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Component\EntityEmbededStatus;
-use Aequation\WireBundle\Entity\interface\TraitSerializableInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\trait\Serializable;
 use Aequation\WireBundle\Entity\trait\WireEntity;
 // Symfony
-use Doctrine\ORM\Mapping\MappedSuperclass;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
-use Symfony\Component\PropertyAccess\PropertyAccess;
-// use Symfony\Component\Uid\UuidV7 as Uuid;
-// PHP
-use Throwable;
 
 /**
  * Class MappSuperClassEntity
  * @package Aequation\WireBundle\Entity
  */
-#[MappedSuperclass]
+#[ORM\MappedSuperclass]
 #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 abstract class MappSuperClassEntity implements WireEntityInterface
 {

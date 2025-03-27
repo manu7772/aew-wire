@@ -2,51 +2,66 @@
 
 namespace Aequation\WireBundle\Component;
 
+use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
+use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Tools\Encoders;
+use Aequation\WireBundle\Tools\Objects;
+use Doctrine\Common\Collections\ArrayCollection;
+// Symfony
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 // PHP
 use Exception;
 use ReflectionProperty;
-use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\PropertyAccess\PropertyAccessor;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-class NormalizeDataContainer
+class NormalizeDataContainer implements NormalizeDataContainerInterface
 {
+    public const MODELS_NO_ASSOCIATIONS = true;
+
     public readonly WireEntityInterface $entity;
     public readonly ClassMetadata $classMetadata;
     public readonly string $classname;
-    private string $main_group;
-    private readonly bool $create_only;
-    private PropertyAccessorInterface $accessor;
-    private array $data;
-    private ?string $uname = null;
+    protected string $main_group;
+    protected readonly bool $create_only;
+    protected PropertyAccessorInterface $accessor;
+    protected array $data;
+    protected ?string $uname = null;
+    protected array $reverse_operations = []; // description in data['_reverse'] = [...]
 
     public function __construct(
-        private readonly WireEntityManagerInterface $wireEm,
+        protected readonly WireEntityManagerInterface $wireEm,
         string|WireEntityInterface $classOrEntity,
         array $data,
-        private array $context = [],
+        protected array $context = [],
         ?string $main_group = null,
         bool $create_only = true,
-        private readonly bool $is_model = false,
+        protected readonly bool $is_model = false,
     ) {
         $this->setMainGroup((string)$main_group);
         if($classOrEntity instanceof WireEntityInterface) $this->entity = $classOrEntity;
-        $this->classname = is_string($classOrEntity) ? $classOrEntity : $classOrEntity->getClassname();
-        $this->setData($data);
-        // if($this->isCreateOrFind() && !$this->isModel()) {
-        //     $this->findEntity();
-        // }
+        $classname = is_string($classOrEntity) ? $classOrEntity : $classOrEntity->getClassname();
+        if(!$this->wireEm->entityExists($classname)) {
+            $resolved = $this->wireEm->getEntityClassesOfInterface($classname, false, true);
+            if(count($resolved) === 1) {
+                $classname = reset($resolved);
+            } else {
+                throw new Exception(vsprintf('Error %s line %d: entity %s does not exist! Could it be one of these?%s', [__METHOD__, __LINE__, $classname, PHP_EOL.'- '.implode(PHP_EOL.'- ', $resolved)]));
+            }
+        }
+        $this->classname = $classname;                                                                                  
         $this->defineCreateOnly($create_only);
+        $this->setData($data);
     }
 
     public function isProd(): bool
@@ -75,12 +90,12 @@ class NormalizeDataContainer
      * CONTEXT
      **********************************************************************************************/
 
-    public function setEntity(
+    protected function setEntity(
         WireEntityInterface $entity
     ): static
     {
         if($this->hasEntity() && $this->entity !== $entity) {
-            throw new Exception(vsprintf('Error %s line %d: entity %s %s (id: %s) is already set!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->entity, $this->entity->getId() ?? 'NULL']));
+            throw new Exception(vsprintf('Error %s line %d: entity %s is already set!%sCan not set another entity %s', [__METHOD__, __LINE__, Objects::toDebugString($this->entity), PHP_EOL, Objects::toDebugString($entity)]));
         }
         $this->entity ??= $entity;
         if($this->entity->getSelfState()->isLoaded()) {
@@ -91,7 +106,19 @@ class NormalizeDataContainer
             $this->entity->setUname($this->uname);
         }
         $this->controlContainer(true);
+        // dump($this->entity);
         return $this;
+    }
+
+    public function finalizeEntity(WireEntityInterface $entity): bool
+    {
+        if($this->hasEntity() && $this->entity !== $entity) {
+            return false;
+        }
+        $this->setEntity($entity);
+        // Apply reverse operations
+        $this->applyReverseOperations();
+        return true;
     }
 
     public function getEntity(): ?WireEntityInterface
@@ -172,11 +199,9 @@ class NormalizeDataContainer
             $context[AbstractNormalizer::GROUPS] = NormalizerService::getDenormalizeGroups($this->getType(), $this->getMainGroup());
         }
         // Object to populate
-        if($this->findEntity()) {
-            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->getEntity();
-        } else {
-            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->wireEm->createEntity($this->getType());
-        }
+        $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->findEntity()
+            ? $this->getEntity()
+            : $this->wireEm->createEntity($this->getType());
         return $context;
     }
 
@@ -192,7 +217,7 @@ class NormalizeDataContainer
         if(empty($main_group)) {
             return $this->resetMainGroup();
         }
-        if(!preg_match('/^[a-z0-9_]+$/', $main_group)) {
+        if(!preg_match('/^[a-z0-9_]+$/', $main_group) && !$this->isProd()) {
             throw new Exception(vsprintf('Error %s line %d: main group "%s" is invalid!', [__METHOD__, __LINE__, $main_group]));
         }
         $this->main_group = $main_group;
@@ -214,7 +239,7 @@ class NormalizeDataContainer
      * OPTIONS
      **********************************************************************************************/
     
-    private function defineCreateOnly(
+    protected function defineCreateOnly(
         bool $create_only
     ): static
     {
@@ -258,7 +283,7 @@ class NormalizeDataContainer
      * DATA
      **********************************************************************************************/
 
-     public function getData(): array
+    public function getData(): array
     {
         return $this->getCompiledData();
     }
@@ -267,11 +292,17 @@ class NormalizeDataContainer
         array $data
     ): static
     {
+        if(empty($data)) {
+            throw new Exception(vsprintf('Error %s line %d: data can not be empty!', [__METHOD__, __LINE__]));
+        }
         $this->data = [];
         foreach ($data as $key => $value) {
             switch ($key) {
                 case 'uname':
                     $this->uname = $value;
+                    break;
+                case '_reverse':
+                    $this->reverse_operations = $value;
                     break;
                 default:
                     $this->data[$key] = $value;
@@ -281,36 +312,148 @@ class NormalizeDataContainer
         return $this;
     }
 
-    private function getCompiledData(): array
+    protected function scalarToArrayUid(
+        mixed $value
+    ): array|false
+    {
+        if(is_bool($value)) {
+            return false;
+            // throw new Exception(vsprintf('Error %s line %d: value %s can not be boolean!', [__METHOD__, __LINE__, Objects::toDebugString($value)]));
+        }
+        if(empty($value)) {
+            return false;
+            // throw new Exception(vsprintf('Error %s line %d: value %s can not be empty!', [__METHOD__, __LINE__, Objects::toDebugString($value)]));
+        }
+        if(is_scalar($value)) {
+            if(Encoders::isEuidFormatValid($value)) {
+                $value = ['euid' => $value];
+            } else if(Encoders::isUnameFormatValid($value)) {
+                $value = ['uname' => $value];
+            } else if(preg_match('/^\d+$/', (string)$value) && intval($value) > 0) {
+                $value = ['id' => intval($value)];
+            }
+        }
+        return $value;
+    }
+
+    protected function getCompiledData(): array
     {
         $data = $this->data;
-        // Compile here...
-        // if (isset($data['unameName'])) {
-        //     $data['uname'] ??= $data['unameName'];
-        //     unset($data['unameName']);
-        // }
+        // 1 - Use Serialization mappings
+        $smap = $this->getSerializationMappings();
+        if(!empty($smap)) {
+            foreach ($data as $field => $value) {
+                if($interfaces = $smap[$field] ?? false) {
+                    if(!$this->is_model || !static::MODELS_NO_ASSOCIATIONS) {
+                        if(is_array($value) && !array_is_list($value)) {
+                            // One entity - list of named attributes
+                            $targetEntity = $data['classname'] ?? null;
+                            $targetEntity ??= $this->wireEm->getClassnameByEuidOrUname($value['euid'] ?? $value['uname'] ?? '');
+                            if(!empty($targetEntity) && Objects::isAlmostOneOfIntefaces($targetEntity, $interfaces)) {
+                                $data[$field] = new static($this->wireEm, $targetEntity, $value, $this->context, $this->main_group, $this->create_only, $this->is_model);
+                            } else {
+                                if(!$this->isProd()) {
+                                    throw new Exception(vsprintf('Error %s line %d: value %s must be almost one of instances: %s!', [__METHOD__, __LINE__, Objects::toDebugString($targetEntity), implode(', ', $interfaces)]));
+                                }
+                                unset($data[$field]);
+                            }
+                        } else if(is_scalar($value)) {
+                            // One entity - unique identifier (euid, uname) / NOT ID!!!
+                            $targetEntity = $this->wireEm->getClassnameByEuidOrUname((string)$value);
+                            if(!empty($targetEntity) && Objects::isAlmostOneOfIntefaces($targetEntity, $interfaces)) {
+                                $data[$field] = new static($this->wireEm, $targetEntity, $this->scalarToArrayUid($value), $this->context, $this->main_group, $this->create_only, $this->is_model);
+                            } else {
+                                if(!$this->isProd()) {
+                                    throw new Exception(vsprintf('Error %s line %d: value %s must be almost one of instances: %s!', [__METHOD__, __LINE__, Objects::toDebugString($targetEntity), implode(', ', $interfaces)]));
+                                }
+                                unset($data[$field]);
+                            }
+                        } else if(is_array($value)) {
+                            // Many entities
+                            $data[$field] = new ArrayCollection();
+                            foreach ($value as $key => $val) {
+                                $targetEntity = is_scalar($val) ? $this->wireEm->getClassnameByEuidOrUname((string)$val) : ($val['classname'] ?? null);
+                                if(!empty($targetEntity) && Objects::isAlmostOneOfIntefaces($targetEntity, $interfaces)) {
+                                    $ndc = new static($this->wireEm, $targetEntity, $this->scalarToArrayUid($val), $this->context, $this->main_group, $this->create_only, $this->is_model);
+                                    $related = $this->wireEm->getNormaliserService()->denormalizeEntity($ndc, $ndc->getType());
+                                    if(!$data[$field]->contains($related)) {
+                                        $data[$field]->add($related);
+                                    }
+                                } else if(!$this->isProd()) {
+                                    throw new Exception(vsprintf('Error %s line %d: value %s must be almost one of instances: %s!', [__METHOD__, __LINE__, Objects::toDebugString($targetEntity), implode(', ', $interfaces)]));
+                                }
+                            }
+                        }
+                    } else {
+                        // If model, do not manage associations
+                        unset($data[$field]);
+                    }
+                }
+            }
+        }
+        // 2 - Associations
+        foreach ($this->getAssociationMappings() as $field => $mapping) {
+            /** @var AssociationMapping $mapping */
+            switch (true) {
+                case $this->is_model && static::MODELS_NO_ASSOCIATIONS:
+                    // If model, do not manage associations
+                    if(isset($data[$field])) {
+                        unset($data[$field]);
+                    }
+                    break;
+                case $mapping->isToOne() && is_array($data[$field] ?? null):
+                    $data[$field] = new static($this->wireEm, $mapping->targetEntity, $data[$field], $this->context, $this->main_group, $this->create_only, $this->is_model);
+                    break;
+                case $mapping->isToMany():
+                    $targetEntity = $mapping->targetEntity;
+                    foreach ($data[$field] as $key => $value) {
+                        $related_data = $this->scalarToArrayUid($value);
+                        if($related_data) {
+                            $data[$field][$key] = new static($this->wireEm, $targetEntity, $related_data, $this->context, $this->main_group, $this->create_only, $this->is_model);
+                        } else {
+                            unset($data[$field][$key]);
+                            throw new Exception(vsprintf('Error %s line %d: property "%s" value %s type is invalid!', [__METHOD__, __LINE__, $field, Objects::toDebugString($value)]));
+                        }
+                    }
+                    break;
+            }
+        }
         return $data;
     }
 
     /**
      * Try find entity with data if exists
      */
-    public function findEntity(): bool
+    protected function findEntity(): bool
     {
         if(!$this->hasEntity() && $this->isCreateOrFind()) {
             $data = $this->getCompiledData();
             $entity = null;
+            // if(!$this->isProd() && !$this->wireEm->isDebugMode()) {
+            //     throw new Exception(vsprintf('Error %s line %d: debug mode (%d) must be enabled!', [__METHOD__, __LINE__, $this->wireEm->debug_mode]));
+            // }
+            $this->wireEm->incDebugMode(); // --> should be unnecessary
             // Try find entity if exists
             if (!empty($data['id'] ?? null)) {
                 $repo = $this->wireEm->getRepository($this->getType());
                 $entity = $repo->find($data['id']);
+                if(empty($entity)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity with id "%s" should exist, but was not found!', [__METHOD__, __LINE__, $data['id']]));
+                }
             }
             if (!$entity && Encoders::isEuidFormatValid($data['euid'] ?? null)) {
                 $entity = $this->wireEm->findEntityByEuid($data['euid']);
+                if(empty($entity)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity with euid "%s" should exist, but was not found!', [__METHOD__, __LINE__, $data['euid']]));
+                }
             }
             if (!$entity && Encoders::isUnameFormatValid($this->uname)) {
                 $entity = $this->wireEm->findEntityByUname($this->uname);
+                if(empty($entity) && empty($this->data)) {
+                    throw new Exception(vsprintf('Error %s line %d: entity with uname "%s" should exist, but was not found!', [__METHOD__, __LINE__, $this->uname]));
+                }
             }
+            $this->wireEm->decDebugMode(); // --> should be unnecessary
             if($entity instanceof WireEntityInterface) {
                 $this->setEntity($entity);
             }
@@ -320,22 +463,76 @@ class NormalizeDataContainer
 
 
     /***********************************************************************************************
-     * CLASSMETADATA / CONTROLS
+     * REVERSE OPERATIONS
+     * (apply AFTER denormalization)
      **********************************************************************************************/
 
-    public function getAssociationMappings(): array
+    public function getReverseOperations(): array
     {
-        $data = $this->getCompiledData();
-        $mappings = $this->getClassMetadata()->getAssociationMappings();
-        return array_filter($mappings, fn(AssociationMapping $mapping) => !empty($data[$mapping->fieldName] ?? null));
+        return $this->reverse_operations;
     }
 
-    public function getClassMetadata(): ?ClassMetadata
+    public function hasReverseOperations(): bool
+    {
+        return !empty($this->reverse_operations);
+    }
+
+    public function applyReverseOperations(): void
+    {
+        $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
+        foreach ($this->reverse_operations as $targetUname => $targetPropertys) {
+            foreach ((array)$targetPropertys as $targetProperty) {
+                $targetEntity = $this->wireEm->findEntityByUname($targetUname);
+                if($targetEntity instanceof WireEntityInterface) {
+                    // $targetValue = $this->accessor->getValue($targetEntity, $targetProperty);
+                    // if($targetValue instanceof ArrayCollection) {
+                    //     if(!$targetValue->contains($this->entity))
+                    //     $targetValue->add($this->entity);
+                    // }
+                    /**
+                     * @see https://symfony.com/doc/current/components/property_access.html#using-non-standard-adder-remover-methods
+                     */
+                    $this->accessor->setValue($targetEntity, $targetProperty, $this->entity);
+                } else {
+                    // Entity not found
+                    throw new Exception(vsprintf('Error %s line %d: entity with uname "%s" should exist, but was not found!', [__METHOD__, __LINE__, $targetUname]));
+                }
+            }
+        }
+    }
+
+
+    /***********************************************************************************************
+     * CLASSMETADATA / MAPPINGS / CONTROLS
+     **********************************************************************************************/
+
+    protected function getAssociationMappings(): array
+    {
+        $mappings = $this->getClassMetadata()->getAssociationMappings();
+        return array_filter($mappings, fn(AssociationMapping $mapping) => !empty($this->data[$mapping->fieldName] ?? null));
+    }
+
+    protected function getSerializationMappings(): array
+    {
+        $method = true;
+        if($method) {
+            return is_a($this->classname, WireEcollectionInterface::class, true)
+                ? $this->classname::ITEMS_ACCEPT
+                : [];
+        }
+        $mappings = Objects::getClassAttributes($this->getEntity() ?? $this->getType(), SerializationMapping::class);
+        // Get first mapping
+        /** @var SerializationMapping|false */
+        $mapping = reset($mappings);
+        return $mapping ? $mapping->getMapping() : [];
+    }
+
+    protected function getClassMetadata(): ?ClassMetadata
     {
         return $this->classMetadata ??= $this->wireEm->getClassMetadata($this->getType());
     }
 
-    public function setFieldValue(
+    protected function setFieldValue(
         string $field,
         mixed $value
     ): static
@@ -356,7 +553,7 @@ class NormalizeDataContainer
      * 
      * @param bool $exception
      */
-    private function controlContainer(
+    protected function controlContainer(
         bool $exception = false
     ): array
     {
@@ -370,7 +567,7 @@ class NormalizeDataContainer
         if (empty($this->classname)) {
             $error_messages[] = vsprintf('Error %s line %d: context type is not defined!', [__METHOD__, __LINE__]);
         }
-        if(is_string($this->classname) && !class_exists($this->classname)) {
+        if(is_string($this->classname) && !class_exists($this->classname) && !interface_exists($this->classname)) {
             $error_messages[] = vsprintf('Error %s line %d: class %s does not exist!', [__METHOD__, __LINE__, $this->classname]);
         }
         if(!is_a($this->classname, WireEntityInterface::class, true)) {
@@ -382,7 +579,7 @@ class NormalizeDataContainer
                 $error_messages[] = vsprintf('Error %s line %d: entity %s does not implement %s!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->classname]);
             }
             if($this->isCreateOnly() && !empty($this->entity->getId())) {
-                $error_messages[] = vsprintf('Error %s line %d: entity %s %s (id: %s) is already persisted!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->entity, $this->entity->getId() ?? 'NULL']);
+                $error_messages[] = vsprintf('Error %s line %d: %s is already persisted!', [__METHOD__, __LINE__, $this->entity]);
             }
         }
         if($exception && count($error_messages) > 0) {
