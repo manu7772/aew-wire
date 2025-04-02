@@ -1,9 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
@@ -13,11 +16,13 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-abstract class WireFactory extends WireItem implements WireFactoryInterface, TraitRelinkableInterface, TraitCategorizedInterface
+#[SerializationMapping(WireFactory::ITEMS_ACCEPT)]
+abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 
     use Webpageable, Relinkable, Categorized;
@@ -26,6 +31,16 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface, Tra
         'ux' => 'tabler:building-factory-2',
         'fa' => 'fa-solid fa-industry'
     ];
+    public const ITEMS_ACCEPT = [
+        'addresses' => [
+            'field' => 'relinks',
+            'require' => [WireAddresslinkInterface::class],
+        ],
+    ];
+
+    #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Assert\Valid(groups: ['persist','update'])]
+    protected Collection $relinks;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]

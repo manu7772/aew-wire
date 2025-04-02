@@ -2,9 +2,7 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
-use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
@@ -13,23 +11,26 @@ use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
+use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Routing\Router;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
+// PHP
+use Exception;
 
 #[ORM\Entity(repositoryClass: WireRelinkRepository::class)]
 #[ORM\Table(name: 'w_relink')]
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['name','itemowner'], message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy', groups: ['persist','update'])]
+#[UniqueEntity(fields: ['name','parent'], message: 'Ce nom {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
-abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInterface, TraitCategorizedInterface
+abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
     use Datetimed, Unamed, Categorized;
@@ -48,6 +49,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     ];
     public const RELINK_TYPES = [
         'Url' => 'URL',
+        'Reseau social' => 'RS',
         'Adresse' => 'ADDRESS',
         'Email' => 'EMAIL',
         'Téléphone' => 'PHONE',
@@ -83,24 +85,11 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     #[ORM\Column(nullable: true)]
     protected ?array $params = null;
 
-    #[ORM\Column(length: 16, nullable: true)]
+    #[ORM\Column(length: 8, nullable: true)]
     protected ?string $target = null;
 
-    // #[ORM\ManyToOne(targetEntity: LaboRelink::class, inversedBy: 'relinks', fetch: 'LAZY')]
-    // protected ?LaboRelink $parentrelink = null;
-
-    // /**
-    //  * @var Collection<int, LaboRelink>
-    //  */
-    // #[ORM\OneToMany(targetEntity: LaboRelink::class, mappedBy: 'parentrelink', fetch: 'EXTRA_LAZY')]
-    // protected Collection $relinks;
-
-    #[ORM\ManyToOne(targetEntity: WireItemInterface::class, inversedBy: 'relinks', fetch: 'LAZY')]
-    #[Gedmo\SortableGroup]
-    protected WireItemInterface & TraitRelinkableInterface $itemowner;
-
-    #[Gedmo\SortableGroup]
-    protected readonly string $shortname;
+    // #[ORM\OneToOne(targetEntity: RelinkCollectionInterface::class, mappedBy: 'relink', cascade: ['persist'])]
+    // protected RelinkCollectionInterface $parent;
 
     #[ORM\Column]
     protected bool $turboenabled = true;
@@ -116,18 +105,15 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     #[Gedmo\SortablePosition]
     protected int $position;
 
-    // /**
-    //  * @var Collection<int, WireCategoryInterface>
-    //  */
-    // #[ORM\ManyToMany(targetEntity: WireCategoryInterface::class)]
-    // protected Collection $categorys;
+    #[ORM\Column(type: Types::STRING, nullable: false, updatable: false)]
+    #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
+    public readonly string $ownereuid;
+
 
     public function __construct()
     {
         if(!in_array(static::RELINK_TYPE, static::RELINK_TYPES)) throw new \Exception(vsprintf('Error %s line %d: static::RELINK_TYPE is invalid. Should be one of these: %s!', [__METHOD__, __LINE__, implode(', ', static::RELINK_TYPES)]));
         parent::__construct();
-        // $this->categorys = new ArrayCollection();
-        // $this->relinks = new ArrayCollection();
         $targets = static::TARGETS;
         $this->target = reset($targets);
     }
@@ -138,32 +124,30 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     }
 
     public function getALink(
-        ?int $referenceType = Router::ABSOLUTE_PATH
+        ?int $referenceType = null
     ): ?string
     {
-        switch ($this->getRelinkType()) {
-            case 'URL':
-                /** @var FinalUrlinkInterface $this */
-                if($this->isUrl()) {
-                    return $this->mainlink;
-                } else if($this->isRoute()) {
-                    return $this->_service->getAppService()->getUrlIfExists($this->mainlink, $this->params, $referenceType);
-                }
-                break;
-            case 'ADDRESS':
-                /** @var FinalAddresslinkInterface $this */
-                return $this->getMaplink();
-                break;
-            case 'EMAIL':
-                /** @var FinalEmailinkInterface $this */
-                'mailto:'.$this->mainlink;
-                break;
-            case 'PHONE':
-                /** @var FinalPhonelinkInterface $this */
-                'tel:'.preg_replace('/[\\s]/', '', $this->mainlink);
-                break;
-        }
-        return null;
+        throw new Exception(vsprintf('Error %s line %d: please implement this in final entity', [__METHOD__, __LINE__]));
+        // switch ($this->getRelinkType()) {
+        //     case 'URL':
+        //         if($this->isUrl()) {
+        //             return $this->mainlink;
+        //         } else if($this->isRoute()) {
+        //             return $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceType ?? Router::ABSOLUTE_PATH);
+        //         }
+        //         break;
+        //     case 'ADDRESS':
+        //         throw new Exception(vsprintf('Error %s line %d: please implement this in final entity', [__METHOD__, __LINE__]));
+        //         // return $this->getMaplink();
+        //         break;
+        //     case 'EMAIL':
+        //         return 'mailto:'.$this->mainlink;
+        //         break;
+        //     case 'PHONE':
+        //         return 'tel:'.preg_replace('/[\s\t]/', '', $this->mainlink);
+        //         break;
+        // }
+        // return null;
     }
 
     public function isUrl(): bool
@@ -174,6 +158,11 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     public function isRoute(): bool
     {
         return $this->getRelinkType() === 'URL' && !!$this->isUrl();
+    }
+
+    public function isRs(): bool
+    {
+        return $this->getRelinkType() === 'RS';
     }
 
     public function isAddress(): bool
@@ -264,45 +253,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this;
     }
 
-    // public function getParentrelink(): ?static
-    // {
-    //     return $this->parentrelink;
-    // }
-
-    // public function setParentrelink(?LaboRelinkInterface $parentrelink): static
-    // {
-    //     $this->parentrelink = $parentrelink;
-    //     return $this;
-    // }
-
-    // /**
-    //  * @return Collection<int, LaboRelinkInterface>
-    //  */
-    // public function getRelinks(): Collection
-    // {
-    //     return $this->relinks;
-    // }
-
-    // public function addRelink(LaboRelinkInterface $child): static
-    // {
-    //     if (empty($this->parentrelink) && !$this->relinks->contains($child)) {
-    //         $this->relinks->add($child);
-    //         $child->setParentrelink($this);
-    //     }
-    //     return $this;
-    // }
-
-    // public function removeRelink(LaboRelinkInterface $child): static
-    // {
-    //     if ($this->relinks->removeElement($child)) {
-    //         // set the owning side to null (unless already changed)
-    //         if ($child->getParentrelink() === $this) {
-    //             $child->setParentrelink(null);
-    //         }
-    //     }
-    //     return $this;
-    // }
-
     public function setTurboenabled(
         bool $turboenabled = true
     ): static
@@ -338,57 +288,19 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this;
     }
 
-
-    public function getItemowner(): WireItemInterface & TraitRelinkableInterface
-    {
-        return $this->itemowner;
-    }
-
-    public function setItemowner(WireItemInterface & TraitRelinkableInterface $itemowner): static
-    {
-        $this->itemowner = $itemowner;
-        if(!$itemowner->hasRelink($this)) $itemowner->addRelink($this);
-        return $this;
-    }
-
-    // #[ORM\PrePersist]
-    // #[ORM\PreUpdate]
-    // public function updateLinkTitle(): static
+    // public function getParent(): TraitRelinkableInterface
     // {
-    //     if(empty($this->linktitle)) $this->linktitle = $this->title;
-    //     $this->linktitle = trim($this->linktitle);
-    //     return $this;
+    //     return $this->parent->getParent();
     // }
 
-    // /**
-    //  * @return Collection<int, WireCategoryInterface>
-    //  */
-    // public function getCategorys(): Collection
+    // public function setParent(WireEntityInterface & TraitRelinkableInterface $parent): static
     // {
-    //     return $this->categorys;
-    // }
-
-    // public function addCategory(WireCategoryInterface $category): static
-    // {
-    //     if (!$this->categorys->contains($category)) {
-    //         $this->categorys->add($category);
-    //     }
-    //     return $this;
-    // }
-
-    // public function removeCategory(WireCategoryInterface $category): static
-    // {
-    //     $this->categorys->removeElement($category);
-    //     return $this;
-    // }
-
-    // public function removeCategorys(): static
-    // {
-    //     foreach ($this->categorys as $category) {
-    //         /** @var WireCategoryInterface $category */
-    //         $this->removeCategory($category);
-    //     }
-    //     return $this;
+    //     throw new Exception(vsprintf('Error %s line %d: can not define parent here. Add this %s in it\'s parent (%s) relinks instead.', [__METHOD__, __LINE__, $this->getShortname(), Objects::toDebugString($parent)]));
+    //     // if(isset($this->parent) && $this->parent->getParent() !== $parent) {
+    //     //     throw new Exception(vsprintf('Error %s line %d: the parent is already set', [__METHOD__, __LINE__]));
+    //     // }
+    //     // $this->parent = new RelinkCollection($parent, $this);
+    //     // return $this;
     // }
 
     public function getSlug(): string
@@ -401,12 +313,24 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this->translations;
     }
 
-    public function addTranslation(WireTranslationInterface $t)
+    public function addTranslation(WireTranslationInterface $t): static
     {
         if (!$this->translations->contains($t)) {
             $this->translations[] = $t;
             $t->setObject($this);
         }
+        return $this;
+    }
+
+    public function setOwnereuid(TraitRelinkableInterface $owner): static
+    {
+        $this->ownereuid = $owner->getEuid();
+        return $this;
+    }
+
+    public function getOwnereuid(): string
+    {
+        return $this->ownereuid;
     }
 
 }

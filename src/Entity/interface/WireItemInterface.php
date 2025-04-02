@@ -8,13 +8,16 @@ interface WireItemInterface extends WireEntityInterface, BetweenManyChildInterfa
 {
     public function getName(): ?string;
     public function setName(string $name): static;
+    public function getTempParent(): ?WireEcollectionInterface;
+    public function setTempParent(?WireEcollectionInterface $tempParent = null): static;
+    public function getPosition(?WireEcollectionInterface $parent = null): int|false;
     public function getMainparent(): ?WireEcollectionInterface;
-    public function setParent(?WireEcollectionInterface $mainparent): bool;
+    public function setMainparent(WireEcollectionInterface $mainparent): bool;
     public function removeMainparent(): bool;
-    public function addParent(WireEcollectionInterface $parent): static;
+    public function attributeDefaultMainparent(): static;
+    public function addParent(WireEcollectionInterface $parent): bool;
     public function getParents(): Collection;
     public function hasParent(WireEcollectionInterface $parent): bool;
-    public function removeParent(WireEcollectionInterface $parent): static;
-    public function removeParents(): static;
-
+    public function removeParent(WireEcollectionInterface $parent): bool;
+    public function removeParents(): bool;
 } 

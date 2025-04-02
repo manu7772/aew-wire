@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface TraitOwnerInterface extends TraitEntityInterface
+interface TraitOwnerInterface extends WireEntityInterface
 {
 
     public function __construct_owner(): void;

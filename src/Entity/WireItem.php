@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireItemTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
@@ -13,6 +14,7 @@ use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireItemRepository;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
+use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -21,8 +23,10 @@ use Doctrine\DBAL\Types\Types;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\Sortable\Entity\Repository\SortableRepository;
 
-#[ORM\Entity(repositoryClass: WireItemRepository::class)]
+// #[ORM\Entity(repositoryClass: WireItemRepository::class)]
+#[ORM\Entity(repositoryClass: SortableRepository::class)]
 #[ORM\Table(name: 'w_item')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
@@ -50,14 +54,13 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     protected ?string $name = null;
 
     #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'child', cascade: ['persist'], orphanRemoval: true)]
+    #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $parents;
+    public WireEcollectionInterface $tempParent;
 
-    #[ORM\ManyToOne(targetEntity: WireEcollectionInterface::class)]
-    protected ?WireEcollectionInterface $mainparent = null;
-
-    #[ORM\OneToMany(targetEntity: WireRelinkInterface::class, mappedBy: 'itemowner', orphanRemoval: true, cascade: ['persist'])]
-    #[ORM\OrderBy(['position' => 'ASC'])]
-    protected Collection $relinks;
+    #[ORM\Column(type: Types::STRING, nullable: true)]
+    #[Assert\Regex(pattern: Encoders::EUID_SCHEMA, message: 'parent EUID is invalide.', groups: ['persist','update'])]
+    protected ?string $mainparent = null;
 
     #[ORM\OneToMany(targetEntity: WireItemTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
     protected $translations;
@@ -72,7 +75,6 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     {
         parent::__construct();
         $this->parents = new ArrayCollection();
-        $this->relinks = new ArrayCollection();
         $this->translations = new ArrayCollection();
     }
 
@@ -92,53 +94,85 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this;
     }
 
-    public function getMainparent(): ?WireEcollectionInterface
+    public function getTempParent(): ?WireEcollectionInterface
     {
-        return $this->mainparent;
+        return $this->tempParent ?? $this->getMainparent();
     }
 
-    public function setParent(?WireEcollectionInterface $mainparent): bool
+    public function setTempParent(?WireEcollectionInterface $tempParent = null): static
     {
-        $this->addParent($mainparent);
-        $this->mainparent = $mainparent;
+        $this->tempParent = $tempParent;
+        return $this;
+    }
+
+    public function getPosition(?WireEcollectionInterface $parent = null): int|false
+    {
+        $parent ??= $this->getTempParent();
+        if($parent) {
+            foreach ($this->parents as $ic) {
+                /** @var ItemCollectionInterface $ic */
+                if($ic->getParent() === $parent) {
+                    return $ic->getPosition();
+                }
+            }
+        }
+        return false;
+    }
+
+    public function getMainparent(): ?WireEcollectionInterface
+    {
+        if(!empty($this->mainparent)) {
+            foreach ($this->getParents() as $parent) {
+                /** @var WireEcollectionInterface $parent */
+                if($parent->getEuid() === $this->mainparent) {
+                    return $parent;
+                }
+            }
+        }
+        // Not found, so becomes null if not
+        return $this->mainparent = null;
+    }
+
+    public function setMainparent(WireEcollectionInterface $mainparent): bool
+    {
+        if($this->addParent($mainparent)) {
+            $this->mainparent = $mainparent->getEuid();
+        }
         $this->attributeDefaultMainparent();
-        return $this->mainparent === $mainparent;
+        return $this->mainparent === $mainparent->getEuid();
     }
 
     public function removeMainparent(): bool
     {
-        if($this->mainparent) {
-            $this->removeParent($this->mainparent);
+        if($mainparent = $this->getMainparent()) {
+            $this->removeParent($mainparent);
         }
-        $this->attributeDefaultMainparent();
         return empty($this->mainparent);
     }
 
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
-    protected function attributeDefaultMainparent(): static
+    public function attributeDefaultMainparent(): static
     {
-        $parents = $this->getParents();
-        if($this->mainparent && !$parents->contains($this->mainparent)) {
-            $this->mainparent = null;
+        $this->getMainparent(); // --> set $this->mainparent to null if parent not found
+        if(!$this->mainparent) {
+            $firstparent = $this->parents->first();
+            $this->mainparent = $firstparent ? $firstparent->getParent()->getEuid() : null;
         }
-        if(empty($this->mainparent) && $parents->count() > 0) {
-            $mainparent = $parents->first();
-            $this->mainparent = !empty($mainparent) ? $mainparent : null;
+        if(!$this->mainparent && $this->parents->count() > 0) {
+            throw new \LogicException(vsprintf('Error %s line %d: The mainparent for item %s was not found.', [__FILE__, __LINE__, $this->__toString()]));
         }
         return $this;
     }
 
-    public function addParent(WireEcollectionInterface $parent): static
+    public function addParent(WireEcollectionInterface $parent): bool
     {
-        if($parent !== $this && !$this->hasParent($parent)) {
+        if(!$this->hasParent($parent)) {
             $ic = new ItemCollection($parent, $this);
             $this->parents->add($ic);
-        } else {
-            $this->removeParent($parent);
         }
         $this->attributeDefaultMainparent();
-        return $this;
+        return $this->hasParent($parent);
     }
 
     public function getParents(): Collection
@@ -153,22 +187,20 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this->getParents()->contains($parent);
     }
 
-    public function removeParent(WireEcollectionInterface $parent): static
+    public function removeParent(WireEcollectionInterface $parent): bool
     {
         $this->parents = $this->parents->filter(
             fn(ItemCollectionInterface $ic) => $ic->getParent() !== $parent
         );
-        if($this->mainparent === $parent) {
-            $this->mainparent = null;
-        }
         $this->attributeDefaultMainparent();
-        return $this;
+        return $this->hasParent($parent);
     }
 
-    public function removeParents(): static
+    public function removeParents(): bool
     {
         $this->parents->clear();
-        return $this;
+        $this->mainparent = null;
+        return $this->parents->isEmpty();
     }
 
     public function getSlug(): string

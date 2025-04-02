@@ -14,6 +14,7 @@ use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
 use Stringable;
+use Throwable;
 use Twig\Markup;
 
 class Objects implements ToolInterface
@@ -162,7 +163,12 @@ class Objects implements ToolInterface
             $regex = $interfaces;
             $interfaces = [];
             foreach (get_declared_interfaces() as $class) {
-                if(preg_match($regex, $class)) $interfaces[] = $class;
+                try {
+                    if(preg_match($regex, $class)) $interfaces[] = $class;
+                } catch (Throwable $th) {
+                    dump($regex, $class);
+                    throw $th;
+                }
             }
         }
         if(!is_array($interfaces)) $interfaces = [$interfaces];
@@ -192,9 +198,10 @@ class Objects implements ToolInterface
 
     public static function isAlmostOneOfIntefaces(
         object|string $class,
-        string|array $interfaces
+        string|array $interfaces // --> empty or '*' = all interfaces
     ): bool
     {
+        if(empty($interfaces) || $interfaces === '*') return true;
         foreach ((array)$interfaces as $interface) {
             if(is_a($class, $interface, true)) return true;
         }

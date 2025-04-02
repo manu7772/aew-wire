@@ -25,18 +25,11 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
         'fa' => 'fa-bars'
     ];
     public const ITEMS_ACCEPT = [
-        'items'         => [WireMenuInterface::class, WireWebpageInterface::class],
-        // 'categorys'     => [WireCategoryInterface::class],
+        'items' => [
+            'field' => 'childs',
+            'require' => [WireMenuInterface::class, WireWebpageInterface::class],
+        ],
     ];
-
-    // /**
-    //  * @var Collection<int, WireCategoryInterface>
-    //  */
-    // #[ORM\ManyToMany(targetEntity: WireCategoryInterface::class)]
-    // protected Collection $categorys;
-
-    #[ORM\Column]
-    protected bool $prefered = false;
 
 
     public function __construct()
@@ -59,40 +52,5 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
     {
         return $this->childs->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireMenuInterface; });
     }
-
-    // /**
-    //  * @return Collection<int, WireCategoryInterface>
-    //  */
-    // public function getCategorys(): Collection
-    // {
-    //     return $this->categorys;
-    // }
-
-    // public function addCategory(WireCategoryInterface $category): static
-    // {
-    //     if($this->isAcceptsChildForParent($category, 'categorys') && is_a($this, $category->getType())) {
-    //         if (!$this->categorys->contains($category)) {
-    //             $this->categorys->add($category);
-    //         }
-    //     } else {
-    //         $this->removeCategory($category);
-    //         throw new Exception(vsprintf('Error %s line %d: category %s is not available for %s %s!', [__METHOD__, __LINE__, $category->__toString(), $this->getShortname(), $this->__toString()]));
-    //     }
-    //     return $this;
-    // }
-
-    // public function removeCategory(WireCategoryInterface $category): static
-    // {
-    //     $this->categorys->removeElement($category);
-    //     return $this;
-    // }
-
-    // public function removeCategorys(): static
-    // {
-    //     foreach ($this->categorys as $category) {
-    //         $this->removeCategory($category);
-    //     }
-    //     return $this;
-    // }
 
 }

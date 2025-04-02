@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Serializable;
 
-interface TraitSerializableInterface extends TraitEntityInterface, Serializable
+interface TraitSerializableInterface extends Serializable
 {
 
     // public function __construct_serializable(): void;

@@ -52,15 +52,12 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): WireEntityInterface;
     public function createClone(WireEntityInterface $entity, array $changes = [], array $context = [], bool $tryService = true): WireEntityInterface|false;
-    // Maintain database
-    // Maintain database
-    public function checkAllDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
-    public function checkDatabase(string $classname, ?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Entity Events
     public function postLoaded(WireEntityInterface $entity): void;
     public function postCreated(WireEntityInterface $entity): void;
 
     // Find
+    public function findEntityById(string $classname, string $id): ?WireEntityInterface;
     public function findEntityByEuid(string $euid): ?WireEntityInterface;
     public function findEntityByUname(string $uname): ?WireEntityInterface;
     public function getClassnameByUname(string $uname): ?string;

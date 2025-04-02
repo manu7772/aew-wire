@@ -1,22 +1,17 @@
 <?php
-
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\EntityEmbededStatus;
-use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\NormalizeDataContainer;
-use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
-use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
-use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Entity\MappSuperClassEntity;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -28,24 +23,21 @@ use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Objects;
-use Aequation\WireBundle\Tools\Strings;
 // Symfony
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\UnitOfWork;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Doctrine\ORM\Events;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
-use Twig\Markup;
 // PHP
 use Exception;
 use Closure;
-use ReflectionClass;
 use ReflectionMethod;
 
 /**
@@ -338,82 +330,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
 
     /****************************************************************************************************/
-    /** MAINTAIN DATABASE                                                                               */
-    /****************************************************************************************************/
-
-    public function checkAllDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult ??= new Opresult();
-        foreach ($this->getEntityNames(false, false, true) as $classname) {
-            $this->checkDatabase($classname, $opresult, $repair);
-        }
-        return $opresult;
-    }
-
-    public function checkDatabase(
-        string $classname,
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $this->incDebugMode();
-        $opresult ??= new Opresult();
-        // Check prefered
-        if(is_a($classname, TraitPreferedInterface::class, true)) {
-            $this->database_check_prefered($classname, $opresult, $repair);
-        }
-        // Check others...
-        // ...
-        // Check specific functionalities for entity
-        if($service = $this->getEntityService($classname)) {
-            /** @var WireEntityServiceInterface $service */
-            $service->checkDatabase($opresult, $repair);
-        }
-        $this->decDebugMode();
-        return $opresult;
-    }
-
-    /**
-     * Check TraitPreferedInterface
-     */
-    public function database_check_prefered(
-        string $classname,
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $this->incDebugMode();
-        $opresult ??= new Opresult();
-        if(is_a($classname, TraitPreferedInterface::class, true)) {
-            $repo = $this->getRepository($classname);
-            $prefered = $repo->findBy(['prefered' => true]);
-            if(count($prefered) > 1) {
-                $opresult->addDanger(vsprintf('Error %s line %d: %s has more than one prefered (found %d)!', [__METHOD__, __LINE__, $classname, count($prefered)]));
-                if($repair) {
-                    $prefered = array_slice($prefered, 1);
-                    foreach ($prefered as $entity) {
-                        $entity->setPrefered(false);
-                    }
-                    $this->em->flush();
-                    $this->em->clear();
-                    $prefered = $repo->findBy(['prefered' => true]);
-                    if(count($prefered) > 1) {
-                        $opresult->addDanger(vsprintf('Error %s line %d: %s has more than one prefered after repair (still found %d)!', [__METHOD__, __LINE__, $classname, count($prefered)]));
-                    } else {
-                        $opresult->addSuccess(vsprintf('Success %s line %d: %s has been repaired!', [__METHOD__, __LINE__, $classname]));
-                    }
-                }
-            }
-        }
-        $this->decDebugMode();
-        return $opresult;
-    }
-
-
-    /****************************************************************************************************/
     /** ENTITY EVENTS                                                                                   */
     /****************************************************************************************************/
 
@@ -429,7 +345,9 @@ class WireEntityManager implements WireEntityManagerInterface
         if($entity->getSelfState() && $entity->getSelfState()?->isPostLoaded() ?? false) return;
         $entity->doInitializeSelfState('loaded', 'auto');
         $entity->getSelfState()->setPostLoaded();
-        if($this->isDebugMode()) {
+        // Add EntityEmbededStatus is necessary
+        /** @var WireEntityInterface&MappSuperClassEntity $entity */
+        if($this->isDebugMode() || in_array(Events::postLoad, $entity::DO_EMBED_STATUS_EVENTS)) {
             $this->insertEmbededStatus($entity);
         }
     }
@@ -530,6 +448,20 @@ class WireEntityManager implements WireEntityManagerInterface
 
     /**
      * find entity by id
+     * 
+     * @param int|string $id
+     * @return WireEntityInterface|null
+     */
+    public function findEntityById(
+        string $classname,
+        string $id
+    ): ?WireEntityInterface {
+        $repo = $this->em->getRepository($classname);
+        return $repo->find($id);
+    }
+
+    /**
+     * find entity by euid
      * 
      * @param string $euid
      * @return WireEntityInterface|null

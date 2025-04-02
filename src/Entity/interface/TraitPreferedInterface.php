@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-interface TraitPreferedInterface extends TraitEntityInterface
+interface TraitPreferedInterface extends WireEntityInterface
 {
     public function __construct_prefered(): void;
     public function isPrefered(): bool;

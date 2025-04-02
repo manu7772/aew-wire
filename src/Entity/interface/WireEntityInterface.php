@@ -13,8 +13,12 @@ use Stringable;
 
 interface WireEntityInterface extends Stringable, TraitSerializableInterface
 {
+    // public const DO_EMBED_STATUS_EVENTS = [];
     // public function __toString(): string;
     public function __construct_entity(): void;
+    // Count updates
+    public function doUpdate(): void;
+    public function getUpdates(): int;
     // Entity self state
     public function doInitializeSelfState(string $state = 'auto', bool|string $debug = 'auto'): void;
     public function getSelfState(): ?EntitySelfState;

@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface TraitUnamedInterface extends TraitEntityInterface, WireEntityInterface
+interface TraitUnamedInterface extends WireEntityInterface
 {
 
     public function __construct_unamed(): void;

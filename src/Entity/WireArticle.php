@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 
 #[ORM\HasLifecycleCallbacks]
-abstract class WireArticle extends WireItem implements WireArticleInterface, TraitCategorizedInterface
+abstract class WireArticle extends WireItem implements WireArticleInterface
 {
 
     use Owner, Webpageable, Relinkable, Categorized;

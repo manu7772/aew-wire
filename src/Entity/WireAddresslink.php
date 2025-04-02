@@ -9,13 +9,15 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-#[UniqueEntity(fields: ['name','itemowner'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[UniqueEntity(fields: ['name','parent'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 abstract class WireAddresslink extends WireRelink implements WireAddresslinkInterface
 {
 
-    public const ICON = 'tabler:map-pin';
-    public const FA_ICON = 'link';
+    public const ICON = [
+        'ux' => 'tabler:map-pin',
+        'fa' => 'fa-link'
+    ];
 
     public const RELINK_TYPE = 'ADDRESS';
 
@@ -32,11 +34,17 @@ abstract class WireAddresslink extends WireRelink implements WireAddresslinkInte
     protected ?array $gps = null;
 
     // #[Gedmo\SortableGroup]
-    // protected WireItemInterface & TraitRelinkableInterface $itemowner;
+    // protected WireItemInterface & TraitRelinkableInterface $parent;
 
     // #[Gedmo\SortablePosition]
     // protected int $position;
 
+    public function getALink(
+        ?int $referenceType = null
+    ): ?string
+    {
+        return $this->getMainlink();
+    }
 
     public function getAddressLines(bool $joinCPandVille = true): array
     {

@@ -22,7 +22,7 @@ abstract class MappSuperClassEntity implements WireEntityInterface
     //     'fa' => 'fa-question'
     // ];
     // public const SERIALIZATION_PROPS = ['id','euid','classname','shortname'];
-
+    public const DO_EMBED_STATUS_EVENTS = [];
     // protected $id = null;
 
     /**

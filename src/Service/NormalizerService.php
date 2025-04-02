@@ -26,10 +26,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 // PHP
 use ArrayObject;
+use DateTimeInterface;
 use Exception;
 use ReflectionClass;
 use SplFileInfo;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 
 /**
  * Normalizer service
@@ -40,6 +42,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class NormalizerService implements NormalizerServiceInterface
 {
     use TraitBaseService;
+
+    public const CIRCULAR_REFERENCE_LIMIT = 2;
 
     public function __construct(
         public readonly AppWireServiceInterface $appWire,
@@ -52,6 +56,28 @@ class NormalizerService implements NormalizerServiceInterface
     {
         return $this->serializer;
     }
+
+
+    /****************************************************************************************************/
+    /** DOCUMENTATION                                                                                   */
+    /****************************************************************************************************/
+    /**
+     * How to Use the Serializer
+     * @see https://symfony.com/doc/current/serializer.html
+     * 
+     * Serialization/Normalization
+     * - Normalization depth
+     * @see https://symfony.com/doc/current/serializer.html#handling-serialization-depth
+     * - Callback to serialize properties with object instances
+     * When serializing, you can set a callback to format a specific object property. This can be used instead of defining the context for a group:
+     * @see https://symfony.com/doc/current/serializer.html#using-callbacks-to-serialize-properties-with-object-instances
+     * 
+     * Deserialization/Denormalization
+     * - Objects with parameters in constructor
+     * @see https://symfony.com/doc/current/serializer.html#advanced-deserialization
+     * 
+     * 
+     */
 
 
     /****************************************************************************************************/
@@ -133,6 +159,27 @@ class NormalizerService implements NormalizerServiceInterface
         return static::_getGroups($class, $type)['denormalize'];
     }
 
+    // public function getMaxDepthHandler(): callable
+    // {
+    //     return function (mixed $innerObject, object $outerObject, string $attributeName, ?string $format = null, array $context = []): ?string {
+    //         // return only the EUID of the next entity in the tree
+    //         return $innerObject instanceof WireEntityInterface ? $innerObject->getEuid() : null;
+    //     };
+    // }
+
+    public function getCallbackHandler(): array
+    {
+        return [
+            // all callback parameters are optional (you can omit the ones you don't use)
+            // 'createdAt' => function (?object $attributeValue, object $object, string $attributeName, ?string $format = null, array $context = []) {
+            //     return $attributeValue instanceof DateTimeInterface ? $attributeValue->format(DateTimeInterface::ATOM) : '';
+            // },
+            // 'updatedAt' => function (?object $attributeValue, object $object, string $attributeName, ?string $format = null, array $context = []) {
+            //     return $attributeValue instanceof DateTimeInterface ? $attributeValue->format(DateTimeInterface::ATOM) : '';
+            // },
+        ];
+    }
+
     /****************************************************************************************************/
     /** NORMALIZER                                                                                      */
     /****************************************************************************************************/
@@ -143,9 +190,16 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = [],
         ?bool $convertToArrayList = false // for React, can not be object, but array
     ): array|string|int|float|bool|ArrayObject|null {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
+        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= true;
+        $context[AbstractObjectNormalizer::CIRCULAR_REFERENCE_LIMIT] ??= static::CIRCULAR_REFERENCE_LIMIT;
+        $context[AbstractNormalizer::CALLBACKS] ??= $this->getCallbackHandler();
+        // $context[AbstractObjectNormalizer::MAX_DEPTH_HANDLER] ??= $this->getMaxDepthHandler();
         if ($data instanceof Collection) $data = $data->toArray();
         if ($convertToArrayList && is_array($data) && !array_is_list($data)) $data = array_values($data);
-        return $this->getSerializer()->normalize($data, $format, $context);
+        $norm = $this->getSerializer()->normalize($data, $format, $context);
+        ksort($norm);
+        return $norm;
     }
 
     public function denormalize(
@@ -154,6 +208,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?string $format = null,
         ?array $context = []
     ): mixed {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         if (is_a($classname, WireEntityInterface::class, true)) {
             // throw new Exception(vsprintf('Error %s line %d: please, use method denormalizeEntity() to denormalize entities!', [__METHOD__, __LINE__]));
             return $this->denormalizeEntity($data, $classname, $format, $context);
@@ -173,6 +228,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?string $format = null,
         ?array $context = []
     ): array|string|int|float|bool|ArrayObject|null {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         return $this->normalize($entity, $format, $context);
     }
 
@@ -182,6 +238,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?string $format = null,
         ?array $context = []
     ): WireEntityInterface {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         if(!($data instanceof NormalizeDataContainer)) {
             $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
         }
@@ -202,6 +259,10 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = [],
         ?bool $convertToArrayList = false
     ): string {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
+        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= true;
+        $context[AbstractObjectNormalizer::CIRCULAR_REFERENCE_LIMIT] ??= static::CIRCULAR_REFERENCE_LIMIT;
+        // $context[AbstractObjectNormalizer::MAX_DEPTH_HANDLER] ??= $this->getMaxDepthHandler();
         if ($data instanceof Collection) $data = $data->toArray();
         if ($convertToArrayList && is_array($data) && !array_is_list($data)) $data = array_values($data); // for React, can not be object, but array
         return $this->getSerializer()->serialize($data, $format, $context);
@@ -213,6 +274,7 @@ class NormalizerService implements NormalizerServiceInterface
         string $format,
         ?array $context = []
     ): mixed {
+        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         $this->wireEm->incDebugMode();
         $data = $this->getSerializer()->deserialize($data, $type, $format, $context);
         $this->wireEm->decDebugMode();

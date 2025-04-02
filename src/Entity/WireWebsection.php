@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Tools\Files;
 // Symfony
@@ -22,6 +23,9 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
         'fa' => 'fa-s'
     ];
 
+    #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]
+    protected WireMenuInterface $mainmenu;
+
     #[ORM\Column()]
     #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
     protected ?string $twigfile = null;
@@ -34,6 +38,17 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
 
     protected readonly TwigfileMetadata $twigfileMetadata;
 
+
+    public function getMainmenu(): WireMenuInterface
+    {
+        return $this->mainmenu;
+    }
+
+    public function setMainmenu(WireMenuInterface $mainmenu): static
+    {
+        $this->mainmenu = $mainmenu;
+        return $this;
+    }
 
     public function getTwigfileChoices(): array
     {

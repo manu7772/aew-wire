@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Command;
 
+use Aequation\WireBundle\Service\interface\WireDatabaseCheckerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -8,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
@@ -18,11 +20,14 @@ class checkDatabase extends BaseCommand
 {
     protected const ALL_CLASSES = 'Toute les classes';
 
+    protected WireEntityManagerInterface $wireEm;
+
     public function __construct(
-        protected WireEntityManagerInterface $wireEm
+        protected WireDatabaseCheckerInterface $dbChecker
     )
     {
         parent::__construct();
+        $this->wireEm = $this->dbChecker->wireEm;
     }
 
     protected function configure(): void
@@ -49,6 +54,7 @@ class checkDatabase extends BaseCommand
         /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
         $all_classnames = $this->wireEm->getEntityNames(true, false, true);
+        // Choice entities
         $question = new ChoiceQuestion(
             question: 'Choisissez une ou plusieurs classes d\'entités à contrôler :',
             choices: array_merge([0 => static::ALL_CLASSES], array_keys($all_classnames)),
@@ -77,16 +83,31 @@ class checkDatabase extends BaseCommand
         }
         $io->writeln('<info>Entités à contrôler :</info>');
         $io->table(['Classname', 'Shortname', 'Count'], $lines);
+        // Repair entities?
+        $question = new ConfirmationQuestion(
+            question: 'Voulez-vous réparer les entités ?',
+            default: false
+        );
+        $repair = $helper->ask($input, $output, $question);
+        $io->writeln($repair ? '<info>Réparer les entités</info>' : '<info>Contrôler les entités sans réparer</info>');
 
         foreach ($to_check as $classname => $count) {
             if($count <= 0) continue;
             $io->writeln('<info>Contrôle de '.$count.' x '.$classname.'</info>');
-            $opresult = $this->wireEm->checkDatabase($classname, null, true);
+            $opresult = $this->dbChecker->checkDatabase($classname, null, $repair);
             $this->printMessages($opresult, $io);
         }
 
+        if(!$opresult->isSuccess()) {
+            $io->error('Des erreurs ont été trouvées dans la base de données !');
+            $io->writeln('<info>Contrôle de la base de données terminé avec des erreurs, veuillez relancer l\'opération en effectuant les corrections.</info>');
+        } else {
+            $io->success('Aucune erreur trouvée dans la base de données !');
+        }
         $io->info('Contrôle terminé');
-        return Command::SUCCESS;
+        return $opresult->isSuccess()
+            ? Command::SUCCESS
+            : Command::INVALID;
     }
 
 }

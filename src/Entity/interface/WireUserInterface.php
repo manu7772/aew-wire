@@ -8,7 +8,7 @@ use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-interface WireUserInterface extends WireItemInterface, UserInterface, EquatableInterface, PasswordAuthenticatedUserInterface, TraitRelinkableInterface, TraitWebpageableInterface
+interface WireUserInterface extends WireItemInterface, UserInterface, EquatableInterface, PasswordAuthenticatedUserInterface, TraitRelinkableInterface, TraitWebpageableInterface, TraitCategorizedInterface
 {
 
     public const ROLE_USER = 'ROLE_USER';

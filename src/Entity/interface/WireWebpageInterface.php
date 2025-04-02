@@ -5,6 +5,8 @@ use Doctrine\Common\Collections\Collection;
 
 interface WireWebpageInterface extends WireEcollectionInterface, TraitPreferedInterface
 {
+    public function getMainmenu(): WireMenuInterface;
+    public function setMainmenu(WireMenuInterface $mainmenu): static;
     public function getSections(): Collection;
     public function setSections(iterable $sections): static;
     public function addSection($section): static;

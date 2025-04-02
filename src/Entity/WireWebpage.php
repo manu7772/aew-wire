@@ -2,8 +2,6 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\SerializationMapping;
-use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
-use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
@@ -30,7 +28,10 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
     public const ITEMS_ACCEPT = [
-        'sections'     => [WireWebsectionInterface::class],
+        'sections'     => [
+            'field' => 'Items',
+            'require' => [WireWebsectionInterface::class],
+        ],
     ];
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]

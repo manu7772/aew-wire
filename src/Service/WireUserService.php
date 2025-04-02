@@ -355,7 +355,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
     ): static
     {
 
-        if(empty($user->getId() && !$user->__estatus->isContained())) {
+        if(empty($user->getSelfState()->isNew())) {
             $this->getEm()->persist($user);
         }
         $errors = $this->validator->validate($user);
@@ -368,13 +368,11 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
 
      public function getSuperadmins(): array
      {
-         // return $this->getRepository()->findAll();
          return $this->getRepository()->findGranted('ROLE_ADMIN');
      }
 
      public function getAdmins(): array
      {
-         // return $this->getRepository()->findAll();
          return $this->getRepository()->findGranted('ROLE_ADMIN');
      }
 

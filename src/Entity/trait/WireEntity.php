@@ -7,6 +7,7 @@ use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Tools\Encoders;
+use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -26,27 +27,31 @@ trait WireEntity
     public const SERIALIZATION_PROPS = ['id'];
 
     #[ORM\Column(updatable: false, nullable: false, unique: true)]
-    #[Assert\NotNull()]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
+    // #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
     protected readonly string $euid;
 
     #[ORM\Column(updatable: false, nullable: false)]
-    #[Assert\NotNull()]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
     protected readonly string $classname;
 
     #[ORM\Column(length: 32, updatable: false, nullable: false)]
-    #[Assert\NotNull()]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
     protected readonly string $shortname;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: false)]
+    protected int $updates = 0;
 
     public readonly EntityEmbededStatusInterface $__estatus;
     public readonly EntitySelfState $__selfstate;
 
     public function __construct_entity(): void
     {
-        $this->doInitializeSelfState();
+        $this->doInitializeSelfState('new');
         $rc = new ReflectionClass(static::class);
         $this->classname = $rc->getName();
         $this->shortname = $rc->getShortName();
-        $this->euid = $this->getNewEuid();
+        $this->euid = Encoders::geUniquid($this->classname . '|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
         foreach ($construct_methods as $method) {
@@ -55,6 +60,22 @@ trait WireEntity
         if (!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
     }
 
+
+
+    /*************************************************************************************
+     * UPDATES COUNT
+     *************************************************************************************/
+
+     #[ORM\PreUpdate]
+    public function doUpdate(): void
+    {
+        $this->updates++;
+    }
+
+    public function getUpdates(): int
+    {
+        return $this->updates;
+    }
 
     /*************************************************************************************
      * SELF STATE
@@ -125,11 +146,6 @@ trait WireEntity
             $this->updateUname($uname);
         }
         return $this;
-    }
-
-    private function getNewEuid(): string
-    {
-        return Encoders::geUniquid($this->classname . '|');
     }
 
     public function getClassname(): string

@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity\interface;
 // PHP
 use DateTimeInterface;
 
-interface WireArticleInterface extends WireItemInterface, TraitOwnerInterface, TraitRelinkableInterface, TraitWebpageableInterface
+interface WireArticleInterface extends WireItemInterface, TraitOwnerInterface, TraitRelinkableInterface, TraitWebpageableInterface, TraitCategorizedInterface
 {
     public function getStart(): ?DateTimeInterface;
     public function setStart(?DateTimeInterface $start): static;

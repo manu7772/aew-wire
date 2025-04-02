@@ -1,18 +1,18 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
-use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Mapping\MappedSuperclass;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -26,7 +26,8 @@ use Doctrine\Common\Collections\Collection;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
 #[ORM\HasLifecycleCallbacks]
-abstract class WireUser extends WireItem implements WireUserInterface, TraitCategorizedInterface
+#[SerializationMapping(WireUser::ITEMS_ACCEPT)]
+abstract class WireUser extends WireItem implements WireUserInterface
 {
     use Webpageable, Relinkable, Categorized;
 
@@ -34,6 +35,16 @@ abstract class WireUser extends WireItem implements WireUserInterface, TraitCate
         'ux' => 'tabler:user-filled',
         'fa' => 'fa-user'
     ];
+    public const ITEMS_ACCEPT = [
+        'addresses' => [
+            'field' => 'relinks',
+            'require' => [WireRelinkInterface::class],
+        ],
+    ];
+
+    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Assert\Valid(groups: ['persist','update'])]
+    protected Collection $relinks;
 
     #[ORM\Column(length: 180)]
     #[Assert\Email(groups: ['registration','persist','update'], message: 'Cet email n\'est pas valide')]

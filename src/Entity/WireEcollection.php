@@ -14,6 +14,7 @@ use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Use Gedmo extension for sortable
@@ -34,11 +35,15 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         'fa' => 'fa-folder'
     ];
     public const ITEMS_ACCEPT = [
-        'childs' => [WireItemInterface::class],
+        'items' => [
+            'field' => 'childs',
+            'require' => [WireItemInterface::class],
+        ],
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = false;
 
     #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'parent', cascade: ['persist'], orphanRemoval: true)]
+    #[Assert\Valid(groups: ['persist','update'])]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $childs;
 
@@ -79,7 +84,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function getItems(): Collection
     {
         return $this->childs->map(
-            fn(ItemCollectionInterface $ic) => $ic->getChild()
+            fn(ItemCollectionInterface $ic) => $ic->getChild($this)
         );
     }
 
@@ -88,6 +93,15 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this->childs
             ->map(fn(ItemCollectionInterface $ic) => $ic->getChild())
             ->filter(fn(WireItemInterface $item) => $item->isActive());
+    }
+
+    public function setItems(iterable $items): static
+    {
+        $this->removeItems();
+        foreach ($items as $item) {
+            if($item instanceof WireItemInterface) $this->addItem($item);
+        }
+        return $this;
     }
 
     public function addItem(WireItemInterface $item): static
@@ -114,6 +128,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         foreach ($this->childs as $child) {
             if($child->getChild() === $item) {
                 $this->childs->removeElement($child);
+                $child->preRemove();
                 break;
             }
         }
@@ -122,7 +137,9 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
 
     public function removeItems(): static
     {
-        $this->childs->clear();
+        foreach ($this->childs as $child) {
+            $this->removeItem($child->getChild());
+        }
         return $this;
     }
 
@@ -132,7 +149,10 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     ): bool
     {   
         if($item !== $this) {
-            foreach (static::ITEMS_ACCEPT[$property] as $class) {
+            foreach (static::ITEMS_ACCEPT[$property] as $field => $classes) {
+                foreach ($classes as $class) {
+                    if(is_a($item, $class)) return true;
+                }
                 if(is_a($item, $class)) return true;
             }
         }
