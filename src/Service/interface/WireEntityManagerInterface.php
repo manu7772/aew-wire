@@ -32,7 +32,12 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getClassMetadata(null|string|WireEntityInterface $objectOrClass = null): ?ClassMetadata;
     public function getRepository(string|WireEntityInterface $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
+    public static function isBetweenEntity(string|object $objectOrClass): bool;
+    public static function isTranslationEntity(string|object $objectOrClass): bool;
     public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
+    public function getAppEntityNames(bool $asShortnames = false, bool $onlyInstantiables = false): array;
+    public function getBetweenEntityNames(bool $asShortnames = false): array;
+    public function getTranslationEntityNames(bool $asShortnames = false): array;
     public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
     public function getEntityClassesOfInterface(string|array $interfaces, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;

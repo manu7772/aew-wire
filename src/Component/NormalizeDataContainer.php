@@ -49,18 +49,25 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         bool $create_only = true,
         protected readonly bool $is_model = false,
     ) {
-        $this->setMainGroup((string)$main_group);
-        if($classOrEntity instanceof WireEntityInterface) $this->entity = $classOrEntity;
-        $classname = is_string($classOrEntity) ? $classOrEntity : $classOrEntity->getClassname();
-        if(!$this->wireEm->entityExists($classname)) {
-            $resolved = $this->wireEm->getEntityClassesOfInterface($classname, false, true);
-            if(count($resolved) === 1) {
-                $classname = reset($resolved);
-            } else {
-                throw new Exception(vsprintf('Error %s line %d: entity %s does not exist! Could it be one of these?%s', [__METHOD__, __LINE__, $classname, PHP_EOL.'- '.implode(PHP_EOL.'- ', $resolved)]));
+        if($classOrEntity instanceof WireEntityInterface) {
+            // is object entity
+            $this->entity = $classOrEntity;
+            $this->classname = $classOrEntity->getClassname();
+        } else {
+            // is string
+            dd($this->wireEm->getEntityNames(true), $this->wireEm->getBetweenEntityNames(true), $this->wireEm->getTranslationEntityNames(true));
+            if(!$this->wireEm->entityExists($classOrEntity)) {
+                $resolved = $this->wireEm->getEntityClassesOfInterface([$classOrEntity], false, true);
+                dd($resolved, $classOrEntity);
+                if(count($resolved) === 1) {
+                    $classOrEntity = reset($resolved);
+                } else {
+                    throw new Exception(vsprintf('Error %s line %d: entity %s does not exist! Could it be one of these?%s', [__METHOD__, __LINE__, $classOrEntity, PHP_EOL.'- '.implode(PHP_EOL.'- ', $resolved)]));
+                }
             }
+            $this->classname = $classOrEntity;
         }
-        $this->classname = $classname;
+        $this->setMainGroup((string)$main_group);
         $this->defineCreateOnly($create_only);
         $this->setData($data);
     }

@@ -109,8 +109,9 @@ class Objects implements ToolInterface
     {
         $reflClass = new ReflectionClass($class);
         while (!$reflClass->hasProperty($propertyName)) {
-            $parent = $reflClass->getParentClass();
-            if(!$parent) return false;
+            if(false === $parent = $reflClass->getParentClass()) {
+                return false;
+            }
             $reflClass = $parent;
         }
         return $reflClass;
@@ -146,29 +147,32 @@ class Objects implements ToolInterface
     /**
      * Get filtered list of classes
      * param $interfaces can be:
-     * - single => classname or regex
-     * - array of interfaces classnames
+     * - single => interface/classname or regex
+     * - array of interfaces/classnames
      * - empty (null or []) => uses all declared interfaces (get_declared_interfaces())
-     * @param array|object|string|null &$interfaces
+     * @param array|string|null &$interfaces
      * @return void
      */
     public static function filterDeclaredInterfaces(
-        null|array|object|string &$interfaces = null,
+        null|array|string &$interfaces = null,
         bool $sort = false
     ): void
     {
         if(empty($interfaces)) $interfaces = get_declared_interfaces();
-        if(is_string($interfaces) && !interface_exists($interfaces)) {
-            // filter with REGEX
-            $regex = $interfaces;
-            $interfaces = [];
-            foreach (get_declared_interfaces() as $class) {
-                try {
-                    if(preg_match($regex, $class)) $interfaces[] = $class;
-                } catch (Throwable $th) {
-                    dump($regex, $class);
-                    throw $th;
+        if(is_string($interfaces)) {
+            if(!interface_exists($interfaces)) {
+                // filter with REGEX
+                $regex = $interfaces;
+                $interfaces = [];
+                foreach (get_declared_interfaces() as $class) {
+                    try {
+                        if(preg_match($regex, $class)) $interfaces[] = $class;
+                    } catch (Throwable $th) {
+                        throw $th;
+                    }
                 }
+            } else {
+                $interfaces = [$interfaces];
             }
         }
         if(!is_array($interfaces)) $interfaces = [$interfaces];
@@ -178,7 +182,7 @@ class Objects implements ToolInterface
     /**
      * Get classes of interface
      * @param string|array $interfaces
-     * @param array|null $listOfClasses
+     * @param null|array|object|string $listOfClasses
      * @return array
      */
     public static function filterByInterface(
@@ -188,9 +192,12 @@ class Objects implements ToolInterface
     {
         static::filterDeclaredInterfaces($interfaces);
         static::filterDeclaredClasses($listOfClasses);
-        return array_filter($listOfClasses, function ($classname) use ($interfaces) {
+        return array_filter($listOfClasses, function ($classname) use ($interfaces, $listOfClasses) {
             foreach ($interfaces as $interface) {
-                if(is_a($classname, $interface, true)) return true;
+                if(is_a($classname, $interface, true)) {
+                    dd($classname, $interface);
+                    return true;
+                }
             }
             return false;
         });
@@ -206,6 +213,18 @@ class Objects implements ToolInterface
             if(is_a($class, $interface, true)) return true;
         }
         return false;
+    }
+
+    public static function getFinalInterfaces(string $interface): array
+    {
+        $RC = new ReflectionClass($interface);
+        $interfaces = [];
+        foreach ($RC->getInterfaces() as $interface) {
+            if($interface->isFinal()) {
+                $interfaces[] = $interface;
+            }
+        }
+        return $interfaces;
     }
 
     /*************************************************************************************

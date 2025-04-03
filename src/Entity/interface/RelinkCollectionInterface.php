@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface RelinkCollectionInterface
+interface RelinkCollectionInterface extends BetweenManyInterface
 {
     public function __construct_baserelinkcollection(TraitRelinkableInterface $parent, WireRelinkInterface $relink);
     public function getParent(): TraitRelinkableInterface;

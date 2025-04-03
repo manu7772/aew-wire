@@ -11,6 +11,7 @@ use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\CacheServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
