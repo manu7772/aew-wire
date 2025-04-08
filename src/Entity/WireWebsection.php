@@ -5,23 +5,38 @@ use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
 use Aequation\WireBundle\Tools\Files;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use InvalidArgumentException;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-class WireWebsection extends WireItem implements WireWebsectionInterface
+#[Gedmo\TranslationEntity(class: WireWebsectionTranslationInterface::class)]
+abstract class WireWebsection extends MappSuperClassEntity implements WireWebsectionInterface
 {
 
     public const ICON = [
         'ux' => 'tabler:section',
         'fa' => 'fa-s'
     ];
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: Types::INTEGER, unique: true)]
+    protected ?int $id = null;
+
+    #[ORM\Column()]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
+    protected ?string $name = null;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]
     protected WireMenuInterface $mainmenu;
@@ -33,11 +48,45 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
     #[ORM\Column]
     protected bool $prefered = false;
 
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $title = null;
+
+    #[ORM\Column]
+    #[Gedmo\Translatable]
+    protected array $content = [];
+
     #[ORM\Column(length: 32, nullable: false)]
     protected string $sectiontype;
 
+    #[ORM\OneToMany(targetEntity: WireWebsectionTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
+    protected $translations;
+
     protected readonly TwigfileMetadata $twigfileMetadata;
 
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->translations = new ArrayCollection();
+    }
+
+
+    public function __toString(): string
+    {
+        return empty($this->name) ? parent::__toString() : $this->name;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = trim($name);
+        return $this;
+    }
 
     public function getMainmenu(): WireMenuInterface
     {
@@ -90,6 +139,28 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
         return $this;
     }
 
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): static
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    public function getContent(): array
+    {
+        return $this->content;
+    }
+
+    public function setContent(array $content): static
+    {
+        $this->content = $content;
+        return $this;
+    }
+
     public function getTwigfileMetadata(): TwigfileMetadata
     {
         return $this->twigfileMetadata ??= new TwigfileMetadata($this);
@@ -111,6 +182,19 @@ class WireWebsection extends WireItem implements WireWebsectionInterface
     {
         $this->sectiontype = $sectiontype;
         return $this;
+    }
+
+    public function getTranslations(): Collection
+    {
+        return $this->translations;
+    }
+
+    public function addTranslation(WireWebsectionTranslationInterface $t)
+    {
+        if (!$this->translations->contains($t)) {
+            $this->translations[] = $t;
+            $t->setObject($this);
+        }
     }
 
 }

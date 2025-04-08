@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityRepository;
 // PHP
 use Exception;
 
-abstract class WireWebpageService extends WireEcollectionService implements WireWebpageServiceInterface
+abstract class WireWebpageService extends WireItemService implements WireWebpageServiceInterface
 {
 
     public const ENTITY_CLASS = WireWebpageInterface::class;

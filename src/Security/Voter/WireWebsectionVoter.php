@@ -2,53 +2,18 @@
 namespace Aequation\WireBundle\Security\Voter;
 
 // Aequation
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Tools\Objects;
+use Aequation\WireBundle\Entity\WireWebsection;
+use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 // Symfony
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\Voter\Voter;
-use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 // PHP
 use Exception;
 
-abstract class BaseEntityVoter extends Voter implements VoterInterface
+abstract class WireWebsectionVoter extends BaseEntityVoter
 {
 
-    public const ENTITY_CLASS = BaseEntityInterface::class;
+    public const ENTITY_CLASS = WireWebsection::class;
 
-    public function __construct(
-        protected readonly AppWireServiceInterface $appWire
-    ) {
-    }
-
-    public static function getEntityClassname(): ?string
-    {
-        if (!empty(static::ENTITY_CLASS) && is_a(static::ENTITY_CLASS, BaseEntityInterface::class, true)) {
-            return static::ENTITY_CLASS;
-        }
-        throw new Exception(vsprintf('Error %s line %d: the constant ENTITY_CLASS must be defined and instance of %s in %s', [__METHOD__, __LINE__, BaseEntityInterface::class, static::class]));
-    }
-
-    protected function supports($attribute, $subject): bool
-    {
-        $classname = static::getEntityClassname();
-        if(is_a($subject, $classname, true)) {
-            return true;
-        }
-        $classnames = $this->getSupportedSubjectValues();
-        return in_array($subject, $classnames);
-    }
-
-    public function getSupportedSubjectValues(): array
-    {
-        $classname = static::getEntityClassname();
-        return [
-            $classname,
-            Objects::getShortname($classname, false),
-            Objects::getShortname($classname, true),
-        ];
-    }
 
     public function voteOnAttribute(
         string $subject,
@@ -56,6 +21,12 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
         TokenInterface $token
     ): bool
     {
+        if(!parent::voteOnAttribute($subject, $attribute, $token)) {
+            return false;
+        }
+
+        // $categoryService = $this->appWire->get(WireWebsectionServiceInterface::class);
+
         switch ($this->appWire->getFirewallName()) {
             case 'admin':
                 switch ($subject) {
@@ -69,10 +40,10 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
                         return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     case 'edit':
-                        return $this->appWire->isGranted('ROLE_COLLABORATOR');
+                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
                         break;
                     case 'delete':
-                        return $this->appWire->isGranted('ROLE_COLLABORATOR');
+                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
                         break;
                     default:
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
@@ -105,8 +76,8 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
                 }
                 break;
         }
+
         return false;
     }
-
 
 }

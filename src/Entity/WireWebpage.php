@@ -2,11 +2,13 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Tools\Files;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
@@ -18,7 +20,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[SerializationMapping(WireWebpage::ITEMS_ACCEPT)]
-class WireWebpage extends WireEcollection implements WireWebpageInterface
+class WireWebpage extends WireItem implements WireWebpageInterface
 {
     use Prefered;
 
@@ -29,10 +31,13 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
     public const ITEMS_ACCEPT = [
         'sections'     => [
-            'field' => 'childs',
+            'field' => 'sections',
             'require' => [WireWebsectionInterface::class],
         ],
     ];
+
+    #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage', cascade: ['persist','remove'], orphanRemoval: true)]
+    protected ArrayCollection $sections;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]
     protected WireMenuInterface $mainmenu;
@@ -67,7 +72,12 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
 
     public function getSections(): Collection
     {
-        return $this->getItems()->filter(fn($item) => $item instanceof WireWebsectionInterface);
+        return $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getWebsection());
+    }
+
+    public function getSectionsByType(string $type): Collection
+    {
+        return $this->getSections()->filter(fn(WireWebsectionInterface $section) => $section->getSectiontype() === $type);
     }
 
     public function setSections(iterable $sections): static
@@ -79,16 +89,29 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
         return $this;
     }
 
-    public function addSection($section): static
+    public function hasSection(WireWebsectionInterface $section): bool
     {
-        $this->addItem($section);
-        return $this;
+        return $this->getSections()->contains($section);
     }
 
-    public function removeSection($section): static
+    public function addSection(WireWebsectionInterface $section): bool
     {
-        $this->removeItem($section);
-        return $this;
+        if(!$this->hasSection($section)) {
+            $new_section = new WireWebpageWebsectionCollection($this, $section);
+            $this->sections->add($new_section);
+        }
+        return $this->hasSection($section);
+    }
+
+    public function removeSection(WireWebsectionInterface $section): bool
+    {
+        foreach ($this->sections as $section_collection) {
+            if($section_collection->getSection() === $section) {
+                $this->sections->removeElement($section_collection);
+                return true;
+            }
+        }
+        return false;
     }
 
     public function removeSections(): static

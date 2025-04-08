@@ -3,16 +3,23 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
+use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Files;
 // Symfony
 use Symfony\Component\Yaml\Yaml;
+use Knp\Component\Pager\PaginatorInterface;
 // PHP
 use Exception;
 use SplFileInfo;
 
-abstract class WireWebsectionService extends WireItemService implements WireWebsectionServiceInterface
+abstract class WireWebsectionService implements WireWebsectionServiceInterface
 {
+    use TraitBaseService;
+    use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
 
@@ -21,13 +28,19 @@ abstract class WireWebsectionService extends WireItemService implements WireWebs
     public const SECTION_TYPES = ['section','header','footer','banner','sidemenu','left-sidemenu','right-sidemenu','hidden'];
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
+    public function __construct(
+        protected AppWireServiceInterface $appWire,
+        protected WireEntityManagerInterface $wireEntityService,
+        protected PaginatorInterface $paginator,
+    ) {
+    }
+
     public function checkDatabase(
         ?OpresultInterface $opresult = null,
         bool $repair = false
     ): OpresultInterface
     {
         $this->wireEntityService->incDebugMode();
-        $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireWebsectionInterface entities
         $this->wireEntityService->decDebugMode();
         return $opresult;

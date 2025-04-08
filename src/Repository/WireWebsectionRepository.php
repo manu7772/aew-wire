@@ -7,7 +7,7 @@ use Aequation\WireBundle\Repository\interface\WireWebsectionRepositoryInterface;
 /**
  * @extends WireWebsectionRepository
  */
-abstract class WireWebsectionRepository extends WireEcollectionRepository implements WireWebsectionRepositoryInterface
+abstract class WireWebsectionRepository extends BaseWireRepository implements WireWebsectionRepositoryInterface
 {
 
     const ENTITY_CLASS = WireWebsection::class;
