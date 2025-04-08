@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
@@ -32,7 +33,7 @@ trait Relinkable
     public function addRelink(WireRelinkInterface $relink): bool
     {
         if(!$this->hasRelink($relink)) {
-            $linkclass = 'Aequation\\WireBundle\\Entity\\Wire'.$this->getShortname().'RelinkCollection';
+            $linkclass = "Aequation\\WireBundle\\Entity\\Wire{$this->getShortname()}RelinkCollection";
             $this->relinks->add(new $linkclass($this, $relink));
         }
         return $this->hasRelink($relink);
@@ -61,7 +62,7 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireAddresslinkInterface);
     }
 
-    public function setAddresses(iterable $relinks): static
+    public function setAddresses(Collection $relinks): static
     {
         foreach ($this->getAddresses() as $relink) {
             if(!$relinks->contains($relink)) {
@@ -91,7 +92,7 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WirePhonelinkInterface);
     }
 
-    public function setPhones(iterable $relinks): static
+    public function setPhones(Collection $relinks): static
     {
         foreach ($this->getPhones() as $relink) {
             if(!$relinks->contains($relink)) {
@@ -121,7 +122,7 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireEmailinkInterface);
     }
 
-    public function setEmails(iterable $relinks): static
+    public function setEmails(Collection $relinks): static
     {
         foreach ($this->getEmails() as $relink) {
             if(!$relinks->contains($relink)) {
@@ -151,7 +152,7 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireUrlinkInterface);
     }
 
-    public function setUrls(iterable $relinks): static
+    public function setUrls(Collection $relinks): static
     {
         foreach ($this->getUrls() as $relink) {
             if(!$relinks->contains($relink)) {
@@ -181,7 +182,7 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireRslinkInterface);
     }
 
-    public function setRs(iterable $relinks): static
+    public function setRs(Collection $relinks): static
     {
         foreach ($this->getRs() as $relink) {
             if(!$relinks->contains($relink)) {

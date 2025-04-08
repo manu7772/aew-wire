@@ -2,7 +2,7 @@
 
 namespace Aequation\WireBundle\Repository\interface;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
 use Doctrine\Persistence\ObjectRepository;
@@ -20,6 +20,6 @@ interface BaseWireRepositoryInterface extends ServiceEntityRepositoryInterface, 
 
     // basic querys
     public function count(array $criteria = []): int;
-    // public function findOneByEuid(string $euid): ?WireEntityInterface;
-    public function findEntityByEuidOrUname(string $euidOrUname): ?WireEntityInterface;
+    // public function findOneByEuid(string $euid): ?BaseEntityInterface;
+    public function findEntityByEuidOrUname(string $euidOrUname): ?BaseEntityInterface;
 }

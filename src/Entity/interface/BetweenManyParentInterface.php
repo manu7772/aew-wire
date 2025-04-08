@@ -13,7 +13,7 @@ interface BetweenManyParentInterface
     public function addItem(WireItemInterface $item): static;
     public function removeItem(WireItemInterface $item): static;
     public function removeItems(): static;
-    public function hasItem(WireEntityInterface $item): bool;
-    public function isAcceptsChildForParent(WireEntityInterface $item, string $property): bool;
+    public function hasItem(WireItemInterface $item): bool;
+    public function isAcceptsChildForParent(WireItemInterface $item, string $property): bool;
     public function filterAcceptedChildsForParent(Collection $items, string $property): Collection;
 }

@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Gedmo\Sluggable\Sluggable;
 
-interface SluggableInterface extends Sluggable, TranslationEntityInterface, WireEntityInterface
+interface SluggableInterface extends Sluggable, TranslationEntityInterface, BaseEntityInterface
 {
 
     public function getSlug(): ?string;

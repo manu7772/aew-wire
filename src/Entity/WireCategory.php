@@ -66,7 +66,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
 
     public function __toString(): string
     {
-        return $this->name;
+        return empty($this->name) ? parent::__toString() : $this->name;
     }
 
     public function getName(): string

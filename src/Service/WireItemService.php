@@ -3,7 +3,6 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;

@@ -2,7 +2,7 @@
 
 namespace Aequation\WireBundle\Repository\trait;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Doctrine\ORM\Query\Expr\From;
 use Doctrine\ORM\QueryBuilder;
@@ -51,7 +51,7 @@ trait BaseTraitWireRepository
 
     public function findEntityByEuidOrUname(
         string $euidOrUname
-    ): ?WireEntityInterface {
+    ): ?BaseEntityInterface {
         $qb = $this->createQueryBuilder(static::alias())
             ->where(static::alias() . '.euid = :euidOrUname')
             ->setParameter('euidOrUname', $euidOrUname);

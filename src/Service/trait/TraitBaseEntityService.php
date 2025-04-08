@@ -3,7 +3,7 @@
 namespace Aequation\WireBundle\Service\trait;
 
 use Aequation\WireBundle\Component\NormalizeDataContainer;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Serializer\EntityDenormalizer;
 use Aequation\WireBundle\Service\NormalizerService;
@@ -22,7 +22,7 @@ use ReflectionClassConstant;
 trait TraitBaseEntityService
 {
 
-    // public const ENTITY_CLASS = WireEntityInterface::class;
+    // public const ENTITY_CLASS = BaseEntityInterface::class;
 
     protected readonly EntityManagerInterface $em;
     protected readonly UnitOfWork $uow;
@@ -59,7 +59,7 @@ trait TraitBaseEntityService
     public function createEntity(
         array|false $data = false, // ---> do not forget uname if wanted!
         array $context = []
-    ): WireEntityInterface {
+    ): BaseEntityInterface {
         $entity = $this->wireEntityService->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $entity;
@@ -68,12 +68,12 @@ trait TraitBaseEntityService
     /**
      * create model
      * 
-     * @return WireEntityInterface
+     * @return BaseEntityInterface
      */
     public function createModel(
         array|false $data = false,
         array $context = []
-    ): WireEntityInterface
+    ): BaseEntityInterface
     {
         $model = $this->wireEntityService->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
@@ -81,10 +81,10 @@ trait TraitBaseEntityService
     }
 
     public function createClone(
-        WireEntityInterface $entity,
+        BaseEntityInterface $entity,
         array $changes = [], // ---> do not forget uname if wanted!
         array $context = []
-    ): WireEntityInterface|false
+    ): BaseEntityInterface|false
     {
         $clone = $this->wireEntityService->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...

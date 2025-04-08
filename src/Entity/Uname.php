@@ -24,13 +24,14 @@ use Exception;
 // #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !', groups: ['persist','update'])]
 #[UniqueEntity('entityEuid', message: 'Cette entité (euid: {{ value }}) est déjà utilisé !', groups: ['persist','update'])]
 #[ClassCustomService(UnameServiceInterface::class)]
-class Uname extends MappSuperClassEntity implements UnameInterface
+class Uname extends BaseMappSuperClassEntity implements UnameInterface
 {
 
     public const ICON = [
         'ux' => 'tabler:fingerprint',
         'fa' => 'fa-fingerprint'
     ];
+    public const RESERVED_UNAMES = ['uname', 'id', 'euid', 'entityEuid', 'entity', 'entityClassname', 'entityShortname', 'entityEuid', 'entityId', 'entityUname', 'entityUnameId', 'entityUnameEuid'];
 
     #[ORM\Id]
     #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
@@ -103,7 +104,7 @@ class Uname extends MappSuperClassEntity implements UnameInterface
     public function setUname(string $uname): static
     {
         if (!Encoders::isUnameFormatValid($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
-        if(strtolower($uname) === 'uname') {
+        if(in_array(strtolower($uname), static::RESERVED_UNAMES)) {
             throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is reserved!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
         }
         $this->id = $uname;
@@ -120,11 +121,11 @@ class Uname extends MappSuperClassEntity implements UnameInterface
         return $this->entityEuid ?? null;
     }
 
-    public function getEntity(): ?WireEntityInterface
+    public function getEntity(): ?TraitUnamedInterface
     {
         if(!isset($this->entity)) {
             $entity = $this->getEmbededStatus()?->wireEntityManager->getEntityByEuid($this->entityEuid) ?? null;
-            if($entity instanceof WireEntityInterface) {
+            if($entity instanceof TraitUnamedInterface) {
                 $this->entity = $entity;
             }
         }

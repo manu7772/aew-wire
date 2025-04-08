@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Security\Voter;
 
 // Aequation
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Exception;
@@ -15,7 +15,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 abstract class BaseEntityVoter extends Voter implements VoterInterface
 {
 
-    public const ENTITY_CLASS = WireEntityInterface::class;
+    public const ENTITY_CLASS = BaseEntityInterface::class;
 
     public function __construct(
         protected readonly AppWireServiceInterface $appWire
@@ -24,10 +24,10 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
 
     public static function getEntityClassname(): ?string
     {
-        if (!empty(static::ENTITY_CLASS) && is_a(static::ENTITY_CLASS, WireEntityInterface::class, true)) {
+        if (!empty(static::ENTITY_CLASS) && is_a(static::ENTITY_CLASS, BaseEntityInterface::class, true)) {
             return static::ENTITY_CLASS;
         }
-        throw new Exception(vsprintf('Error %s line %d: the constant ENTITY_CLASS must be defined and instance of %s in %s', [__METHOD__, __LINE__, WireEntityInterface::class, static::class]));
+        throw new Exception(vsprintf('Error %s line %d: the constant ENTITY_CLASS must be defined and instance of %s in %s', [__METHOD__, __LINE__, BaseEntityInterface::class, static::class]));
     }
 
     protected function supports($attribute, $subject): bool

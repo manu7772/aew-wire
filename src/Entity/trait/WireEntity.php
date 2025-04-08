@@ -1,11 +1,10 @@
 <?php
-
 namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Doctrine\DBAL\Types\Types;
 // Symfony
@@ -19,17 +18,17 @@ use Exception;
 trait WireEntity
 {
 
-    public const ICON = [
-        'ux' => 'tabler:file',
-        'fa' => 'fa-file'
-        // Add other types and their corresponding icons here
-    ];
-    public const SERIALIZATION_PROPS = ['id'];
+    // public const ICON = [
+    //     'ux' => 'tabler:file',
+    //     'fa' => 'fa-file'
+    //     // Add other types and their corresponding icons here
+    // ];
+    // public const SERIALIZATION_PROPS = ['id'];
 
     #[ORM\Column(updatable: false, nullable: false, unique: true)]
     #[Assert\NotNull(groups: ['persist', 'update'])]
     // #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
-    protected readonly string $euid;
+    protected string $euid;
 
     #[ORM\Column(updatable: false, nullable: false)]
     #[Assert\NotNull(groups: ['persist', 'update'])]
@@ -51,13 +50,13 @@ trait WireEntity
         $rc = new ReflectionClass(static::class);
         $this->classname = $rc->getName();
         $this->shortname = $rc->getShortName();
-        $this->euid = Encoders::geUniquid($this->classname . '|');
+        $this->euid = Encoders::geUniquid($this->classname.'|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
         foreach ($construct_methods as $method) {
             $this->$method();
         }
-        if (!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
+        if (!($this instanceof BaseEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, BaseEntityInterface::class]));
     }
 
 
@@ -134,6 +133,18 @@ trait WireEntity
         return $this->euid;
     }
 
+    public function setEuid(
+        string $euid
+    ): static {
+        if($this->__selfstate->isNew() || empty($this->euid ?? null)) {
+            if(!Encoders::isEuidFormatValid($euid)) {
+                throw new Exception(vsprintf('Error %s line %d: EUID "%s" is not valid!', [__METHOD__, __LINE__, $euid]));
+            }
+            $this->euid = $euid;
+        }
+        return $this;
+    }
+
     public function getUnameThenEuid(): string
     {
         return $this instanceof TraitUnamedInterface ? $this->getUname()->getId() : $this->getEuid();
@@ -170,7 +181,7 @@ trait WireEntity
     {
         $array = ['id' => $this->id];
         $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
-        foreach (static::SERIALIZATION_PROPS as $attr) {
+        foreach (constant('static::SERIALIZATION_PROPS') as $attr) {
             $array[$attr] = $accessor->getValue($this, $attr);
         }
         return $array;
@@ -220,6 +231,6 @@ trait WireEntity
     public static function getIcon(
         string $type = 'ux'
     ): string {
-        return static::ICON[$type];
+        return constant('static::ICON')[$type];
     }
 }

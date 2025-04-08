@@ -29,7 +29,7 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
     public const ITEMS_ACCEPT = [
         'sections'     => [
-            'field' => 'Items',
+            'field' => 'childs',
             'require' => [WireWebsectionInterface::class],
         ],
     ];
@@ -43,7 +43,7 @@ class WireWebpage extends WireEcollection implements WireWebpageInterface
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
-    private ?string $title = null;
+    protected ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]

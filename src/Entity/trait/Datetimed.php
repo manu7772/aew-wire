@@ -2,7 +2,10 @@
 namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
+use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
+use Aequation\WireBundle\Entity\WireLanguage;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -14,6 +17,11 @@ use Exception;
 
 trait Datetimed
 {
+    #[ORM\ManyToOne(targetEntity: WireLanguageInterface::class, fetch: 'EAGER')]
+    #[Assert\NotNull()]
+    protected WireLanguageInterface $langage;
+    // language choices
+    protected array $languageChoices;
 
     #[ORM\Column(updatable: false, nullable: false)]
     #[Assert\NotNull()]
@@ -21,10 +29,6 @@ trait Datetimed
 
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $updatedAt = null;
-
-    #[ORM\Column]
-    #[Assert\NotNull()]
-    protected ?string $timezone = null;
 
     public function __construct_datetimed(): void
     {
@@ -95,20 +99,35 @@ trait Datetimed
         return $this;
     }
 
+    public function getLanguage(): WireLanguageInterface
+    {
+        return $this->langage;
+    }
+
+    public function setLanguage(WireLanguageInterface $langage): static
+    {
+        $this->langage = $langage;
+        return $this;
+    }
+
+    public function getLanguageChoices(): array
+    {
+        return $this->languageChoices ??= $this->getEmbededStatus()->wireEntityManager->getEntityService(WireLanguage::class)->getLanguageChoices();
+    }
+
+    public function getLocale(): ?string
+    {
+        return $this->langage->getLocale();
+    }
+
     public function getDateTimezone(): ?DateTimeZone
     {
-        return new DateTimeZone($this->timezone);
+        return $this->langage->getDateTimezone();
     }
 
     public function getTimezone(): string
     {
-        return $this->timezone;
-    }
-
-    public function setTimezone(string $timezone): static
-    {
-        $this->timezone = $timezone;
-        return $this;
+        return $this->langage->getTimezone();
     }
 
 

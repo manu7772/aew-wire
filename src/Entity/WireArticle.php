@@ -2,7 +2,11 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Owner;
 use Aequation\WireBundle\Entity\trait\Relinkable;
@@ -22,6 +26,24 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
     public const ICON = [
         'ux' => 'tabler:article',
         'fa' => 'fa-regular fa-newspaper'
+    ];
+    public const ITEMS_ACCEPT = [
+        'addresses' => [
+            'field' => 'relinks',
+            'require' => [WireAddresslinkInterface::class],
+        ],
+        'phones' => [
+            'field' => 'relinks',
+            'require' => [WirePhonelinkInterface::class],
+        ],
+        'emails' => [
+            'field' => 'relinks',
+            'require' => [WireEmailinkInterface::class],
+        ],
+        'urls' => [
+            'field' => 'relinks',
+            'require' => [WireUrlinkInterface::class],
+        ],
     ];
 
 

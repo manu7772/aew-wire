@@ -6,7 +6,7 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // PHP
 use Attribute;
 use Exception;
@@ -69,7 +69,7 @@ class Objects implements ToolInterface
             case is_bool($something):
                 $string = $something ? '[bool]true' : '[bool]false';
                 break;
-            case is_object($something) && $something instanceof WireEntityInterface:
+            case is_object($something) && $something instanceof BaseEntityInterface:
                 $string = vsprintf('%s "%s" (#%d)', [$something->getClassname(), $something, $something->getId() ?? 'null']);
                 break;
             case is_object($something) && $something instanceof Stringable:
@@ -119,8 +119,8 @@ class Objects implements ToolInterface
 
     /**
      * Get filtered list of classes
-     * param $listOfClasses can be:
-     * - single => classname, object or regex
+     * Param $listOfClasses can be:
+     * - string => classname, object or regex
      * - array of classnames or objects
      * - empty (null or []) => uses all declared classes (get_declared_classes())
      * @param array|object|string|null &$listOfClasses
@@ -131,71 +131,96 @@ class Objects implements ToolInterface
         bool $sort = false
     ): void
     {
-        if(empty($listOfClasses)) $listOfClasses = get_declared_classes();
-        if(is_string($listOfClasses) && !class_exists($listOfClasses)) {
-            // filter with REGEX
-            $regex = $listOfClasses;
-            $listOfClasses = [];
-            foreach (get_declared_classes() as $class) {
-                if(preg_match($regex, $class)) $listOfClasses[] = $class;
-            }
+        $classes = get_declared_classes();
+        if(empty($listOfClasses)) {
+            $listOfClasses = $classes;
+            if($sort) sort($listOfClasses);
+            return;
         }
-        if(!is_array($listOfClasses)) $listOfClasses = [$listOfClasses];
+        if(is_string($listOfClasses)) {
+            if(!class_exists($listOfClasses)) {
+                // filter with REGEX
+                $regex = $listOfClasses;
+                $listOfClasses = [];
+                foreach ($classes as $class) {
+                    if(preg_match($regex, $class)) $listOfClasses[] = $class;
+                }
+                if($sort) sort($listOfClasses);
+                return;
+            }
+            $listOfClasses = [$listOfClasses];
+        }
+        if(is_object($listOfClasses)) {
+            $listOfClasses = [$listOfClasses];
+        }
+        $listOfClasses = array_filter($listOfClasses, function ($class) use ($classes) {
+            if(is_object($class)) {
+                $class = $class::class;
+            }
+            return is_string($class) && in_array($class, $classes);
+        });
         if($sort) sort($listOfClasses);
     }
 
     /**
      * Get filtered list of classes
-     * param $interfaces can be:
-     * - single => interface/classname or regex
-     * - array of interfaces/classnames
-     * - empty (null or []) => uses all declared interfaces (get_declared_interfaces())
+     * Param $interfaces can be:
+     * - string => interface/classname or regex
+     * - array of string interfaces/classnames
+     * - empty (null or []) => uses all declared interfaces (get_declared_interfaces() + get_declared_classes() if $assumeClasses = true)
+     * 
      * @param array|string|null &$interfaces
      * @return void
      */
     public static function filterDeclaredInterfaces(
         null|array|string &$interfaces = null,
-        bool $sort = false
+        bool $sort = false,
+        bool $assumeClasses = false
     ): void
     {
-        if(empty($interfaces)) $interfaces = get_declared_interfaces();
+        $classes = $assumeClasses ? array_merge(get_declared_classes(), get_declared_interfaces()) : get_declared_interfaces();
+        if(empty($interfaces)) {
+            $interfaces = $classes;
+            if($sort) sort($interfaces);
+            return;
+        }
         if(is_string($interfaces)) {
-            if(!interface_exists($interfaces)) {
+            if(!interface_exists($interfaces) && !class_exists($interfaces)) {
                 // filter with REGEX
                 $regex = $interfaces;
                 $interfaces = [];
-                foreach (get_declared_interfaces() as $class) {
-                    try {
-                        if(preg_match($regex, $class)) $interfaces[] = $class;
-                    } catch (Throwable $th) {
-                        throw $th;
-                    }
+                foreach ($classes as $class) {
+                    if(preg_match($regex, $class)) $interfaces[] = $class;
                 }
-            } else {
-                $interfaces = [$interfaces];
+                if($sort) sort($interfaces);
+                return;
             }
+            $interfaces = [$interfaces];
         }
-        if(!is_array($interfaces)) $interfaces = [$interfaces];
+        $interfaces = array_filter($interfaces, fn ($interface) => is_string($interface) && in_array($interface, $classes));
         if($sort) sort($interfaces);
     }
 
     /**
-     * Get classes of interface
+     * Filter classes that must be almost one of interfaces/classes
+     * - If $interfaces is empty, uses all declared interfaces (or interfaces + classes if $assumeClasses = true)
+     * - If $listOfClasses is empty, uses all declared classes
+     * 
      * @param string|array $interfaces
      * @param null|array|object|string $listOfClasses
      * @return array
      */
     public static function filterByInterface(
         string|array $interfaces,
-        null|array|object|string $listOfClasses = null
+        null|array|object|string $listOfClasses = null,
+        bool $assumeClasses = true
     ): array
     {
-        static::filterDeclaredInterfaces($interfaces);
+        static::filterDeclaredInterfaces($interfaces, true, $assumeClasses);
         static::filterDeclaredClasses($listOfClasses);
-        return array_filter($listOfClasses, function ($classname) use ($interfaces, $listOfClasses) {
+        return array_filter($listOfClasses, function ($classname) use ($interfaces) {
             foreach ($interfaces as $interface) {
                 if(is_a($classname, $interface, true)) {
-                    dd($classname, $interface);
                     return true;
                 }
             }
@@ -203,14 +228,33 @@ class Objects implements ToolInterface
         });
     }
 
+    /**
+     * Check if class is almost one of interfaces/classes
+     * 
+     * @param object|string $class
+     * @param string|array $interfaces
+     * @return bool
+     */
     public static function isAlmostOneOfIntefaces(
         object|string $class,
         string|array $interfaces // --> empty or '*' = all interfaces
     ): bool
     {
+        if(is_object($class)) {
+            $class = $class::class;
+        }
+        if(!class_exists($class)) {
+            return false;
+        }
         if(empty($interfaces) || $interfaces === '*') return true;
         foreach ((array)$interfaces as $interface) {
-            if(is_a($class, $interface, true)) return true;
+            if(
+                interface_exists($interface)
+                && class_exists($interface)
+                && is_a($class, $interface, true)
+            ) {
+                return true;
+            }
         }
         return false;
     }

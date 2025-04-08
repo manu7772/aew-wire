@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Doctrine\Common\Collections\Collection;
 
-interface TraitRelinkableInterface extends WireEntityInterface
+interface TraitRelinkableInterface extends BaseEntityInterface
 {
     public function __construct_relinkable(): void;
     public function getRelinks(): Collection;

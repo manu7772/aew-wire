@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Twig;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
@@ -146,7 +146,7 @@ class WireExtension extends AbstractExtension
             case $type === 'boolean':
                 $value = $value ? 'true' : 'false';
                 break;
-            case $type === 'object' && $value instanceof WireEntityInterface:
+            case $type === 'object' && $value instanceof BaseEntityInterface:
                 $value = is_string($options['related_access'] ?? false) ? $accessor->getValue($value, $options['related_access']) : $value->__toString();
                 break;
             case $type === 'object' && $value instanceof DateTimeInterface:

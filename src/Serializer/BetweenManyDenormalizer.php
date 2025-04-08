@@ -40,7 +40,7 @@ class BetweenManyDenormalizer implements DenormalizerInterface
 
     public function getSupportedTypes(?string $format): array
     {
-        return $this->isEnabled() ? [BetweenManyInterface::class => true] : [];
+        return $this->isEnabled() ? [BetweenManyInterface::class => true] : ['*' => null];
     }
 
 

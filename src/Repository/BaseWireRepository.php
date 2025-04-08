@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Repository;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Repository\trait\BaseTraitWireRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -16,7 +16,7 @@ abstract class BaseWireRepository extends ServiceEntityRepository implements Bas
 {
     use BaseTraitWireRepository;
 
-    const ENTITY_CLASS = WireEntityInterface::class;
+    const ENTITY_CLASS = BaseEntityInterface::class;
     const NAME = 'u';
 
     public function __construct(

@@ -7,6 +7,7 @@ use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
@@ -15,6 +16,7 @@ use Aequation\WireBundle\Service\interface\CacheServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\HttpRequest;
@@ -297,6 +299,22 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             }
         }
         return null;
+    }
+
+
+    /************************************************************************************************************/
+    /** LANGUAGES/LOCALES                                                                                       */
+    /************************************************************************************************************/
+
+    public function getCurrentLocale(): string
+    {
+        return $this->getRequest()?->getLocale() ?? $this->getDefaultLocale();
+    }
+
+    public function getCurrentLanguage(): ?WireLanguageInterface
+    {
+        $locale = $this->getCurrentLocale();
+        return $this->get(WireLanguageServiceInterface::class)->findLanguageByLocale($locale);
     }
 
 

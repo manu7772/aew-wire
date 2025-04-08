@@ -406,13 +406,13 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
                 ],
                 'sortable' => true,
             ],
-            'ratings' => [
-                'classes' => ['text-center'],
-                'view_options' => [
-                    'template' => ['from_string' => '{{ \'actions.count\'|trans({\'%count%\': entity.ratings|length}, \'Rating\') }}']
-                ],
-                // 'sortable' => false,
-            ],
+            // 'ratings' => [
+            //     'classes' => ['text-center'],
+            //     'view_options' => [
+            //         'template' => ['from_string' => '{{ \'actions.count\'|trans({\'%count%\': entity.ratings|length}, \'Rating\') }}']
+            //     ],
+            //     // 'sortable' => false,
+            // ],
             'roles' => [
                 'classes' => ['text-center'],
                 'view_options' => [

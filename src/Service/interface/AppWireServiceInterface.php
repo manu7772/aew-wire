@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 // Symfony
 
+use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -73,6 +74,9 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function has(string $id): bool;
     public function get(string $id, int $invalidBehavior = ContainerInterface::NULL_ON_INVALID_REFERENCE): ?object;
     public function getClassService(string|object $objectOrClass): ?object;
+    // Languages/locales
+    public function getCurrentLocale(): string;
+    public function getCurrentLanguage(): ?WireLanguageInterface;
     // Initialized
     public function isInitializable(KernelEvent $event): bool;
     public function isRequiredInitialization(KernelEvent $event): bool;

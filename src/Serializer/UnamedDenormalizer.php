@@ -38,6 +38,7 @@ class UnamedDenormalizer implements DenormalizerInterface
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
+        dd($data);
         $entity = $this->wireEm->findEntityByUname($data);
         if(empty($entity)) {
             throw new Exception(vsprintf('Error %s line %d: Entity with uname %s not found!', [__METHOD__, __LINE__, $data]));
@@ -53,7 +54,7 @@ class UnamedDenormalizer implements DenormalizerInterface
 
     public function getSupportedTypes(?string $format): array
     {
-        return $this->isEnabled() ? [Stringable::class => true] : [];
+        return $this->isEnabled() ? [Stringable::class => true] : ['*' => null];
     }
 
 

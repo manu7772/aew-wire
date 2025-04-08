@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
@@ -31,11 +31,11 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     /**
      * Constructor
      *
-     * @param WireEntityInterface $entity
+     * @param BaseEntityInterface $entity
      * @param AppWireServiceInterface $appWire
      */
     public function __construct(
-        public readonly WireEntityInterface $entity,
+        public readonly BaseEntityInterface $entity,
         public readonly AppWireServiceInterface $appWire
     ) {
         $this->selfstate = $entity->__selfstate;

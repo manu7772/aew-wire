@@ -2,9 +2,9 @@
 
 namespace Aequation\WireBundle\Component;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // PHP
@@ -16,7 +16,7 @@ class EntitySelfState implements EntitySelfStateInterface
     private int $event = 0b00000000;
 
     public function __construct(
-        private readonly WireEntityInterface $entity,
+        private readonly BaseEntityInterface $entity,
         string $initial_state,
         private bool|string $debug = 'auto'
     ) {

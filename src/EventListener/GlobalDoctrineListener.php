@@ -3,7 +3,7 @@
 namespace Aequation\WireBundle\EventListener;
 
 // Aequation
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
@@ -46,7 +46,7 @@ class GlobalDoctrineListener
     ): void
     {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $this->wireEm->postLoaded($entity);
     }
 
@@ -55,7 +55,7 @@ class GlobalDoctrineListener
     ): void
     {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $this->checkIntegrity($entity, __METHOD__, __LINE__);
         // User
         if($entity instanceof WireUserInterface) {
@@ -67,9 +67,9 @@ class GlobalDoctrineListener
     public function postPersist(
         PostPersistEventArgs $event
     ): void {
-        /** @var WireEntityInterface */
+        /** @var BaseEntityInterface */
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $entity->__selfstate->setPersisted();
     }
 
@@ -78,7 +78,7 @@ class GlobalDoctrineListener
     ): void
     {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $this->checkIntegrity($entity, __METHOD__, __LINE__);
         if($entity instanceof WireUserInterface) {
             $plainPassword = $entity->getPlainPassword();
@@ -92,7 +92,7 @@ class GlobalDoctrineListener
         PostUpdateEventArgs $event
     ): void {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $entity->__selfstate->setUpdated();
     }
 
@@ -101,7 +101,7 @@ class GlobalDoctrineListener
     ): void
     {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         switch (true) {
             case $entity instanceof WireUserInterface:
                 if (array_intersect($entity->getRoles(), ['ROLE_SUPER_ADMIN', 'ROLE_ADMIN'])) {
@@ -115,7 +115,7 @@ class GlobalDoctrineListener
         PostRemoveEventArgs $event
     ): void {
         $entity = $event->getObject();
-        if (!($entity instanceof WireEntityInterface)) return;
+        if (!($entity instanceof BaseEntityInterface)) return;
         $entity->__selfstate->setRemoved();
     }
 
@@ -134,7 +134,7 @@ class GlobalDoctrineListener
 
 
     private function checkIntegrity(
-        WireEntityInterface $entity,
+        BaseEntityInterface $entity,
         string $method = __METHOD__,
         int $line = __LINE__
     ): void

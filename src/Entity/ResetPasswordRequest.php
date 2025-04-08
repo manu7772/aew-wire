@@ -17,7 +17,7 @@ use DateTimeInterface;
 #[ORM\Entity(repositoryClass: ResetPasswordRequestRepository::class)]
 #[ORM\Table(name: '`reset_pwd_request`')]
 #[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
-class ResetPasswordRequest extends MappSuperClassEntity implements ResetPasswordRequestInterface
+class ResetPasswordRequest extends BaseMappSuperClassEntity implements ResetPasswordRequestInterface
 {
     use ResetPasswordRequestTrait;
 

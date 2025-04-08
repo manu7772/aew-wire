@@ -132,9 +132,9 @@ class CacheService implements CacheServiceInterface
         ?array &$metadata = null
     ): mixed
     {
-        if(preg_match('/^!/', $key)) {
+        if(preg_match('/^!+/', $key) || $this->kernel->getEnvironment() !== 'prod') {
             $key = ltrim($key, '!');
-            return $this->reset($key, $callback, $commentaire, $beta, $metadata);
+            $this->delete($key);
         }
         $this->checkValidKey($key);
         return $this->cache->get($key, $callback, $beta, $metadata);

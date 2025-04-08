@@ -5,7 +5,7 @@ namespace Aequation\WireBundle\Service;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\NormalizeDataContainer;
 use Aequation\WireBundle\Component\Opresult;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -89,21 +89,21 @@ class NormalizerService implements NormalizerServiceInterface
      * returns array of 2 named elements:
      *      - ["normalize" => <normalization groups>]
      *      - ["denormalize" => <denormalization groups>]
-     * @param string|WireEntityInterface $class
+     * @param string|BaseEntityInterface $class
      * @param string $type
      * @return array
      */
     private static function _getGroups(
-        string|WireEntityInterface $class,
+        string|BaseEntityInterface $class,
         string $type
     ): array {
-        if ($class instanceof WireEntityInterface) {
+        if ($class instanceof BaseEntityInterface) {
             $class = $class->getClassname();
         }
         if (class_exists($class) || interface_exists($class)) {
             $shortname = Objects::getShortname($class, true);
         } else {
-            throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, WireEntityInterface::class]));
+            throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, BaseEntityInterface::class]));
         }
         $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
         if (empty($type) || $type === '_default') $type = static::MAIN_GROUP;
@@ -135,12 +135,12 @@ class NormalizerService implements NormalizerServiceInterface
 
     /**
      * Get normalization groups for a class
-     * @param string|WireEntityInterface $class
+     * @param string|BaseEntityInterface $class
      * @param string $type
      * @return array
      */
     public static function getNormalizeGroups(
-        string|WireEntityInterface $class,
+        string|BaseEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
         return static::_getGroups($class, $type)['normalize'];
@@ -148,12 +148,12 @@ class NormalizerService implements NormalizerServiceInterface
 
     /**
      * Get denormalization groups for a class
-     * @param string|WireEntityInterface $class
+     * @param string|BaseEntityInterface $class
      * @param string $type
      * @return array
      */
     public static function getDenormalizeGroups(
-        string|WireEntityInterface $class,
+        string|BaseEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
         return static::_getGroups($class, $type)['denormalize'];
@@ -163,7 +163,7 @@ class NormalizerService implements NormalizerServiceInterface
     // {
     //     return function (mixed $innerObject, object $outerObject, string $attributeName, ?string $format = null, array $context = []): ?string {
     //         // return only the EUID of the next entity in the tree
-    //         return $innerObject instanceof WireEntityInterface ? $innerObject->getEuid() : null;
+    //         return $innerObject instanceof BaseEntityInterface ? $innerObject->getEuid() : null;
     //     };
     // }
 
@@ -209,7 +209,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = []
     ): mixed {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        if (is_a($classname, WireEntityInterface::class, true)) {
+        if (is_a($classname, BaseEntityInterface::class, true)) {
             // throw new Exception(vsprintf('Error %s line %d: please, use method denormalizeEntity() to denormalize entities!', [__METHOD__, __LINE__]));
             return $this->denormalizeEntity($data, $classname, $format, $context);
         }
@@ -224,7 +224,7 @@ class NormalizerService implements NormalizerServiceInterface
     /****************************************************************************************************/
 
     public function normalizeEntity(
-        WireEntityInterface $entity,
+        BaseEntityInterface $entity,
         ?string $format = null,
         ?array $context = []
     ): array|string|int|float|bool|ArrayObject|null {
@@ -237,7 +237,7 @@ class NormalizerService implements NormalizerServiceInterface
         string $classname,
         ?string $format = null,
         ?array $context = []
-    ): WireEntityInterface {
+    ): BaseEntityInterface {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         if(!($data instanceof NormalizeDataContainer)) {
             $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
@@ -415,8 +415,13 @@ class NormalizerService implements NormalizerServiceInterface
                 $data['uname'] ??= $uname;
             }
             // dd($data);
-            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, create_only: false);
-            /** @var WireEntityInterface $entity */
+            $context = [
+                NormalizeDataContainer::CONTEXT_MAIN_GROUP => NormalizerServiceInterface::MAIN_GROUP,
+                NormalizeDataContainer::CONTEXT_CREATE_ONLY => false,
+                NormalizeDataContainer::CONTEXT_AS_MODEL => false,
+            ];
+            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
+            /** @var BaseEntityInterface $entity */
             $entity = $this->denormalizeEntity($data, $classname);
             if(!$entity) {
                 $opresult->addDanger(vsprintf('Erreur de dénormalisation de l\'entité %s avec les données %s', [$classname, json_encode($data)]));

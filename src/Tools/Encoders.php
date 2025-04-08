@@ -59,7 +59,7 @@ class Encoders implements ToolInterface
      */
     public static function isEuidFormatValid(mixed $euid): bool
     {
-        return is_string($euid) && !empty($euid) && preg_match(static::EUID_SCHEMA, $euid);
+        return is_string($euid) && preg_match(static::EUID_SCHEMA, $euid);
     }
 
     /**

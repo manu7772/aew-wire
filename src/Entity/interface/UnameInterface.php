@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-interface UnameInterface extends WireEntityInterface
+interface UnameInterface extends BaseEntityInterface
 {
 
     public function isValid(): bool;
@@ -9,7 +9,7 @@ interface UnameInterface extends WireEntityInterface
     public function setUname(string $uname): static;
     public function getUname(): string;
     public function getEntityEuid(): ?string;
-    public function getEntity(): ?WireEntityInterface;
+    public function getEntity(): ?TraitUnamedInterface;
 
 }
 

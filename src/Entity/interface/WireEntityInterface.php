@@ -11,30 +11,16 @@ use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 // PHP
 use Stringable;
 
-interface WireEntityInterface extends Stringable, TraitSerializableInterface
+interface WireEntityInterface extends BaseEntityInterface, TraitSerializableInterface
 {
-    // public const DO_EMBED_STATUS_EVENTS = [];
-    // public function __toString(): string;
-    public function __construct_entity(): void;
-    // Count updates
-    public function doUpdate(): void;
-    public function getUpdates(): int;
-    // Entity self state
-    public function doInitializeSelfState(string $state = 'auto', bool|string $debug = 'auto'): void;
-    public function getSelfState(): ?EntitySelfState;
-    // Embeded Status
-    public function setEmbededStatus(EntityEmbededStatusInterface $estatus): void;
-    public function hasEmbededStatus(): bool;
-    public function getEmbededStatus(): ?EntityEmbededStatusInterface;
+    // public const ICON = [
+    //     'ux' => 'tabler:file',
+    //     'fa' => 'fa-file'
+    //     // Add other types and their corresponding icons here
+    // ];
+    // public const SERIALIZATION_PROPS = ['id'];
     // Interface of all entities
     public function getId(): mixed;
-    public function getEuid(): ?string;
-    public function getUnameThenEuid(): string;
-    public function defineUname(string $uname): static;
-    // Classname
-    public function getClassname(): string;
-    // Shortname
-    public function getShortname(bool $lowercase = false): string;
     // Serialization
     public function serialize(): ?string;
     public function unserialize(string $data): void;

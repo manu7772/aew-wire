@@ -11,7 +11,7 @@ trait Enabled
     public const INIT_ENABLED_ENABLED = true;
 
     #[ORM\Column]
-    private bool $enabled = true;
+    protected bool $enabled = true;
 
     public function __construct_enabled(): void
     {

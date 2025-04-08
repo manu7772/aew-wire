@@ -6,7 +6,6 @@ use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
 use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
@@ -115,7 +114,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this;
     }
 
-    public function hasItem(WireEntityInterface $item): bool
+    public function hasItem(WireItemInterface $item): bool
     {
         return $this->getItems()->contains($item);
     }
@@ -144,7 +143,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     }
 
     public function isAcceptsChildForParent(
-        WireEntityInterface $item,
+        WireItemInterface $item,
         string $property
     ): bool
     {   

@@ -17,7 +17,7 @@ use Knp\Component\Pager\PaginatorInterface;
 
 abstract class WireCategoryService implements WireCategoryServiceInterface
 {
-    USE TraitBaseService;
+    use TraitBaseService;
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireCategoryInterface::class;

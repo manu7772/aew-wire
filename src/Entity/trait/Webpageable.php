@@ -21,7 +21,7 @@ trait Webpageable
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
-    private ?string $title = null;
+    protected ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]

@@ -1,15 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Serializer;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Service\AppWireService;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 // symfony
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ToOneAssociationMapping;
-use Doctrine\ORM\Mapping\ToManyAssociationMapping;
 // PHP
 use Exception;
 
@@ -54,7 +49,7 @@ class AppWireNormalizer implements NormalizerInterface
         return $this->isEnabled() ? [
             AppWireServiceInterface::class => true,
             // AppWireService::class => true,
-        ] : [];
+        ] : ['*' => null];
     }
 
 }

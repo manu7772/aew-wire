@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Serializer;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // symfony
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
@@ -56,12 +56,12 @@ class EntityNormalizer implements NormalizerInterface
 
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
-        return $this->isEnabled() ? $data instanceof WireEntityInterface : false;
+        return $this->isEnabled() ? $data instanceof BaseEntityInterface : false;
     }
 
     public function getSupportedTypes(?string $format): array
     {
-        return $this->isEnabled() ? [WireEntityInterface::class => true] : [];
+        return $this->isEnabled() ? [BaseEntityInterface::class => true] : ['*' => null];
     }
 
 }

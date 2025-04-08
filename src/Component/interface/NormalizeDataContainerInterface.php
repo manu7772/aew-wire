@@ -1,16 +1,19 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 
 interface NormalizeDataContainerInterface
 {
     public function isProd(): bool;
     public function isDev(): bool;
+    public function getLevel(): int;
+    public function isMaxLevel(): bool;
+    public function isRoot(): bool;
     public function getType(): string;
-    // public function setEntity(WireEntityInterface $entity): static;
-    public function finalizeEntity(WireEntityInterface $entity): bool;
-    public function getEntity(): ?WireEntityInterface;
+    // public function setEntity(BaseEntityInterface $entity): static;
+    public function finalizeEntity(object $entity): bool;
+    public function getEntity(): ?object;
     public function hasEntity(): bool;
     public function getContext(): array;
     public function setContext(array $context): static;
@@ -26,7 +29,7 @@ interface NormalizeDataContainerInterface
     public function isCreateOrFind(): bool;
     public function isModel(): bool;
     public function isEntity(): bool;
-    public function getOptions(): array;
+    // public function getOptions(): array;
     public function getData(): array;
     public function setData(array $data): static;
 

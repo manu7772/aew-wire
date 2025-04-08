@@ -4,9 +4,8 @@ namespace Aequation\WireBundle\Entity\interface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 // PHP
 use DateTimeImmutable;
-use DateTimeZone;
 
-interface TraitDatetimedInterface extends WireEntityInterface, TimezoneInterface
+interface TraitDatetimedInterface extends BaseEntityInterface, TimezoneInterface
 {
     public function __construct_datetimed(): void;
     public function getUpdatedAt(): ?DateTimeImmutable;
@@ -15,7 +14,7 @@ interface TraitDatetimedInterface extends WireEntityInterface, TimezoneInterface
     public function getCreatedAt(): ?DateTimeImmutable;
     public function updateCreatedAt(): static;
     public function setCreatedAt(): static;
-    public function getDateTimezone(): ?DateTimeZone;
-    public function getTimezone(): ?string;
-    public function setTimezone(string $timezone): static;
+    public function getLanguage(): WireLanguageInterface;
+    public function setLanguage(WireLanguageInterface $langage): static;
+    public function getLocale(): ?string;
 }

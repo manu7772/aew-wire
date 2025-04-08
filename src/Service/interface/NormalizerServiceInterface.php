@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\NormalizeDataContainer;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Symfony\Component\Console\Style\SymfonyStyle;
 // PHP
@@ -25,15 +25,15 @@ interface NormalizerServiceInterface extends WireServiceInterface
         ],
     ];
 
-    // public function cleanAndPrepareDataToDeserialize(array &$data, string $classname, ?string $uname = null): ?WireEntityInterface;
-    public static function getNormalizeGroups(string|WireEntityInterface $class, ?string $type = null): array;
-    public static function getDenormalizeGroups(string|WireEntityInterface $class, ?string $type = null): array;
+    // public function cleanAndPrepareDataToDeserialize(array &$data, string $classname, ?string $uname = null): ?BaseEntityInterface;
+    public static function getNormalizeGroups(string|BaseEntityInterface $class, ?string $type = null): array;
+    public static function getDenormalizeGroups(string|BaseEntityInterface $class, ?string $type = null): array;
     // Normalize
     public function normalize(mixed $data, ?string $format = null, ?array $context = [], ?bool $convertToArrayList = false): array|string|int|float|bool|ArrayObject|null;
     public function denormalize(mixed $data, string $classname, ?string $format = null, ?array $context = []): mixed;
     // Normalize entity
-    public function normalizeEntity(WireEntityInterface $entity, ?string $format = null, ?array $context = []): array|string|int|float|bool|ArrayObject|null;
-    public function denormalizeEntity(array|NormalizeDataContainer $data, string $classname, ?string $format = null, ?array $context = []): WireEntityInterface;
+    public function normalizeEntity(BaseEntityInterface $entity, ?string $format = null, ?array $context = []): array|string|int|float|bool|ArrayObject|null;
+    public function denormalizeEntity(array|NormalizeDataContainer $data, string $classname, ?string $format = null, ?array $context = []): BaseEntityInterface;
     // Serialize
     public function serialize(mixed $data, string $format, ?array $context = [], ?bool $convertToArrayList = false): string;
     public function deserialize(string $data, string $type, string $format, ?array $context = []): mixed;

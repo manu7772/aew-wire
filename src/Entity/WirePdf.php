@@ -37,7 +37,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
-    private ?string $description = null;
+    protected ?string $description = null;
 
     // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null', groups: ['persist','update'])]
     #[ORM\Column()]

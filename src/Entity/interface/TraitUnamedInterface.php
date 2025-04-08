@@ -6,6 +6,7 @@ interface TraitUnamedInterface extends WireEntityInterface
 {
 
     public function __construct_unamed(): void;
+    // Interface of all entities
     public function updateUname(?string $uname = null): static;
     public function setUname(string $uname): static;
     public function getUname(): ?UnameInterface;

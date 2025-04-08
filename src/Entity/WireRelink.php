@@ -288,21 +288,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this;
     }
 
-    // public function getParent(): TraitRelinkableInterface
-    // {
-    //     return $this->parent->getParent();
-    // }
-
-    // public function setParent(WireEntityInterface & TraitRelinkableInterface $parent): static
-    // {
-    //     throw new Exception(vsprintf('Error %s line %d: can not define parent here. Add this %s in it\'s parent (%s) relinks instead.', [__METHOD__, __LINE__, $this->getShortname(), Objects::toDebugString($parent)]));
-    //     // if(isset($this->parent) && $this->parent->getParent() !== $parent) {
-    //     //     throw new Exception(vsprintf('Error %s line %d: the parent is already set', [__METHOD__, __LINE__]));
-    //     // }
-    //     // $this->parent = new RelinkCollection($parent, $this);
-    //     // return $this;
-    // }
-
     public function getSlug(): string
     {
         return $this->slug;

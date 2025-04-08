@@ -3,8 +3,12 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
@@ -38,7 +42,19 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public const ITEMS_ACCEPT = [
         'addresses' => [
             'field' => 'relinks',
-            'require' => [WireRelinkInterface::class],
+            'require' => [WireAddresslinkInterface::class],
+        ],
+        'phones' => [
+            'field' => 'relinks',
+            'require' => [WirePhonelinkInterface::class],
+        ],
+        'emails' => [
+            'field' => 'relinks',
+            'require' => [WireEmailinkInterface::class],
+        ],
+        'urls' => [
+            'field' => 'relinks',
+            'require' => [WireUrlinkInterface::class],
         ],
     ];
 
