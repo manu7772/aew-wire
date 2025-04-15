@@ -25,7 +25,7 @@ class WireRelinkService implements WireRelinkServiceInterface
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
         protected NormalizerServiceInterface $normalizer
     ) {
@@ -36,10 +36,10 @@ class WireRelinkService implements WireRelinkServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult = new Opresult();
         // Check all WireRelinkInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 

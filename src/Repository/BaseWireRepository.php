@@ -16,27 +16,27 @@ abstract class BaseWireRepository extends ServiceEntityRepository implements Bas
 {
     use BaseTraitWireRepository;
 
-    const ENTITY_CLASS = BaseEntityInterface::class;
-    const NAME = 'u';
+    const NAME = BaseEntityInterface::class;
+    const ALIAS = 'u';
 
     public function __construct(
         ManagerRegistry $registry,
         protected AppWireServiceInterface $appWire,
     )
     {
-        parent::__construct(registry: $registry, entityClass: static::ENTITY_CLASS);
+        parent::__construct(registry: $registry, entityClass: static::NAME);
         if($this instanceof GedmoOvrSortableRepositoryInterface) {
             // instance of Aequation\WireBundle\Repository\interface\GedmoOvrSortableRepositoryInterface
             $this->__self_construct($registry->getManager());
         }
         if($this->appWire->isDev()) {
-            if(!is_a($this->getEntityName(), static::ENTITY_CLASS, true)) throw new Exception(vsprintf('Error %s line %d: in %s, entity classes %s and %s do not match!', [__METHOD__, __LINE__, __CLASS__, $this->getEntityName(), static::ENTITY_CLASS]));
+            if(!is_a($this->getEntityName(), static::NAME, true)) throw new Exception(vsprintf('Error %s line %d: in %s, entity classes %s and %s do not match!', [__METHOD__, __LINE__, __CLASS__, $this->getEntityName(), static::NAME]));
         }
     }
 
     public static function getDefaultAlias(): string
     {
-        return static::NAME;
+        return static::ALIAS;
     }
 
 

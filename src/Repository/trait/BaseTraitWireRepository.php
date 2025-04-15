@@ -61,4 +61,35 @@ trait BaseTraitWireRepository
         }
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+    /************************************************************************************************************/
+    /** COMMON QUERYS                                                                                           */
+    /************************************************************************************************************/
+
+    public function findAllActives(): array
+    {
+        $qb = $this->createQueryBuilder(static::alias());
+        $this->findAllActivesQueryBuilder($qb);
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findAllInactives(): array
+    {
+        $qb = $this->createQueryBuilder(static::alias());
+        $this->findAllInactivesQueryBuilder($qb);
+        return $qb->getQuery()->getResult();
+    }
+
+
+
+    public function findAllActivesQueryBuilder(QueryBuilder $qb): void
+    {
+        $qb->andWhere(static::alias().'.enabled = 1');
+    }
+
+    public function findAllInactivesQueryBuilder(QueryBuilder $qb): void
+    {
+        $qb->andWhere(static::alias().'.enabled = 0');
+    }
+
 }

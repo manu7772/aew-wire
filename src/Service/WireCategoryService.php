@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
@@ -26,7 +27,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
     ) {
     }
@@ -36,7 +37,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult ??= new Opresult();
         // Check all WireCategoryInterface entities
         $all = $this->getRepository()->findAll();
@@ -57,23 +58,30 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         } else {
             $opresult->addSuccess("All category types are valid");
         }
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 
+    /**
+     * Get available category types
+     * - returns final entities related to WireCategoryInterface AND instance of TraitCategorizedInterface
+     * 
+     */
     public function getAvailableTypes(
         bool $asShornames = true
     ): array
     {
         if(!isset($this->availableTypes)) {
-            $relateds = $this->wireEntityService->getRelateds(
+            $relateds = $this->wireEm->getRelateds(
                 static::ENTITY_CLASS,
                 fn(AssociationMapping $mapping, ClassMetadata $cmd) => count($cmd->subClasses) === 0 && !$cmd->isMappedSuperclass,
                 true
             );
             $availableTypes = [];
             foreach (array_keys($relateds) as $class) {
-                $availableTypes[$class] = $asShornames ? Objects::getShortname($class, false) : $class;
+                if(is_a($class, TraitCategorizedInterface::class, true)) {
+                    $availableTypes[$class] = $asShornames ? Objects::getShortname($class, false) : $class;
+                }
             }
             $this->availableTypes = $availableTypes;
         }

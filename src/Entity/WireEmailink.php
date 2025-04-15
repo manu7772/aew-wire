@@ -7,8 +7,9 @@ use Aequation\WireBundle\Entity\WireRelink;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[UniqueEntity(fields: ['name','parent'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[UniqueEntity(fields: ['name','ownereuid'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 abstract class WireEmailink extends WireRelink implements WireEmailinkInterface
 {
@@ -17,15 +18,11 @@ abstract class WireEmailink extends WireRelink implements WireEmailinkInterface
         'ux' => 'tabler:mail',
         'fa' => 'fa-envelope'
     ];
-
     public const RELINK_TYPE = 'EMAIL';
 
-    // #[Gedmo\SortableGroup]
-    // protected WireItemInterface & TraitRelinkableInterface $parent;
 
-    // #[Gedmo\SortablePosition]
-    // protected int $position;
-
+    #[Assert\NotNull(message: 'L\'email est obligatoire', groups: ['persist','update'])]
+    protected ?string $mainlink = null;
 
     public function setEmail(string $email): static
     {

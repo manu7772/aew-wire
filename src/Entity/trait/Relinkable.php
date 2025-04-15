@@ -1,7 +1,6 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
-use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
@@ -9,14 +8,17 @@ use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
+use Aequation\WireBundle\Entity\WireUserRelinkCollection;
 use Doctrine\Common\Collections\ArrayCollection;
 // Symfony
+use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\Collection;
 // PHP
 use Exception;
 
 trait Relinkable
 {
+    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent')]
     protected Collection $relinks;
 
     public function __construct_relinkable(): void
@@ -33,7 +35,7 @@ trait Relinkable
     public function addRelink(WireRelinkInterface $relink): bool
     {
         if(!$this->hasRelink($relink)) {
-            $linkclass = "Aequation\\WireBundle\\Entity\\Wire{$this->getShortname()}RelinkCollection";
+            $linkclass = vsprintf("Aequation\\WireBundle\\Entity\\Wire%sRelinkCollection", [$this->getShortname()]);
             $this->relinks->add(new $linkclass($this, $relink));
         }
         return $this->hasRelink($relink);
@@ -53,6 +55,27 @@ trait Relinkable
             }
         }
         return false;
+    }
+
+    public function setRelinkPosition(WireRelinkInterface $relink, int $position): bool
+    {
+        foreach ($this->relinks as $link) {
+            if($link->getRelink() === $relink) {
+                $link->setPosition($position);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getRelinkPosition(WireRelinkInterface $relink): ?int
+    {
+        foreach ($this->relinks as $link) {
+            if($link->getRelink() === $relink) {
+                return $link->getPosition();
+            }
+        }
+        return null;
     }
 
     // AddressLink

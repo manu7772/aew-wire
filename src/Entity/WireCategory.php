@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\WireCategoryTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Tools\Objects;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\DBAL\Types\Types;
@@ -62,6 +63,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     public function __construct()
     {
         parent::__construct();
+        $this->translations = new ArrayCollection();
     }
 
     public function __toString(): string

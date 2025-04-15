@@ -28,7 +28,7 @@ class UnameService implements UnameServiceInterface
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
         public readonly NormalizerServiceInterface $normalizer,
     ) {

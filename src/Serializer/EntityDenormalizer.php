@@ -1,10 +1,7 @@
 <?php
-
 namespace Aequation\WireBundle\Serializer;
 
 use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
-use Aequation\WireBundle\Entity\interface\TranslationEntityInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -29,11 +26,9 @@ class EntityDenormalizer implements DenormalizerInterface
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        return $data->getEntity();
-        dd($data);
         /** @var NormalizeDataContainerInterface $data */
         $entity = $this->denormalizer->denormalize($data->getData(), $data->getType(), $format, $data->getDenormalizationContext());
-        $data->finalizeEntity($entity);
+        $data->finalizeEntity();
         // dd($data->getData(), $entity);
         return $entity;
     }

@@ -4,10 +4,15 @@ namespace Aequation\WireBundle\Service\trait;
 
 use Aequation\WireBundle\Component\NormalizeDataContainer;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Serializer\EntityDenormalizer;
 use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Service\WireEntityManager;
+use Aequation\WireBundle\Tools\Encoders;
+use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 // Symfony
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityRepository;
@@ -33,7 +38,7 @@ trait TraitBaseEntityService
 
     public function getEntityManager(): EntityManagerInterface
     {
-        return $this->em ??= $this->wireEntityService->em;
+        return $this->em ??= $this->wireEm->em;
     }
 
     public function getEm(): EntityManagerInterface
@@ -60,7 +65,7 @@ trait TraitBaseEntityService
         array|false $data = false, // ---> do not forget uname if wanted!
         array $context = []
     ): BaseEntityInterface {
-        $entity = $this->wireEntityService->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->wireEm->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $entity;
     }
@@ -75,7 +80,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface
     {
-        $model = $this->wireEntityService->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $model = $this->wireEm->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $model;
     }
@@ -86,7 +91,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface|false
     {
-        $clone = $this->wireEntityService->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
+        $clone = $this->wireEm->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $clone;
     }
@@ -96,7 +101,7 @@ trait TraitBaseEntityService
      *
      * @return string|null
      */
-    public function getEntityClassname(): string
+    public static function getEntityClassname(): string
     {
         $rconstant = new ReflectionClassConstant(static::class, 'ENTITY_CLASS');
         return $rconstant->getValue();
@@ -112,21 +117,6 @@ trait TraitBaseEntityService
     ): ?EntityRepository {
         $classname ??= $this->getEntityClassname();
         return $this->getEm()?->getRepository($classname) ?: null;
-    }
-
-    /**
-     * Get COUNT of entities (with optional criteria)
-     *
-     * @param array $criteria
-     * @return integer
-     */
-    public function getEntitiesCount(
-        array $criteria = [],
-        ?string $classname = null
-    ): int|false {
-        /** @var EntityRepository */
-        $repository = $this->getRepository($classname);
-        return $repository ? $repository->count($criteria) : false;
     }
 
 
@@ -165,4 +155,84 @@ trait TraitBaseEntityService
         // $request ??= $this->appWire->getRequest();
         throw new Exception(vsprintf('Method %s not implemented yet.', [__METHOD__]));
     }
+
+
+    /************************************************************************************************************/
+    /** QUERYS                                                                                                  */
+    /************************************************************************************************************/
+
+    public function getCount(
+        bool|array $criteria = []
+    ): int
+    {
+        if(is_bool($criteria)) {
+            $criteria = $criteria ? static::getCriteriaEnabled() : static::getCriteriaDisabled();
+        }
+        return $this->getRepository()->count($criteria);
+    }
+
+    public function findAll(
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+        ?int $limit = null,
+        ?int $offset = null
+    ): array
+    {
+        if(is_bool($criteria)) {
+            $criteria = $criteria ? static::getCriteriaEnabled() : static::getCriteriaDisabled();
+        }
+        $entities = $this->getRepository()->findBy($criteria, $orderBy, $limit, $offset);
+        return array_filter($entities, function ($entity) {
+            if ($entity instanceof TraitEnabledInterface) {
+                return $entity->isActive();
+            }
+            return true;
+        });
+    }
+
+    public function find(
+        int|string $identifier,
+        bool|array $criteria = [],
+        ?array $orderBy = null
+    ): ?object
+    {
+        if(is_bool($criteria)) {
+            $criteria = $criteria ? static::getCriteriaEnabled() : static::getCriteriaDisabled();
+        }
+        if(is_int($identifier) && $identifier > 0) {
+            $criteria['id'] = $identifier;
+        } else if(Encoders::isEuidFormatValid($identifier)) {
+            $criteria['euid'] = $identifier;
+        } elseif(Encoders::isUnameFormatValid($identifier)) {
+            $euid = $this->wireEm->getEuidOfUname($identifier);
+            if(empty($euid)) {
+                throw new Exception(vsprintf('Error %s line %d: could not resolve euid with uname %s for class %s!', [__METHOD__, __LINE__, $identifier, static::getEntityClassname()]));
+            }
+            $criteria['euid'] = $euid;
+        } else {
+            throw new Exception(vsprintf('Error %s line %d: identifier "%s" is not valid!', [__METHOD__, __LINE__, $identifier]));
+        }
+        $entity = $this->getRepository()->findOneBy($criteria, $orderBy);
+        if($entity instanceof TraitEnabledInterface) {
+            return $entity->isActive() ? $entity : null;
+        }
+        return $entity;
+    }
+
+
+    /************************************************************************************************************/
+    /** CRITERIA                                                                                                */
+    /************************************************************************************************************/
+
+    public static function getCriteriaEnabled(): array
+    {
+        return WireEntityManager::getCriteriaEnabled(static::getEntityClassname());
+    }
+
+    public static function getCriteriaDisabled(): array
+    {
+        return WireEntityManager::getCriteriaDisabled(static::getEntityClassname());
+    }
+
+
 }

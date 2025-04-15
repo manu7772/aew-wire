@@ -14,7 +14,7 @@ use Stringable;
 class UnamedDenormalizer implements DenormalizerInterface
 {
 
-    public const ENABLED = true;
+    public const ENABLED = false;
 
     public ?NormalizeDataContainer $currentContainer = null;
     public bool $currentIsModel = false;
@@ -38,7 +38,6 @@ class UnamedDenormalizer implements DenormalizerInterface
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        dd($data);
         $entity = $this->wireEm->findEntityByUname($data);
         if(empty($entity)) {
             throw new Exception(vsprintf('Error %s line %d: Entity with uname %s not found!', [__METHOD__, __LINE__, $data]));

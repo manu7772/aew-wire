@@ -19,8 +19,8 @@ class WireItemRepository extends BaseWireRepository implements WireItemRepositor
     use BaseTraitWireRepository;
     use BaseGedmoOvrSortableRepository;
 
-    const ENTITY_CLASS = WireItem::class;
-    const NAME = 'w_item';
+    const NAME = WireItem::class;
+    const ALIAS = 'w_item';
 
     // public function __construct(
     //     ManagerRegistry $registry,
@@ -32,7 +32,7 @@ class WireItemRepository extends BaseWireRepository implements WireItemRepositor
 
     public static function getDefaultAlias(): string
     {
-        return static::NAME;
+        return static::ALIAS;
     }
 
 }

@@ -15,10 +15,10 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireFactoryInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 

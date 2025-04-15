@@ -16,6 +16,7 @@ use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 // PHP
 use Closure;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
@@ -30,6 +31,8 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getAppWireService(): AppWireServiceInterface;
     public function getEntityService(string|BaseEntityInterface $entity): ?WireEntityServiceInterface;
     public function getClassMetadata(null|string|BaseEntityInterface $objectOrClass = null): ?ClassMetadata;
+    public function addPostFlushInfos(PostFlushEventArgs $args): void;
+    public function getPostFlushInfos(bool $getLastOnly = false): array;
     public function getRepository(string|BaseEntityInterface $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
     public static function isBetweenEntity(string|object $objectOrClass): bool;
@@ -78,12 +81,87 @@ interface WireEntityManagerInterface extends WireServiceInterface
 
     // Find
     public function findEntityById(string $classname, string $id): ?BaseEntityInterface;
+    /**
+     * find entity by `euid`
+     * 
+     * @param string $euid
+     * @return BaseEntityInterface|null
+     */
     public function findEntityByEuid(string $euid): ?BaseEntityInterface;
+    /**
+     * find entity by `uname`
+     * 
+     * @param string $uname
+     * @return BaseEntityInterface|null
+     */
     public function findEntityByUname(string $uname): ?BaseEntityInterface;
+    /**
+     * Get `euid` of `uname`
+     * 
+     * @param string $uname
+     * @return string|null
+     */
+    public function getEuidOfUname(string $uname): ?string;
+    /**
+     * find entity by unique value:
+     * - `uname`
+     * - `euid`
+     * 
+     * @param string $value
+     * @return BaseEntityInterface|null
+     */
+    public function findEntityByUniqueValue(string $value): ?BaseEntityInterface;
     public function getClassnameByUname(string $uname): ?string;
     public function getClassnameByEuidOrUname(string $euidOrUname): ?string;
-    public function findEntityByUniqueValue(string $value): ?BaseEntityInterface;
-    public function getEntitiesCount(string $classname, array $criteria = []): int;
+    /**
+     * get count of entities
+     * - uses criteria
+     * - search *ONLY IN DATABASE*  
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * @param bool|array $criteria
+     * @return int
+     */
+    public function getEntitiesCount(
+        string $classname,
+        bool|array $criteria = []
+    ): int;
+    /**
+     * get all entities
+     * - uses criteria
+     * - search *ONLY IN DATABASE*
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * @param bool|array $criteria
+     * @return array
+     */
+    public function findAllEntities(
+        string $classname,
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+        ?int $limit = null,
+        ?int $offset = null
+    ): array;
+    /**
+     * get one entity by id or euid or uname
+     * - uses criteria
+     * - search *ONLY IN DATABASE*
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * @param int|string $identifier
+     * @param bool|array $criteria
+     * @return object|null
+     */
+    public function findEntity(
+        string $classname,
+        int|string $identifier,
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+    ): ?object;
+
+    // Criteria
+    public static function getCriteriaEnabled(string $classname): array;
+    public static function getCriteriaDisabled(string $classname): array;
 
     // Liip
     public function getBrowserPath(

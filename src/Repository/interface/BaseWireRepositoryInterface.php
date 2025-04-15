@@ -5,6 +5,7 @@ namespace Aequation\WireBundle\Repository\interface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ObjectRepository;
 // use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
@@ -22,4 +23,12 @@ interface BaseWireRepositoryInterface extends ServiceEntityRepositoryInterface, 
     public function count(array $criteria = []): int;
     // public function findOneByEuid(string $euid): ?BaseEntityInterface;
     public function findEntityByEuidOrUname(string $euidOrUname): ?BaseEntityInterface;
+
+    // Common querys
+    public function findAllActives(): array;
+    public function findAllInactives(): array;
+    // Common QueryBuilders
+    public function findAllActivesQueryBuilder(QueryBuilder $qb): void;
+    public function findAllInactivesQueryBuilder(QueryBuilder $qb): void;
+
 }

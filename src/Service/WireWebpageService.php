@@ -24,10 +24,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireWebpageInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 
@@ -46,7 +46,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         if($onlyActives) {
             $criteria['enabled'] = true;
         }
-        return $this->getEntitiesCount($criteria);
+        return $this->getCount($criteria);
     }
 
     /**

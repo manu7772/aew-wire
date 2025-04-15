@@ -16,7 +16,7 @@ interface WireRelinkInterface extends WireEntityInterface, TraitDatetimedInterfa
     public function getRelinkType(): ?string;
     public function getRelinkTypeChoices(): array;
     public function getMainlink(): ?string;
-    public function setMainlink(?string $mainlink): static;
+    public function setMainlink(string $mainlink): static;
     public function isPrefered(): bool;
     public function setPrefered(bool $prefered): static;
     public function getParams(): ?array;

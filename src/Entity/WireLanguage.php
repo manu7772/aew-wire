@@ -10,6 +10,7 @@ use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Service\WireLanguageService;
 use DateTimeZone;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\DBAL\Types\Types;
@@ -30,7 +31,8 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     use Unamed, Enabled, Prefered;
 
     public const ICON = [
-        'ux' => 'tabler:flag',
+        'ux' => 'flag:@locale@-4x3',
+        'ux-square' => 'flag:@locale@-1x1',
         'fa' => 'fa-flag'
     ];
 
@@ -61,15 +63,26 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     #[ORM\OneToMany(targetEntity: WireLanguageTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
     protected $translations;
 
+    #[ORM\Column(type: Types::INTEGER, nullable: false)]
+    #[Gedmo\SortablePosition]
+    protected int $position = 0;
 
     public function __construct()
     {
         parent::__construct();
+        $this->translations = new ArrayCollection();
     }
 
     public function __toString(): string
     {
         return empty($this->locale) ? parent::__toString() : $this->locale;
+    }
+
+    public function getCountryIcon(
+        string $type = 'ux'
+    ): string
+    {
+        return preg_replace('/@locale@/', $this->getLocale(), static::ICON[$type]);
     }
 
     public function getLocale(): ?string
@@ -80,11 +93,11 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     public function setLocale(string $locale): static
     {
         if(!WireLanguageService::isValidLocale($locale)) {
-            throw new Exception(vsprintf('Error %s line %d:%s- This locale %s is not valid!', [__METHOD__, __LINE__, PHP_EOL, $locale]));
+            throw new \InvalidArgumentException(vsprintf('Error %s line %d:%sInvalid locale "%s"!%sPlease choose one of %s', [__METHOD__, __LINE__, PHP_EOL, $locale, PHP_EOL, implode(', ', WireLanguageService::getAvailableLocales())]));
         }
         $this->locale = $locale;
         $this->setTimezone(WireLanguageService::findTimezoneByLocale($locale));
-        $currentLocale = $this->getEmbededStatus()->appWire->getCurrentLocale();
+        $currentLocale = $this->getEmbededStatus()->appWire->getLocale();
         $this->setName(WireLanguageService::getLocaleName($locale, $currentLocale));
         return $this;
     }

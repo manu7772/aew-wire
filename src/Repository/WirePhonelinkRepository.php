@@ -7,7 +7,7 @@ use Aequation\WireBundle\Repository\interface\WirePhonelinkRepositoryInterface;
 abstract class WirePhonelinkRepository extends WireRelinkRepository implements WirePhonelinkRepositoryInterface
 {
 
-    const ENTITY_CLASS = WirePhonelink::class;
-    const NAME = 'wirephonelink';
+    const NAME = WirePhonelink::class;
+    const ALIAS = 'wirephonelink';
 
 }

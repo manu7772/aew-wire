@@ -30,14 +30,15 @@ class WireWebpage extends WireItem implements WireWebpageInterface
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
     public const ITEMS_ACCEPT = [
-        'sections'     => [
+        'websections' => [
             'field' => 'sections',
             'require' => [WireWebsectionInterface::class],
         ],
     ];
 
-    #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage', cascade: ['persist','remove'], orphanRemoval: true)]
-    protected ArrayCollection $sections;
+    #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage')]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    protected Collection $sections;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]
     protected WireMenuInterface $mainmenu;
@@ -72,41 +73,46 @@ class WireWebpage extends WireItem implements WireWebpageInterface
 
     public function getSections(): Collection
     {
+        return $this->sections;
+    }
+
+    public function getWebsections(): Collection
+    {
         return $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getWebsection());
     }
 
-    public function getSectionsByType(string $type): Collection
+    public function getWebsectionsByType(string $type): Collection
     {
-        return $this->getSections()->filter(fn(WireWebsectionInterface $section) => $section->getSectiontype() === $type);
+        return $this->getWebsections()->filter(fn(WireWebsectionInterface $section) => $section->getSectiontype() === $type);
     }
 
-    public function setSections(iterable $sections): static
+    public function setWebsections(Collection $sections): static
     {
-        $this->removeSections();
+        $this->removeWebsections();
         foreach ($sections as $section) {
-            if($section instanceof WireWebsectionInterface) $this->addSection($section);
+            if($section instanceof WireWebsectionInterface) $this->addWebsection($section);
         }
         return $this;
     }
 
-    public function hasSection(WireWebsectionInterface $section): bool
+    public function hasWebsection(WireWebsectionInterface $section): bool
     {
-        return $this->getSections()->contains($section);
+        return $this->getWebsections()->contains($section);
     }
 
-    public function addSection(WireWebsectionInterface $section): bool
+    public function addWebsection(WireWebsectionInterface $section): bool
     {
-        if(!$this->hasSection($section)) {
+        if(!$this->hasWebsection($section)) {
             $new_section = new WireWebpageWebsectionCollection($this, $section);
             $this->sections->add($new_section);
         }
-        return $this->hasSection($section);
+        return $this->hasWebsection($section);
     }
 
-    public function removeSection(WireWebsectionInterface $section): bool
+    public function removeWebsection(WireWebsectionInterface $section): bool
     {
         foreach ($this->sections as $section_collection) {
-            if($section_collection->getSection() === $section) {
+            if($section_collection->getWebsection() === $section) {
                 $this->sections->removeElement($section_collection);
                 return true;
             }
@@ -114,10 +120,10 @@ class WireWebpage extends WireItem implements WireWebpageInterface
         return false;
     }
 
-    public function removeSections(): static
+    public function removeWebsections(): static
     {
-        foreach ($this->getSections() as $section) {
-            $this->removeSection($section);
+        foreach ($this->getWebsections() as $section) {
+            $this->removeWebsection($section);
         }
         return $this;
     }

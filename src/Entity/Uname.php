@@ -92,7 +92,7 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
      */
     public function getUname(): string
     {
-        return $this->id;
+        return (string)$this->id;
     }
 
     /**

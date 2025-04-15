@@ -45,7 +45,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     protected ?int $id = null;
 
     #[ORM\Column()]
-    #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
+    #[Assert\NotNull(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
     protected ?string $name = null;
 

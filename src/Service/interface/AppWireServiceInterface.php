@@ -1,10 +1,9 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
-// Symfony
-
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+// Symfony
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -14,21 +13,21 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Translation\LocaleSwitcher;
-// PHP
-use DateTimeImmutable;
-use DateTimeInterface;
-use DateTimeZone;
-use JsonSerializable;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Stopwatch\Stopwatch;
-use UnitEnum;
+use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Twig\Loader\LoaderInterface;
 use Twig\Environment;
 use Twig\Markup;
+// PHP
+use DateTimeImmutable;
+use DateTimeZone;
+use JsonSerializable;
+use UnitEnum;
 
-interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
+interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface, LocaleAwareInterface
 {
 
     public const DEFAULT_HOME_ROUTE = 'app_home';
@@ -64,7 +63,6 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getSession(): ?SessionInterface;
     public function getEnvironment(): string;
     public function getDebug(): bool;
-    public function getLocale(): string;
     public function getEnabled_locales(): array;
     public function getFlashes(string|array|null $types = null): array;
     public function getCurrent_route(): ?string;
@@ -74,9 +72,15 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function has(string $id): bool;
     public function get(string $id, int $invalidBehavior = ContainerInterface::NULL_ON_INVALID_REFERENCE): ?object;
     public function getClassService(string|object $objectOrClass): ?object;
-    // Languages/locales
-    public function getCurrentLocale(): string;
+    // Locale / Languages
+    public function runWithLocale(string $locale, callable $callback): mixed;
+    public function setLocale(string $locale);
+    public function getLocale(): string;
+    public function resetLocale(): static;
+    // public function getCurrentLocale(): string;
+    public function getDefaultLocale(): string;
     public function getCurrentLanguage(): ?WireLanguageInterface;
+    public function getPreferedLanguage(): ?WireLanguageInterface;
     // Initialized
     public function isInitializable(KernelEvent $event): bool;
     public function isRequiredInitialization(KernelEvent $event): bool;
@@ -121,16 +125,12 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getDarkmode(): bool;
     public function setDarkmode(?bool $darkmode = null): bool;
     public function getDarkmodeClass(): string;
-    // Timestamp
-    // Timezone
+    // Timestamp / Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
     public function getDefaultTimezone(): DateTimeZone;
     public function getTimezone(): DateTimeZone;
     public function getTimezoneName(): string;
     public function getDatetimeTZ(string|DateTimeImmutable $date = 'now'): DateTimeImmutable;
-    // Locale / Languages
-    public function runWithLocale(string $locale, callable $callback): static;
-    public function resetLocale(): static;
     // DateTime
     public function getCurrentDatetime(): DateTimeImmutable;
     public function getCurrentDatetimeFormated(string $format = DATE_ATOM): string;

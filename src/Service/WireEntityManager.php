@@ -17,6 +17,8 @@ use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
+use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -44,6 +46,8 @@ use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 // PHP
 use Exception;
 use Closure;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use ReflectionMethod;
 
@@ -60,12 +64,16 @@ class WireEntityManager implements WireEntityManagerInterface
     public const MAX_SURVEY_RECURSION = 300;
     public const SERIALIZATION_MAPPINGS_BY_ATTRIBUTE = true;
     private array $__src = [];
+    // Criteria
+    public const CRITERIA_ENABLED = ['enabled' => true];
+    public const CRITERIA_DISABLED = ['enabled' => false];
 
     protected ArrayCollection $createds;
     protected NormalizerServiceInterface $normalizer;
     protected readonly UnitOfWork $uow;
     public int $debug_mode = 0;
     public bool $dismissCreateds = false;
+    protected array $postFlushInfos = [];
 
     /**
      * constructor.
@@ -290,13 +298,12 @@ class WireEntityManager implements WireEntityManagerInterface
             // Denormalize
             $context[NormalizeDataContainer::CONTEXT_CREATE_ONLY] = false;
             $context[NormalizeDataContainer::CONTEXT_AS_MODEL] = false;
-            $normalizeContainer = new NormalizeDataContainer($this, $classname, $data, $context);
+            $normalizeContainer = new NormalizeDataContainer($this->getNormaliserService(), $classname, $data, $context);
             $entity = $this->getNormaliserService()->denormalizeEntity($normalizeContainer, $classname);
         }
         // Add some stuff here...
         return $entity;
     }
-
 
     /**
      * create model
@@ -321,7 +328,7 @@ class WireEntityManager implements WireEntityManagerInterface
             // Denormalize
             $context[NormalizeDataContainer::CONTEXT_CREATE_ONLY] = true;
             $context[NormalizeDataContainer::CONTEXT_AS_MODEL] = true;
-            $normalizeContainer = new NormalizeDataContainer($this, $classname, $data, $context);
+            $normalizeContainer = new NormalizeDataContainer($this->getNormaliserService(), $classname, $data, $context);
             $model = $this->getNormaliserService()->denormalizeEntity($normalizeContainer, $classname);
         }
         // Add some stuff here...
@@ -410,6 +417,13 @@ class WireEntityManager implements WireEntityManagerInterface
                     }
                 }
             }
+            // TraitDatetimedInterface
+            if ($entity instanceof TraitDatetimedInterface && empty($entity->getLanguage())) {
+                if($defaultLanguage = $this->appWire->getCurrentLanguage()) {
+                    $entity->setLanguage($defaultLanguage);
+                    // Default timezone setted automatically
+                }
+            }
             // TraitUnamedInterface
             if ($entity instanceof TraitUnamedInterface) {
                 $this->postCreated($entity->getUname());
@@ -487,12 +501,6 @@ class WireEntityManager implements WireEntityManagerInterface
         return $repo->find($id);
     }
 
-    /**
-     * find entity by euid
-     * 
-     * @param string $euid
-     * @return BaseEntityInterface|null
-     */
     public function findEntityByEuid(
         string $euid
     ): ?BaseEntityInterface {
@@ -506,12 +514,6 @@ class WireEntityManager implements WireEntityManagerInterface
         return $entity instanceof BaseEntityInterface ? $entity : null;
     }
 
-    /**
-     * find entity by uname
-     * 
-     * @param string $uname
-     * @return BaseEntityInterface|null
-     */
     public function findEntityByUname(
         string $uname
     ): ?BaseEntityInterface {
@@ -524,6 +526,20 @@ class WireEntityManager implements WireEntityManagerInterface
                 : null;
         }
         return $entity instanceof BaseEntityInterface ? $entity : null;
+    }
+
+    public function getEuidOfUname(
+        string $uname
+    ): ?string
+    {
+        if(Encoders::isEuidFormatValid($uname)) {
+            $unameOjb = $this->getRepository(Uname::class)->find($uname);
+            if($unameOjb instanceof UnameInterface) {
+                $euid = $unameOjb->getEntityEuid();
+                if(Encoders::isEuidFormatValid($euid)) return $euid;
+            }
+        }
+        return null;
     }
 
     public function findEntityByUniqueValue(
@@ -556,21 +572,101 @@ class WireEntityManager implements WireEntityManagerInterface
             : $this->getRepository(Uname::class)->getClassnameByUname($euidOrUname);
     }
 
-    /**
-     * get count of entities
-     * can use criteria
-     * 
-     * @param string $classname
-     * @param array $criteria
-     * @return BaseEntityInterface|null
-     */
     public function getEntitiesCount(
         string $classname,
-        array $criteria = []
+        bool|array $criteria = []
     ): int {
+        if($service = $this->getEntityService($classname)) {
+            return $service->getCount($criteria);
+        }
+        if(is_bool($criteria)) {
+            $criteria = true === $criteria ? static::getCriteriaEnabled($classname) : static::getCriteriaDisabled($classname);
+        }
         /** @var BaseWireRepositoryInterface */
         $repo = $this->em->getRepository($classname);
         return $repo->count($criteria);
+    }
+
+    public function findAllEntities(
+        string $classname,
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+        ?int $limit = null,
+        ?int $offset = null
+    ): array
+    {
+        if($service = $this->getEntityService($classname)) {
+            /** @var WireEntityServiceInterface $service */
+            return $service->findAll($criteria, $orderBy, $limit, $offset);
+        }
+        if(is_bool($criteria)) {
+            $criteria = $criteria ? static::getCriteriaEnabled($classname) : static::getCriteriaDisabled($classname);
+        }
+        $entities = $this->getRepository($classname)->findBy($criteria, $orderBy, $limit, $offset);
+        return array_filter($entities, function ($entity) {
+            if ($entity instanceof TraitEnabledInterface) {
+                return $entity->isActive();
+            }
+            return true;
+        });
+    }
+
+    public function findEntity(
+        string $classname,
+        int|string $identifier,
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+    ): ?object
+    {
+        if($service = $this->getEntityService($classname)) {
+            return $service->find($identifier, $criteria, $orderBy);
+        }
+        if(is_bool($criteria)) {
+            $criteria = $criteria ? static::getCriteriaEnabled($classname) : static::getCriteriaDisabled($classname);
+        }
+        if(is_int($identifier) && $identifier > 0) {
+            $criteria['id'] = $identifier;
+        } else if(Encoders::isEuidFormatValid($identifier)) {
+            $criteria['euid'] = $identifier;
+        } elseif(Encoders::isUnameFormatValid($identifier)) {
+            $euid = $this->getEuidOfUname($identifier);
+            if(empty($euid)) {
+                throw new Exception(vsprintf('Error %s line %d: could not resolve euid with uname %s for class %s!', [__METHOD__, __LINE__, $identifier, $classname]));
+            }
+            $criteria['euid'] = $euid;
+        } else {
+            throw new Exception(vsprintf('Error %s line %d: identifier "%s" is not valid!', [__METHOD__, __LINE__, $identifier]));
+        }
+        // $criteria_object = Criteria::create();
+        // foreach ($criteria as $key => $value) {
+        //     $criteria_object->andWhere(Criteria::expr()->eq($key, $value));
+        // }
+        $entity = $this->getRepository($classname)->findOneBy($criteria, $orderBy);
+        if($entity instanceof TraitEnabledInterface) {
+            return $entity->isActive() ? $entity : null;
+        }
+        return $entity;
+    }
+
+
+    /************************************************************************************************************/
+    /** CRITERIA                                                                                                */
+    /************************************************************************************************************/
+
+    public static function getCriteriaEnabled(
+        string $classname
+    ): array
+    {
+        return is_a($classname, TraitEnabledInterface::class, true) ? static::CRITERIA_ENABLED : [];
+        // return is_a($classname, TraitEnabledInterface::class, true) ? [Criteria::expr()->eq('enabled', true)] : [];
+    }
+
+    public static function getCriteriaDisabled(
+        string $classname
+    ): array
+    {
+        return is_a($classname, TraitEnabledInterface::class, true) ? static::CRITERIA_DISABLED : [];
+        // return is_a($classname, TraitEnabledInterface::class, true) ? [Criteria::expr()->eq('enabled', false)] : [];
     }
 
 
@@ -592,6 +688,16 @@ class WireEntityManager implements WireEntityManagerInterface
         return $classname
             ? $this->em->getClassMetadata($classname)
             : null;
+    }
+
+    public function addPostFlushInfos(PostFlushEventArgs $args): void
+    {
+        $this->postFlushInfos[] = $args->getObjectManager();
+    }
+
+    public function getPostFlushInfos(bool $getLastOnly = false): array
+    {
+        return $getLastOnly ? end($this->postFlushInfos) : $this->postFlushInfos;
     }
 
     /**

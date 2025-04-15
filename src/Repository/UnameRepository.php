@@ -8,15 +8,15 @@ use Aequation\WireBundle\Tools\Encoders;
 class UnameRepository extends BaseWireRepository implements UnameRepositoryInterface
 {
 
-    const ENTITY_CLASS = Uname::class;
-    const NAME = 'uname';
+    const NAME = Uname::class;
+    const ALIAS = 'uname';
 
     public function getClassnameByUname(
         string $uname
     ): ?string {
-        $qb = $this->createQueryBuilder(static::NAME);
-        $qb->select(static::NAME.'.entityEuid')
-            ->where(static::NAME.'.id = :uname')
+        $qb = $this->createQueryBuilder(static::ALIAS);
+        $qb->select(static::ALIAS.'.entityEuid')
+            ->where(static::ALIAS.'.id = :uname')
             ->setParameter('uname', $uname);
         $result = $qb->getQuery()->getOneOrNullResult();
         if($euid = $result['entityEuid'] ?? null) {

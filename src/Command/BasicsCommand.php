@@ -143,7 +143,8 @@ class BasicsCommand extends BaseCommand
                 $class,
                 $data['items'],
                 $replace,
-                $io
+                $io,
+                true
             );
             if ($opresult->isSuccess()) {
                 // $io->success(vsprintf('Entités générées pour %s', [$class]));

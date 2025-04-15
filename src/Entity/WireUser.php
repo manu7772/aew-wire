@@ -59,6 +59,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     ];
 
     #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;
 
@@ -70,7 +71,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     /**
      * @var list<string> The user roles
      */
-    #[ORM\Column]
+    #[ORM\Column(type: Types::JSON)]
     protected array $roles = [];
 
     /**
@@ -187,7 +188,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function getLabel(): string
     {
-        return $this->name . trim(' ' . $this->firstname). ' (' . $this->email . ')';
+        return $this->name.trim(' '.$this->firstname). ' ('.$this->email.')';
     }
 
     /**
@@ -199,7 +200,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
-        $roles[] = static::ROLE_USER;
+        array_unshift($roles, static::ROLE_USER);
         return array_unique($roles);
     }
 
@@ -211,11 +212,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public function setRoles(array $roles): static
     {
         $this->roles = [];
-        foreach ($roles as $role) {
-            $this->addRole($role);
-        }
-        $this->checkRoles();
-        return $this;
+        return $this->addRole($roles);
     }
 
     /**
@@ -226,7 +223,6 @@ abstract class WireUser extends WireItem implements WireUserInterface
      */
     public function addRole(string|array $role): static
     {
-        if(!$this->HasRole($role)) $this->roles[] = $role;
         $this->roles = array_unique(array_merge($this->roles, (array)$role));
         $this->checkRoles();
         return $this;

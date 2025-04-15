@@ -15,10 +15,10 @@ class WireUrlinkService extends WireRelinkService implements WireUrlinkServiceIn
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireUrlinkInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 

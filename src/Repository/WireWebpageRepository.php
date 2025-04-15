@@ -10,7 +10,7 @@ use Aequation\WireBundle\Repository\interface\WireWebpageRepositoryInterface;
 abstract class WireWebpageRepository extends WireItemRepository implements WireWebpageRepositoryInterface
 {
 
-    const ENTITY_CLASS = WireWebpage::class;
-    const NAME = 'wirewebpage';
+    const NAME = WireWebpage::class;
+    const ALIAS = 'wirewebpage';
 
 }

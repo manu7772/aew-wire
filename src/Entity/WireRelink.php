@@ -10,8 +10,10 @@ use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
+use Doctrine\Common\Collections\ArrayCollection;
 // Symfony
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -27,7 +29,7 @@ use Exception;
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['name','parent'], message: 'Ce nom {{ value }} existe déjà', groups: ['persist','update'])]
+#[UniqueEntity(fields: ['name','ownereuid'], message: 'Ce nom {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
 abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
@@ -77,6 +79,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
      * - PHONE: type phone
      */
     #[ORM\Column(type: Types::TEXT, nullable: false)]
+    // #[Assert\NotNull(message: 'Le lien est obligatoire', groups: ['persist','update'])]
     protected ?string $mainlink = null;
 
     #[ORM\Column]
@@ -95,15 +98,12 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     protected bool $turboenabled = true;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\NotNull(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
     protected ?string $name = null;
 
     #[ORM\Column(type: Types::STRING, nullable: true)]
     protected ?string $linktitle = null;
-
-    #[ORM\Column]
-    #[Gedmo\SortablePosition]
-    protected int $position;
 
     #[ORM\Column(type: Types::STRING, nullable: false, updatable: false)]
     #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
@@ -114,6 +114,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     {
         if(!in_array(static::RELINK_TYPE, static::RELINK_TYPES)) throw new \Exception(vsprintf('Error %s line %d: static::RELINK_TYPE is invalid. Should be one of these: %s!', [__METHOD__, __LINE__, implode(', ', static::RELINK_TYPES)]));
         parent::__construct();
+        $this->translations = new ArrayCollection();
         $targets = static::TARGETS;
         $this->target = reset($targets);
     }
@@ -195,7 +196,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this->mainlink;
     }
 
-    public function setMainlink(?string $mainlink): static
+    public function setMainlink(string $mainlink): static
     {
         $this->mainlink = $mainlink;
         return $this;
@@ -309,7 +310,14 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
 
     public function setOwnereuid(TraitRelinkableInterface $owner): static
     {
-        $this->ownereuid = $owner->getEuid();
+        if(!isset($this->ownereuid)) {
+            $this->ownereuid = $owner->getEuid();
+        } else if($this->ownereuid !== $owner->getEuid()) {
+            /** @var WireEntityManagerInterface */
+            $wireEm = $this->getEmbededStatus()->wireEntityManager;
+            $selfowner = $wireEm->findEntityByEuid($this->ownereuid);
+            throw new Exception(vsprintf('Error %s line %d: this entity %s (%s - named "%s") value ownereuid "%s" (entity %s) is already set with "%s (entity %s)"!', [__METHOD__, __LINE__, static::class, $this->getShortname(), $this->__toString(), $this->ownereuid, $selfowner->__toString(), $owner->getEuid(), $owner->__toString(), $owner->__toString()]));
+        }
         return $this;
     }
 

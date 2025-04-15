@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 abstract class WireImageRepository extends WireItemRepository implements WireImageRepositoryInterface
 {
 
-    const ENTITY_CLASS = WireImage::class;
-    const NAME = 'wire_Image';
+    const NAME = WireImage::class;
+    const ALIAS = 'wire_Image';
 
 }

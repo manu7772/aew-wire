@@ -36,7 +36,65 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     // Maintain database
     public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Querys
-    public function getEntityClassname(): string;
+    public static function getEntityClassname(): string;
     public function getRepository(?string $classname = null): ?EntityRepository;
-    public function getEntitiesCount(array $criteria = [], ?string $classname = null): int|false;
+    // Find
+    /**
+     * get entities count
+     * - uses criteria
+     * - search *ONLY IN DATABASE*
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * - ~barré~
+     * - `code`
+     * - *italic*
+     * 
+     * @param bool|array $criteria
+     * @return int
+     */
+    public function getCount(
+        bool|array $criteria = []
+    ): int;
+    /**
+     * get all entities
+     * - uses criteria
+     * - search *ONLY IN DATABASE*
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * - ~barré~
+     * - `code`
+     * - *italic*
+     * 
+     * @param bool|array $criteria
+     * @return array
+     */
+    public function findAll(
+        bool|array $criteria = [],
+        ?array $orderBy = null,
+        ?int $limit = null,
+        ?int $offset = null
+    ): array;
+    /**
+     * get one entity by id or euid or uname
+     * - uses criteria
+     * - search *ONLY IN DATABASE*
+     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
+     * 
+     * - ~barré~
+     * - `code`
+     * - *italic*
+     * 
+     * @param int|string $identifier
+     * @param bool|array $criteria
+     * @return object|null
+     */
+    public function find(
+        int|string $identifier,
+        bool|array $criteria = [],
+        ?array $orderBy = null
+    ): ?object;
+
+    // Criteria
+    public static function getCriteriaEnabled(): array;
+    public static function getCriteriaDisabled(): array;
 }

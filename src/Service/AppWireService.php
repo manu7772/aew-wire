@@ -303,18 +303,86 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
 
     /************************************************************************************************************/
-    /** LANGUAGES/LOCALES                                                                                       */
+    /** LOCALE / LANGUAGES                                                                                      */
     /************************************************************************************************************/
 
-    public function getCurrentLocale(): string
+    /**
+     * Switch to a new locale, execute a callback, then switch back to the original.
+     * @template T
+     * @param callable(string $locale):T $callback
+     * @return T
+     */
+    public function runWithLocale(
+        string $locale, callable $callback
+    ): mixed
     {
-        return $this->getRequest()?->getLocale() ?? $this->getDefaultLocale();
+        return $this->myLocaleSwitcher->runWithLocale($locale, $callback);
+    }
+
+    /**
+     * Sets the current locale.
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException If the locale contains invalid characters
+     */
+    public function setLocale(string $locale)
+    {
+        if (!WireLanguageService::isValidLocale($locale)) {
+            throw new \InvalidArgumentException(vsprintf('Error %s line %d:%sInvalid locale "%s"!%sPlease choose one of %s', [__METHOD__, __LINE__, PHP_EOL, $locale, PHP_EOL, implode(', ', WireLanguageService::getAvailableLocales())]));
+        }
+        // test if locale is different: IMPORTANT to prevent infinite loop!
+        if($locale !== $this->myLocaleSwitcher->getLocale()) {
+            $this->myLocaleSwitcher->setLocale($locale);
+        }
+    }
+
+    public function getLocale(): string
+    {
+        return $this->myLocaleSwitcher->getLocale();
+    }
+
+    /**
+     * Reset locale to the original one.
+     *
+     * @return static
+     */
+    public function resetLocale(): static
+    {
+        $this->myLocaleSwitcher->reset();
+        return $this;
+    }
+
+    // public function getCurrentLocale(): string
+    // {
+    //     return $this->myLocaleSwitcher->getLocale();
+    // }
+
+    public function getDefaultLocale(): string
+    {
+        $default = $this->getPreferedLanguage()?->getLocale() ?? null;
+        if(empty($default)) {
+            $original = $this->myLocaleSwitcher->getLocale();
+            $this->myLocaleSwitcher->reset();
+            $default = $this->myLocaleSwitcher->getLocale();
+            $this->myLocaleSwitcher->setLocale($original);
+        }
+        return $default;
     }
 
     public function getCurrentLanguage(): ?WireLanguageInterface
     {
-        $locale = $this->getCurrentLocale();
-        return $this->get(WireLanguageServiceInterface::class)->findLanguageByLocale($locale);
+        $locale = $this->getLocale();
+        /** @var WireLanguageServiceInterface $service */
+        $service = $this->get(WireLanguageServiceInterface::class);
+        return $service->findLanguageByLocale($locale) ?: $service->getPreferedLanguage();
+    }
+
+    public function getPreferedLanguage(): ?WireLanguageInterface
+    {
+        /** @var WireLanguageServiceInterface $service */
+        $service = $this->get(WireLanguageServiceInterface::class);
+        return $service->getPreferedLanguage();
     }
 
 
@@ -1079,36 +1147,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getTwigLoader(): LoaderInterface
     {
         return $this->twig->getLoader();
-    }
-
-
-    /************************************************************************************************************/
-    /** LOCALE / LANGUAGES                                                                                      */
-    /************************************************************************************************************/
-
-    /**
-     * Switch to a new locale, execute a callback, then switch back to the original.
-     * @template T
-     * @param callable(string $locale):T $callback
-     * @return T
-     */
-    public function runWithLocale(
-        string $locale, callable $callback
-    ): static
-    {
-        $this->myLocaleSwitcher->runWithLocale($locale, $callback);
-        return $this;
-    }
-
-    /**
-     * Reset locale to the original one.
-     *
-     * @return static
-     */
-    public function resetLocale(): static
-    {
-        $this->myLocaleSwitcher->reset();
-        return $this;
     }
 
 

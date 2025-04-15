@@ -9,8 +9,9 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[UniqueEntity(fields: ['name','parent'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
+#[UniqueEntity(fields: ['name','ownereuid'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
 {
@@ -20,14 +21,11 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
         'fa' => 'fa-link'
     ];
     public const DO_EMBED_STATUS_EVENTS = [Events::postLoad];
-    
     public const RELINK_TYPE = 'URL';
 
-    // #[Gedmo\SortableGroup]
-    // protected WireItemInterface & TraitRelinkableInterface $parent;
 
-    // #[Gedmo\SortablePosition]
-    // protected int $position;
+    #[Assert\NotNull(message: 'Le lien URL est obligatoire', groups: ['persist','update'])]
+    protected ?string $mainlink = null;
 
     public function getALink(
         ?int $referenceType = null

@@ -19,17 +19,17 @@ trait Webpageable
     #[ORM\JoinColumn(nullable: true)]
     protected ?WireWebpageInterface $webpage = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: Types::STRING, nullable: true)]
     #[Gedmo\Translatable]
     protected ?string $title = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(type: Types::STRING, nullable: true)]
     #[Gedmo\Translatable]
     protected ?string $linktitle = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
-    protected array $content = [];
+    protected ?string $content = null;
 
 
     public function __construct_webpageable(): void
@@ -60,7 +60,7 @@ trait Webpageable
 
     public function setTitle(?string $title): static
     {
-        $this->title = $title;
+        $this->title = empty(trim($title)) ? null : trim($title);
         return $this;
     }
 
@@ -71,7 +71,7 @@ trait Webpageable
 
     public function setLinktitle(?string $linktitle): static
     {
-        $this->linktitle = $linktitle;
+        $this->linktitle = empty(trim($linktitle)) ? null : trim($linktitle);
         return $this;
     }
 
@@ -79,19 +79,20 @@ trait Webpageable
     #[ORM\PreUpdate]
     public function updateLinkTitle(): static
     {
-        if(empty($this->linktitle)) $this->linktitle = $this->title;
-        $this->linktitle = trim($this->linktitle);
+        if(empty($this->linktitle)) {
+            $this->setLinktitle($this->title);
+        }
         return $this;
     }
 
-    public function getContent(): array
+    public function getContent(): ?string
     {
         return $this->content;
     }
 
-    public function setContent(array $content): static
+    public function setContent(?string $content): static
     {
-        $this->content = $content;
+        $this->content = empty(trim($content)) ? null : trim($content);
         return $this;
     }
 

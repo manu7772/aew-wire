@@ -10,6 +10,8 @@ interface TraitRelinkableInterface extends BaseEntityInterface
     public function addRelink(WireRelinkInterface $relink): bool;
     public function hasRelink(WireRelinkInterface $relink): bool;
     public function removeRelink(WireRelinkInterface $relink): bool;
+    public function setRelinkPosition(WireRelinkInterface $relink, int $position): bool;
+    public function getRelinkPosition(WireRelinkInterface $relink): ?int;
 
     // AddressLink
     public function getAddresses(): Collection;

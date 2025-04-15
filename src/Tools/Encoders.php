@@ -29,6 +29,27 @@ class Encoders implements ToolInterface
     }
 
     /*************************************************************************************
+     * GPS
+     *************************************************************************************/
+
+    public static function split_gps(null|string|array $gps, string $separator = ','): ?array
+    {
+        if(is_string($gps)) {
+            $gps = preg_replace('/[^0-9.,]/', '', $gps);
+            $gps = array_map(fn($v) => (float)$v, explode($separator, $gps));
+        }
+        if (count($gps) !== 2 || (!is_float($gps[0]) || !is_float($gps[1]))) {
+            return null;
+            // throw new \InvalidArgumentException('Invalid GPS format');
+        }
+        return [
+            'lat' => (float)$gps[0],
+            'lng' => (float)$gps[1],
+        ];
+    }
+
+
+    /*************************************************************************************
      * [E]UID
      *************************************************************************************/
 

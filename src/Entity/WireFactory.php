@@ -12,6 +12,7 @@ use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
+use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
 use Doctrine\Common\Collections\Collection;
@@ -28,7 +29,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 
-    use Webpageable, Relinkable, Categorized;
+    use Prefered, Webpageable, Relinkable, Categorized;
 
     public const ICON = [
         'ux' => 'tabler:building-factory-2',
@@ -54,6 +55,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     ];
 
     #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;
 

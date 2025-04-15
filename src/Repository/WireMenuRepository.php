@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 abstract class WireMenuRepository extends WireEcollectionRepository implements WireMenuRepositoryInterface
 {
 
-    const ENTITY_CLASS = WireMenu::class;
-    const NAME = 'wire_Menu';
+    const NAME = WireMenu::class;
+    const ALIAS = 'wire_Menu';
 
 }

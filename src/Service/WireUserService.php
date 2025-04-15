@@ -40,7 +40,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
         public readonly ValidatorInterface $validator,
         // // public readonly NormalizerServiceInterface $normalizer,
@@ -58,10 +58,10 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult ??= new Opresult();
         // Check all WireUserInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 

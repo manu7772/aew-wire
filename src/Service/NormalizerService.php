@@ -191,7 +191,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?bool $convertToArrayList = false // for React, can not be object, but array
     ): array|string|int|float|bool|ArrayObject|null {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= true;
+        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= false;
         $context[AbstractObjectNormalizer::CIRCULAR_REFERENCE_LIMIT] ??= static::CIRCULAR_REFERENCE_LIMIT;
         $context[AbstractNormalizer::CALLBACKS] ??= $this->getCallbackHandler();
         // $context[AbstractObjectNormalizer::MAX_DEPTH_HANDLER] ??= $this->getMaxDepthHandler();
@@ -228,7 +228,6 @@ class NormalizerService implements NormalizerServiceInterface
         ?string $format = null,
         ?array $context = []
     ): array|string|int|float|bool|ArrayObject|null {
-        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         return $this->normalize($entity, $format, $context);
     }
 
@@ -239,11 +238,12 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = []
     ): BaseEntityInterface {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
+        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= true;
         if(!($data instanceof NormalizeDataContainer)) {
-            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
+            $data = new NormalizeDataContainer($this, $classname, $data, $context);
         }
         $this->wireEm->incDebugMode();
-        $entity = $this->getSerializer()->denormalize($data, $classname, $format, $data->getContext());
+        $entity = $this->getSerializer()->denormalize($data, $classname);
         $this->wireEm->decDebugMode();
         return $entity;
     }
@@ -260,7 +260,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?bool $convertToArrayList = false
     ): string {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= true;
+        $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] ??= false;
         $context[AbstractObjectNormalizer::CIRCULAR_REFERENCE_LIMIT] ??= static::CIRCULAR_REFERENCE_LIMIT;
         // $context[AbstractObjectNormalizer::MAX_DEPTH_HANDLER] ??= $this->getMaxDepthHandler();
         if ($data instanceof Collection) $data = $data->toArray();
@@ -275,6 +275,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = []
     ): mixed {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
+        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= true;
         $this->wireEm->incDebugMode();
         $data = $this->getSerializer()->deserialize($data, $type, $format, $context);
         $this->wireEm->decDebugMode();
@@ -372,11 +373,12 @@ class NormalizerService implements NormalizerServiceInterface
     public function generateEntitiesFromClass(
         string $classname,
         bool $replace = false,
-        ?SymfonyStyle $io = null
+        ?SymfonyStyle $io = null,
+        bool $flush = true
     ): OpresultInterface {
         $data = $this->getYamlData($classname);
         if ($data) {
-            return $this->generateEntities($data['entity'], $data['items'], $replace, $io);
+            return $this->generateEntities($data['entity'], $data['items'], $replace, $io, $flush);
         }
         $result = new Opresult();
         $result->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
@@ -386,11 +388,12 @@ class NormalizerService implements NormalizerServiceInterface
     public function generateEntitiesFromFile(
         string $filename,
         bool $replace = false,
-        ?SymfonyStyle $io = null
+        ?SymfonyStyle $io = null,
+        bool $flush = true
     ): OpresultInterface {
         $data = $this->getYamlData($filename);
         if ($data) {
-            return $this->generateEntities($data['entity'], $data['items'], $replace, $io);
+            return $this->generateEntities($data['entity'], $data['items'], $replace, $io, $flush);
         }
         $result = new Opresult();
         $result->addUndone(vsprintf('Le fichier %s n\'a donné aucun résultat', [$filename]));
@@ -401,28 +404,32 @@ class NormalizerService implements NormalizerServiceInterface
         $classname,
         array $items,
         bool $replace = false,
-        ?SymfonyStyle $io = null
+        ?SymfonyStyle $io = null,
+        bool $flush = true
     ): OpresultInterface {
-        if (!$this->wireEm->entityExists($classname, false, true)) {
+        if (!$this->wireEm->entityExists($classname, true, true)) {
             throw new Exception(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
         }
         $opresult = new Opresult();
         if ($io) $io->writeln(vsprintf('- Génération de <info>%s</info> entités pour <info>%s</info>', [count($items), $classname]));
+        $context = [
+            NormalizeDataContainer::CONTEXT_MAIN_GROUP => NormalizerServiceInterface::MAIN_GROUP,
+            NormalizeDataContainer::CONTEXT_CREATE_ONLY => false,
+            NormalizeDataContainer::CONTEXT_AS_MODEL => false,
+        ];
         $progress = $io ? $io->progressIterate($items) : $items;
         $count = 0;
         foreach ($progress as $uname => $data) {
             if(is_string($uname)) {
                 $data['uname'] ??= $uname;
             }
-            // dd($data);
-            $context = [
-                NormalizeDataContainer::CONTEXT_MAIN_GROUP => NormalizerServiceInterface::MAIN_GROUP,
-                NormalizeDataContainer::CONTEXT_CREATE_ONLY => false,
-                NormalizeDataContainer::CONTEXT_AS_MODEL => false,
-            ];
-            $data = new NormalizeDataContainer($this->wireEm, $classname, $data, $context);
+            // $data = new NormalizeDataContainer($this, $classname, $data, $context);
+            // if($classname !== $data->getType()) {
+            //     $opresult->addDanger(vsprintf('Erreur de classe d\'entité %s, attendu %s', [$data->getType(), $classname]));
+            //     continue;
+            // }
             /** @var BaseEntityInterface $entity */
-            $entity = $this->denormalizeEntity($data, $classname);
+            $entity = $this->denormalizeEntity($data, $classname, context: $context);
             if(!$entity) {
                 $opresult->addDanger(vsprintf('Erreur de dénormalisation de l\'entité %s avec les données %s', [$classname, json_encode($data)]));
                 continue;
@@ -432,6 +439,7 @@ class NormalizerService implements NormalizerServiceInterface
                 && $entity->getSelfState()->isLoaded()
                 // && $entity->getEmbededStatus()->isContained()
             ) {
+                $this->wireEm->getEm()->detach($entity);
                 $opresult->addWarning(vsprintf('L\'entité %s existe déjà, elle ne sera pas modifiée.', [Objects::toDebugString($entity)]));
                 continue;
             }
@@ -454,13 +462,16 @@ class NormalizerService implements NormalizerServiceInterface
                 $action = $this->wireEm->getEm()->getUnitOfWork()->isScheduledForUpdate($entity) ? 'MODIFIÉE' : 'NON MODIFIÉE';
                 $opresult->addSuccess(vsprintf('L\'entité %s a été %s', [Objects::toDebugString($entity), $action]));
             }
-            $opresult->addData($entity->getUnameThenEuid(), $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
-            // $opresult->addData($entity->getUnameThenEuid(), $entity);
+            // $opresult->addData($entity->getUnameThenEuid(), $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
+            $opresult->addData($entity->getUnameThenEuid(), $entity);
             $count++;
         }
-        if ($count > 0) {
+        if ($count > 0 && $flush) {
             // dd($opresult->getData());
             $this->wireEm->getEm()->flush();
+        }
+        foreach ($opresult->getData() as $euid => $entity) {
+            // $opresult->addData($euid, $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
         }
         return $opresult;
     }

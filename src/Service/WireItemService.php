@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -23,7 +24,7 @@ abstract class WireItemService implements WireItemServiceInterface
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
         protected NormalizerServiceInterface $normalizer
     ) {
@@ -34,11 +35,12 @@ abstract class WireItemService implements WireItemServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult ??= new Opresult();
         // Check all WireItemInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
+
 
 }

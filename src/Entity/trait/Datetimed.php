@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\WireLanguage;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
+use Aequation\WireBundle\Service\WireLanguageService;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -30,12 +31,14 @@ trait Datetimed
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $updatedAt = null;
 
+    #[ORM\Column(nullable: false)]
+    protected string $timezone;
+
     public function __construct_datetimed(): void
     {
         $this->updateCreatedAt();
-        $this->setTimezone(AppWireServiceInterface::DEFAULT_TIMEZONE);
+        // $this->setTimezone(AppWireServiceInterface::DEFAULT_TIMEZONE);
         if(!($this instanceof TraitDatetimedInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitDatetimedInterface::class]));
-
     }
 
     public function getLastActionAt(): DateTimeImmutable
@@ -99,14 +102,17 @@ trait Datetimed
         return $this;
     }
 
-    public function getLanguage(): WireLanguageInterface
+    public function getLanguage(): ?WireLanguageInterface
     {
-        return $this->langage;
+        return $this->langage ?? null;
     }
 
     public function setLanguage(WireLanguageInterface $langage): static
     {
         $this->langage = $langage;
+        if(!isset($this->timezone)) {
+            $this->setTimezone($langage->getTimezone());
+        }
         return $this;
     }
 
@@ -120,14 +126,25 @@ trait Datetimed
         return $this->langage->getLocale();
     }
 
-    public function getDateTimezone(): ?DateTimeZone
+    public function setTimezone(string $timezone): static
     {
-        return $this->langage->getDateTimezone();
+        $this->timezone = $timezone;
+        return $this;
+    }
+
+    public function getTimezoneChoices(): array
+    {
+        return WireLanguageService::getTimezoneChoices();
     }
 
     public function getTimezone(): string
     {
-        return $this->langage->getTimezone();
+        return $this->timezone;
+    }
+
+    public function getDateTimezone(): ?DateTimeZone
+    {
+        return new DateTimeZone($this->timezone);
     }
 
 

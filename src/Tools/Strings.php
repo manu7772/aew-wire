@@ -22,6 +22,7 @@ class Strings implements ToolInterface
 {
 
 	public const CHARSET = 'UTF-8';
+	public const LINE_SEPARATOR = "\n";
 
     public function __toString(): string
     {
@@ -37,6 +38,26 @@ class Strings implements ToolInterface
 			content: $html ?? '',
 			charset: $charset ?? static::CHARSET
 		);
+	}
+
+	/**
+	 * Split a string into lines
+	 * @see https://onlinephp.io/c/43489
+	 * 
+	 * @param string $text
+	 * @return array<string>
+	 */
+	public static function split_lines(string $text, bool $removeEmpty = true): array
+	{
+		$lines = preg_split('/(\s*[\n\r]+\s*)+/', trim($text));
+		return $removeEmpty
+			? Iterables::removeEmptyElements($lines)
+			: array_map(fn($t) => static::markup(trim($t))->__toString(), $lines);
+	}
+
+	public static function cleanLineSeparators(string $text): string
+	{
+		return implode("\n", static::split_lines($text));
 	}
 
     /** ***********************************************************************************

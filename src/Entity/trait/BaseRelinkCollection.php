@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 // Symfony
@@ -40,6 +41,10 @@ trait BaseRelinkCollection
         if($parent === $relink) throw new Exception(vsprintf('Error %s line %d: the parent and child parameters must be different', [__METHOD__, __LINE__]));
         $this->parent = $parent;
         $this->relink = $relink;
+        $this->relink->setOwnereuid($this->parent);
+        if($this->parent instanceof TraitDatetimedInterface) {
+            $this->relink->setLanguage($this->parent->getLanguage());
+        }
         $this->updateSortgroup();
     }
 

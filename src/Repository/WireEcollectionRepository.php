@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 class WireEcollectionRepository extends WireItemRepository implements WireEcollectionRepositoryInterface
 {
 
-    const ENTITY_CLASS = WireEcollection::class;
-    const NAME = 'w_ecollection';
+    const NAME = WireEcollection::class;
+    const ALIAS = 'w_ecollection';
 
 }

@@ -31,21 +31,21 @@ class WireLanguageService implements WireLanguageServiceInterface
 
     public const ENTITY_CLASS = WireLanguageInterface::class;
     public const LOCALES_TIMEZONES = [
-        'fr-FR' => 'Europe/Paris',
-        'it-IT' => 'Europe/Rome',
-        'en-GB' => 'Europe/London',
-        'en-US' => 'America/New_York',
-        'de-DE' => 'Europe/Berlin',
-        'es-ES' => 'Europe/Madrid',
-        'ru-RU' => 'Europe/Moscow',
-        'ja-JP' => 'Asia/Tokyo',
-        'zh-CN' => 'Asia/Shanghai',
+        'fr' => 'Europe/Paris',
+        'it' => 'Europe/Rome',
+        'en' => 'Europe/London',
+        'de' => 'Europe/Berlin',
+        'es' => 'Europe/Madrid',
+        'ru' => 'Europe/Moscow',
+        'us' => 'America/New_York',
+        'ja' => 'Asia/Tokyo',
+        'zh' => 'Asia/Shanghai',
         // Add more mappings as needed
     ];
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
     ) {
     }
@@ -63,11 +63,44 @@ class WireLanguageService implements WireLanguageServiceInterface
             DateTimeZone::EUROPE,
             DateTimeZone::INDIAN,
             DateTimeZone::PACIFIC,
-            DateTimeZone::UTC,
-            DateTimeZone::ALL,
-            DateTimeZone::ALL_WITH_BC,
-            DateTimeZone::PER_COUNTRY,
+            // DateTimeZone::UTC,
+            // DateTimeZone::ALL,
+            // DateTimeZone::ALL_WITH_BC,
+            // DateTimeZone::PER_COUNTRY,
         ];
+    }
+
+    public static function getTimezoneChoices(): array
+    {
+        $choices = [];
+        foreach (DateTimeZone::listIdentifiers() as $name) {
+            $choices[$name] = $name;
+        }
+        return $choices;
+    }
+
+
+    /**
+     * Sets the current locale.
+     *
+     * @return void
+     */
+    public function setLocale(string $locale)
+    {
+        $this->appWire->setLocale($locale);
+    }
+
+    /**
+     * Returns the current locale.
+     */
+    public function getLocale(): string
+    {
+        return $this->appWire->getLocale();
+    }
+
+    public static function getAvailableLocales(): array
+    {
+        return array_values(static::getPrimaryLanguages());
     }
 
     public static function getLocales(): array
@@ -77,12 +110,34 @@ class WireLanguageService implements WireLanguageServiceInterface
 
     public static function isValidLocale(string $locale): bool
     {
-        return array_key_exists($locale, static::LOCALES_TIMEZONES);
+        return in_array($locale, static::getAvailableLocales());
+    }
+
+    public static function getPrimaryLanguages(): array
+    {
+        $locales = static::getLocales();
+        return array_map(
+            static function ($locale) {
+                return static::getPrimaryLanguage($locale);
+            },
+            $locales
+        );
     }
 
     public static function getPrimaryLanguage(string $locale): string
     {
         return Locale::getPrimaryLanguage($locale);
+    }
+
+    public static function getRegions(): array
+    {
+        $locales = static::getLocales();
+        return array_map(
+            static function ($locale) {
+                return static::getRegion($locale);
+            },
+            $locales
+        );
     }
 
     public static function getRegion(string $locale): string
@@ -103,6 +158,11 @@ class WireLanguageService implements WireLanguageServiceInterface
     public function findLanguageByLocale(string $locale): ?WireLanguageInterface
     {
         return $this->getRepository()->findOneBy(['locale' => $locale]);
+    }
+
+    public function getPreferedLanguage(): ?WireLanguageInterface
+    {
+        return $this->getRepository()->findOneBy(['prefered' => true]);
     }
 
     public function getLanguages(bool $onlyActive = false): array
@@ -136,10 +196,10 @@ class WireLanguageService implements WireLanguageServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult ??= new Opresult();
         // Check all WireLanguageInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 

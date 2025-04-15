@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Doctrine\Common\Collections\Collection;
 
-interface WireFactoryInterface extends WireItemInterface, TraitWebpageableInterface, TraitRelinkableInterface, TraitCategorizedInterface
+interface WireFactoryInterface extends WireItemInterface, TraitPreferedInterface, TraitWebpageableInterface, TraitRelinkableInterface, TraitCategorizedInterface
 {
     public function getAssociates(): Collection;
     public function addAssociate(WireUserInterface $associate): static;

@@ -30,7 +30,7 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
     ) {
     }
@@ -40,9 +40,9 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         // Check all WireWebsectionInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 
@@ -61,7 +61,7 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
         if($onlyActives) {
             $criteria['enabled'] = true;
         }
-        return $this->getEntitiesCount($criteria);
+        return $this->getCount($criteria);
     }
 
     /**

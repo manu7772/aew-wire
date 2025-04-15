@@ -1,16 +1,11 @@
 <?php
-
 namespace Aequation\WireBundle\Component;
 
-use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
-use Aequation\WireBundle\Entity\WireItem;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Tools\Encoders;
@@ -23,10 +18,10 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 // PHP
 use Exception;
 use ReflectionProperty;
-use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 
 class NormalizeDataContainer implements NormalizeDataContainerInterface
 {
@@ -39,43 +34,47 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
     public const CONTEXT_CREATE_ONLY = 'context_create_only';
     public const CONTEXT_AS_MODEL = 'context_as_model';
 
+    public readonly NormalizerServiceInterface $normService;
     public readonly WireEntityManagerInterface $wireEm;
     public readonly ?NormalizeDataContainerInterface $parent;
     public readonly int $level;
-    public readonly object $entity;
-    public readonly ClassMetadata $classMetadata;
+    public BaseEntityInterface $entity;
+    protected array $addPostRelations = [];
+    // public readonly ClassMetadata $classMetadata;
     public readonly string $classname;
-    protected string $main_group;
-    protected readonly bool $create_only;
-    protected readonly bool $is_model;
+    protected array $context = [];
     protected PropertyAccessorInterface $accessor;
     protected array $data;
     protected ?string $uname = null;
     protected array $reverse_operations = []; // description in data['_reverse'] = [...]
 
     public function __construct(
-        WireEntityManagerInterface|NormalizeDataContainerInterface $starter,
-        string|object $classOrEntity,
+        NormalizerServiceInterface|NormalizeDataContainerInterface $starter,
+        string|BaseEntityInterface $classOrEntity,
         array $data,
-        protected array $context = [],
-    ) {
+        array $context = []
+    )
+    {
+        $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
         // 1 - Start Container
-        if($starter instanceof WireEntityManagerInterface) {
+        if($starter instanceof NormalizerServiceInterface) {
             // First initialization - is root container
             $this->parent = null;
-            $this->wireEm = $starter;
+            $this->normService = $starter;
+            $this->wireEm = $starter->wireEm;
             $this->level = 0;
         } else {
             // Child container
             $this->parent = $starter;
+            $this->normService = $this->parent->normService;
             $this->wireEm = $this->parent->wireEm;
             $this->level = $this->parent->getLevel() + 1;
         }
         // 2 - Entity classname
-        if(is_object($classOrEntity)) {
+        if($classOrEntity instanceof BaseEntityInterface) {
             // classOrEntity is entity
-            $this->entity = $classOrEntity;
-            $this->classname = $classOrEntity instanceof BaseEntityInterface ? $classOrEntity->getClassname() : $classOrEntity::class;
+            $this->classname = $classOrEntity->getClassname();
+            $this->setEntity($classOrEntity);
         } else {
             // classOrEntity is string classname
             if(!$this->wireEm->entityExists($classOrEntity, false, true)) {
@@ -91,33 +90,18 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
                 throw new Exception(vsprintf('Error %s line %d: entity %s does not exist!', [__METHOD__, __LINE__, $classOrEntity]));
             }
         }
-        // 3 - Options
-        if($this->isRoot()) {
-            // main group
-            $this->setMainGroup($context[self::CONTEXT_MAIN_GROUP] ?? null);
-            if(isset($context[self::CONTEXT_MAIN_GROUP])) {
-                unset($context[self::CONTEXT_MAIN_GROUP]);
-            }
-            // is model
-            $this->is_model = $context[self::CONTEXT_AS_MODEL] ?? false;
-            // create only
-            $this->defineCreateOnly($context[self::CONTEXT_CREATE_ONLY] ?? false);
-        } else {
-            // main group
-            if(isset($context[self::CONTEXT_MAIN_GROUP])) {
-                $this->setMainGroup($context[self::CONTEXT_MAIN_GROUP]);
-                unset($context[self::CONTEXT_MAIN_GROUP]);
-            } else {
-                $this->setMainGroup($this->parent->getMainGroup());
-            }
-            // is model
-            $this->is_model = $this->parent->isModel();
-            // create only
-            $this->defineCreateOnly($context[self::CONTEXT_CREATE_ONLY] ?? $this->parent->isCreateOnly());
-        }
+        // 3 - Options/contexts
+        $this->mergeContext($context, false);
         // 4 - Data
         $this->setData($data);
-        // if(!$this->isRoot()) dd($this->data);
+
+        // DEBUG
+        if($this->isRoot()) {
+            // dump('Data after initialization (line '.__LINE__.'):', $this, $this->getDenormalizationContext());
+        } else {
+            // dump('Child '.$this->getType().' context :', $this->getDenormalizationContext());
+        }
+        // dump($this->getDenormalizationContext());
     }
 
 
@@ -166,9 +150,7 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
      * CONTEXT
      **********************************************************************************************/
 
-    protected function setEntity(
-        object $entity
-    ): static
+    protected function setEntity(BaseEntityInterface $entity): static
     {
         if($this->hasEntity() && $this->entity !== $entity) {
             throw new Exception(vsprintf('Error %s line %d: entity %s is already set!%sCan not set another entity %s', [__METHOD__, __LINE__, Objects::toDebugString($this->entity), PHP_EOL, Objects::toDebugString($entity)]));
@@ -186,34 +168,35 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         return $this;
     }
 
-    public function finalizeEntity(object $entity): bool
+    public function finalizeEntity(): bool
     {
         if($this->isMaxLevel()) {
             return false;
         }
-        if($this->hasEntity() && $this->entity !== $entity) {
-            return false;
+        if(!$this->hasEntity()) {
+            throw new Exception(vsprintf('Error %s line %d: entity is not set!', [__METHOD__, __LINE__]));
         }
-        $this->setEntity($entity);
+        // $this->setEntity($entity);
+        $this->applyPostRelations();
         // Apply reverse operations
         $this->applyReverseOperations();
         return true;
     }
 
-    public function getEntity(): ?object
+    public function getEntity(): ?BaseEntityInterface
     {
         if($this->isMaxLevel()) {
             return null;
         }
         if(!isset($this->entity) && !$this->findEntity()) {
-            $this->entity = $this->wireEm->createEntity($this->getType());
+            $this->setEntity($this->wireEm->createEntity($this->getType()));
         }
         return $this->entity;
     }
 
     public function hasEntity(): bool
     {
-        return !empty($this->entity);
+        return !empty($this->entity ?? null);
     }
 
 
@@ -232,6 +215,22 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
     ): static
     {
         $this->context = $context;
+        if($this->isRoot()) {
+            // main group
+            $this->setMainGroup($this->context[self::CONTEXT_MAIN_GROUP] ?? null);
+            // is model
+            $this->context[self::CONTEXT_AS_MODEL] ??= false;
+            // create only
+            $this->context[self::CONTEXT_CREATE_ONLY] ??= false;
+        } else {
+            // $this->mergeContext($this->parent->getContext(), false);
+            // main group
+            $this->setMainGroup($this->context[self::CONTEXT_MAIN_GROUP] ?? $this->parent->getMainGroup());
+            // is model
+            $this->context[self::CONTEXT_AS_MODEL] = $this->parent->isModel();
+            // create only
+            $this->context[self::CONTEXT_CREATE_ONLY] ??= $this->parent->isCreateOnly();
+        }
         $this->controlContainer(true);
         return $this;
     }
@@ -264,30 +263,39 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
             ;
     }
 
-    public function getNormalizationContext(): array
+    private static function getHiddenContextNames(): array
     {
-        $this->controlContainer(true);
-        $context = $this->context;
-        // Define groups if not
-        if (empty($context[AbstractNormalizer::GROUPS] ?? [])) {
-            $context[AbstractNormalizer::GROUPS] = NormalizerService::getNormalizeGroups($this->getType(), $this->getMainGroup());
-        }
-        $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        return $context;
+        return [
+            static::CONTEXT_MAIN_GROUP,
+            static::CONTEXT_CREATE_ONLY,
+            static::CONTEXT_AS_MODEL,
+        ];
     }
+
+    // public function getNormalizationContext(): array
+    // {
+    //     $this->controlContainer(true);
+    //     $context = $this->getContext();
+    //     // Define groups if not
+    //     if (empty($context[AbstractNormalizer::GROUPS] ?? [])) {
+    //         $context[AbstractNormalizer::GROUPS] = NormalizerService::getNormalizeGroups($this->getType(), $this->getMainGroup());
+    //     }
+    //     $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
+    //     return array_filter($context, fn($key) => !in_array($key, static::getHiddenContextNames()), ARRAY_FILTER_USE_KEY);
+    // }
 
     public function getDenormalizationContext(): array
     {
         $this->controlContainer(true);
-        $context = $this->context;
+        $context = $this->getContext();
         // Define groups if not
         if (empty($context[AbstractNormalizer::GROUPS] ?? [])) {
             $context[AbstractNormalizer::GROUPS] = NormalizerService::getDenormalizeGroups($this->getType(), $this->getMainGroup());
         }
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         // Object to populate
-        $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->getEntity();
-        return $context;
+        $context[AbstractNormalizer::OBJECT_TO_POPULATE] ??= $this->getEntity();
+        return array_filter($context, fn($key) => !in_array($key, static::getHiddenContextNames()), ARRAY_FILTER_USE_KEY);
     }
 
 
@@ -305,7 +313,7 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         if(!preg_match('/^[a-z0-9_]+$/', $main_group) && !$this->isProd()) {
             throw new Exception(vsprintf('Error %s line %d: main group "%s" is invalid!', [__METHOD__, __LINE__, $main_group]));
         }
-        $this->main_group = $main_group;
+        $this->context[self::CONTEXT_MAIN_GROUP] = $main_group;
         return $this;
     }
 
@@ -316,7 +324,7 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
 
     public function getMainGroup(): string
     {
-        return $this->main_group;
+        return $this->context[self::CONTEXT_MAIN_GROUP] ?? NormalizerService::MAIN_GROUP;
     }
 
 
@@ -324,44 +332,28 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
      * OPTIONS
      **********************************************************************************************/
     
-    protected function defineCreateOnly(
-        bool $create_only
-    ): static
-    {
-        $this->create_only = $create_only
-            || $this->isModel()
-            || is_a($this->classname, UnameInterface::class, true)
-            ;
-        return $this;
-    }
-
     public function isCreateOnly(): bool
     {
-        return $this->create_only;
+        return $this->context[self::CONTEXT_CREATE_ONLY]
+            || $this->isModel()
+            || is_a($this->classname, UnameInterface::class, true)
+        ;
     }
 
     public function isCreateOrFind(): bool
     {
-        return !$this->create_only;
+        return !$this->isCreateOnly();
     }
 
     public function isModel(): bool
     {
-        return $this->is_model;
+        return $this->context[self::CONTEXT_AS_MODEL];
     }
 
     public function isEntity(): bool
     {
-        return !$this->is_model;
+        return !$this->context[self::CONTEXT_AS_MODEL];
     }
-
-    // public function getOptions(): array
-    // {
-    //     return [
-    //         'create_only' => $this->isCreateOnly(),
-    //         'is_model' => $this->isModel(),
-    //     ];
-    // }
 
 
     /***********************************************************************************************
@@ -396,7 +388,6 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         }
         $this->data = $this->regularizeData($data);
         $this->getEntity();
-        // dd('Data after initialization (line '.__LINE__.'):', $this->data);
         return $this;
     }
 
@@ -432,39 +423,58 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         }
         // 2 - Relations
         $mappings = $this->getAssociationMappings(array_keys($data));
+        // dump($mappings, array_keys($data));
+        if(empty($mappings)) {
+            // No relations
+            return $data;
+        }
         foreach ($data as $field => $value) {
             if(array_key_exists($field, $mappings)) {
                 // Relation
-                if($mappings[$field]['mapping']->isToOne()) {
+                /** @var AssociationMapping $mapping */
+                $mapping = $mappings[$field]['mapping'];
+                $create = $mapping->isCascadePersist() || $mapping->orphanRemoval;
+                if($mapping->isToOne()) {
                     // ToOne relation
                     # find identifier if exists
                     if(is_array($value)) {
                         $key = array_key_first($value);
                         if(count($value) === 1 && (is_string($key) || (is_int($key) && $key > 0)) && is_array(reset($value))) {
                             $value = $this->scalarToArrayUid($key, reset($value));
-                        // } else {
-                        //     $value = $this->scalarToArrayUid($value);
                         }
                     } else {
                         $value = $this->scalarToArrayUid($value);
                     }
                     if($new_data = $this->regularizeRelation($value, $mappings[$field])) {
-                        $data[$field] = new static($this, $new_data['classname'], $new_data);
+                        $ndc = new static($this, $new_data['classname'], $new_data);
+                        if($create) {
+                            // Create only
+                            $ndc->setContext([static::CONTEXT_CREATE_ONLY => false]);
+                        }
+                        $data[$field] = $ndc;
                     }
                 } else {
                     // ToMany relation
-                    $new_datas = [];
+                    $collection = new ArrayCollection();
                     foreach($value as $name => $sub) {
                         $sub = is_array($sub) ? $this->scalarToArrayUid($name, $sub) : $this->scalarToArrayUid($sub);
-                        if($sub = $this->regularizeRelation($sub, $mappings[$field])) {
-                            $new_datas[] = $sub;
+                        if($new_data = $this->regularizeRelation($sub, $mappings[$field])) {
+                            $ndc = new Static($this, $new_data['classname'], $new_data);
+                            if($create) {
+                                // Create only
+                                $ndc->setContext([static::CONTEXT_CREATE_ONLY => false]);
+                            }
+                            $entity = $this->normService->denormalizeEntity($ndc, $ndc->getType(), null, $ndc->getDenormalizationContext());
+                            if($entity && !$collection->contains($entity)) {
+                                $ndc->finalizeEntity();
+                                $collection->add($entity);
+                            }
                         }
                     }
-                    $data[$field] = new ArrayCollection();
-                    foreach ($new_datas as $new_data) {
-                        $data[$field]->add(new static($this, $new_data['classname'], $new_data));
+                    if(!$collection->isEmpty()) {
+                        $this->addPostRelation($field, $collection);
                     }
-                    // $data[$field] = $data[$field]->toArray();
+                    unset($data[$field]);
                 }
             } else {
                 // Column
@@ -479,13 +489,15 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         array $mapping
     ): mixed
     {
+        $valid_requires = array_filter($mapping['require'], fn($class) => $this->wireEm->entityExists($class, true, true));
         // 1 - classname
         $classenames = [
-            'shortname' => isset($data['shortname']) ? $this->wireEm->getClassnameByShortname($data['shortname']) : null,
-            'classname' => $data['classname'] ?? null,
-            'mapping' => $mapping['require'],
+            // 'shortname' => isset($data['shortname']) ? $this->wireEm->getClassnameByShortname($data['shortname']) : null,
+            'classname' => $data['classname'] ?? reset($valid_requires),
+            // 'mapping' => $mapping['require'],
         ];
-        if(count($mapping['require']) === 1) {
+        // dump($classenames, $valid_requires);
+        if(count($mapping['require']) === 1 || !empty($classenames['classname'])) {
             // Default classname
             $data['classname'] ??= reset($mapping['require']);
             if(!$this->wireEm->entityExists($data['classname'], true, true)) {
@@ -547,10 +559,10 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         return $final_mappings;
     }
 
-    protected function getClassMetadata(): ?ClassMetadata
-    {
-        return $this->classMetadata ??= $this->wireEm->getClassMetadata($this->getType());
-    }
+    // protected function getClassMetadata(): ?ClassMetadata
+    // {
+    //     return $this->classMetadata ??= $this->wireEm->getClassMetadata($this->getType());
+    // }
 
 
     /**
@@ -585,8 +597,8 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
                 }
             }
             $this->wireEm->decDebugMode(); // --> should be unnecessary
-            if($entity) {
-                $this->entity = $entity;
+            if($entity instanceof BaseEntityInterface) {
+                $this->setEntity($entity);
             }
         }
         return $this->hasEntity();
@@ -610,7 +622,6 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
 
     public function applyReverseOperations(): void
     {
-        $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
         foreach ($this->reverse_operations as $targetUname => $targetPropertys) {
             foreach ((array)$targetPropertys as $targetProperty) {
                 $targetEntity = $this->wireEm->findEntityByUname($targetUname);
@@ -633,21 +644,40 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
     }
 
 
-    // protected function setFieldValue(
-    //     string $field,
-    //     mixed $value
-    // ): static
-    // {
-    //     $reflfield = $this->getClassMetadata()->reflFields[$field] ?? null;
-    //     if($reflfield instanceof ReflectionProperty) {
-    //         $this->getClassMetadata()->setFieldValue($this->entity, $reflfield->name, $value);
-    //     } else {
-    //         $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
-    //         $this->accessor->setValue($this->entity, $field, $value);
-    //     }
-    //     return $this;
-    // }
+    protected function setFieldValue(
+        string $field,
+        mixed $value
+    ): static
+    {
+        $reflfield = $this->wireEm->getClassMetadata($this->getType())->reflFields[$field] ?? null;
+        if($reflfield instanceof ReflectionProperty) {
+            $this->wireEm->getClassMetadata($this->getType())->setFieldValue($this->entity, $reflfield->name, $value);
+        } else {
+            $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
+            $this->accessor->setValue($this->entity, $field, $value);
+        }
+        return $this;
+    }
 
+    protected function addPostRelation(
+        string $field,
+        BaseEntityInterface|Collection $value
+    ): static
+    {
+        $this->addPostRelations[$field] = $value;
+        return $this;
+    }
+
+    protected function applyPostRelations(): static
+    {
+        foreach ($this->addPostRelations as $field => $values) {
+            if($this->entity instanceof BaseEntityInterface) {
+                $this->setFieldValue($field, $values);
+            }
+        }
+        $this->addPostRelations = [];
+        return $this;
+    }
 
     /**
      * Get list of error messages if container is not valid
@@ -687,9 +717,11 @@ class NormalizeDataContainer implements NormalizeDataContainerInterface
         if($this->hasEntity()) {
             // Has entity
             if(!is_a($this->entity, $this->classname)) {
+                dump($this);
                 $error_messages[] = vsprintf('Error %s line %d: entity %s does not implement %s!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->classname]);
             }
             if($this->isCreateOnly() && !empty($this->entity->getId())) {
+                dump($this);
                 $error_messages[] = vsprintf('Error %s line %d: %s is already persisted!', [__METHOD__, __LINE__, $this->entity]);
             }
         }

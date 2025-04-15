@@ -44,7 +44,6 @@ trait Categorized
     public function addCategory(WireCategoryInterface $category): static
     {
         if(!is_a($this, $category->getType())) {
-            // dump($category);
             throw new Exception(vsprintf('Error %s line %d: category type "%s" is not compatible with entity type "%s"', [__METHOD__, __LINE__, $category->getType(), get_class($this)]));
         }
         if (!$this->categorys->contains($category)) {

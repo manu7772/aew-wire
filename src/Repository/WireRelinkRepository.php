@@ -19,8 +19,8 @@ class WireRelinkRepository extends BaseWireRepository implements WireRelinkRepos
     use BaseTraitWireRepository;
     use BaseGedmoOvrSortableRepository;
 
-    const ENTITY_CLASS = WireRelink::class;
-    const NAME = 'wire_Relink';
+    const NAME = WireRelink::class;
+    const ALIAS = 'wire_Relink';
 
     // public function __construct(
     //     ManagerRegistry $registry,
@@ -32,7 +32,7 @@ class WireRelinkRepository extends BaseWireRepository implements WireRelinkRepos
 
     public static function getDefaultAlias(): string
     {
-        return static::NAME;
+        return static::ALIAS;
     }
 
 }

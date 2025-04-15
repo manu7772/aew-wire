@@ -22,14 +22,14 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
-        protected WireEntityManagerInterface $wireEntityService,
+        protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
         protected NormalizerServiceInterface $normalizer,
         protected DompdfFactoryInterface $dompdfFactory,
         protected UploaderHelper $vichHelper,
     )
     {
-        parent::__construct($appWire, $wireEntityService, $paginator, $normalizer);
+        parent::__construct($appWire, $wireEm, $paginator, $normalizer);
     }
 
     public function checkDatabase(
@@ -37,10 +37,10 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEntityService->incDebugMode();
+        $this->wireEm->incDebugMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WirePdfInterface entities
-        $this->wireEntityService->decDebugMode();
+        $this->wireEm->decDebugMode();
         return $opresult;
     }
 
