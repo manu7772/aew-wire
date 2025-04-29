@@ -16,7 +16,12 @@ class SerializationMapping extends BaseClassAttribute implements AppAttributeCla
 
     public function __construct(
         public array $mapping,
-    ) {}
+    ) {
+        foreach ($this->mapping as $field => $mapping) {
+            $this->mapping[$field]['field'] ??= $field;
+            $this->mapping[$field]['require'] = (array)$this->mapping[$field]['require'];
+        }
+    }
 
     public function getMapping(): array
     {

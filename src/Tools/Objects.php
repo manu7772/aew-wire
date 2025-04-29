@@ -33,12 +33,26 @@ class Objects implements ToolInterface
     public static function getShortname(
         object|string $objectOrClass,
         bool $lowercase = false
-    ): string
+    ): ?string
     {
+        if(is_string($objectOrClass) && !class_exists($objectOrClass)) {
+            return null;
+        }
         $RC = new ReflectionClass($objectOrClass);
         return $lowercase
             ? strtolower($RC->getShortName())
             : $RC->getShortName();
+    }
+
+    public static function getClassname(
+        object $objectOrClass
+    ): ?string
+    {
+        if($objectOrClass instanceof BaseEntityInterface) {
+            return $objectOrClass->getClassname();
+        }
+        $RC = new ReflectionClass($objectOrClass);
+        return $RC->getName();
     }
 
 
@@ -70,7 +84,7 @@ class Objects implements ToolInterface
                 $string = $something ? '[bool]true' : '[bool]false';
                 break;
             case is_object($something) && $something instanceof BaseEntityInterface:
-                $string = vsprintf('%s "%s" (#%d)', [$something->getClassname(), $something, $something->getId() ?? 'null']);
+                $string = vsprintf('%s "%s" (#%d) U:%s', [$something->getClassname(), $something, $something->getId() ?? 'null', $something->getUnameThenEuid()]);
                 break;
             case is_object($something) && $something instanceof Stringable:
                 $string = vsprintf('%s "%s"', [$something::class, $something]);
@@ -269,6 +283,34 @@ class Objects implements ToolInterface
             }
         }
         return $interfaces;
+    }
+
+    /**
+     * Change class/interface names to class names
+     * - Find all classes are subclasses of classes or that implements the interfaces)
+     * - If $classChoices is empty, uses all declared classes
+     * - If $classChoices is not empty, uses only classes that are declared in $classChoices
+     * 
+     * @param array $classesAndInterfaces
+     * @param null|array $classChoices
+     * @return array
+     */
+    public static function changeToClassnames(
+        array $classesAndInterfaces,
+        ?array $classChoices = null
+    ): array
+    {
+        static::filterDeclaredClasses($classChoices);
+        $classes = [];
+        foreach ($classesAndInterfaces as $classOrInterface) {
+            foreach ($classChoices as $classname) {
+                if(is_subclass_of($classname, $classOrInterface, true) || is_a($classname, $classOrInterface, true)) {
+                    $classes[$classname] = $classname;
+                }
+            }
+        }
+        // dd($classChoices, $classesAndInterfaces, array_values($classes));
+        return array_values($classes);
     }
 
     /*************************************************************************************

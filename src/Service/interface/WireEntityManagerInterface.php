@@ -17,9 +17,33 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 // PHP
 use Closure;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+use Psr\Log\LoggerInterface;
+use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
+
+    /**
+     * constructor.
+     * 
+     * @param EntityManagerInterface $em
+     * @param AppWireServiceInterface $appWire
+     * @param CacheServiceInterface $cacheService
+     * @param UploaderHelper $vichHelper
+     * @param CacheManager $liipCache
+     * @param LoggerInterface $logger
+     * @param SurveyRecursionInterface $surveyRecursion
+     */
+    public function __construct(
+        EntityManagerInterface $em,
+        AppWireServiceInterface $appWire,
+        CacheServiceInterface $cacheService,
+        UploaderHelper $vichHelper,
+        CacheManager $liipCache,
+        LoggerInterface $logger,
+        SurveyRecursionInterface $surveyRecursion,
+    );
 
     // Debug mode
     public function isDebugMode(): bool;
@@ -30,7 +54,6 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getNormaliserService(): NormalizerServiceInterface;
     public function getAppWireService(): AppWireServiceInterface;
     public function getEntityService(string|BaseEntityInterface $entity): ?WireEntityServiceInterface;
-    public function getClassMetadata(null|string|BaseEntityInterface $objectOrClass = null): ?ClassMetadata;
     public function addPostFlushInfos(PostFlushEventArgs $args): void;
     public function getPostFlushInfos(bool $getLastOnly = false): array;
     public function getRepository(string|BaseEntityInterface $objectOrClass): ?EntityRepository;
@@ -56,8 +79,22 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getClassnameByShortname(string $shortname, bool $allnamespaces = false, bool $onlyInstantiables = false): ?string;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
     public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
-    public function getRelatedClassnames(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null): array;
-    public function getAllRelatedProperties(string|BaseEntityInterface $objectOrClass, array $filterFields = [], ?Closure $filter = null): array;
+    // public function getRelatedClassnames(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null): array;
+    /**
+     * Get all related properties of entity
+     * - add properties of relations not defined in the class metadata
+     * 
+     * Results:
+     * - require_all: all required classes for this relation
+     * - require_instantiable: all required classes for this relation that are instantiable
+     * - require_metadata: the class metadata of the relation (defined by Doctrine)
+     * 
+     * @param string|BaseEntityInterface $objectOrClass
+     * @param null|Closure $filter
+     * @param bool $excludeSelf
+     * @return array
+     */
+    // public function getAllRelatedDependencies(string|BaseEntityInterface $objectOrClass, array $filterFields = [], ?Closure $filter = null): array|false;
     public function getRelateds(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null, bool $excludeSelf = false): array;
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;
@@ -65,12 +102,6 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getUow(): UnitOfWork;
 
     // Create
-    public function dismissCreateds(bool $dismissCreateds): void;
-    public function isDismissCreateds(): bool;
-    public function addCreated(BaseEntityInterface $entity): void;
-    public function clearCreateds(): bool;
-    public function clearPersisteds(): bool;
-    public function findCreated(string $euidOrUname): ?BaseEntityInterface;
     public function insertEmbededStatus(BaseEntityInterface $entity): void;
     public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
@@ -88,6 +119,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @return BaseEntityInterface|null
      */
     public function findEntityByEuid(string $euid): ?BaseEntityInterface;
+    public function entityWithEuidExists(string $euid, bool $getData = false): bool|null|array;
     /**
      * find entity by `uname`
      * 
@@ -162,6 +194,17 @@ interface WireEntityManagerInterface extends WireServiceInterface
     // Criteria
     public static function getCriteriaEnabled(string $classname): array;
     public static function getCriteriaDisabled(string $classname): array;
+
+    /**
+     * get class metadata
+     * 
+     * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
+     * @param string|object|null $objectOrClass
+     * @return ClassMetadata|null
+     */
+    public function getClassMetadata(
+        null|string|object $objectOrClass = null,
+    ): ?ClassMetadata;
 
     // Liip
     public function getBrowserPath(

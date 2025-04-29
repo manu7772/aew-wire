@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Twig\Markup;
 
@@ -14,6 +15,14 @@ interface OpresultInterface
     public const ACTION_SUCCESS =       'success';      // success -- success
     public const MESSAGE_INFO =         'info';         // info message
     public const MESSAGE_DEV =          'dev';          // information for DEVELOPPERS
+
+    // Embedded results
+    public function setMaster(OpresultInterface $master): static;
+    public function getMaster(): ?OpresultInterface;
+    public function hasMaster(): bool;
+    public function addOpresult(OpresultInterface $opresult): static;
+    public function getOpresults(): ArrayCollection;
+    public function hasOpresults(): bool;
 
     public function isSuccess(): bool;
     public function hasSuccess(): bool;
@@ -34,6 +43,7 @@ interface OpresultInterface
     public function addUndone(null|string|array $messages = null, int $inc = 1): static;
     public function addWarning(null|string|array $messages = null, int $inc = 1): static;
     public function addDanger(null|string|array $messages = null, int $inc = 1): static;
+    public function addError(null|string|array $messages = null, int $inc = 1): static;
 
     public function initActionTypes(bool $resetTypes = true): static;
     public function getActionTypes(): array;
@@ -48,8 +58,8 @@ interface OpresultInterface
     public function checkMessagesTypes(): static;
     public function getMessageTypes(): array;
     public function getMessages(?string $type = null): array;
-    public function printMessages(SymfonyStyle|bool $asHtmlOrIo = false, string|array $msgtypes = null): void;
-    public function getMessagesAsString(?bool $asHtml = null, bool $byTypes = true, string|array $msgtypes = null): string|Markup;
+    public function printMessages(SymfonyStyle|bool $asHtmlOrIo = false, null|string|array $msgtypes = null): void;
+    public function getMessagesAsString(?bool $asHtml = null, bool $byTypes = true, null|string|array $msgtypes = null): string|Markup;
     public function hasMessages(?string $type = null): bool;
     public function getMessageGlobalType(): string;
     public function getData(null|string|int $index = null): mixed;

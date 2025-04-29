@@ -56,7 +56,12 @@ class ArrayTextType extends Type
         return new ArrayTextUtil(is_resource($value) ? stream_get_contents($value) : $value);
     }
 
-    public function getName()
+    /**
+     * Get the name of this type
+     *
+     * @return string
+     */
+    public function getName(): string
     {
         return self::NAME;
     }

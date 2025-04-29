@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Serializer;
 
-use Aequation\WireBundle\Component\interface\NormalizeDataContainerInterface;
+use Aequation\WireBundle\Component\interface\EntityContainerInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -26,17 +26,14 @@ class EntityDenormalizer implements DenormalizerInterface
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        /** @var NormalizeDataContainerInterface $data */
-        $entity = $this->denormalizer->denormalize($data->getData(), $data->getType(), $format, $data->getDenormalizationContext());
-        $data->finalizeEntity();
-        // dd($data->getData(), $entity);
-        return $entity;
+        /** @var EntityContainerInterface $data */
+        return $data->getEntityDenormalized($format, $context);
     }
 
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
         $supports = $this->isEnabled()
-            && $data instanceof NormalizeDataContainerInterface
+            && $data instanceof EntityContainerInterface
             // && is_a($type, BaseEntityInterface::class, true)
             // && !is_a($type, UnameInterface::class, true)
             ;

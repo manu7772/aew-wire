@@ -32,6 +32,8 @@ class CacheService implements CacheServiceInterface
         'cache_dir_path',
         'cache_dir_url',
     ];
+    public const SHORTCUT_CACHE = true;
+    public const DEV_REFRESH_ALL = false;
 
     public function __construct(
         public readonly KernelInterface $kernel,
@@ -41,7 +43,22 @@ class CacheService implements CacheServiceInterface
         // public string $cacheDir,
     )
     {
-        // Constructor logic here
+        if(static::SHORTCUT_CACHE && $this->kernel->getEnvironment() === 'prod') {
+            $this->logger->warning(vsprintf('CacheService SHORTCUT_CACHE is active in %s environment!', [$this->kernel->getEnvironment()]));
+        }
+    }
+
+
+    public function isRefresh(string $key): bool
+    {
+        if(static::DEV_REFRESH_ALL) {
+            if($this->kernel->getEnvironment() === 'prod') {
+                $this->logger->error(vsprintf('Warning %s line %d: DEV_REFRESH_ALL is enabled for key "%s" in PROD environment!', [__METHOD__, __LINE__, $key]));
+                return false;
+            }
+            return true;
+        }
+        return preg_match('/^!+/', $key);
     }
 
 
@@ -75,6 +92,7 @@ class CacheService implements CacheServiceInterface
         bool $reset = false
     ): array
     {
+        if(static::SHORTCUT_CACHE) return [];
         $attributes = $this->get(($reset ? '!' : '').static::SERVICE_CACHES_NAMES, fn() => array_map(fn($attribute) => $attribute->jsonSerialize(), $this->getCacheableAttributes()));
         foreach ($attributes as $key => $attrValues) {
             $starter = array_filter($attrValues, fn($value) => in_array($value, ['name', 'params', 'commentaire']), ARRAY_FILTER_USE_KEY);
@@ -132,7 +150,8 @@ class CacheService implements CacheServiceInterface
         ?array &$metadata = null
     ): mixed
     {
-        if(preg_match('/^!+/', $key) || $this->kernel->getEnvironment() !== 'prod') {
+        if(static::SHORTCUT_CACHE) return $callback();
+        if($this->isRefresh($key)) {
             $key = ltrim($key, '!');
             $this->delete($key);
         }

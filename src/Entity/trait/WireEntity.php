@@ -47,9 +47,8 @@ trait WireEntity
     public function __construct_entity(): void
     {
         $this->doInitializeSelfState('new');
-        $rc = new ReflectionClass(static::class);
-        $this->classname = $rc->getName();
-        $this->shortname = $rc->getShortName();
+        $this->getClassname();
+        $this->getShortName();
         $this->euid = Encoders::geUniquid($this->classname.'|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
@@ -161,12 +160,20 @@ trait WireEntity
 
     public function getClassname(): string
     {
+        if(!isset($this->classname)) {
+            $rc = new ReflectionClass(static::class);
+            $this->classname = $rc->getName();
+        }
         return $this->classname;
     }
 
     public function getShortname(
         bool $lowercase = false
     ): string {
+        if(!isset($this->shortname)) {
+            $rc = new ReflectionClass(static::class);
+            $this->shortname = $rc->getShortName();
+        }
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;

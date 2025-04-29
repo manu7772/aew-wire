@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Strings;
 use Aequation\WireBundle\Tools\Iterables;
+use Doctrine\Common\Collections\ArrayCollection;
 // Symfony
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Twig\Markup;
@@ -21,6 +22,8 @@ class Opresult implements OpresultInterface
     protected array $messages;
     protected array $actions_types = [];
     protected array $actions = [];
+    protected ArrayCollection $embeddeds;
+    protected readonly OpresultInterface $master;
 
     public function __construct()
     {
@@ -37,6 +40,7 @@ class Opresult implements OpresultInterface
     {
         $this->initActionTypes(true);
         $this->setData(null);
+        $this->embeddeds = new ArrayCollection();
         return $this;
     }
 
@@ -56,10 +60,62 @@ class Opresult implements OpresultInterface
     }
 
 
+    // EMBEDEDD-RESULTS
+
+    public function setMaster(OpresultInterface $master): static
+    {
+        if(isset($this->master) && $this->master !== $master) {
+            throw new Exception(vsprintf('Error %s line %d: opresult is already embedded elsewhere!', [__METHOD__, __LINE__]));
+        }
+        $this->master = $master;
+        return $this;
+    }
+
+    public function getMaster(): ?OpresultInterface
+    {
+        return $this->master ?? null;
+    }
+
+    public function hasMaster(): bool
+    {
+        return isset($this->master);
+    }
+
+    public function addOpresult(OpresultInterface $opresult): static
+    {
+        if($opresult->hasMaster() && $opresult->getMaster() !== $this) {
+            throw new Exception(vsprintf('Error %s line %d: opresult is already embedded elsewhere!', [__METHOD__, __LINE__]));
+        }
+        if($this->hasMaster()) {
+            throw new Exception(vsprintf('Error %s line %d: opresult is already embedded, so can not embed another Opresult!', [__METHOD__, __LINE__]));
+        }
+        if(!$this->embeddeds->contains($opresult)) {
+            $this->embeddeds->add($opresult);
+            $opresult->setMaster($this);
+        }
+        return $this;
+    }
+
+    public function getOpresults(): ArrayCollection
+    {
+        return $this->embeddeds;
+    }
+
+    public function hasOpresults(): bool
+    {
+        return $this->embeddeds->count() > 0;
+    }
+
+
     // RESULTS
 
     public function isSuccess(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isSuccess()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_SUCCESS] > 0
             && $this->actions[static::ACTION_UNDONE] === 0
             && $this->actions[static::ACTION_WARNING] === 0
@@ -69,11 +125,21 @@ class Opresult implements OpresultInterface
 
     public function hasSuccess(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->hasSuccess()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_SUCCESS] > 0;
     }
 
     public function isUndone(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isUndone()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_UNDONE] > 0
             && $this->actions[static::ACTION_SUCCESS] === 0
             && $this->actions[static::ACTION_WARNING] === 0
@@ -83,11 +149,21 @@ class Opresult implements OpresultInterface
 
     public function hasUndone(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->hasUndone()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_UNDONE] > 0;
     }
 
     public function isPartialSuccess(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isPartialSuccess()) {
+                return false;
+            }
+        }
         return ($this->actions[static::ACTION_SUCCESS] > 0 || $this->actions[static::ACTION_UNDONE] > 0)
             && ($this->actions[static::ACTION_WARNING] > 0 || $this->actions[static::ACTION_DANGER] > 0)
             ;
@@ -95,11 +171,21 @@ class Opresult implements OpresultInterface
 
     public function hasFail(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->hasFail()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_DANGER] > 0;
     }
 
     public function isFail(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isFail()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_SUCCESS] === 0
             && $this->actions[static::ACTION_DANGER] > 0
             ;
@@ -107,6 +193,11 @@ class Opresult implements OpresultInterface
 
     public function isWarning(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isWarning()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_SUCCESS] === 0
             && $this->actions[static::ACTION_UNDONE] === 0
             && $this->actions[static::ACTION_WARNING] > 0
@@ -116,6 +207,11 @@ class Opresult implements OpresultInterface
 
     public function hasWarning(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->hasWarning()) {
+                return false;
+            }
+        }
         return $this->actions[static::ACTION_WARNING] > 0;
     }
 
@@ -125,12 +221,17 @@ class Opresult implements OpresultInterface
 
     public function isContainerValid(): bool
     {
+        foreach($this->embeddeds as $opresult) {
+            if(!$opresult->isContainerValid()) {
+                return false;
+            }
+        }
         return array_sum($this->actions) > 0;
     }
 
     public function getContainer(): array
     {
-        return [
+        $container = [
             'result' => $this->hasSuccess(),
             'isSuccess' => $this->isSuccess(),
             'hasSuccess' => $this->hasSuccess(),
@@ -144,7 +245,14 @@ class Opresult implements OpresultInterface
             'data' => $this->data,
             'messages' => $this->messages,
             'cont_valid' => $this->isContainerValid(),
+            'hasEmbeddeds' => $this->hasOpresults(),
+            'hasMaster' => $this->hasMaster(),
+            'embeddeds' => [],
         ];
+        foreach($this->embeddeds as $opresult) {
+            $container['embeddeds'][] = $opresult->getContainer();
+        }
+        return $container;
     }
 
     public function getJsonContainer(): string
@@ -193,7 +301,27 @@ class Opresult implements OpresultInterface
         return $this->addResult(static::ACTION_WARNING, $messages, $inc);
     }
 
+    /**
+     * Add a danger message
+     * @param null|string|array $messages
+     * @param int $inc
+     * @return static
+     */
     public function addDanger(
+        null|string|array $messages = null,
+        int $inc = 1
+    ): static
+    {
+        return $this->addResult(static::ACTION_DANGER, $messages, $inc);
+    }
+
+    /**
+     * addError is an alias for addDanger
+     * @param null|string|array $messages
+     * @param int $inc
+     * @return static
+     */
+    public function addError(
         null|string|array $messages = null,
         int $inc = 1
     ): static
@@ -253,13 +381,23 @@ class Opresult implements OpresultInterface
     ): array|int
     {
         if(empty($types)) {
+            $actions = $this->actions;
+            foreach ($this->embeddeds as $opresult) {
+                foreach ($opresult->getActions() as $type => $count) {
+                    $actions[$type] ??= 0;
+                    $actions[$type] += $count;
+                }
+            }
             return $getTotal
-                ? array_sum($this->actions)
-                : $this->actions;
+                ? array_sum($actions)
+                : $actions;
         }
         $actions = 0;
         foreach ((array)$types as $type) {
             $actions += $this->actions[$type];
+            foreach ($this->embeddeds as $opresult) {
+                $actions += $opresult->getActions($type);
+            }
         }
         return $actions;
     }
@@ -311,9 +449,16 @@ class Opresult implements OpresultInterface
         ?string $type = null
     ): array
     {
+        $messages = $this->messages;
+        foreach($this->embeddeds as $opresult) {
+            foreach ($opresult->getMessages() as $type => $msgs) {
+                $messages[$type] ??= [];
+                $messages[$type] = array_merge($messages[$type], $msgs);
+            }
+        }
         return empty($type)
-            ? $this->messages
-            : $this->messages[$type];
+            ? $messages
+            : $messages[$type];
     }
 
     public function printMessages(
@@ -322,7 +467,7 @@ class Opresult implements OpresultInterface
     ): void
     {
         $msgtypes = empty($msgtypes) ? [] : (array)$msgtypes;
-        foreach ($this->messages as $type => $messages) {
+        foreach ($this->getMessages() as $type => $messages) {
             if((empty($msgtypes) || in_array($type, $msgtypes)) && count($messages) > 0) {
                 if($asHtmlOrIo instanceof SymfonyStyle) {
                     switch ($type) {
@@ -373,7 +518,7 @@ class Opresult implements OpresultInterface
         $ul_end = $asHtml ? '</ul>' : '';
         $li_start = $asHtml ? '<li>' : ' - ';
         $li_end = $asHtml ? '</li>' : ''.$nl;
-        foreach ($this->messages as $type => $messages) {
+        foreach ($this->getMessages() as $type => $messages) {
             if((empty($msgtypes) || in_array($type, $msgtypes)) && count($messages) > 0) {
                 if($byTypes) $string .= $asHtml ? '<div>'.$type.'</div>' : $type.$nl;
                 $string .= $ul_start;
@@ -391,12 +536,12 @@ class Opresult implements OpresultInterface
     ): bool
     {
         if(empty($type)) {
-            foreach ($this->messages as $type => $messages) {
+            foreach ($this->getMessages() as $type => $messages) {
                 if(count($messages) > 0) return true;
             }
             return false;
         }
-        return count($this->messages[$type]) > 0;
+        return count($this->getMessages()[$type]) > 0;
     }
 
     public function getMessageGlobalType(): string

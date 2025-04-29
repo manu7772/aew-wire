@@ -2,24 +2,16 @@
 
 namespace Aequation\WireBundle\Service\trait;
 
-use Aequation\WireBundle\Component\NormalizeDataContainer;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
-use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
-use Aequation\WireBundle\Serializer\EntityDenormalizer;
-use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Encoders;
-use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 // Symfony
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
-use Knp\Component\Pager\Pagination\PaginationInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Knp\Component\Pager\Pagination\PaginationInterface;
 // PHP
 use Exception;
 use ReflectionClassConstant;

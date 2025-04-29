@@ -7,6 +7,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 // PHP
 use Traversable;
 
+/**
+ * Class ArrayTextUtil
+ * @package Aequation\WireBundle\Component
+ * 
+ * Manages an array of strings
+ *
+ * @author Aequation
+ */
 class ArrayTextUtil implements ArrayTextUtilInterface
 {
 

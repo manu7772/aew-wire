@@ -130,7 +130,7 @@ class GlobalDoctrineListener
     public function onClear(
         OnClearEventArgs $event
     ): void {
-        $this->wireEm->clearCreateds();
+        $this->wireEm->getNormaliserService()->clearCreateds();
     }
 
 
