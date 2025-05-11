@@ -15,7 +15,7 @@ trait Webpageable
 
     public const HTML_TYPE = null;
 
-    #[ORM\ManyToOne(targetEntity: WireWebpageInterface::class)]
+    #[ORM\ManyToOne(targetEntity: WireWebpageInterface::class, fetch: 'EAGER')]
     #[ORM\JoinColumn(nullable: true)]
     protected ?WireWebpageInterface $webpage = null;
 
@@ -27,9 +27,9 @@ trait Webpageable
     #[Gedmo\Translatable]
     protected ?string $linktitle = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column]
     #[Gedmo\Translatable]
-    protected null|string|iterable $content = null;
+    protected array $content = [];
 
 
     public function __construct_webpageable(): void
@@ -87,12 +87,12 @@ trait Webpageable
 
     public function getContent(): ?array
     {
-        return empty($this->content) ? null : json_decode($this->content, true);
+        return $this->content;
     }
 
-    public function setContent(null|string|array $content): static
+    public function setContent(?array $content): static
     {
-        $this->content = empty($content) ? null : json_encode((array) $content);
+        $this->content = $content;
         return $this;
     }
 
