@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Aequation\WireBundle\Component\TwigfileMetadata;
 
-interface WireWebsectionInterface extends WireEntityInterface
+interface WireWebsectionInterface extends WireEntityInterface, TraitUnamedInterface
 {
     public function getMainmenu(): WireMenuInterface;
     public function setMainmenu(WireMenuInterface $mainmenu): static;

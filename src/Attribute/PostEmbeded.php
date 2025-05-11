@@ -12,6 +12,7 @@ class PostEmbeded extends BaseMethodAttribute
 
     public function __construct(
         public null|string|array $on = null,
+        public array $arguments = [],
     ) {
         if(empty($this->on)) $this->on = static::ON_VALUES;
         $this->on = (array)$this->on;
@@ -28,6 +29,11 @@ class PostEmbeded extends BaseMethodAttribute
     public function isOnLoad() 
     {
         return in_array('load', $this->on);
+    }
+
+    public function getMethodArguments(): array
+    {
+        return $this->arguments;
     }
 
 }

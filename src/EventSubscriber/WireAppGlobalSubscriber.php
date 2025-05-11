@@ -1,9 +1,11 @@
 <?php
 namespace Aequation\WireBundle\EventSubscriber;
 
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
@@ -100,42 +102,46 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onException(ExceptionEvent $event): void
     {
+        if($this->appWire->isDev()) {
+            $normalizer = $this->appWire->get(NormalizerServiceInterface::class);
+            dump($normalizer->getCreateds()->toArray());
+        }
         return;
-        // Disable control
-        if(!$this->appWire->isProd()) return;
-        if($event->getRequest()->query->get('debug', 0) === "1") {
-            return;
-        }
-        // Redirect to Exception Twig page
-        /** @var Throwable */
-        $exception = $event->getThrowable();
-        $statusCode = 500;
-        if(method_exists($exception, 'getCode') &&  $exception->getCode() > 0) {
-            $statusCode = $exception->getCode();
-        } else if(method_exists($exception, 'getStatusCode') &&  $exception->getStatusCode() > 0) {
-            $statusCode = $exception->getStatusCode();
-        }
-        switch (true) {
-            case $statusCode >= 100:
-                $twigpage_name = $this->getTemplateName($statusCode);
-                break;
-            // case $exception instanceof HttpExceptionInterface:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            // case $exception instanceof Error:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            // case $exception instanceof LogicException:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            default:
-                $twigpage_name = static::DEFAULT_ERROR_TEMPLATE;
-                break;
-        }
-        $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
-        $response ??= $this->appWire->getTwig()->render(name: $twigpage_name, context: $context);
-        // if($statusCode <= 0) dd($exception, $response);
-        $event->setResponse(new Response($response, $statusCode));
+        // // Disable control
+        // if(!$this->appWire->isProd()) return;
+        // if($event->getRequest()->query->get('debug', 0) === "1") {
+        //     return;
+        // }
+        // // Redirect to Exception Twig page
+        // /** @var Throwable */
+        // $exception = $event->getThrowable();
+        // $statusCode = 500;
+        // if(method_exists($exception, 'getCode') &&  $exception->getCode() > 0) {
+        //     $statusCode = $exception->getCode();
+        // } else if(method_exists($exception, 'getStatusCode') &&  $exception->getStatusCode() > 0) {
+        //     $statusCode = $exception->getStatusCode();
+        // }
+        // switch (true) {
+        //     case $statusCode >= 100:
+        //         $twigpage_name = $this->getTemplateName($statusCode);
+        //         break;
+        //     // case $exception instanceof HttpExceptionInterface:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     // case $exception instanceof Error:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     // case $exception instanceof LogicException:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     default:
+        //         $twigpage_name = static::DEFAULT_ERROR_TEMPLATE;
+        //         break;
+        // }
+        // $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
+        // $response ??= $this->appWire->getTwig()->render(name: $twigpage_name, context: $context);
+        // // if($statusCode <= 0) dd($exception, $response);
+        // $event->setResponse(new Response($response, $statusCode));
     }
 
     protected function getTemplateName(

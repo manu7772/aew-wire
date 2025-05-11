@@ -42,10 +42,17 @@ trait BaseRelinkCollection
         $this->parent = $parent;
         $this->relink = $relink;
         $this->relink->setOwnereuid($this->parent);
-        if($this->parent instanceof TraitDatetimedInterface) {
+        $this->synchParentLanguage();
+        $this->updateSortgroup();
+    }
+
+    #[ORM\PrePersist]
+    public function synchParentLanguage(): static
+    {
+        if($this->parent instanceof TraitDatetimedInterface && $this->parent->getLanguage()) {
             $this->relink->setLanguage($this->parent->getLanguage());
         }
-        $this->updateSortgroup();
+        return $this;
     }
 
     public function getParent(): TraitRelinkableInterface

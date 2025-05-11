@@ -12,7 +12,7 @@ interface TraitWebpageableInterface extends WireEntityInterface
     // Attributes for webpage
     public function getTitle(): ?string;
     public function setTitle(?string $title): static;
-    public function getContent(): ?string;
-    public function setContent(?string $content): static;
+    public function getContent(): ?array;
+    public function setContent(null|string|array $content): static;
 
 }

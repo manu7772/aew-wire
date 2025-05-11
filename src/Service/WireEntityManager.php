@@ -7,7 +7,9 @@ use Aequation\WireBundle\Attribute\CacheManaged;
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\EntityContainer;
 use Aequation\WireBundle\Component\EntityEmbededStatus;
+use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Component\interface\EntityContainerInterface;
+use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
@@ -19,6 +21,8 @@ use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
+use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -108,12 +112,12 @@ class WireEntityManager implements WireEntityManagerInterface
     public function isDebugMode(): bool
     {
         $is = $this->debug_mode > 0 || HttpRequest::isCli();
-        if($is) {
-            // Is debug mode, so
-            foreach ($this->getUnitOfWork()->getIdentityMap() as $oid => $value) {
-                # code...
-            }
-        }
+        // if($is) {
+        //     // Is debug mode, so
+        //     foreach ($this->getUnitOfWork()->getIdentityMap() as $oid => $value) {
+        //         # code...
+        //     }
+        // }
         return $is;
     }
     
@@ -133,6 +137,16 @@ class WireEntityManager implements WireEntityManagerInterface
     {
         $this->debug_mode = 0;
         return $this->isDebugMode();
+    }
+
+    public function isDev(): bool
+    {
+        return $this->appWire->isDev();
+    }
+
+    public function isProd(): bool
+    {
+        return $this->appWire->isProd();
     }
 
 
@@ -187,24 +201,24 @@ class WireEntityManager implements WireEntityManagerInterface
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
-    public function insertEmbededStatus(
-        BaseEntityInterface $entity
-    ): void {
-        if (!$entity->hasEmbededStatus()) {
-            new EntityEmbededStatus($entity, $this->appWire);
-            // Apply PostEmbeded events
-            $isNew = $entity->getSelfState()->isNew();
-            $attributes = Objects::getMethodAttributes($entity, PostEmbeded::class, ReflectionMethod::IS_PUBLIC);
-            foreach ($attributes as $instances) {
-                $instance = reset($instances);
-                if ($isNew && $instance->isOnCreate()) {
-                    $entity->{$instance->getMethodName()}();
-                } else if($instance->isOnLoad()) {
-                    $entity->{$instance->getMethodName()}();
-                }
-            }
-        }
-    }
+    // public function insertEmbededStatus(
+    //     BaseEntityInterface $entity
+    // ): void {
+    //     if (!$entity->hasEmbededStatus()) {
+    //         new EntityEmbededStatus($entity, $this->appWire);
+    //         // Apply PostEmbeded events
+    //         $isNew = $entity->getSelfState()->isNew();
+    //         $attributes = Objects::getMethodAttributes($entity, PostEmbeded::class, ReflectionMethod::IS_PUBLIC);
+    //         foreach ($attributes as $instances) {
+    //             $instance = reset($instances);
+    //             if ($isNew && $instance->isOnCreate()) {
+    //                 $entity->{$instance->getMethodName()}();
+    //             } else if($instance->isOnLoad()) {
+    //                 $entity->{$instance->getMethodName()}();
+    //             }
+    //         }
+    //     }
+    // }
 
     /**
      * create entity
@@ -223,12 +237,15 @@ class WireEntityManager implements WireEntityManagerInterface
         if($tryService && $service = $this->getEntityService($classname)) {
             return $service->createEntity($data, $context);
         }
+        if(!class_exists($classname)) {
+            throw new Exception(vsprintf('Error %s line %d: class %s not found!', [__METHOD__, __LINE__, $classname]));
+        }
         if(!$data || empty($data)) {
             $entity = new $classname();
             $this->postCreated($entity);
         } else {
             // Denormalize
-            $context[EntityContainerInterface::CONTEXT_CREATE_ONLY] = false;
+            $context[EntityContainerInterface::CONTEXT_DO_NOT_UPDATE] = false;
             $context[EntityContainerInterface::CONTEXT_AS_MODEL] = false;
             $normalizeContainer = new EntityContainer($this->getNormaliserService(), $classname, $data, $context);
             $entity = $this->getNormaliserService()->denormalizeEntity($normalizeContainer, $classname);
@@ -260,7 +277,7 @@ class WireEntityManager implements WireEntityManagerInterface
             $this->postCreated($model);
         } else {
             // Denormalize
-            $context[EntityContainerInterface::CONTEXT_CREATE_ONLY] = true;
+            $context[EntityContainerInterface::CONTEXT_DO_NOT_UPDATE] = true;
             $context[EntityContainerInterface::CONTEXT_AS_MODEL] = true;
             $normalizeContainer = new EntityContainer($this->getNormaliserService(), $classname, $data, $context);
             $model = $this->getNormaliserService()->denormalizeEntity($normalizeContainer, $classname);
@@ -292,69 +309,151 @@ class WireEntityManager implements WireEntityManagerInterface
     /****************************************************************************************************/
 
     /**
-     * After a entity is loaded from database, add EntityEmbededStatus and more actions...
+     * After a entity is loaded from database
      * 
      * @param BaseEntityInterface $entity
      * @return void
      */
-    public function postLoaded(
-        BaseEntityInterface $entity
-    ): void {
-        if($entity->getSelfState() && $entity->getSelfState()?->isPostLoaded() ?? false) return;
-        $entity->doInitializeSelfState('loaded', 'auto');
-        $entity->getSelfState()->setPostLoaded();
-        // Add EntityEmbededStatus is necessary
-        /** @var BaseEntityInterface&BaseMappSuperClassEntity $entity */
-        if($this->isDebugMode() || in_array(Events::postLoad, $entity::DO_EMBED_STATUS_EVENTS)) {
-            $this->insertEmbededStatus($entity);
+    public function postLoaded(BaseEntityInterface $entity): void
+    {
+        $entity->initializeSelfstate();
+        if(!$entity->getSelfState()->isExactState('loaded')) {
+            if($entity->getSelfState()->isModel()) {
+                throw new Exception(vsprintf('Error %s line %d: entity %s is a model, not an entity!', [__METHOD__, __LINE__, $entity->getClassname()]));
+            }
+            throw new Exception(vsprintf('Error %s line %d: entity %s is not loaded ONLY!', [__METHOD__, __LINE__, $entity->getClassname()]));
         }
+        if($entity->getSelfState()->isPostLoaded() ?? false) {
+            // Entity loaded events already done
+            $message = vsprintf('%s line %d: %s (id: %s) already %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->getId() ?? 'NULL', __FUNCTION__]);
+            if($this->appWire->isDev()) {
+                throw new Exception('Error '.$message);
+            }
+            $this->logger->warning('Debug '.$message);
+            return;
+        }
+        // Prepare Embedded status
+        $entity->getSelfState()->startEmbed($this->appWire, false);
+        // First apply internal events
+        $entity->getSelfState()->applyEvents();
+        // Then apply external events
+        // ...
+        $this->defaultEventActions($entity, __FUNCTION__);
     }
 
     /**
-     * After a new entity created, add it to createds list and more actions...
+     * After a new entity created
      * 
      * @param BaseEntityInterface $entity
      * @return void
      */
-    public function postCreated(
-        BaseEntityInterface $entity
-    ): void {
-        if($entity->getSelfState()?->isPostCreated() ?? false) return;
-        $this->insertEmbededStatus($entity);
-        if ($entity->getSelfState()->isEntity()) {
-            // TraitOwnerInterface
-            if ($entity instanceof TraitOwnerInterface && empty($entity->getOwner())) {
-                $user = $this->appWire->getUser();
-                if ($user) {
-                    $entity->setOwner($user);
-                } else if ($entity->isOwnerRequired()) {
-                    $userService = $this->appWire->get(WireUserServiceInterface::class);
-                    $admin = $userService->getMainAdmin();
-                    if ($admin) {
-                        $entity->setOwner($admin);
-                    } else if ($this->appWire->isDev()) {
-                        throw new Exception(vsprintf('Error %s line %d: entity %s %s has no owner!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
-                    }
-                }
+    public function postCreated(BaseEntityInterface $entity): void
+    {
+        if(!$entity->getSelfState()->isExactState('new')) {
+            if(!$entity->getSelfState()->isModel()) {
+                // dump($entity->getSelfState()->getReport());
+                throw new Exception(vsprintf('Error %s line %d: entity %s is not new ONLY (and not a MODEL either)!', [__METHOD__, __LINE__, $entity->getClassname()]));
             }
-            // TraitDatetimedInterface
-            if ($entity instanceof TraitDatetimedInterface && empty($entity->getLanguage())) {
-                if($defaultLanguage = $this->appWire->getCurrentLanguage()) {
-                    $entity->setLanguage($defaultLanguage);
-                    // Default timezone setted automatically
-                }
-            }
-            // TraitUnamedInterface
-            if ($entity instanceof TraitUnamedInterface) {
-                $this->postCreated($entity->getUname());
-            }
-            // if($service = $this->getEntityService($entity)) {
-            //     $service->postCreated($entity);
-            // }
-        } else {
-            // Model
         }
-        $entity->getSelfState()->setPostCreated();
+        if($entity->getSelfState()->isPostCreated() ?? false) {
+            // Entity created events already done
+            $message = vsprintf('%s line %d: %s (id: %s) already %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->getId() ?? 'NULL', __FUNCTION__]);
+            if($this->appWire->isDev()) {
+                throw new Exception('Error '.$message);
+            }
+            $this->logger->warning('Debug '.$message);
+            return;
+        }
+        // Prepare Embedded status
+        $entity->getSelfState()->startEmbed($this->appWire, false);
+        // First apply internal events
+        $entity->getSelfState()->applyEvents();
+        // Then apply external events
+        $this->defaultEventActions($entity, __FUNCTION__);
+    }
+
+    private function defaultEventActions(
+        BaseEntityInterface $entity,
+        string $eventName,
+    ): void
+    {
+        if($entity->getSelfState()->isModel()) return;
+        $actions = [
+            TraitOwnerInterface::class => [
+                // 'postLoaded',
+                'postCreated',
+            ],
+            TraitWebpageableInterface::class => [
+                // 'postLoaded',
+                'postCreated',
+            ],
+            TraitUnamedInterface::class => [
+                // 'postLoaded',
+                'postCreated',
+            ],
+            TraitDatetimedInterface::class => [
+                // 'postLoaded',
+                'postCreated',
+            ],
+        ];
+        foreach ($actions as $interface => $triggers) {
+            if(in_array($eventName, $triggers) && is_a($entity, $interface)) {
+                switch ($interface) {
+                    case TraitOwnerInterface::class:
+                        // TraitOwnerInterface
+                        /** @var TraitOwnerInterface $entity */
+                        if(empty($entity->getOwner())) {
+                            $user = $this->appWire->getUser();
+                            if ($user) {
+                                $entity->setOwner($user);
+                            } else if ($entity->isOwnerRequired()) {
+                                $userService = $this->appWire->get(WireUserServiceInterface::class);
+                                $admin = $userService->getMainAdmin();
+                                if ($admin) {
+                                    $entity->setOwner($admin);
+                                } else if ($this->appWire->isDev()) {
+                                    throw new Exception(vsprintf('Error %s line %d: entity %s %s has no owner!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
+                                }
+                            }
+                        }
+                        break;
+                    case TraitWebpageableInterface::class:
+                        // TraitWebpageableInterface
+                        /** @var TraitWebpageableInterface $entity */
+                        $unames = [
+                            'User' => 'wp_user_presentation',
+                        ];
+                        $uname = $unames[$entity->getShortname()] ?? null;
+                        if($uname && empty($entity->getWebpage()) && ($webpage = $this->findEntityByUname($uname))) {
+                            if($webpage->getEmbededStatus()->isContained()) $entity->setWebpage($webpage);
+                        }
+                        break;
+                    case TraitDatetimedInterface::class:
+                        // TraitDatetimedInterface
+                        /** @var TraitDatetimedInterface $entity */
+                        if(empty($entity->getLanguage())) {
+                            if($defaultLanguage = $this->appWire->getCurrentLanguage()) {
+                                $entity->setLanguage($defaultLanguage);
+                                // Default timezone setted automatically
+                            } else if($this->isDebugMode()) {
+                                foreach ($this->getNormaliserService()->getCreateds() as $ent) {
+                                    if($ent instanceof WireLanguageInterface && $ent->isPrefered()) {
+                                        $entity->setLanguage($ent);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case TraitUnamedInterface::class:
+                        // TraitUnamedInterface
+                        /** @var TraitUnamedInterface $entity */
+                        if(empty($entity->getUname())) {
+                            $this->postCreated($entity->getUname());
+                        }
+                        break;
+                }
+            }
+        }
     }
 
 
@@ -426,6 +525,9 @@ class WireEntityManager implements WireEntityManagerInterface
         string $euid
     ): ?BaseEntityInterface
     {
+        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
+            return $entity;
+        }
         $class = Encoders::getClassOfEuid($euid);
         $repo = $this->em->getRepository($class);
         $entity = $repo->findOneBy(['euid' => $euid]);
@@ -437,6 +539,9 @@ class WireEntityManager implements WireEntityManagerInterface
         bool $getData = false
     ): bool|null|array
     {
+        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
+            return true;
+        }
         $class = Encoders::getClassOfEuid($euid);
         $repo = $this->em->getRepository($class);
         $entity = $repo
@@ -455,6 +560,9 @@ class WireEntityManager implements WireEntityManagerInterface
         string $uname
     ): ?BaseEntityInterface
     {
+        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($uname))) {
+            return $entity;
+        }
         $unameOjb = $this->getRepository(Uname::class)->find($uname);
         $entity = $unameOjb instanceof UnameInterface
             ? $this->findEntityByEuid($unameOjb->getEntityEuid())
@@ -462,12 +570,25 @@ class WireEntityManager implements WireEntityManagerInterface
         return $entity instanceof BaseEntityInterface ? $entity : null;
     }
 
+    public function findUnameByUname(
+        string $uname
+    ): ?UnameInterface
+    {
+        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findUnameCreated($uname))) {
+            return $entity;
+        }
+        return $this->findEntityById(Uname::class, $uname);
+    }
+
     public function getEuidOfUname(
         string $uname
     ): ?string
     {
-        if(Encoders::isEuidFormatValid($uname)) {
-            $unameOjb = $this->getRepository(Uname::class)->find($uname);
+        if(Encoders::isUnameFormatValid($uname) || Encoders::isEuidFormatValid($uname)) {
+            if($this->isDebugMode()) {
+                $unameOjb = $this->getNormaliserService()->findCreated($uname);
+            }
+            $unameOjb ??= $this->getRepository(Uname::class)->findOneById($uname);
             if($unameOjb instanceof UnameInterface) {
                 $euid = $unameOjb->getEntityEuid();
                 if(Encoders::isEuidFormatValid($euid)) return $euid;
@@ -488,6 +609,11 @@ class WireEntityManager implements WireEntityManagerInterface
         string $uname
     ): ?string
     {
+        if($this->isDebugMode()) {
+            $entity = $this->getNormaliserService()->findCreated($uname);
+            $result = $entity ? $entity->getClassname() : $this->getNormaliserService()->tryFindCatalogueClassname($uname);
+            if($result) return $result;
+        }
         return $this->getRepository(Uname::class)->getClassnameByUname($uname);
     }
 
@@ -497,7 +623,7 @@ class WireEntityManager implements WireEntityManagerInterface
     {
         return Encoders::isEuidFormatValid($euidOrUname)
             ? Encoders::getClassOfEuid($euidOrUname)
-            : $this->getRepository(Uname::class)->getClassnameByUname($euidOrUname);
+            : $this->getClassnameByUname($euidOrUname);
     }
 
     public function getEntitiesCount(

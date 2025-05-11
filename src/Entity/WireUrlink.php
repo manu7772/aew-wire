@@ -20,7 +20,7 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
         'ux' => 'tabler:link',
         'fa' => 'fa-link'
     ];
-    public const DO_EMBED_STATUS_EVENTS = [Events::postLoad];
+    // public const DO_EMBED_STATUS_EVENTS = [Events::postLoad];
     public const RELINK_TYPE = 'URL';
 
 
@@ -47,11 +47,11 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
 
     public function getUrl(
         ?int $referenceTypeIfRoute = Router::ABSOLUTE_PATH
-    ): string
+    ): ?string
     {
-        return $this->isUrl()
+        return empty($this->mainlink) || $this->isUrl()
             ? $this->mainlink
-            : $this->__estatus->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceTypeIfRoute);
+            : $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceTypeIfRoute);
     }
 
     public function setRoute(?string $route): static

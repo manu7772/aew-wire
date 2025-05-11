@@ -1,33 +1,332 @@
 <?php
-
 namespace Aequation\WireBundle\Component;
 
+use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
+use Aequation\WireBundle\Tools\Objects;
+// Symfony
+use Doctrine\ORM\Events;
 // PHP
+use BadMethodCallException;
 use Exception;
+use ReflectionMethod;
 
+/**
+ * EntitySelfState
+ * Entity status container of useful methods
+ * 
+ * Binary operations eg.:
+ * @see https://onlinephp.io/c/29621
+ * and a end of this file
+ */
 class EntitySelfState implements EntitySelfStateInterface
 {
     private int $state = 0b00000000;
     private int $event = 0b00000000;
+    public readonly EntityEmbededStatusInterface $embededStatus;
+    public readonly AppWireServiceInterface $appWire;
 
     public function __construct(
-        private readonly BaseEntityInterface $entity,
-        string $initial_state,
-        private bool|string $debug = 'auto'
-    ) {
-        $this->state = static::STATES[$initial_state];
+        public readonly BaseEntityInterface $entity
+     ) {
+        $contructor_used = $this->entity->__selfstate_constructor_used ?? false;
+        switch (true) {
+            case $contructor_used:
+                $this->setNew();
+                break;
+            default:
+                $this->setLoaded();
+                break;
+        }
     }
 
-    public function getReport(
-        bool $asString = false
-    ): array|string
+    public function isReady(): bool
+    {
+        return isset($this->appWire);
+    }
+
+    public function isStarted(): bool
+    {
+        return isset($this->embededStatus);
+    }
+    
+    /**
+     * Start embeded status
+     * 
+     * @param AppWireServiceInterface|null $appWire
+     * @throws BadMethodCallException
+     */
+    public function startEmbed(
+        AppWireServiceInterface $appWire,
+        bool $startNow = false
+    ): bool
+    {
+        $this->appWire ??= $appWire;
+        return $startNow && !($this->embededStatus instanceof EntityEmbededStatusInterface)
+            ? $this->internalStartEmbed()
+            : $this->isStarted();
+    }
+
+    private function internalStartEmbed(): bool
+    {
+        if(!$this->isStarted()) {
+            if(!isset($this->appWire)) {
+                throw new BadMethodCallException(vsprintf('Error %s line %d: cant not start EmbededStatus, because appWire service is not set!', [__METHOD__, __LINE__]));
+            }
+            $this->embededStatus = new EntityEmbededStatus($this, $this->appWire);
+        }
+        return $this->isStarted();
+    }
+
+    public function getEmbededStatus(): ?EntityEmbededStatusInterface
+    {
+        return isset($this->embededStatus) || $this->internalStartEmbed() ? $this->embededStatus : null;
+    }
+
+
+    /*******************************************************************************************
+     * MAGIC METHODS on EntityEmbededStatus
+     */
+
+    /**
+     * Call method on embeded status
+     * 
+     * @param string $name
+     * @param array $arguments
+     * @throws BadMethodCallException
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        if (($this->isStarted() || $this->internalStartEmbed()) && method_exists($this->embededStatus, $name)) {
+            return $this->embededStatus->$name(...$arguments);
+        }
+        throw new BadMethodCallException(vsprintf('Error %s line %d: method %s not found! Maybe startEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
+    }
+
+    public function __isset(string $name)
+    {
+        return ($this->isStarted() || $this->internalStartEmbed()) && isset($this->embededStatus->$name);
+    }
+
+    public function __get(string $name)
+    {
+        if ($this->__isset($name)) {
+            return $this->embededStatus->$name;
+        }
+        throw new BadMethodCallException(vsprintf('Error %s line %d: property %s not found! Maybe startEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
+    }
+    
+    
+    /*******************************************************************************************
+     * STATES
+     */
+
+    public function isExactBinState(int $state): bool
+    {
+        return $this->state === $state;
+    }
+
+    public function isExactState(string $state): bool
+    {
+        return $this->state === static::STATES[$state];
+    }
+
+    private function setNew(): static
+    {
+        $this->state = static::STATES['new'];
+        return $this;
+    }
+
+    public function isNew(): bool
+    {
+        return ($this->state & static::STATES['new']) > 0;
+    }
+
+    private function setLoaded(): static
+    {
+        $this->state = static::STATES['loaded'];
+        return $this;
+    }
+
+    public function isLoaded(): bool
+    {
+        return ($this->state & static::STATES['loaded']) > 0;
+    }
+
+    public function setPersisted(): static
+    {
+        $this->state = $this->state | static::STATES['persisted'];
+        return $this;
+    }
+
+    public function isPersisted(): bool
+    {
+        return ($this->state & static::STATES['persisted']) > 0;
+    }
+
+    public function setUpdated(): static
+    {
+        $this->state = $this->state | static::STATES['updated'];
+        return $this;
+    }
+
+    public function isUpdated(): bool
+    {
+        return ($this->state & static::STATES['updated']) > 0;
+    }
+
+    public function setRemoved(): static
+    {
+        $this->state = $this->state | static::STATES['removed'];
+        return $this;
+    }
+
+    public function isRemoved(): bool
+    {
+        return ($this->state & static::STATES['removed']) > 0;
+    }
+
+    public function setDetached(): static
+    {
+        $this->state = $this->state | static::STATES['detached'];
+        return $this;
+    }
+
+    public function isDetached(): bool
+    {
+        return ($this->state & static::STATES['detached']) > 0;
+    }
+
+    public function isEntity(): bool
+    {
+        return !$this->isModel();
+    }
+
+    public function setModel(): static
+    {
+        $this->state = $this->state | static::STATES['model'];
+        return $this;
+    }
+
+    public function isModel(): bool
+    {
+        return ($this->state & static::STATES['model']) > 0;
+    }
+
+
+    /*******************************************************************************************
+     * EVENTS
+     */
+
+    public function applyEvents(): void
+    {
+        $attributes = Objects::getMethodAttributes($this->entity, PostEmbeded::class, ReflectionMethod::IS_PUBLIC);
+        switch (true) {
+            case $this->isNew():
+                // Starter start
+                // $this->startEmbed();
+                if(!$this->isPostCreated()) {
+                    foreach ($attributes as $instances) {
+                        /** @var PostEmbeded $instance */
+                        $instance = reset($instances);
+                        if($instance->isOnCreate()) {
+                            $this->entity->{$instance->getMethodName()}(...$instance->getMethodArguments());
+                        }
+                    }
+                    $this->setPostCreated();
+                }
+                break;
+            case $this->isLoaded():
+                // Starter start
+                // $this->startEmbed();
+                if(!$this->isPostLoaded()) {
+                    foreach ($attributes as $instances) {
+                        /** @var PostEmbeded $instance */
+                        $instance = reset($instances);
+                        if($instance->isOnLoad()) {
+                            $this->entity->{$instance->getMethodName()}(...$instance->getMethodArguments());
+                        }
+                    }
+                    $this->setPostLoaded();
+                }
+                break;
+            default:
+                throw new Exception(vsprintf('Error %s line %d: the entity status is neither new nor loaded.', [__METHOD__, __LINE__]));
+                break;
+        }
+    }
+ 
+    /**
+     * Is event done
+     * $bin is a binary value (eg. 0b00000001) or integer (eg. 1)
+     */
+    public function eventDone(
+        string|int $bin
+    ): bool
+    {
+        return $this->event & $bin > 0;
+    }
+
+    public function setPostCreated(): static
+    {
+        $this->event = $this->event | static::POST_CREATED;
+        return $this;
+    }
+
+    public function isPostCreated(): bool
+    {
+        return ($this->event & static::POST_CREATED) > 0;
+    }
+
+    public function setPostLoaded(): static
+    {
+        $this->event = $this->event | static::POST_LOADED;
+        return $this;
+    }
+
+    public function isPostLoaded(): bool
+    {
+        return ($this->event & static::POST_LOADED) > 0;
+    }
+
+    public function setPostPersisted(): static
+    {
+        $this->event = $this->event | static::POST_PERSISTED;
+        return $this;
+    }
+
+    public function isPostPersisted(): bool
+    {
+        return ($this->event & static::POST_PERSISTED) > 0;
+    }
+
+    public function setPostUpdated(): static
+    {
+        $this->event = $this->event | static::POST_UPDATED;
+        return $this;
+    }
+
+    public function isPostUpdated(): bool
+    {
+        return ($this->event & static::POST_UPDATED) > 0;
+    }
+
+
+    /*******************************************************************************************
+     * REPORT
+     */
+
+    public function getReport(bool $asString = false): array|string
     {
         $report = [
+            // entity
+            '_entity' => $this->entity->getClassname().'::'.$this->entity,
+            '_constructor_used' => $this->entity->__selfstate_constructor_used ?? false,
             // state
             '_state' => Encoders::toBin($this->state),
             'state_new'       => $this->isNew(),
@@ -58,233 +357,6 @@ class EntitySelfState implements EntitySelfStateInterface
         }
         return $report;
     }
-
-    public function isDebug(): bool
-    {
-        if (is_bool($this->debug)) {
-            return $this->debug;
-        }
-        $embs = $this->entity->getEmbededStatus();
-        return $embs instanceof EntityEmbededStatusInterface ? $embs->isDev() : false;
-    }
-
-    public function setNew(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('new');
-        $this->state = static::STATES['new'];
-        return $this;
-    }
-
-    public function isNew(): bool
-    {
-        return ($this->state & static::STATES['new']) > 0;
-    }
-
-    public function setLoaded(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('loaded');
-        $this->state = static::STATES['loaded'];
-        return $this;
-    }
-
-    public function isLoaded(): bool
-    {
-        return ($this->state & static::STATES['loaded']) > 0;
-    }
-
-    public function setPersisted(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('persisted');
-        $this->state = $this->state | static::STATES['persisted'];
-        return $this;
-    }
-
-    public function isPersisted(): bool
-    {
-        return ($this->state & static::STATES['persisted']) > 0;
-    }
-
-    public function setUpdated(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('updated');
-        $this->state = $this->state | static::STATES['updated'];
-        return $this;
-    }
-
-    public function isUpdated(): bool
-    {
-        return ($this->state & static::STATES['updated']) > 0;
-    }
-
-    public function setRemoved(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('removed');
-        $this->state = $this->state | static::STATES['removed'];
-        return $this;
-    }
-
-    public function isRemoved(): bool
-    {
-        return ($this->state & static::STATES['removed']) > 0;
-    }
-
-    public function setDetached(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('detached');
-        $this->state = $this->state | static::STATES['detached'];
-        return $this;
-    }
-
-    public function isDetached(): bool
-    {
-        return ($this->state & static::STATES['detached']) > 0;
-    }
-
-    public function isEntity(): bool
-    {
-        return !$this->isModel();
-    }
-
-    public function setModel(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('model');
-        $this->state = static::STATES['model'];
-        return $this;
-    }
-
-    public function isModel(): bool
-    {
-        $embs = $this->entity->getEmbededStatus();
-        return $embs instanceof EntityEmbededStatusInterface
-            ? $embs->isModel()
-            : ($this->state & static::STATES['model']) > 0;
-    }
-
-
-    private function isValidNewState(
-        string $state
-    ): bool {
-        switch ($state) {
-            case 'model':
-                return empty($this->state);
-                break;
-            case 'new':
-                return empty($this->state);
-                break;
-            case 'loaded':
-                return empty($this->state);
-                break;
-            case 'persisted':
-                return $this->isNew() && !$this->isRemoved() && !$this->isModel();
-                break;
-            case 'updated':
-                return ($this->isLoaded() || $this->isPersisted()) && !$this->isRemoved() && !$this->isModel();
-                break;
-            case 'removed':
-                return ((0b00000111 & $this->state) > 0) && !$this->isModel();
-                break;
-            case 'detached':
-                return !$this->isModel();
-                break;
-            // Entity Events
-            case 'event_post_created':
-                return $this->event === 0b00000000;
-                break;
-            case 'event_post_loaded':
-                return $this->event === 0b00000000;
-                break;
-            case 'event_post_persisted':
-                return $this->isPostCreated() && !$this->isPostLoaded();
-                break;
-            case 'event_post_updated':
-                return $this->isPostLoaded() && !$this->isPostCreated();
-                break;
-            default:
-                return false;
-                break;
-        }
-    }
-
-    private function exceptionOnInvalidState(
-        string $state
-    ): void {
-        if (!$this->isValidNewState($state)) {
-            $addEntity = '';
-            if($this->entity instanceof UnameInterface) {
-                $owner = $this->entity->getEntity();
-                $addEntity = vsprintf('%s>>> INFO: this UnameInterface owner is %s %s (id: %s):%s%s', [PHP_EOL, $owner->getClassname(), $owner, $owner->getId(), PHP_EOL, $owner->getSelfState()->getReport(true)]);
-                dump($this->entity, $owner);
-            }
-            throw new Exception(vsprintf('Error %s line %d: added state %s is invalid for entity %s %s (id: %s):%s%s%s', [__METHOD__, __LINE__, $state, $this->entity->getClassname(), $this->entity, $this->entity->getId(), PHP_EOL, $this->entity->getSelfState()->getReport(true), $addEntity]));
-        }
-    }
-
-
-    /**
-     * EVENTS
-     * 
-     */
-
-    /**
-     * Is event done
-     * $bin is a binary value (eg. 0b00000001) or integer (eg. 1)
-     */
-    public function eventDone(
-        string|int $bin
-    ): bool
-    {
-        return $this->event & $bin > 0;
-    }
-
-    public function setPostCreated(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('event_post_created');
-        $this->event = $this->event | static::POST_CREATED;
-        return $this;
-    }
-
-    public function isPostCreated(): bool
-    {
-        return ($this->event & static::POST_CREATED) > 0;
-    }
-
-    public function setPostLoaded(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('event_post_loaded');
-        $this->event = $this->event | static::POST_LOADED;
-        return $this;
-    }
-
-    public function isPostLoaded(): bool
-    {
-        return ($this->event & static::POST_LOADED) > 0;
-    }
-
-    public function setPostPersisted(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('event_post_persisted');
-        $this->event = $this->event | static::POST_PERSISTED;
-        return $this;
-    }
-
-    public function isPostPersisted(): bool
-    {
-        return ($this->event & static::POST_PERSISTED) > 0;
-    }
-
-    public function setPostUpdated(): static
-    {
-        if ($this->isDebug()) $this->exceptionOnInvalidState('event_post_updated');
-        $this->event = $this->event | static::POST_UPDATED;
-        return $this;
-    }
-
-    public function isPostUpdated(): bool
-    {
-        return ($this->event & static::POST_UPDATED) > 0;
-    }
-
-    
 
 }
 

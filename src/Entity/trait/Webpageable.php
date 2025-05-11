@@ -29,7 +29,7 @@ trait Webpageable
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
-    protected ?string $content = null;
+    protected null|string|iterable $content = null;
 
 
     public function __construct_webpageable(): void
@@ -60,7 +60,7 @@ trait Webpageable
 
     public function setTitle(?string $title): static
     {
-        $this->title = empty(trim($title)) ? null : trim($title);
+        $this->title = $title;
         return $this;
     }
 
@@ -71,7 +71,7 @@ trait Webpageable
 
     public function setLinktitle(?string $linktitle): static
     {
-        $this->linktitle = empty(trim($linktitle)) ? null : trim($linktitle);
+        $this->linktitle = $linktitle;
         return $this;
     }
 
@@ -79,20 +79,20 @@ trait Webpageable
     #[ORM\PreUpdate]
     public function updateLinkTitle(): static
     {
-        if(empty($this->linktitle)) {
+        if(empty($this->linktitle) && !empty($this->title)) {
             $this->setLinktitle($this->title);
         }
         return $this;
     }
 
-    public function getContent(): ?string
+    public function getContent(): ?array
     {
-        return $this->content;
+        return empty($this->content) ? null : json_decode($this->content, true);
     }
 
-    public function setContent(?string $content): static
+    public function setContent(null|string|array $content): static
     {
-        $this->content = empty(trim($content)) ? null : trim($content);
+        $this->content = empty($content) ? null : json_encode((array) $content);
         return $this;
     }
 

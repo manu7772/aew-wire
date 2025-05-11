@@ -118,7 +118,7 @@ trait Datetimed
 
     public function getLanguageChoices(): array
     {
-        return $this->languageChoices ??= $this->getEmbededStatus()->wireEntityManager->getEntityService(WireLanguage::class)->getLanguageChoices();
+        return $this->languageChoices ??= $this->getEmbededStatus()->wireEm->getEntityService(WireLanguage::class)->getLanguageChoices();
     }
 
     public function getLocale(): ?string

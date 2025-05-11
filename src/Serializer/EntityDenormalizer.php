@@ -27,6 +27,8 @@ class EntityDenormalizer implements DenormalizerInterface
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
         /** @var EntityContainerInterface $data */
+        // dump('Denormalizing '.$data->getClassname());
+        // return $data->getEntity();
         return $data->getEntityDenormalized($format, $context);
     }
 

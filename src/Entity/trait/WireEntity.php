@@ -1,10 +1,15 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Component\EntityEmbededStater;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\EntitySelfState;
+use Aequation\WireBundle\Component\interface\EntityEmbededStaterInterface;
+use Aequation\WireBundle\Component\interface\EntityEmbededStatusContainerInterface;
+use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Doctrine\DBAL\Types\Types;
 // Symfony
@@ -41,12 +46,11 @@ trait WireEntity
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
     protected int $updates = 0;
 
-    public readonly EntityEmbededStatusInterface $__estatus;
-    public readonly EntitySelfState $__selfstate;
+    public readonly EntitySelfStateInterface $__selfstate;
 
     public function __construct_entity(): void
     {
-        $this->doInitializeSelfState('new');
+        $this->initializeSelfstate();
         $this->getClassname();
         $this->getShortName();
         $this->euid = Encoders::geUniquid($this->classname.'|');
@@ -76,73 +80,54 @@ trait WireEntity
     }
 
     /*************************************************************************************
-     * SELF STATE
-     *************************************************************************************/
-
-    public function doInitializeSelfState(
-        string $state = 'auto',
-        bool|string $debug = 'auto'
-    ): void {
-        if ('auto' === $state) {
-            $state = empty($this->getId()) ? 'new' : 'loaded';
-        }
-        $this->__selfstate ??= new EntitySelfState($this, $state, $debug);
-    }
-
-    public function getSelfState(): ?EntitySelfState
-    {
-        return $this->__selfstate ?? null;
-    }
-
-    public function getSelfStateReport(
-        bool $asString = false
-    ): array|string
-    {
-        return $this->getSelfState()->getReport($asString);
-    }
-
-
-    /*************************************************************************************
      * EMBEDED STATUS
      *************************************************************************************/
 
-    public function setEmbededStatus(
-        EntityEmbededStatusInterface $estatus
-    ): void {
-        if (!isset($this->__estatus)) {
-            $this->__estatus = $estatus;
-        } else if ($this->getEmbededStatus() !== $estatus) {
-            if ($this->getEmbededStatus()->isDev()) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->getShortname(), $this->__toString(), EntityEmbededStatusInterface::class]));
-        }
+    public function initializeSelfstate(): void
+    {
+        $this->__selfstate_constructor_used ??= false;
+        $this->__selfstate = new EntitySelfState($this);
+    }
+
+    public function getSelfState(): ?EntitySelfStateInterface
+    {
+        return $this->__selfstate;
     }
 
     public function hasEmbededStatus(): bool
     {
-        $__estatus = $this->__estatus ?? null;
-        return $__estatus instanceof EntityEmbededStatusInterface;
+        return $this->getSelfState()->isReady();
     }
 
-    public function getEmbededStatus(): ?EntityEmbededStatusInterface
+    public function getEmbededStatus(bool $load = true): null|EntityEmbededStatusContainerInterface|EntityEmbededStatusInterface|EntitySelfStateInterface
     {
-        return $this->__estatus ?? null;
+        if($load && !$this->__selfstate->isReady()) {
+            $this->__selfstate->getEmbededStatus();
+        }
+        return $this->__selfstate;
     }
+
+
+    /*************************************************************************************
+     * APP WIRE IDENTIFIERS
+     *************************************************************************************/
 
     public function getEuid(): string
     {
         return $this->euid;
     }
 
-    public function setEuid(
-        string $euid
-    ): static {
-        if($this->__selfstate->isNew() || empty($this->euid ?? null)) {
-            if(!Encoders::isEuidFormatValid($euid)) {
-                throw new Exception(vsprintf('Error %s line %d: EUID "%s" is not valid!', [__METHOD__, __LINE__, $euid]));
-            }
-            $this->euid = $euid;
-        }
-        return $this;
-    }
+    // public function setEuid(
+    //     string $euid
+    // ): static {
+    //     if($this->__selfstate->isNew() || empty($this->euid ?? null)) {
+    //         if(!Encoders::isEuidFormatValid($euid)) {
+    //             throw new Exception(vsprintf('Error %s line %d: EUID "%s" is not valid!', [__METHOD__, __LINE__, $euid]));
+    //         }
+    //         $this->euid = $euid;
+    //     }
+    //     return $this;
+    // }
 
     public function getUnameThenEuid(): string
     {

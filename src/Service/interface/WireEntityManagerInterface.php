@@ -6,6 +6,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 // Symfony
@@ -50,6 +51,8 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function incDebugMode(): bool;
     public function decDebugMode(): bool;
     public function resetDebugMode(): bool;
+    public function isDev(): bool;
+    public function isProd(): bool;
 
     public function getNormaliserService(): NormalizerServiceInterface;
     public function getAppWireService(): AppWireServiceInterface;
@@ -102,7 +105,6 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getUow(): UnitOfWork;
 
     // Create
-    public function insertEmbededStatus(BaseEntityInterface $entity): void;
     public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = [], bool $tryService = true): BaseEntityInterface|false;
@@ -134,6 +136,13 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @return string|null
      */
     public function getEuidOfUname(string $uname): ?string;
+    /**
+     * find Uname by `uname`
+     * 
+     * @param string $uname
+     * @return UnameInterface|null
+     */
+    public function findUnameByUname(string $uname): ?UnameInterface;
     /**
      * find entity by unique value:
      * - `uname`

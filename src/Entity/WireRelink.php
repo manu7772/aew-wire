@@ -314,9 +314,9 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
             $this->ownereuid = $owner->getEuid();
         } else if($this->ownereuid !== $owner->getEuid()) {
             /** @var WireEntityManagerInterface */
-            $wireEm = $this->getEmbededStatus()->wireEntityManager;
+            $wireEm = $this->getEmbededStatus()->wireEm;
             $selfowner = $wireEm->findEntityByEuid($this->ownereuid);
-            throw new Exception(vsprintf('Error %s line %d: this entity %s (%s - named "%s") value ownereuid "%s" (entity %s) is already set with "%s (entity %s)"!', [__METHOD__, __LINE__, static::class, $this->getShortname(), $this->__toString(), $this->ownereuid, $selfowner->__toString(), $owner->getEuid(), $owner->__toString(), $owner->__toString()]));
+            throw new Exception(vsprintf('Error %s line %d:%s-> This %s %s "%s" value ownereuid is already set to "%s" (by %s %s "%s")!%s-> Changing the ownereuid by "%s" (%s %s "%s") is not possible!', [__METHOD__, __LINE__, PHP_EOL, $this->getSelfState()->isNew() ? 'NEW' : 'LOADED', $this->getShortname(), $this->__toString(), $this->ownereuid, $selfowner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $selfowner->getShortname(), $selfowner->__toString(), PHP_EOL, $owner->getEuid(), $owner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $owner->getShortname(), $owner->__toString()]));
         }
         return $this;
     }

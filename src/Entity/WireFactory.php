@@ -15,10 +15,12 @@ use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use Exception;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -72,6 +74,12 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
      */
     #[ORM\ManyToMany(targetEntity: WireUserInterface::class, inversedBy: 'factorys')]
     protected Collection $associates;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->associates = new ArrayCollection();        
+    }
 
     public function getFunctionality(): ?string
     {

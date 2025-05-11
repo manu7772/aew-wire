@@ -1,9 +1,19 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 
-interface EntitySelfStateInterface
+/**
+ * Interface EntitySelfStateInterface
+ * @package Aequation\WireBundle\Component\interface
+ * 
+ * @method EntityEmbededStatusInterface
+ */
+interface EntitySelfStateInterface extends EntityEmbededStatusContainerInterface
 {
+
     public const STATES = [
         'new'       => 0b00000001,
         'loaded'    => 0b00000010,
@@ -14,16 +24,30 @@ interface EntitySelfStateInterface
         'model'     => 0b01000000,
     ];
 
+    public function __construct(
+        BaseEntityInterface $entity
+    );
+
     public const POST_CREATED   = 0b00000001;
     public const POST_LOADED    = 0b00000010;
     public const POST_PERSISTED = 0b00000100;
     public const POST_UPDATED   = 0b00001000;
 
-    public function getReport(bool $asString = false): array|string;
-    public function isDebug(): bool;
-    public function setNew(): static;
+    /**
+     * Contains service, but not necessarily started yet
+     */
+    public function isReady(): bool;
+    /**
+     * Contains service and is started
+     */
+    public function isStarted(): bool;
+    public function startEmbed(AppWireServiceInterface $appWire, bool $startNow = false): bool;
+    public function getEmbededStatus(): ?EntityEmbededStatusInterface;
+    public function __call(string $name, array $arguments): mixed;
+    // status
+    public function isExactBinState(int $state): bool;
+    public function isExactState(string $state): bool;
     public function isNew(): bool;
-    public function setLoaded(): static;
     public function isLoaded(): bool;
     public function setPersisted(): static;
     public function isPersisted(): bool;
@@ -36,12 +60,14 @@ interface EntitySelfStateInterface
     public function isEntity(): bool;
     public function setModel(): static;
     public function isModel(): bool;
-
     // Events
+    public function applyEvents(): void;
     public function eventDone(string $bin): bool;
     public function setPostCreated(): static;
     public function isPostCreated(): bool;
     public function setPostLoaded(): static;
     public function isPostLoaded(): bool;
+    // Report
+    public function getReport(bool $asString = false): array|string;
 
 }

@@ -7,6 +7,7 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 // PHP
 use Attribute;
 use Exception;
@@ -14,6 +15,8 @@ use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
 use Stringable;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Throwable;
 use Twig\Markup;
 
@@ -68,6 +71,43 @@ class Objects implements ToolInterface
 
 
     /*************************************************************************************
+     * ACCESSORS
+     *************************************************************************************/
+
+    public static function newAccessor(): PropertyAccessorInterface
+    {
+        $accessor = PropertyAccess::createPropertyAccessorBuilder();
+        $accessor->enableExceptionOnInvalidIndex();
+        $accessor->enableMagicCall();
+        return $accessor->getPropertyAccessor();
+    }
+
+    public static function getPropertyValue(
+        object $object,
+        string $property
+    ): mixed
+    {
+        $accessor = static::newAccessor();
+        return $accessor->getValue($object, $property);
+    }
+
+    public static function setPropertyValue(
+        object $object,
+        string $property,
+        mixed $value
+    ): bool
+    {
+        $accessor = static::newAccessor();
+        try {
+            $accessor->setValue($object, $property, $value);
+        } catch (Throwable $th) {
+            return false;
+        }
+        return true;
+    }
+
+
+    /*************************************************************************************
      * DEBUG PRINT
      *************************************************************************************/
 
@@ -103,6 +143,13 @@ class Objects implements ToolInterface
                 break;
         }
         return Strings::markup($string);
+    }
+
+    public static function printUname(
+        null|string|UnameInterface $uname
+    ): string|array
+    {
+        return $uname instanceof UnameInterface ? $uname->getSelfState()->getReport() : json_encode($uname);
     }
 
 
@@ -322,6 +369,10 @@ class Objects implements ToolInterface
         ?string $attributeClass = null
     ): array
     {
+        if(!($objectOrClass instanceof ReflectionClass)) {
+            $classname = is_object($objectOrClass) ? $objectOrClass::class : $objectOrClass;
+            if(!class_exists($classname)) return [];
+        }
         if($objectOrClass instanceof ReflectionClass) {
             $reflClass = $objectOrClass;
             $objectOrClass = $reflClass->name;

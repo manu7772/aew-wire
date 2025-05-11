@@ -36,7 +36,7 @@ class WireWebpage extends WireItem implements WireWebpageInterface
         ],
     ];
 
-    #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage')]
+    #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $sections;
 
@@ -59,6 +59,12 @@ class WireWebpage extends WireItem implements WireWebpageInterface
     #[Gedmo\Translatable]
     protected array $content = [];
 
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->sections = new ArrayCollection();
+    }
 
     public function getMainmenu(): WireMenuInterface
     {

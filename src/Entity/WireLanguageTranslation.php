@@ -22,7 +22,7 @@ class WireLanguageTranslation extends AbstractPersonalTranslation implements Wir
         // Add other types and their corresponding icons here
     ];
     public const SERIALIZATION_PROPS = ['id','locale','field','content'];
-    public const DO_EMBED_STATUS_EVENTS = [];
+    // public const DO_EMBED_STATUS_EVENTS = [];
 
     #[ORM\ManyToOne(targetEntity: WireLanguageInterface::class, inversedBy: 'translations')]
     #[ORM\JoinColumn(name: 'object_id', referencedColumnName: 'id', onDelete: 'CASCADE')]

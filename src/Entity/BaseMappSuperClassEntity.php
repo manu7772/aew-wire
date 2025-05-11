@@ -23,14 +23,18 @@ abstract class BaseMappSuperClassEntity implements BaseEntityInterface
         // Add other types and their corresponding icons here
     ];
     public const SERIALIZATION_PROPS = ['id'];
-    public const DO_EMBED_STATUS_EVENTS = [];
+    // public const DO_EMBED_STATUS_EVENTS = [];
     // protected $id = null;
+
+
+    public readonly bool $__selfstate_constructor_used;
 
     /**
      * constructor.
      */
     public function __construct()
     {
+        $this->__selfstate_constructor_used = true;
         $this->__construct_entity();
     }
 

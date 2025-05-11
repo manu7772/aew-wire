@@ -9,6 +9,8 @@ use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Component\RelationMapper;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
@@ -40,7 +42,7 @@ use SplFileInfo;
  * @see https://symfony.com/doc/current/serializer.html
  */
 #[AsAlias(NormalizerServiceInterface::class, public: true)]
-#[Autoconfigure(autowire: true, lazy: false)]
+#[Autoconfigure(autowire: true, lazy: true)]
 class NormalizerService implements NormalizerServiceInterface
 {
     use TraitBaseService;
@@ -98,25 +100,40 @@ class NormalizerService implements NormalizerServiceInterface
     /** CREATED                                                                                         */
     /****************************************************************************************************/
 
+    // private function getCreatedIndex(BaseEntityInterface $entity): string
+    // {
+    //     if($entity->getUnameThenEuid() === 'wp_accueil') {
+    //         dump('getCreatedIndex: '.$entity->getUnameThenEuid());
+    //     }
+    //     return $entity->getUnameThenEuid();
+    // }
+
     public function addCreated(BaseEntityInterface $entity): void
     {
-        $index = spl_object_hash($entity);
+        // $index = spl_object_hash($entity);
+        // $index = $this->getCreatedIndex($entity);
+        $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.spl_object_hash($entity), $max = 50, vsprintf('Error %s line %d: entity %s already saved %d times in "createds" data!', [__METHOD__, __LINE__, $entity, $max]));
         if (!$this->hasCreated($entity)) {
-            $this->createds->set($index, $entity);
+            $this->createds->add($entity);
+            // dump('addCreated: '.$entity->getShortname().' '.($entity instanceof TraitUnamedInterface ? '' : '(X)').' > '.$entity->getUnameThenEuid().($entity instanceof UnameInterface ? ' >>> '.$entity->getId() : ''));
             // if($entity instanceof WireMenuInterface) dump($index.' => '.$entity->getName().' => U:'.$entity->getUnameName().' / Model: '.($entity->getSelfState()->isModel() ? 'true' : 'false'));
         } else {
-            $exists = $this->createds->get($index);
-            if ($this->appWire->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: entity with %s already saved in "createds" data!%s- 1 - %s %s%s- 2 - %s %s', [__METHOD__, __LINE__, $index, PHP_EOL, $entity->getClassname(), $entity, PHP_EOL, $exists->getClassname(), $exists]));
-            }
-            $this->logger->warning(vsprintf('Warning %s line %d: entity %s already saved in "createds" data as %s!', [__METHOD__, __LINE__, $entity, $exists]));
+            // $exists = $this->createds->get($index);
+            // $this->logger->warning(vsprintf('Warning %s line %d: entity %s already saved in "createds" data as %s!', [__METHOD__, __LINE__, $entity, $exists]));
+            // if ($this->appWire->isDev()) {
+            //     throw new Exception(vsprintf('Error %s line %d: entity with %s already saved in "createds" data!%s- 1 - %s %s%s- 2 - %s %s', [__METHOD__, __LINE__, $index, PHP_EOL, $entity->getClassname(), $entity, PHP_EOL, $exists->getClassname(), $exists]));
+            // }
         }
+    }
+
+    public function getCreateds(): Collection
+    {
+        return $this->createds;
     }
 
     public function hasCreated(BaseEntityInterface $entity): bool
     {
         return $this->createds->contains($entity);
-        // return $this->createds->containsKey(spl_object_hash($entity));
     }
 
     public function clearCreateds(): bool
@@ -149,10 +166,23 @@ class NormalizerService implements NormalizerServiceInterface
         foreach ($this->createds as $entity) {
             /** @var BaseEntityInterface $entity */
             if (
-                ($entity instanceof BaseEntityInterface && $entity->getEuid() === $euidOrUname)
-                || ($entity instanceof TraitUnamedInterface && $entity->getUnameName() === $euidOrUname)
+                $entity->getEuid() === $euidOrUname || $entity->getUnameThenEuid() === $euidOrUname
             ) {
-                dump('- FindCreated: => '.Objects::toDebugString($entity));
+                // dump('Found Created Index: '.$entity->getShortname().' '.($entity instanceof TraitUnamedInterface ? '' : '(X)').' > '.$euidOrUname.' > '.$entity->getUnameThenEuid());
+                return $entity;
+            }
+        }
+        // dump('NOT FOUND Created Index: '.$euidOrUname);
+        // dump($this->createds, $this->wireEm->isDebugMode());
+        // throw new Exception("Error Processing Request", 1);
+        return null;
+    }
+
+    public function findUnameCreated(string $euidOrUname): ?UnameInterface
+    {
+        foreach ($this->createds as $entity) {
+            /** @var BaseEntityInterface $entity */
+            if ($entity instanceof UnameInterface && $entity->getUname() === $euidOrUname) {
                 return $entity;
             }
         }
@@ -322,14 +352,14 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = []
     ): BaseEntityInterface {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= true;
+        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= static::DEEP_POPULATE_MODE;
         if(!($data instanceof EntityContainerInterface)) {
-            $data = new EntityContainerInterface($this, $classname, $data, $context);
+            $data = new EntityContainer($this, $classname, $data, $context);
         }
         $this->wireEm->incDebugMode();
         $entity = $this->getSerializer()->denormalize($data, $classname);
         $this->wireEm->decDebugMode();
-        $this->addCreated($entity);
+        // $this->addCreated($entity);
         return $entity;
     }
 
@@ -360,7 +390,7 @@ class NormalizerService implements NormalizerServiceInterface
         ?array $context = []
     ): mixed {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
-        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= true;
+        $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= static::DEEP_POPULATE_MODE;
         $this->wireEm->incDebugMode();
         $data = $this->getSerializer()->deserialize($data, $type, $format, $context);
         $this->wireEm->decDebugMode();
@@ -604,37 +634,6 @@ class NormalizerService implements NormalizerServiceInterface
         return $this->catalogue['uname'][$uname] ?? $this->catalogue['euid'][$uname] ?? null;
     }
 
-    // public function tryFindClassnameOfUname(
-    //     string|array $uname,
-    //     array $availableClassnames = [],
-    //     ?string $defaultClassname = null
-    // ): ?string
-    // {
-    //     if(is_string($uname)) {
-    //         $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.$uname, 10);
-    //     }
-    //     if(is_array($uname)) {
-    //         return $this->tryFindClassnameOfUname($uname['uname'], $availableClassnames, $defaultClassname);
-    //     }
-    //     if(!Encoders::isUnameFormatValid($uname)) {
-    //         throw new Exception(vsprintf('Error %s line %d: Uname %s is not valid!', [__METHOD__, __LINE__, $uname]));            
-    //     }
-    //     if($entity = $this->findEntityByUname($uname)) {
-    //         // Try in createds, then in database
-    //         $found = $entity->getClassname();
-    //     } else {
-    //         // Try in catalogue
-    //         $found = $this->tryFindCatalogueClassname($uname);
-    //     }
-    //     if($found && !empty($availableClassnames)) {
-    //         foreach ($availableClassnames as $classname) {
-    //             if(is_a($found, $classname, true)) return $found;
-    //         }
-    //     }
-    //     // dump($uname, $found, $availableClassnames, $defaultClassname);
-    //     return $found ?? $defaultClassname;
-    // }
-
     /**
      * Get compiled YAML data from a path directory
      * - compiled data contains all data for denormalization
@@ -655,7 +654,7 @@ class NormalizerService implements NormalizerServiceInterface
             if(!empty($rawData)) {
                 static::UnhumanizeEntitiesYamlData($rawData['items']);
                 foreach ($rawData['items'] as $values) {
-                    $this->logger->debug(vsprintf('Debug ***** file %s, entity %s *****', [$file->getRealPath(), $rawData['entity']]));
+                    // $this->logger->debug(vsprintf('Debug ***** file %s, entity %s *****', [$file->getRealPath(), $rawData['entity']]));
                     $new_entityContainer = new EntityContainer($this, $rawData['entity'], $values, $rawData['context'] ?? []);
                     if($new_entityContainer->isValid()) {
                         $data[$rawData['order']] ??= [];
@@ -672,28 +671,33 @@ class NormalizerService implements NormalizerServiceInterface
         ksort($data);
         // $data = array_values($data);
         $list = [];
+        $this->wireEm->incDebugMode();
         foreach ($data as $index => $byclasses) {
             if(count($byclasses) > 0) {
                 $index = $byclasses[0]->getClassname();
                 $list[$index] = [];
                 foreach ($byclasses as $values) {
                     switch ($mode_report) {
-                        case 1:
+                        case 0:
+                            // Raw data
                             $list[$index][] = $values->getRawdata();
                             break;
-                        case 2:
+                        case 1:
+                            // Raw data with extra data (actions)
                             $list[$index][] = $values->getRawdata(true);
                             break;
-                        case 3:
+                        case 2:
+                            // Compiled data
                             $list[$index][] = $values->getCompiledData();
                             break;
                         default:
-                            // Default (0): for denormalization
-                            $list[$index][] = $values;
+                            // Default (3): for denormalization
+                            $list[$index][] = $values->compile();
                     }
                 }
             }
         }
+        $this->wireEm->decDebugMode();
         return $list;
     }
 
@@ -736,8 +740,7 @@ class NormalizerService implements NormalizerServiceInterface
                     $values = ['uname' => ['uname' => $values, 'classname' => Uname::class, 'shortname' => Objects::getShortname(Uname::class)]];
                 } else if (Encoders::isEuidFormatValid($values)) {
                     $values = ['euid' => $values];
-                }
-                if (Encoders::isUnameFormatValid($unameOrEuid)) {
+                } else if (Encoders::isUnameFormatValid($unameOrEuid)) {
                     $values = array_merge(['uname' => ['uname' => $unameOrEuid, 'classname' => Uname::class, 'shortname' => Objects::getShortname(Uname::class)]], $values);
                 } else if (Encoders::isEuidFormatValid($unameOrEuid)) {
                     $values = array_merge(['euid' => $unameOrEuid], $values);
@@ -786,17 +789,31 @@ class NormalizerService implements NormalizerServiceInterface
         ?SymfonyStyle $io = null,
         bool $flush = true
     ): OpresultInterface {
-        $result = new Opresult();
+        $opresult = new Opresult();
+        $em = $this->wireEm->getEm();
         if($classname = $this->getEntityClassname($classname)) {
-            foreach ($this->getYamlData([$classname]) as $data) {
-                // Embed results
-                $result->addOpresult($this->generateEntities($data['entity'], $data['items'], $replace, $io, $flush));
+            $all_data = $this->getYamlData([$classname], 3);
+            foreach (reset($all_data) as $data) {
+                $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] = true;
+                $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] = static::DEEP_POPULATE_MODE;
+                $this->wireEm->incDebugMode();
+                $entity = $this->getSerializer()->denormalize($data, $classname, null, $context);
+                $this->wireEm->decDebugMode();
+                $opresult->addData(spl_object_hash($entity), $entity);
+                $em->persist($entity);
+                if(is_a($classname, WireUserInterface::class, true)) {
+                    dump($entity);
+                }
             }
         } else {
-            $result->addDanger(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
-            // $result->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
+            $opresult->addDanger(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
+            // $opresult->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
         }
-        return $result;
+        if($flush) {
+            dump('FLUSHING '.$classname.': '.count($opresult->getData()));
+            $em->flush();
+        }
+        return $opresult;
     }
 
     public function generateEntities(
@@ -813,7 +830,7 @@ class NormalizerService implements NormalizerServiceInterface
         if ($io) $io->writeln(vsprintf('- Génération de <info>%s</info> entités pour <info>%s</info>', [count($items), $classname]));
         $context = [
             EntityContainerInterface::CONTEXT_MAIN_GROUP => NormalizerServiceInterface::MAIN_GROUP,
-            EntityContainerInterface::CONTEXT_CREATE_ONLY => false,
+            EntityContainerInterface::CONTEXT_DO_NOT_UPDATE => false,
             EntityContainerInterface::CONTEXT_AS_MODEL => false,
         ];
         $progress = $io ? $io->progressIterate($items) : $items;
@@ -875,38 +892,35 @@ class NormalizerService implements NormalizerServiceInterface
         string $euid
     ): ?BaseEntityInterface
     {
-        return ($entity = $this->findCreated($euid))
-            ? $entity
-            : $this->wireEm->findEntityByEuid($euid);
+        return $this->wireEm->findEntityByEuid($euid);
     }
 
     public function findEntityByUname(
         string $uname
     ): ?BaseEntityInterface
     {
-        return ($entity = $this->findCreated($uname))
-            ? $entity
-            : $this->wireEm->findEntityByUname($uname);
+        return $this->wireEm->findEntityByUname($uname);
+    }
+
+    public function findUnameByUname(
+        string $uname
+    ): ?UnameInterface
+    {
+        return $this->wireEm->findEntityById(Uname::class, $uname);
     }
 
     public function getClassnameByUname(
         string $uname
     ): ?string
     {
-        $result = ($entity = $this->findCreated($uname))
-            ? $entity->getClassname()
-            : $this->wireEm->getClassnameByUname($uname);
-        return $result ? $result : $this->tryFindCatalogueClassname($uname);
+        return $this->wireEm->getClassnameByUname($uname);
     }
 
     public function getClassnameByEuidOrUname(
         string $euidOrUname
     ): ?string
     {
-        $result = ($entity = $this->findCreated($euidOrUname))
-            ? $entity->getClassname()
-            : $this->wireEm->getClassnameByEuidOrUname($euidOrUname);
-        return $result ? $result : $this->tryFindCatalogueClassname($euidOrUname);
+        return $this->wireEm->getClassnameByEuidOrUname($euidOrUname);
     }
 
     public function getRelationMapper(string $classname): RelationMapperInterface

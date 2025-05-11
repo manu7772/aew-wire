@@ -103,6 +103,13 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
      */
     public function setUname(string $uname): static
     {
+        // dump($this);
+        if($this->getSelfState()->isLoaded() && $this->id !== $uname) {
+            // Can not update Uname if already set in database
+            if($this->getEmbededStatus()->isDevOrSadmin()) {
+                throw new Exception(vsprintf('Error %s line %d:%s- Cant not update Uname as %s: Uname is already set with value %s!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname), json_encode($this->id)]));
+            }
+        }
         if (!Encoders::isUnameFormatValid($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
         if(in_array(strtolower($uname), static::RESERVED_UNAMES)) {
             throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is reserved!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));

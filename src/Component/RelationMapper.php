@@ -5,20 +5,20 @@ use Aequation\WireBundle\Attribute\SerializationMapping;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\RelationMapperInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
-use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\ORM\Mapping\ToOneAssociationMapping;
-use Doctrine\ORM\Mapping\ToManyAssociationMapping;
 use Doctrine\ORM\Mapping\AssociationMapping;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 // PHP
+use Twig\Markup;
 use Closure;
 use Exception;
 use ReflectionClass;
-use Twig\Markup;
+use Throwable;
 
 class RelationMapper implements RelationMapperInterface
 {
@@ -135,6 +135,27 @@ class RelationMapper implements RelationMapperInterface
         return $fieldMappings;
     }
 
+    public function getRelationValue(object $entity, string $field): null|object|array
+    {
+        try {
+            $value = $this->classMetadata->getFieldValue($entity, $field);
+        } catch (Throwable $th) {
+            $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
+            $value = $accessor->getValue($entity, $field);
+        }
+        return $value;
+    }
+
+    public function setRelationValue(object $entity, string $field, object|array $value): void
+    {
+        try {
+            $this->classMetadata->setFieldValue($entity, $field, $value);
+        } catch (Throwable $th) {
+            $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
+            $accessor->setValue($entity, $field, $value);
+        }
+    }
+
 
     /******************************************************************************************/
     /** RELATIONS                                                                             */
@@ -172,7 +193,8 @@ class RelationMapper implements RelationMapperInterface
 
     public function isRelationCreateOnly(string $field): bool
     {
-        return $this->getRelationMapping($field)->orphanRemoval && $this->getRelationMapping($field)->isCascadePersist();
+        $mapp = $this->getRelationMapping($field);
+        return $mapp->orphanRemoval && $mapp->isCascadePersist() && $mapp->isToOne();
     }
 
     public function isAvailableRelation(string $field, object|string $entity): bool

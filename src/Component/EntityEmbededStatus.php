@@ -1,5 +1,4 @@
 <?php
-
 namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
@@ -13,6 +12,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 // PHP
 use Exception;
+use BadMethodCallException;
+use Dom\Entity;
 
 /**
  * EntityEmbededStatus
@@ -20,13 +21,11 @@ use Exception;
  */
 class EntityEmbededStatus implements EntityEmbededStatusInterface
 {
-
-    public readonly WireEntityManagerInterface $wireEntityManager;
+    public readonly WireEntityManagerInterface $wireEm;
     public readonly WireEntityServiceInterface $service;
     public readonly EntityManagerInterface $em;
     public readonly UnitOfWork $uow;
-    public readonly bool $model;
-    public readonly EntitySelfStateInterface $selfstate;
+    public readonly BaseEntityInterface $entity;
 
     /**
      * Constructor
@@ -35,22 +34,34 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
      * @param AppWireServiceInterface $appWire
      */
     public function __construct(
-        public readonly BaseEntityInterface $entity,
+        public readonly EntitySelfStateInterface $selfstate,
         public readonly AppWireServiceInterface $appWire
     ) {
-        $this->selfstate = $entity->__selfstate;
-        // if (!isset($entity->__selfstate)) {
-        //     throw new Exception(vsprintf('Error %s line %d: %s %s (id: %s) does not contain self state %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity, $entity->getId() ?? 'NULL', EntitySelfState::class]));
-        // }
-        if ($this->selfstate->isModel()) {
-            $this->setModel();
+        $this->entity = $this->selfstate->entity;
+        $this->wireEm = $this->appWire->get(WireEntityManagerInterface::class);
+        $this->em = $this->wireEm->getEm();
+        $this->uow = $this->wireEm->getUow();
+        $this->service = $this->wireEm->getEntityService($this->entity);
+
+        // Some controls...
+        if($this->selfstate->isLoaded() && !$this->isContained()) {
+            throw new Exception(vsprintf('Error %s line %d: entity %s looks %s, but not contained in EntityManager!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->selfstate->isNew() ? 'new' : 'loaded']));
         }
-        $this->wireEntityManager = $this->appWire->get(WireEntityManagerInterface::class);
-        $this->em = $this->wireEntityManager->getEm();
-        $this->uow = $this->wireEntityManager->getUow();
-        $this->service = $this->wireEntityManager->getEntityService($this->entity);
-        $entity->setEmbededStatus($this);
     }
+
+
+    /*******************************************************************************************
+     * MAGIC METHODS on EntitySelfState
+     */
+
+    // public function __call(string $name, array $arguments): mixed
+    // {
+    //     if (method_exists($this->selfstate, $name)) {
+    //         return $this->selfstate->$name(...$arguments);
+    //     }
+    //     throw new BadMethodCallException(vsprintf('Error %s line %d: method %s not found!', [__METHOD__, __LINE__, $name]));
+    // }
+
 
     /**
      * Is dev environment
@@ -72,29 +83,34 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         return $this->appWire->isProd();
     }
 
-
-    /** MODEL */
-
     /**
-     * Set entity status to MODEL
-     *
-     * @return static
-     */
-    public function setModel(): static
-    {
-        $this->model = true;
-        $this->entity->__selfstate->setModel();
-        return $this;
-    }
-
-    /**
-     * Is entity model
+     * Is super admin
      *
      * @return boolean
      */
-    public function isModel(): bool
+    public function isSadmin(): bool
     {
-        return $this->model ?? false;
+        return $this->appWire->isGranted('ROLE_SUPER_ADMIN');
+    }
+
+    /**
+     * Is admin
+     *
+     * @return boolean
+     */
+    public function isAdmin(): bool
+    {
+        return $this->appWire->isGranted('ROLE_ADMIN');
+    }
+
+    /**
+     * Is Dev or super admin
+     *
+     * @return boolean
+     */
+    public function isDevOrSadmin(): bool
+    {
+        return $this->appWire->isDev() || $this->isSadmin();
     }
 
 

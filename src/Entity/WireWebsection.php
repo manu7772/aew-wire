@@ -6,6 +6,7 @@ use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
+use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Tools\Files;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -23,6 +24,7 @@ use InvalidArgumentException;
 #[Gedmo\TranslationEntity(class: WireWebsectionTranslationInterface::class)]
 abstract class WireWebsection extends MappSuperClassEntity implements WireWebsectionInterface
 {
+    use Unamed;
 
     public const ICON = [
         'ux' => 'tabler:section',
