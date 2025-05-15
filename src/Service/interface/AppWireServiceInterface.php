@@ -74,7 +74,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getClassService(string|object $objectOrClass): ?object;
     // Locale / Languages
     public function runWithLocale(string $locale, callable $callback): mixed;
-    public function setLocale(string $locale);
+    public function setLocale(string $locale): void;
     public function getLocale(): string;
     public function resetLocale(): static;
     // public function getCurrentLocale(): string;

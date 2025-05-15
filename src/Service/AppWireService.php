@@ -326,7 +326,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      *
      * @throws \InvalidArgumentException If the locale contains invalid characters
      */
-    public function setLocale(string $locale)
+    public function setLocale(string $locale): void
     {
         if (!WireLanguageService::isValidLocale($locale)) {
             throw new \InvalidArgumentException(vsprintf('Error %s line %d:%sInvalid locale "%s"!%sPlease choose one of %s', [__METHOD__, __LINE__, PHP_EOL, $locale, PHP_EOL, implode(', ', WireLanguageService::getAvailableLocales())]));
