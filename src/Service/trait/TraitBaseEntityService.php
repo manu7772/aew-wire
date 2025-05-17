@@ -35,7 +35,7 @@ trait TraitBaseEntityService
 
     public function getEm(): EntityManagerInterface
     {
-        return $this->getEntityManager();
+        return $this->em ??= $this->wireEm->em;
     }
 
     public function getUnitOfWork(): UnitOfWork

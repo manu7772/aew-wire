@@ -1,0 +1,18 @@
+{% extends 'admin/base.html.twig' %}
+{% import 'admin/partials/_elements.html.twig' as elements %}
+{% set trans_domain = user.shortname %}
+
+{% block title %}{{ 'actions.edit'|trans({}, trans_domain) }} {{ user }}{% endblock %}
+
+{% block main_content %}
+    <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+        <h1><span class="text-lg font-light">{{ 'actions.edit'|trans({}, trans_domain) }}</span> {{ user }}</h1>
+        <div class="flex flex-row gap-1">
+            {{ elements.button('show', user) }}
+            {{ elements.button('index', user.shortname) }}
+        </div>
+    </div>
+
+    {{ include('admin/user/_form.html.twig') }}
+
+{% endblock %}

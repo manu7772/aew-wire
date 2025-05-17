@@ -16,9 +16,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 // PHP
 use Exception;
 
+#[Route(path: '/security', name: 'app_')]
 class SecurityController extends AbstractController
 {
-    // #[Route(path: '/login', name: 'app_login')]
+    #[Route(path: '/login', name: 'login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
         // get the login error if there is one
@@ -33,19 +34,19 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    // #[Route(path: '/logout', name: 'app_logout')]
+    #[Route(path: '/logout', name: 'logout')]
     public function logout(): void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
-    #[Route(path: '/profile', name: 'app_account')]
+    #[Route(path: '/profile', name: 'account')]
     public function profile(): Response
     {
         return $this->render('@AequationWire/security/profile.html.twig');
     }
 
-    // #[Route('/profile/delete', name: 'app_profile_delete')]
+    #[Route('/profile/delete', name: 'profile_delete')]
     public function delete(
         Request $request,
         Security $security,
@@ -87,7 +88,7 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    // #[Route('/profile/edit', name: 'app_profile_edit')]
+    #[Route('/profile/edit', name: 'profile_edit')]
     public function edit(
         Request $request,
         EntityManagerInterface $entityManager
@@ -117,7 +118,7 @@ class SecurityController extends AbstractController
      * SECURITY SPECIAL ACTIONS
      */
 
-    // #[Route('/security/commands', name: 'app_security_commands')]
+    #[Route('/commands/help', name: 'security_commands.help')]
     public function commands(): JsonResponse
     {
         return new JsonResponse([
@@ -127,7 +128,7 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    // #[Route('/security/check-sadmin', name: 'app_security_check_sadmin')]
+    #[Route('/commands/check-sadmin', name: 'security_commands.check_sadmin')]
     public function checkSadmin(
         WireUserServiceInterface $userService
     ): Response

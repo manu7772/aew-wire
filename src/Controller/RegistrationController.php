@@ -14,20 +14,21 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
+#[Route('/register', name: 'app_')]
 class RegistrationController extends AbstractController
 {
 
-    // #[Route('/register', name: 'app_register')]
+    #[Route('', name: 'register')]
     public function register(
         Request $request,
         // UserPasswordHasherInterface $userPasswordHasher,
         Security $security,
         EntityManagerInterface $entityManager,
         WireUserServiceInterface $userService,
-        TranslatorInterface $translator
+        // TranslatorInterface $translator
     ): Response
     {
-        $this->denyAccessUnlessGranted('new', 'User', $translator->trans('access_denied'));
+        // $this->denyAccessUnlessGranted('new', 'User', $translator->trans('access_denied'));
         /** @var WireUser */
         $user = $userService->createEntity();
         $form = $this->createForm(RegistrationFormType::class, $user);

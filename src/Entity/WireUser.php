@@ -139,10 +139,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public function isEqualTo(UserInterface $user): bool
     {
         /** @var WireUserInterface $user */
-        return
-            $user->getEmail() === $this->getEmail()
-            && $user->getId() === $this->getId()
-            ;
+        return $user->getId() === $this->getId();
     }
 
     /**

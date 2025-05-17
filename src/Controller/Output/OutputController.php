@@ -11,7 +11,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
-#[Route('/output', name: 'output_')]
+#[Route('/output', name: 'output.')]
 class OutputController extends AbstractController
 {
 

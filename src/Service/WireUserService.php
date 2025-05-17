@@ -211,13 +211,13 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
             return $this->isGranted($attributes, $object);
         }
         $firewallName ??= $this->appWire->getFirewallName();
-        $publics = $this->appWire->getPublicFirewalls();
-        if(!in_array($firewallName, $publics)) {
-            if($this->appWire->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: could not determine user for firewall %s!', [__METHOD__, __LINE__, $firewallName]));
-            }
-            $firewallName = $this->appWire->getFirewallName();
-        }
+        // $publics = $this->appWire->getPublicFirewalls();
+        // if(!in_array($firewallName, $publics)) {
+        //     if($this->appWire->isDev()) {
+        //         throw new Exception(vsprintf('Error %s line %d: could not determine user for firewall %s!', [__METHOD__, __LINE__, $firewallName]));
+        //     }
+        //     $firewallName = $this->appWire->getFirewallName();
+        // }
         $attributes = (array)$attributes;
         $token = new UsernamePasswordToken($user, $firewallName, $user->getRoles());
         return $this->accessDecisionManager->decide($token, $attributes, $object);
@@ -336,12 +336,12 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         WireUserInterface $subordinate
     ): bool
     {
-        throw new Exception(vsprintf('Error %s line %d: method %s not implemented!', [__METHOD__, __LINE__, __METHOD__]));
-        // if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
-        //     foreach ($subordinate->getRoles() as $role) {
-        //         if(!$this->isUserGranted($manager, $role)) return false;
-        //     }
-        // }
+        // throw new Exception(vsprintf('Error %s line %d: method %s not implemented!', [__METHOD__, __LINE__, __METHOD__]));
+        if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
+            foreach ($subordinate->getRoles() as $role) {
+                if(!$this->isUserGranted($manager, $role)) return false;
+            }
+        }
         return true;
     }
 
@@ -362,7 +362,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
         if(count($errors) > 0) {
             throw new Exception(vsprintf('Error %s line %d: %s', [__METHOD__, __LINE__, $errors]));
         }
-        $this->em->flush();
+        $this->getEm()->flush();
         return $this;
     }
 

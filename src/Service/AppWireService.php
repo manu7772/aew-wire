@@ -1528,12 +1528,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $name = Objects::getShortname($name, true);
         }
         $name = strtolower($name);
-        $user ??= $this->userService->getUser();
+        $user ??= $this->getUser();
         $action = strtolower($action);
         $is_public = $firewall
             ? in_array($firewall, static::PUBLIC_FIREWALLS)
-            : $this->isPublicFirewall();
-        if($this->userService->isUserGranted($user, $action, $subject, $firewall)) {
+            : $this->isPublic();
+        if($this->isUserGranted($user, $action, $subject, $firewall)) {
             $prefix = $is_public ? 'app_' : 'admin_';
             $route = $prefix.$name.'_'.$action;
             if($this->routeExists($route)) return $route;
@@ -1555,7 +1555,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             if(in_array($action, ['show','edit','delete']) && is_object($subject) && !isset($route_params['id'])) {
                 $route_params['id'] = $subject->getId();
             }
-            $url = $this->router->generate($route, $route_params, $referenceType);
+            $url = $this->get('router')->generate($route, $route_params, $referenceType);
             return empty($url) ? false : $url;
         }
         return false;
@@ -1574,7 +1574,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             if(in_array($action, ['show','edit','delete']) && is_object($subject) && !isset($route_params['id'])) {
                 $route_params['id'] = $subject->getId();
             }
-            $url = $this->router->generate($route, $route_params, $referenceType);
+            $url = $this->get('router')->generate($route, $route_params, $referenceType);
             return empty($url) ? false : $url;
         }
         return false;

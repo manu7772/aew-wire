@@ -31,103 +31,88 @@ use RuntimeException;
  */
 class ExtraLoader implements LoaderInterface
 {
-    private $loaded = false;
     private ?LoaderResolverInterface $loderResolver;
-    private array $routenames = [];
+    private $loaded = false;
+    private array $controllers;
 
-    public function __construct(
-        private WireEntityManagerInterface $wire_em
-    ) {}
+    // public function __construct(
+    //     private WireEntityManagerInterface $wire_em
+    // ) {}
+
+    /**
+     * Get all controllers Route informations in the Aequation\WireBundle\Controller namespace
+     * 
+     * @return array
+     */
+    public function getControllersList(): array
+    {
+        if(isset($this->controllers)) {
+            return $this->controllers;
+        }
+        $this->controllers = [];
+        foreach(get_declared_classes() as $class) {
+            if (preg_match('/^Aequation\\\WireBundle\\\Controller\\\/', $class)) {
+                $reflectionClass = new ReflectionClass($class);
+                $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+                $this->controllers[$class] = [
+                    'reflectionClass' => $reflectionClass,
+                    'reflectionMethods' => $methods,
+                    'classRoutes' => [],
+                    'attributeRoutes' => [],
+                    'routes' => [],
+                ];
+                // Class Routes
+                $prefix_routename = null;
+                $prefix_path = null;
+                $attributes = $reflectionClass->getAttributes(AttributeRoute::class);
+                foreach ($attributes as $attribute) {
+                    // Add the Class Route attribute
+                    $routeAttr = $attribute->newInstance();
+                    $this->controllers[$class]['classRoutes'][] = $routeAttr;
+                    $prefix_routename ??= $routeAttr->getName();
+                    $prefix_path ??= $routeAttr->getPath();
+                }
+                // Method Routes
+                foreach ($methods as $method) {
+                    $attributes = $method->getAttributes(AttributeRoute::class);
+                    foreach ($attributes as $attribute) {
+                        // Add the Route attribute
+                        $routeAttr = $attribute->newInstance();
+                        $this->controllers[$class]['attributeRoutes'][] = $routeAttr;
+                        $routename = $prefix_routename.$routeAttr->getName();
+                        if (isset($this->controllers[$class]['routes'][$routename])) {
+                            throw new RuntimeException(vsprintf('Error %s line %d: Route name "%s" already exists in class "%s"', [__METHOD__, __LINE__, $routename, $class.'::'.$method->getName()]));
+                        }
+                        $this->controllers[$class]['routes'][$routename] = new Route(
+                            path: $prefix_path.$routeAttr->getPath(),
+                            defaults: array_merge(['_controller' => $class.'::'.$method->getName()], $routeAttr->getDefaults()),
+                            requirements: $routeAttr->getRequirements(),
+                            options: $routeAttr->getOptions(),
+                            host: $routeAttr->getHost(),
+                            schemes: $routeAttr->getSchemes(),
+                            methods: $routeAttr->getMethods(),
+                            condition: $routeAttr->getCondition()
+                        );
+                    }
+                }
+            }
+        }
+        return $this->controllers;
+    }
 
     public function load($resource, $type = null): mixed
     {
         if (true === $this->loaded) {
             throw new RuntimeException(vsprintf('Error %s line %d: Do not add the "%s" loader twice', [__METHOD__, __LINE__, __CLASS__]));
         }
-
         $routes = new RouteCollection();
-
-        // Darkmode Switcher
-        $path = '/api/darkmode/{darkmode}';
-        $defaults = [
-            '_controller' => AppWireController::class . '::darkmodeSwitcher',
-            'darkmode' => 'auto',
-        ];
-        $requirements = ['darkmode' => '/(on|off|auto)/'];
-        $methods = ['GET', 'POST'];
-        $route = new Route(path: $path, defaults: $defaults, requirements: $requirements, methods: $methods);
-        $this->routenames['aequation_wire_api.darkmode_switcher'] = $route;
-        $routes->add('aequation_wire_api.darkmode_switcher', $route);
-
-        // Security
-        // Login
-        $path = '/login';
-        $defaults = ['_controller' => SecurityController::class . '::login'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_login'] = $route;
-        $routes->add('app_login', $route);
-        // Logout
-        $path = '/logout';
-        $defaults = ['_controller' => SecurityController::class . '::logout'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_logout'] = $route;
-        $routes->add('app_logout', $route);
-        // profile/delete
-        $path = '/profile/delete';
-        $defaults = ['_controller' => SecurityController::class . '::delete'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_profile_delete'] = $route;
-        $routes->add('app_profile_delete', $route);
-        // profile/edit
-        $path = '/profile/edit';
-        $defaults = ['_controller' => SecurityController::class . '::edit'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_profile_edit'] = $route;
-        $routes->add('app_profile_edit', $route);
-
-        // Register
-        $path = '/register';
-        $defaults = ['_controller' => RegistrationController::class . '::register'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_register'] = $route;
-        $routes->add('app_register', $route);
-
-        // Security/commands
-        $path = '/security/commands';
-        $defaults = ['_controller' => SecurityController::class . '::commands'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_security_commands'] = $route;
-        $routes->add('app_security_commands', $route);
-        // Security/check-superadmin
-        $path = '/security/check-sadmin';
-        $defaults = ['_controller' => SecurityController::class . '::checkSadmin'];
-        $route = new Route(path: $path, defaults: $defaults);
-        $this->routenames['app_security_check_sadmin'] = $route;
-        $routes->add('app_security_check_sadmin', $route);
-
-        // Admin entities
-        $reflectionClass = new ReflectionClass(EntityAdminController::class);
-        $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
-        foreach ($methods as $method) {
-            $attributes = $method->getAttributes(AttributeRoute::class);
-            foreach ($attributes as $attribute) {
-                $routeAttr = $attribute->newInstance();
-                $route = new Route(
-                    path: $routeAttr->getPath(),
-                    defaults: $routeAttr->getDefaults(),
-                    requirements: $routeAttr->getRequirements(),
-                    options: $routeAttr->getOptions(),
-                    host: $routeAttr->getHost(),
-                    schemes: $routeAttr->getSchemes(),
-                    methods: $routeAttr->getMethods(),
-                    condition: $routeAttr->getCondition()
-                );
-                $this->routenames[$routeAttr->getName()] = $route;
-                $routes->add($routeAttr->getName(), $route);
+        foreach ($this->getControllersList() as $data) {
+            foreach ($data['routes'] as $routename => $route) {
+                $routes->add($routename, $route);
             }
         }
         $this->loaded = true;
-        // dump(array_keys($this->routenames));
+        // dump($routes);
         return $routes;
     }
 

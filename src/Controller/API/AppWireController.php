@@ -14,7 +14,7 @@ use Exception;
 class AppWireController extends AbstractController
 {
 
-    // #[Route('/darkmode/{darkmode}', name: 'darkmode_switcher', defaults: ['darkmode' => null], methods: ['GET','POST'])]
+    #[Route('/darkmode/{darkmode}', name: 'darkmode_switcher', defaults: ['darkmode' => null], methods: ['GET','POST'])]
     public function darkmodeSwitcher(
         AppWireServiceInterface $appWire,
         string $darkmode = 'auto'
