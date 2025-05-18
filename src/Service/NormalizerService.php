@@ -801,16 +801,13 @@ class NormalizerService implements NormalizerServiceInterface
                 $this->wireEm->decDebugMode();
                 $opresult->addData(spl_object_hash($entity), $entity);
                 $em->persist($entity);
-                if(is_a($classname, WireUserInterface::class, true)) {
-                    dump($entity);
-                }
             }
         } else {
             $opresult->addDanger(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
             // $opresult->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
         }
         if($flush) {
-            dump('FLUSHING '.$classname.': '.count($opresult->getData()));
+            // dump('FLUSHING '.$classname.': '.count($opresult->getData()));
             $em->flush();
         }
         return $opresult;
