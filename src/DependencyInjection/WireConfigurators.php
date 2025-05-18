@@ -133,12 +133,10 @@ Class WireConfigurators
                 }
                 break;
             case 'Tailwind':
-                trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available for now.', [__METHOD__, __LINE__]), E_USER_ERROR);
-                $input_css = $container->hasParameter('symfonycasts_tailwind.input_css') ? $container->getParameter('symfonycasts_tailwind.input_css') : [];
-                $input_css = array_unique(array_merge(['./vendor/aequation/wire/assets/styles/wire.css'], $input_css));
+                // trigger_error(vsprintf('OPTION "%s" (mode %s) NOT SUPPORTED YET %s line %d: this option is not available for now.', [$name, $asPrepend ? "PREPEND" : "NORMAL", __METHOD__, __LINE__]), E_USER_ERROR);
                 if($asPrepend) {
                     $container->prependExtensionConfig('symfonycasts_tailwind', [
-                        'input_css' => $input_css,
+                        'input_css' => ['%kernel.project_dir%/vendor/aequation/wire/assets/styles/wire.css'],
                         // 'output_css' => 'assets/aequation/wire/styles/wire.css',
                         // 'output_dir' => 'assets/aequation/wire/styles',
                         // 'purge_css' => [
@@ -148,9 +146,10 @@ Class WireConfigurators
                         //     'whitelist' => [],
                         // ],
                     ]);
+                    // dd($container->getExtensionConfig('symfonycasts_tailwind'));
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
-                    $container->setParameter('symfonycasts_tailwind.input_css', $input_css);
+                    // $container->setParameter('symfonycasts_tailwind.input_css', $input_css);
                 }
                 break;
             case 'VichUploader':
@@ -170,23 +169,24 @@ Class WireConfigurators
                 }
                 break;
             case 'AssetMapper':
-                trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available for now.', [__METHOD__, __LINE__]), E_USER_ERROR);
+                // trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available (%s) for now.', [__METHOD__, __LINE__, $asPrepend ? 'loaded as PREPREND' : 'loaded regularly']), E_USER_ERROR);
                 if(static::isAssetMapperAvailable($container)) {
                     if($asPrepend) {
-                        $container->prependExtensionConfig('framework', [
+                        $config = [
                             'asset_mapper' => [
                                 'paths' => static::getAssetMapperPaths(),
                                 // 'importmap_path' => AequationWireBundle::getPackagePath('/assets/wire_importmap.php'),
                             ],
-                        ]);
-                        // $config = $container->getExtensionConfig('framework');
+                        ];
                         // dd($config);
+                        $container->prependExtensionConfig('framework', $config);
+                        // dd($container->getExtensionConfig('framework'));
                     } else {
-                        trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                        trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_ERROR);
                         throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]));
                     }
                 } else {
-                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]), E_USER_ERROR);
                     throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured because AssetMapperInterface is not available!', [__METHOD__, __LINE__, $name]));
                 }
                 break;
@@ -206,7 +206,7 @@ Class WireConfigurators
                 return is_file($file);
             }
         }
-        dd('AssetMapperInterface not available');
+        trigger_error(vsprintf('AssetMapperInterface not available %s line %d: this option is not available for now.', [__METHOD__, __LINE__]), E_USER_ERROR);
         return false;
     }
 
@@ -305,8 +305,7 @@ Class WireConfigurators
     {
         $paths = [
             'assets/' => 'assets/',
-            // AequationWireBundle::getPackagePath('/assets') => AequationWireBundle::getPackagePath('/assets'),
-            // AequationWireBundle::getPackagePath('/assets/dist') => '@aequation/wire',
+            AequationWireBundle::getPackagePath('/assets') => '@aequation/wire',
         ];
         return $paths;
     }

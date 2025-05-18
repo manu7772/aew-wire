@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app.locale }}" class="{{ darkmode() ? 'dark' }}" data-darkmode-switcher-url="{{ url('aequation_wire_api.darkmode_switcher') }}">
+<html lang="{{ app.locale }}" class="{{ app.darkmode() ? 'dark' }}" data-darkmode-switcher-url="{{ url('aequation_wire_api.darkmode_switcher') }}">
     <head>
         <meta charset="UTF-8">
         <meta name="turbo-refresh-scroll" content="preserve">
@@ -9,12 +9,12 @@
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('admin') }}{% endblock %}
+            {% block importmap %}{{ importmap('@aequation/wire-bundle') }}{% endblock %}
         {% endblock %}
     </head>
     <body {{ stimulus_controller('globalapp') }}>
         <!-- Header fixed row -->
-        {{ include('admin/partials/_flowbite_navbar.html.twig', {}, true) }}
+        {{ include('@AequationWire/admin/partials/_flowbite_navbar.html.twig', {}, true) }}
         <div class="flex flex-col gap-0 h-screen justify-between">
             <div class="pt-12 bg-color-theme text-color-theme h-full min-h-fit">
                 <div class="w-full max-w-7xl mx-auto max-xl:px-4 pb-32">
@@ -22,12 +22,12 @@
                     {% block main_content %}
                     <h1>Administration</h1>
                     {% endblock %}
-                    {# {{ include('admin/partials/_drawer.html.twig', {}, true) }} #}
-                    {# {{ include('admin/partials/_dialog.html.twig', {}) }} #}
+                    {# {{ include('@AequationWire/admin/partials/_drawer.html.twig', {}, true) }} #}
+                    {# {{ include('@AequationWire/admin/partials/_dialog.html.twig', {}) }} #}
                 </div>
             </div>
             <!-- Footer -->
-            {{ include('admin/partials/_footer.html.twig', {}, true) }}
+            {{ include('@AequationWire/admin/partials/_footer.html.twig', {}, true) }}
         </div>
     </body>
 </html>

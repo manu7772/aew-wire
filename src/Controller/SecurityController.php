@@ -15,6 +15,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 // PHP
 use Exception;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route(path: '/security', name: 'app_')]
 class SecurityController extends AbstractController
@@ -40,12 +41,14 @@ class SecurityController extends AbstractController
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
+    #[IsGranted("ROLE_USER")]
     #[Route(path: '/profile', name: 'account')]
     public function profile(): Response
     {
         return $this->render('@AequationWire/security/profile.html.twig');
     }
 
+    #[IsGranted("ROLE_USER")]
     #[Route('/profile/delete', name: 'profile_delete')]
     public function delete(
         Request $request,
@@ -88,6 +91,7 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    #[IsGranted("ROLE_USER")]
     #[Route('/profile/edit', name: 'profile_edit')]
     public function edit(
         Request $request,

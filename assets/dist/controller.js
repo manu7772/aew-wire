@@ -7,9 +7,9 @@ class default_1 extends Controller
 {
     static targets = ['viewValue']
 
-    // initialize() {
-    //     console.debug('--- Initializing DataTable', this.viewValue)
-    // }
+    initialize() {
+        console.debug('--- Initializing DataTable', this.viewValue)
+    }
 
     connect() {
         if(!datatable) {

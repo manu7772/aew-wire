@@ -22,10 +22,10 @@ class AequationWireExtension extends Extension implements PrependExtensionInterf
         "Framework" => true,
         'Twig' => true,
         'TwigComponent' => true,
-        'Tailwind' => false, // --> disabled for now
+        'Tailwind' => true,
         // 'VichUploader' => false,
         'LiipImagine' => true,
-        'AssetMapper' => false, // --> disabled for now
+        'AssetMapper' => true,
     ];
 
     public function load(array $configs, ContainerBuilder $container): void
