@@ -45,7 +45,7 @@ class OutputController extends AbstractController
     public function pdfOutputAction(
         string $pdf,
         string $action = 'inline',
-        string $paper = null,
+        ?string $paper = null,
         string $orientation = 'portrait'
     ): Response
     {

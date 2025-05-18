@@ -66,7 +66,9 @@ trait Datetimed
     }
 
     #[ORM\PreUpdate]
-    public function updateUpdatedAt(LifecycleEventArgs $args = null): static
+    public function updateUpdatedAt(
+        ?LifecycleEventArgs $args = null
+    ): static
     {
         $this->setUpdatedAt();
         return $this;
@@ -86,7 +88,9 @@ trait Datetimed
     }
 
     #[ORM\PrePersist]
-    public function updateCreatedAt(LifecycleEventArgs $args = null): static
+    public function updateCreatedAt(
+        ?LifecycleEventArgs $args = null
+    ): static
     {
         $this->setCreatedAt();
         return $this;

@@ -61,8 +61,8 @@ class Files implements ToolInterface
      * @return array
      */
     public static function listFiles(
-        string $path = null,
-        array|Closure $filter = null,
+        ?string $path = null,
+        null|array|Closure $filter = null,
         int $depth = 1,
     ): array
     {

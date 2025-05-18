@@ -26,8 +26,12 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Knp\Component\Pager\PaginatorInterface;
 // PHP
 use Exception;
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-abstract class WireUserService extends RoleHierarchy implements WireUserServiceInterface
+#[AsAlias(WireUserServiceInterface::class, public: true)]
+#[Autoconfigure(autowire: true, lazy: false)]
+class WireUserService extends RoleHierarchy implements WireUserServiceInterface
 {
 
     USE TraitBaseService;
@@ -122,7 +126,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
      * Check if main SUPER ADMIN user (Webmaster) is still ROLE_SUPER_ADMIN
      * Check if enabled and verified, too
      * If not, restore ROLE_SUPER_ADMIN status and FLUSH changes in database
-     * 
+     *
      * @return WireUserInterface|null
      */
     public function checkMainSuperadmin(): ?WireUserInterface
@@ -182,7 +186,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
      * @return boolean
      */
     public function isGranted(
-        $attribute, 
+        $attribute,
         $subject = null
     ): bool
     {
@@ -244,7 +248,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
 
         /**
      * Get roles map
-     * 
+     *
      * UserService.php on line 222:
      * array:4 [▼
      *   "ROLE_COLLABORATOR" => array:1 [▼
@@ -267,7 +271,7 @@ abstract class WireUserService extends RoleHierarchy implements WireUserServiceI
      *       4 => "ROLE_USER"
      *   ]
      * ]
-     * 
+     *
      * @return array
      */
     public function getRolesMap(): array
