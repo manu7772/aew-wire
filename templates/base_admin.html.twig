@@ -19,7 +19,7 @@
                 <div class="w-full max-w-7xl mx-auto max-xl:px-4 pb-32">
                     <!-- Main content -->
                     {% block main_content %}
-                    <h1>Administration</h1>
+                    <h1>Administration {{ app.factory.name|default('Website') }}</h1>
                     {% endblock %}
                     {# {{ include('@AequationWire/admin/partials/_drawer.html.twig', {}, true) }} #}
                     {# {{ include('@AequationWire/admin/partials/_dialog.html.twig', {}) }} #}
@@ -28,5 +28,6 @@
             <!-- Footer -->
             {{ include('@AequationWire/admin/partials/_footer.html.twig', {}, true) }}
         </div>
+        {% include "@AequationWire/partials/_flashes.html.twig" %}
     </body>
 </html>
