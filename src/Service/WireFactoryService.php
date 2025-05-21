@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 
@@ -9,6 +10,11 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
 {
 
     public const ENTITY_CLASS = WireFactory::class;
+
+    public function getPreferedFactory(): ?WireFactoryInterface
+    {
+        return $this->getRepository()->findOneBy(['prefered' => true]);
+    }
 
     public function checkDatabase(
         ?OpresultInterface $opresult = null,

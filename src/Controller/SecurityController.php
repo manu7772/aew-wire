@@ -15,6 +15,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 // PHP
 use Exception;
+use LogicException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route(path: '/security', name: 'app_')]
@@ -38,7 +39,7 @@ class SecurityController extends AbstractController
     #[Route(path: '/logout', name: 'logout')]
     public function logout(): void
     {
-        throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+        throw new LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
     #[IsGranted("ROLE_USER")]

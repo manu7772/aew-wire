@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 // Symfony
@@ -25,6 +26,7 @@ use Twig\Markup;
 use DateTimeImmutable;
 use DateTimeZone;
 use JsonSerializable;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use UnitEnum;
 
 interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface, LocaleAwareInterface
@@ -37,6 +39,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
         'timezone' => true,
         'datenow' => true,
         'tinyvalues' => 'mergeTinyvalues',
+        'factory' => 'setFactory',
     ];
     public const SECONDARY_PATHS_PATTERN = '#^\\/(_(profiler|wdt)|css|images|js|assets)\\/#';
     public const APP_WIRE_SESSION_PREFIX = 'appwire_';
@@ -107,6 +110,9 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getParameterBag(): ParameterBagInterface;
     public function getParam(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
     public function getParameter(string $name, array|bool|string|int|float|UnitEnum|null $default = null): array|bool|string|int|float|UnitEnum|null;
+    // Current Factory
+    public function getFactory(): ?WireFactoryInterface;
+    public function setFactory(mixed $factory): static;
     // Stopwatch
     public function startStopwatch(): static;
     public function getStopwatch(): ?Stopwatch;
@@ -135,6 +141,9 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getCurrentDatetime(): DateTimeImmutable;
     public function getCurrentDatetimeFormated(string $format = DATE_ATOM): string;
     public function getCurrentYear(): string;
+    // Flashes
+    public function getFlashBag(): ?FlashBagInterface;
+    public function addFlash(string $type, string $message): void;
     // Environment / Security
     public function isGranted(mixed $attributes, mixed $subject = null): bool;
     public function isUserGranted(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;

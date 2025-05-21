@@ -1,6 +1,6 @@
 {
     "name": "@aequation/wire",
-    "description": "DataTables integration for Symfony",
+    "description": "Utilities integration for Symfony",
     "license": "MIT",
     "version": "1.0.0",
     "keywords": [
@@ -10,33 +10,32 @@
     "files": [
         "dist"
     ],
-    "main": "dist/controller.js",
+    "main": "dist/toastr_controller.js",
     "symfony": {
         "controllers": {
-            "datatable": {
-                "main": "dist/controller.js",
+            "toastr": {
+                "main": "dist/toastr_controller.js",
                 "fetch": "eager",
-                "webpackMode": "eager",
                 "enabled": true,
                 "autoimport": {
-                    "simple-datatables/dist/style.min.css": true
+                    "toastr/build/toastr.min.css": true
                 }
             }
         },
         "importmap": {
             "@hotwired/stimulus": "^3.2.2",
             "flowbite": "^3.1.2",
-            "simple-datatables": "10.0.0"
+            "toastr": "^2.1.4"
         }
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
-        "simple-datatables": "10.0.0"
+        "toastr": "^2.1.4"
     },
-    "devDependencies": {
+    "DevDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
-        "simple-datatables": "10.0.0"
+        "toastr": "^2.1.4"
     }
 }

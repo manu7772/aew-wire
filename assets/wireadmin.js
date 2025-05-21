@@ -14,7 +14,7 @@ import './styles/wire.css'
 // import './fontawesome-free-6.5.1-web/css/all.min.css'
 // import './styles/video.css'
 
-console.log('Hello, wireadmin!')
+// alert('Hello, wireadmin!')
 
 document.addEventListener('turbo:render', () => {
     initFlowbite()

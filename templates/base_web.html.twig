@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html{{ component('html_element_attributes') }}>
-	<head>
-		<meta charset="{{ app.charset }}">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>{% block title %}Website{% endblock %}</title>
-		{% block favicon %}
-		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', asset('favicons/favicon.svg'))) }}{% endblock %}">
-		{% endblock %}
+    <head>
+        <meta charset="{{ app.charset }}">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
-		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}
         {% endblock %}
-		{% block javascripts %}
-			{% block importmap %}{{ importmap('app') }}{% endblock %}
-		{% endblock %}
-		{{ app.getTurboMetas() }}
-	</head>
-	<body id="app">
-		<div class="max-w-7xl px-4 mt-4 pb-24 mx-auto">
-			{% block body %}
-			<h5>Base web from Aequation Wire Bundle</h5>
-			{% endblock %}
-		</div>
-	</body>
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+        {{ app.getTurboMetas() }}
+    </head>
+    <body {{ stimulus_controller('aequation/wire/globalapp') }}>
+        {% block body %}
+        {% endblock %}
+        {% include "@AequationWire/partials/_flashes.html.twig" %}
+    </body>
 </html>

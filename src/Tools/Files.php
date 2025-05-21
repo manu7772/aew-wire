@@ -2,10 +2,12 @@
 namespace Aequation\WireBundle\Tools;
 
 use Aequation\WireBundle\Tools\interface\ToolInterface;
-use Closure;
-use SplFileInfo;
+// Symfony
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
+// PHP
+use Closure;
+use SplFileInfo;
 
 class Files implements ToolInterface 
 {
@@ -14,6 +16,15 @@ class Files implements ToolInterface
     public function __toString(): string
     {
         return Objects::getShortname(static::class, false);
+    }
+
+    public static function getNewFinder(): Finder
+    {
+        return Finder::create()
+            ->ignoreUnreadableDirs()
+            ->ignoreDotFiles(true)
+            ->followLinks()
+            ;
     }
 
     /**
@@ -81,14 +92,8 @@ class Files implements ToolInterface
         return $files;
     }
 
-    public static function getNewFinder(): Finder
-    {
-        return Finder::create()
-            ->ignoreUnreadableDirs()
-            ->ignoreDotFiles(true)
-            ->followLinks()
-            ;
-    }
+
+    /** TWIG files */
 
     public static function stripTwigfile(string|SplFileInfo $twigfile, bool $removeExtension = false): string
     {
@@ -99,4 +104,23 @@ class Files implements ToolInterface
             ? preg_replace(static::TWIGFILE_MATCH, '', $basename)
             : $basename;
     }
+
+    public static function findPagesTemplates(
+        string|array $dirs,
+        ?string $search = null
+    ): Finder
+    {
+        $finder = static::getNewFinder();
+        if(!empty($search)) {
+            $finder->files()->in($dirs)->name('*.twig')->contains($search);
+        } else {
+            $finder->files()->in($dirs)->name('*.twig');
+        }
+        return $finder;
+    }
+
+
+
+
+
 }

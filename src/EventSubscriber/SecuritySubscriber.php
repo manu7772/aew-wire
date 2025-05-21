@@ -12,6 +12,7 @@ use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Component\Security\Http\Event\SwitchUserEvent;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class SecuritySubscriber implements EventSubscriberInterface
 {
@@ -31,7 +32,7 @@ class SecuritySubscriber implements EventSubscriberInterface
             SwitchUserEvent::class => 'onSwitchUser',
             LoginSuccessEvent::class => 'onLoginSuccess',
             // LoginFailureEvent::class => 'onLoginFailure',
-            // LogoutEvent::class => 'onLogoutSuccess',
+            LogoutEvent::class => 'onLogoutSuccess',
             CheckPassportEvent::class => 'onCheckPassport',
         ];
     }
@@ -49,6 +50,7 @@ class SecuritySubscriber implements EventSubscriberInterface
         $user = $event->getUser();
         $this->userService->updateUserLastLogin($user);
         // $this->appWire->integrateUserContext($user);
+        $this->appWire->addFlash('success', new TranslatableMessage('Login_successful'));
     }
 
     // public function onLoginFailure(LoginFailureEvent $event): void
@@ -61,14 +63,15 @@ class SecuritySubscriber implements EventSubscriberInterface
     //     }
     // }
 
-    // public function onLogoutSuccess(LogoutEvent $event)
-    // {
-    //     // dump($event->getRequest()->getSession()->all());
-    //     /** @var User */
-    //     $user = $event->getToken()->getUser();
-    //     // $this->userService->setDarkmode($user->isDarkmode());
-    //     // dump($this->userService->getDarkmode());
-    // }
+    public function onLogoutSuccess(LogoutEvent $event)
+    {
+        // dump($event->getRequest()->getSession()->all());
+        /** @var User */
+        $user = $event->getToken()->getUser();
+        // $this->userService->setDarkmode($user->isDarkmode());
+        // dump($this->userService->getDarkmode());
+        $this->appWire->addFlash('info', new TranslatableMessage('Logout_successful'));
+    }
 
     public function onCheckPassport(CheckPassportEvent $event): void
     {

@@ -1,0 +1,4 @@
+textfiles_actions: 'Text files configuration (.env, etc.)'
+insert_yaml_configs: 'Insert files in configuration'
+copy_config_files: 'Copy files in configuration'
+manage_entities: 'Entities creation'

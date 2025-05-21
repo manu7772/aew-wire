@@ -172,15 +172,34 @@ Class WireConfigurators
                 // trigger_error(vsprintf('NOT SUPPORTED YET %s line %d: this option is not available (%s) for now.', [__METHOD__, __LINE__, $asPrepend ? 'loaded as PREPREND' : 'loaded regularly']), E_USER_ERROR);
                 if(static::isAssetMapperAvailable($container)) {
                     if($asPrepend) {
-                        $config = [
+                        $container->prependExtensionConfig('framework', [
                             'asset_mapper' => [
-                                'paths' => static::getAssetMapperPaths(),
-                                // 'importmap_path' => AequationWireBundle::getPackagePath('/assets/wire_importmap.php'),
-                            ],
-                        ];
-                        // dd($config);
-                        $container->prependExtensionConfig('framework', $config);
-                        // dd($container->getExtensionConfig('framework'));
+                                'paths' => [__DIR__.'/../../assets' => '@aequation/wire-bundle'],
+                                'excluded_patterns' => [
+                                    '*/*_old.*',
+                                    'dist/*',
+                                ],
+                            ]
+                        ]);
+                        // $container->prependExtensionConfig('framework', [
+                        //     'asset_mapper' => [
+                        //         'paths' => [__DIR__.'/../../assets/dist' => '@aequation/wire'],
+                        //         'excluded_patterns' => [
+                        //             '*/*_old.*',
+                        //         ],
+                        //     ]
+                        // ]);
+                        // if($asPrepend) {
+                        //     $config = [
+                        //         'asset_mapper' => [
+                        //             'paths' => static::getAssetMapperPaths(),
+                        //             'excluded_patterns' => [
+                        //                 '*/*_old.*'
+                        //             ]
+                        //         ],
+                        //     ];
+                        //     $container->prependExtensionConfig('framework', $config);
+                            // dump($config, $container->getExtensionConfig('framework'));
                     } else {
                         trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_ERROR);
                         throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]));
@@ -301,13 +320,14 @@ Class WireConfigurators
         ];
     }
 
-    private static function getAssetMapperPaths(): array
-    {
-        $paths = [
-            'assets/' => 'assets/',
-            AequationWireBundle::getPackagePath('/assets') => '@aequation/wire',
-        ];
-        return $paths;
-    }
+    // private static function getAssetMapperPaths(): array
+    // {
+    //     $paths = [
+    //         // 'assets/' => 'assets/',
+    //         __DIR__.'/../../assets' => '@aequation/wire-bundle',
+    //         __DIR__.'/../../assets/dist' => '@aequation/wire',
+    //     ];
+    //     return $paths;
+    // }
 
 }

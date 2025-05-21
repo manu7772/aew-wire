@@ -6,6 +6,7 @@ namespace Aequation\WireBundle\Service;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -16,6 +17,7 @@ use Aequation\WireBundle\Service\interface\CacheServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
@@ -53,10 +55,13 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use ReflectionClass;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Translation\TranslatableMessage;
 use UnitEnum;
 
 /**
@@ -84,6 +89,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private string $firewallname;
     private array $tinyvalues = [];
     private bool $darkmode;
+    private int|WireFactoryInterface $factory;
 
     /**
      * AppWireService constructor.
@@ -149,7 +155,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     }
 
     /************************************************************************************************************/
-    /** HTTP Kernal shortcuts                                                                                   */
+    /** HTTP Kernel shortcuts                                                                                   */
     /************************************************************************************************************/
 
     /**
@@ -178,6 +184,27 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         }
         $session = $request?->hasSession() ? $request->getSession() : null;
         return $session;
+    }
+
+
+    /************************************************************************************************************/
+    /** FLASHES                                                                                                 */
+    /************************************************************************************************************/
+
+    public function getFlashBag(): ?FlashBagInterface
+    {
+        $session = $this->getSession();
+        return $session instanceof FlashBagAwareSessionInterface ? $session->getFlashBag() : null;
+    }
+
+    public function addFlash(string $type, string $message): void
+    {
+        if($flashbag = $this->getFlashBag()) {
+            if($message instanceof TranslatableMessage) {
+                $message = $this->get('translator')->trans($message->getMessage(), $message->getParameters(), $message->getDomain());
+            }
+            $flashbag->add($type, $message);
+        }
     }
 
 
@@ -816,6 +843,71 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getDarkmodeClass(): string
     {
         return $this->getDarkmode() ? 'dark' : '';
+    }
+
+
+    /** CURRENT FACTORY */
+
+    /**
+     * get current factory
+     * 
+     * @return ?WireFactoryInterface
+     */
+    public function getFactory(): ?WireFactoryInterface
+    {
+        switch (true) {
+            case empty($this->currentFactory ?? null):
+                /** @var WireFactoryServiceInterface $serviceFactory */
+                $serviceFactory = $this->get(WireFactoryServiceInterface::class);
+                $currentFactory = $serviceFactory->getPreferedFactory();
+                if($currentFactory instanceof WireFactoryInterface) {
+                    $this->currentFactory = $currentFactory;
+                }
+                break;
+            case is_int($this->currentFactory) && $this->currentFactory > 0:
+                /** @var WireFactoryServiceInterface $serviceFactory */
+                $serviceFactory = $this->get(WireFactoryServiceInterface::class);
+                $currentFactory = $serviceFactory->find($this->currentFactory);
+                if($currentFactory instanceof WireFactoryInterface) {
+                    $this->currentFactory = $currentFactory;
+                }
+                break;
+        }
+        return isset($this->currentFactory) && $this->currentFactory instanceof WireFactoryInterface
+            ? $this->currentFactory
+            : null;
+    }
+
+    /**
+     * set current factory
+     * 
+     * @param mixed $factory
+     * @return static
+     */
+    public function setFactory(mixed $factory): static
+    {
+        if(is_array($factory)) {
+            $factory = $factory['id'] ?? null;
+        }
+        switch (true) {
+            case empty($factory):
+                /** @var WireFactoryServiceInterface $serviceFactory */
+                $serviceFactory = $this->get(WireFactoryServiceInterface::class);
+                $factory = $serviceFactory->getPreferedFactory();
+                if($factory instanceof WireFactoryInterface) {
+                    $this->currentFactory = $factory;
+                }
+                break;
+            case is_int($factory) && $factory > 0:
+                /** @var WireFactoryServiceInterface $serviceFactory */
+                $serviceFactory = $this->get(WireFactoryServiceInterface::class);
+                $factory = $serviceFactory->find($factory);
+                if($factory instanceof WireFactoryInterface) {
+                    $this->currentFactory = $factory;
+                }
+                break;
+        }
+        return $this;
     }
 
 

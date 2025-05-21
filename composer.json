@@ -2,7 +2,7 @@
     "name": "aequation/wire",
     "type": "symfony-bundle",
     "description": "This bundle is my symfony common base projects.",
-    "keywords": [ "symfony","symfony-bundle" ],
+    "keywords": [ "symfony","symfony-bundle","symfony-ux" ],
     "homepage": "https://www.aequation.fr",
     "license": "MIT",
     "authors": [
@@ -67,7 +67,8 @@
         "knplabs/knp-paginator-bundle": "^6.6",
         "nucleos/dompdf-bundle": "^4.3",
         "symfonycasts/reset-password-bundle": "^1.23",
-        "symfony/mailer": "^7.2"
+        "symfony/mailer": "^7.2",
+        "aequation/utils": "1.0.*"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.2.*",
