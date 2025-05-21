@@ -1,51 +1,77 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Entity\interface\TraitCreatedInterface;
-use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
-use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
-use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
-use Aequation\WireBundle\Entity\trait\Created;
-use Aequation\WireBundle\Entity\trait\Enabled;
-use Aequation\WireBundle\Entity\trait\Screenable;
-use Aequation\WireBundle\Entity\trait\Unamed;
+use Aequation\WireBundle\Entity\trait\Categorized;
+use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Webpageable;
 use Aequation\WireBundle\Tools\Encoders;
-use DateInterval;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\MappedSuperclass;
+use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
-use Symfony\Component\Serializer\Attribute as Serializer;
-use Symfony\Component\Uid\UuidV7 as Uuid;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
+use DateInterval;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\Collection;
 
-#[MappedSuperclass()]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-abstract class WireUser extends MappSuperClassEntity implements WireUserInterface
+#[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
+#[ORM\HasLifecycleCallbacks]
+#[SerializationMapping(WireUser::ITEMS_ACCEPT)]
+abstract class WireUser extends WireItem implements WireUserInterface
 {
-    use Enabled, Created, Unamed, Screenable;
+    use Webpageable, Relinkable, Categorized;
 
-    public const ICON = "tabler:user-filled";
-    public const FA_ICON = "user";
-    public const SERIALIZATION_PROPS = ['id','email'];
+    public const ICON = [
+        'ux' => 'tabler:user-filled',
+        'fa' => 'fa-user'
+    ];
+    public const ITEMS_ACCEPT = [
+        'addresses' => [
+            'field' => 'relinks',
+            'require' => [WireAddresslinkInterface::class],
+        ],
+        'phones' => [
+            'field' => 'relinks',
+            'require' => [WirePhonelinkInterface::class],
+        ],
+        'emails' => [
+            'field' => 'relinks',
+            'require' => [WireEmailinkInterface::class],
+        ],
+        'urls' => [
+            'field' => 'relinks',
+            'require' => [WireUrlinkInterface::class],
+        ],
+    ];
 
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    #[Serializer\Groups(['index'])]
-    protected ?Uuid $id = null;
+    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[Assert\Valid(groups: ['persist','update'])]
+    protected Collection $relinks;
 
     #[ORM\Column(length: 180)]
+    #[Assert\Email(groups: ['registration','persist','update'], message: 'Cet email n\'est pas valide')]
+    #[Assert\NotBlank(groups: ['registration','persist','update'], message: 'Cet email est obligatoire')]
     protected ?string $email = null;
 
     /**
      * @var list<string> The user roles
      */
-    #[ORM\Column]
+    #[ORM\Column(type: Types::JSON)]
     protected array $roles = [];
 
     /**
@@ -58,18 +84,24 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
      * @see https://symfony.com/doc/current/reference/constraints/PasswordStrength.html
      * @see https://github.com/symfony/symfony/blob/7.0/src/Symfony/Component/Validator/Constraints/PasswordStrength.php
      */
-    #[SecurityAssert\UserPassword(message: 'Votre mot de passe n\'est pas valable', groups: ['registration'])]
     // #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_MEDIUM, message: 'Ce mot de passe n\'est pas assez sécurisé')]
+    // #[SecurityAssert\UserPassword(message: 'Votre mot de passe n\'est pas valable', groups: ['registration','persist'])]
+    #[Assert\NotBlank(groups: ['registration','persist'], message: 'Le mot de passe est obligatoire')]
     protected ?string $plainPassword = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $firstname = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    protected ?string $lastname = null;
+    #[ORM\Column(nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $functionality = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
+    protected ?string $description = null;
 
     #[ORM\Column]
-    protected bool $darkmode = true;
+    protected bool $darkmode = false;
 
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $expiresAt = null;
@@ -80,24 +112,34 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $lastLogin = null;
 
+    /**
+     * @var Collection<int, WireUserInterface>
+     */
+    #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'associates')]
+    protected Collection $factorys;
+
 
     public function __toString(): string
     {
         return $this->getCivilName().' ['.$this->email.']';
     }
 
+    public function isActive(): bool
+    {
+        return $this->isEnabled() && !$this->isExpired();
+    }
+
     public function isLoggable(): bool
     {
-        return $this->isEnabled() && $this->isVerified() && !($this->isSoftdeleted() || $this->isExpired());
+        return $this->isActive()
+            // && $this->isVerified()
+            ;
     }
 
     public function isEqualTo(UserInterface $user): bool
     {
         /** @var WireUserInterface $user */
-        return
-            $user->getEmail() === $this->getEmail()
-            && $user->getId() === $this->getId()
-            ;
+        return $user->getId() === $this->getId();
     }
 
     /**
@@ -106,9 +148,9 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
      */
     public function getCivilName(): string
     {
-        $name = trim(str_replace(["\n", "\r"], '', $this->firstname.' '.$this->lastname));
+        $name = trim(str_replace(["\n", "\r"], '', $this->name.' '.$this->firstname));
         if(empty($name)) $name = $this->email;
-        return $name;
+        return (string)$name;
     }
 
     public function getEmail(): ?string
@@ -141,6 +183,11 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
         return (string) $this->email;
     }
 
+    public function getLabel(): string
+    {
+        return $this->name.trim(' '.$this->firstname). ' ('.$this->email.')';
+    }
+
     /**
      * @see UserInterface
      *
@@ -150,7 +197,7 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
-        $roles[] = static::ROLE_USER;
+        array_unshift($roles, static::ROLE_USER);
         return array_unique($roles);
     }
 
@@ -162,10 +209,7 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     public function setRoles(array $roles): static
     {
         $this->roles = [];
-        foreach ($roles as $role) {
-            $this->addRole($role);
-        }
-        return $this;
+        return $this->addRole($roles);
     }
 
     /**
@@ -174,10 +218,23 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
      * @param string $role
      * @return static
      */
-    public function addRole(string $role): static
+    public function addRole(string|array $role): static
     {
-        if(!$this->HasRole($role)) $this->roles[] = $role;
-        // $this->roles = array_unique($this->roles);
+        $this->roles = array_unique(array_merge($this->roles, (array)$role));
+        $this->checkRoles();
+        return $this;
+    }
+
+    /**
+     * Remove Role(s)
+     *
+     * @param string|array $role
+     * @return static
+     */
+    public function removeRole(string|array $roles): static
+    {
+        $this->roles = array_diff($this->roles, (array)$roles);
+        $this->checkRoles();
         return $this;
     }
 
@@ -192,6 +249,16 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
         return in_array($role, $this->roles);
     }
 
+    #[ORM\PrePersist()]
+    #[ORM\PreUpdate()]
+    public function checkRoles(): static
+    {
+        $this->roles = array_diff($this->roles, [static::ROLE_USER]);
+        $this->updateIsVerified();
+        return $this;
+    }
+
+
     /**
      * Set Superadmin
      *
@@ -201,17 +268,13 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     {
         $this->addRole(static::ROLE_SUPER_ADMIN);
         $this->setEnabled(true);
-        $this->setSoftdeleted(false);
-        $this->setIsVerified(true);
         return $this;
     }
 
     public function isValidSuperadmin(): bool
     {
         return $this->HasRole(static::ROLE_SUPER_ADMIN)
-            && $this->isEnabled()
-            && !$this->isSoftdeleted()
-            && $this->isVerified();
+            && $this->isLoggable();
     }
 
     /**
@@ -236,13 +299,13 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     public function setPlainPassword(string $plainPassword): static
     {
         $this->plainPassword = $plainPassword;
-        $this->updateUpdatedAt();
+        if(!empty($this->id)) $this->updateUpdatedAt();
         return $this;
     }
 
     public function autoGeneratePassword(
         int $length = 32,
-        string $chars = null,
+        ?string $chars = null,
         bool $replace = true
     ): static
     {
@@ -258,17 +321,6 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     public function setFirstname(string $firstname): static
     {
         $this->firstname = $firstname;
-        return $this;
-    }
-
-    public function getLastname(): ?string
-    {
-        return $this->lastname;
-    }
-
-    public function setLastname(?string $lastname): static
-    {
-        $this->lastname = $lastname;
         return $this;
     }
 
@@ -324,6 +376,14 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
         return $this;
     }
 
+    public function updateIsVerified(): static
+    {
+        if(count($this->roles) > 0) {
+            $this->setIsVerified(true);
+        }
+        return $this;
+    }
+
     public function getLastLogin(): ?DateTimeImmutable
     {
         return $this->lastLogin;
@@ -348,5 +408,57 @@ abstract class WireUser extends MappSuperClassEntity implements WireUserInterfac
     {
         // If you store any temporary, sensitive data on the user, clear it here
         $this->plainPassword = null;
+    }
+
+    public function getFunctionality(): ?string
+    {
+        return $this->functionality;
+    }
+
+    public function setFunctionality(?string $functionality = null): static
+    {
+        $this->functionality = $functionality;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description = null): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    public function getFactorys(): Collection
+    {
+        return $this->factorys;
+    }
+
+    public function addFactory(WireFactoryInterface $factory): static
+    {
+        if (!$this->factorys->contains($factory)) {
+            $this->factorys->add($factory);
+        }
+        if(!$factory->hasAssociate($this)) {
+            $factory->addAssociate($this);
+        }
+        return $this;
+    }
+
+    public function removeFactory(WireFactoryInterface $factory): static
+    {
+        $this->factorys->removeElement($factory);
+        if($factory->hasAssociate($this)) {
+            $factory->removeAssociate($this);
+        }
+        return $this;
+    }
+
+    public function hasFactory(WireFactoryInterface $factory): bool
+    {
+        return $this->factorys->contains($factory);
     }
 }

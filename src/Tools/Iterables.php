@@ -32,9 +32,8 @@ class Iterables implements ToolInterface
         ?callable $callback = null
     ): array
     {
-        $array = array_map('trim', $array);
-        $callback ??= fn ($item) => !empty($item);
-        return array_filter($array, $callback);
+        $array = array_map(fn($t) => is_string($t) ? Strings::markup(trim($t))->__toString() : $t, $array);
+        return array_filter($array, $callback ?? fn ($item) => !empty($item));
     }
 
     public static function isArrayIndex(mixed $index): bool

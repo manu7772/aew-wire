@@ -5,7 +5,7 @@ use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 // PHP
 use SplFileInfo;
 
-interface WireWebpageServiceInterface extends WireHtmlcodeServiceInterface
+interface WireWebpageServiceInterface extends WireEntityServiceInterface
 {
 
     public function getPreferedWebpage(): ?WireWebpageInterface;

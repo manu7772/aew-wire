@@ -1,0 +1,79 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+
+{% block title %}
+	{{ 'title_generic'|trans }}
+{% endblock %}
+
+{% block container %}
+	<div class="max-w-7xl px-4 mt-4 pb-24 mx-auto">
+		<h1 class="text-3xl italic text-blue-700">UnitOfWork tests</h1>
+		{{ parent()}}
+
+		<div{{turbo_memory(false)}}>
+
+			<div class="max-w-7xl mx-auto my-2">
+				<h3 class="text-center font-black">UOW & Entities</h3>
+				<div class="flex flex-grow gap-1 justify-center items-center">
+					<div class="text-center border border-slate-700 rounded-lg p-2 mb-1">
+						UnitOfWork size : <span class="font-black">{{ UnitOfWork.size() }}</span><br>
+					</div>
+					<div class="text-center border border-slate-700 rounded-lg p-2 mb-1">
+						Has pending insertions: <span class="font-black">{{ UnitOfWork.hasPendingInsertions() ? 'true' : 'false' }}</span><br>
+					</div>
+				</div>
+				{% for data in entities %}
+				<div class="border border-slate-700 rounded-lg p-4 mb-2">
+					<h4 class="text-center text-slate-900 font-black"><span class="text-slate-500">{{ data.entity.classname }}</span> is <span class="text-sky-600">{{ data.state|lower }}</span></h4>
+					<div class="text-lg font-thin italic text-slate-800 text-center">{{ data.commentaire|raw }}</div>
+					<div class="mt-3">
+						{# {{ dump(data.entity) }} #}
+						<div class="block w-full overflow-x-auto border rounded-md border-slate-600">
+							<table class="items-center w-full bg-transparent border-collapse">
+								<thead>
+									<tr>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-black text-center uppercase border-l-0 border-r-0 whitespace-nowrap">ID</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-left uppercase border-l-0 border-r-0 whitespace-nowrap">Name</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">State</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">Contained</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">Scheduled</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">Insert</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">Update</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">DirtyCheck</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">Delete</th>
+										<th class="px-4 bg-slate-50 text-slate-700 align-middle py-3 text-xs font-semibold text-center uppercase border-l-0 border-r-0 whitespace-nowrap">EmbededStatus</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-slate-100">
+									<tr class="text-slate-500">
+										<th class="border-t-0 px-4 align-middle p-4 text-center"><div class="rounded-full py-1 px-2 text-lg font-black whitespace-nowrap text-white bg-black">{{ data.entity.id|default('?') }}</div></th>
+										<th class="border-t-0 px-4 align-middle text-sm font-bold text-sky-600 whitespace-nowrap p-4 text-left">{{ data.entity.name|default('???') }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ data.state }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ em.contains(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ UnitOfWork.isEntityScheduled(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ UnitOfWork.isScheduledForInsert(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ UnitOfWork.isScheduledForUpdate(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ UnitOfWork.isScheduledForDirtyCheck(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ UnitOfWork.isScheduledForDelete(data.entity) ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+										<th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">{{ data.entity.hasEmbededStatus() ? ux_icon('tabler:square-check-filled', {class: 'w-6 h-6 inline-block text-lime-500'}) : ux_icon('tabler:square-check', {class: 'w-6 h-6 inline-block text-slate-300'}) }}</th>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+
+			<div class="max-w-7xl mx-auto my-2">
+				<h3 class="text-center font-black">UOW tests</h3>
+				<div>{{ dump(UnitOfWork.identityMap) }}</div>
+				{# <div>{{ dump(UnitOfWork.identityMap) }}</div> #}
+				{# <div>{{ dump(UnitOfWork.identityMap) }}</div> #}
+				{# <div>{{ dump(UnitOfWork.identityMap) }}</div> #}
+			</div>
+
+		</div>
+
+	</div>
+{% endblock %}

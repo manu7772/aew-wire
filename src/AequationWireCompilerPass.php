@@ -12,14 +12,16 @@ use Exception;
 class AequationWireCompilerPass implements CompilerPassInterface
 {
     public const CONFIGURES = [
-        'Parameters' => false,
-        'Twig' => false,
-        'Tailwind' => false,
-        'VichUploader' => false,
-        'AssetMapper' => false,
+        // 'Parameters' => false,
+        // 'Siteparams' => false,
+        // 'Framework' => false,
+        // 'Twig' => false,
+        // 'TwigComponent' => false,
+        // 'Tailwind' => false,
+        'VichUploader' => true,
+        // 'LiipImagine' => false,
+        // 'AssetMapper' => false,
     ];
-    // public const EXECUTE_DISPATCH = true;
-    // public const REMOVE_DISPATCHEDS = true;
 
     public function Process(
         ContainerBuilder $container

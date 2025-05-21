@@ -11,11 +11,31 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Exception;
 
 #[Route(path: '/api', name: 'aequation_wire_api.')]
-// #[IsGranted("ROLE_USER", null, 'forbidden_access', 403)]
 class AppWireController extends AbstractController
 {
 
+    #[Route('/darkmode/{darkmode}', name: 'darkmode_switcher', defaults: ['darkmode' => null], methods: ['GET','POST'])]
+    public function darkmodeSwitcher(
+        AppWireServiceInterface $appWire,
+        string $darkmode = 'auto'
+    ): JsonResponse
+    {
+        $darkmode = match ($darkmode) {
+            'on' => true,
+            'off' => false,
+            default => null,
+        };
+        $appWire->setDarkmode($darkmode);
+        return $this->json(
+            data: ['darkmode' => $appWire->getDarkmode()],
+            status: JsonResponse::HTTP_OK,
+            context: $appWire->jsonSerialize(),
+        );
+    }
+
+
     #[Route(path: '/tiny-set/{name}/{value}', name: 'set_tiny', methods: ['GET','POST'])]
+    // #[IsGranted("ROLE_USER", null, 'forbidden_access', 403)]
     public function setTinyvalue(
         AppWireServiceInterface $appWire,
         string $name,
@@ -31,6 +51,7 @@ class AppWireController extends AbstractController
     }
 
     #[Route(path: '/tiny-bool/{name}/{action<(switch|true|false)>?switch}', name: 'bool_tiny', methods: ['GET','POST'])]
+    // #[IsGranted("ROLE_USER", null, 'forbidden_access', 403)]
     public function boolTinyvalue(
         AppWireServiceInterface $appWire,
         string $name,

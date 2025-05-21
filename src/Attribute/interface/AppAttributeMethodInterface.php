@@ -9,5 +9,6 @@ interface AppAttributeMethodInterface extends AppAttributeInterface
 
     public function setMethod(ReflectionMethod $method): static;
     public function getMethod(): ReflectionMethod;
+    public function getMethodName(): string;
 
 }

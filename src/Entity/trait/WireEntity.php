@@ -1,131 +1,228 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Component\EntityEmbededStater;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
+use Aequation\WireBundle\Component\EntitySelfState;
+use Aequation\WireBundle\Component\interface\EntityEmbededStaterInterface;
+use Aequation\WireBundle\Component\interface\EntityEmbededStatusContainerInterface;
+use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
+use Doctrine\DBAL\Types\Types;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 // PHP
 use ReflectionClass;
 use Exception;
 
-#[UniqueEntity(fields: ['euid'], message: 'Cet EUID {{ value }} est déjà utilisé !')]
 trait WireEntity
 {
 
-    #[ORM\Column(length: 255, updatable: false, nullable: false)]
-    #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
-    protected readonly string $euid;
+    // public const ICON = [
+    //     'ux' => 'tabler:file',
+    //     'fa' => 'fa-file'
+    //     // Add other types and their corresponding icons here
+    // ];
+    // public const SERIALIZATION_PROPS = ['id'];
+
+    #[ORM\Column(updatable: false, nullable: false, unique: true)]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
+    // #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
+    protected string $euid;
 
     #[ORM\Column(updatable: false, nullable: false)]
-    #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
     protected readonly string $classname;
 
     #[ORM\Column(length: 32, updatable: false, nullable: false)]
-    #[Assert\NotNull()]
-    #[Serializer\Groups('index')]
+    #[Assert\NotNull(groups: ['persist', 'update'])]
     protected readonly string $shortname;
 
-    #[Serializer\Ignore]
-    public readonly EntityEmbededStatusInterface $_estatus;
+    #[ORM\Column(type: Types::INTEGER, nullable: false)]
+    protected int $updates = 0;
 
+    public readonly EntitySelfStateInterface $__selfstate;
 
     public function __construct_entity(): void
     {
-        $rc = new ReflectionClass(static::class);
-        $this->classname = $rc->getName();
-        $this->shortname = $rc->getShortName();
-        $this->euid = $this->getNewEuid();
+        $this->initializeSelfstate();
+        $this->getClassname();
+        $this->getShortName();
+        $this->euid = Encoders::geUniquid($this->classname.'|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
         foreach ($construct_methods as $method) {
             $this->$method();
         }
-        if(!($this instanceof WireEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, WireEntityInterface::class]));
+        if (!($this instanceof BaseEntityInterface)) throw new Exception(vsprintf('Error %s line %d:%s- This entity %s sould implement %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, BaseEntityInterface::class]));
     }
 
-    public function setEmbededStatus(
-        EntityEmbededStatusInterface $estatus
-    ): void
+
+
+    /*************************************************************************************
+     * UPDATES COUNT
+     *************************************************************************************/
+
+     #[ORM\PreUpdate]
+    public function doUpdate(): void
     {
-        if(isset($this->_estatus) && !$this->_estatus->isProd()) {
-            throw new Exception(vsprintf('Error %s line %d:%s- This entity %s (%s - named "%s") already got %s!', [__METHOD__, __LINE__, PHP_EOL, static::class, $this->_estatus->getType(), $this->__toString(), EntityEmbededStatusInterface::class]));
+        $this->updates++;
+    }
+
+    public function getUpdates(): int
+    {
+        return $this->updates;
+    }
+
+    /*************************************************************************************
+     * EMBEDED STATUS
+     *************************************************************************************/
+
+    public function initializeSelfstate(): void
+    {
+        $this->__selfstate_constructor_used ??= false;
+        $this->__selfstate = new EntitySelfState($this);
+    }
+
+    public function getSelfState(): ?EntitySelfStateInterface
+    {
+        return $this->__selfstate;
+    }
+
+    public function hasEmbededStatus(): bool
+    {
+        return $this->getSelfState()->isReady();
+    }
+
+    public function getEmbededStatus(bool $load = true): null|EntityEmbededStatusContainerInterface|EntityEmbededStatusInterface|EntitySelfStateInterface
+    {
+        if($load && !$this->__selfstate->isReady()) {
+            $this->__selfstate->getEmbededStatus();
         }
-        $this->_estatus = $estatus;
+        return $this->__selfstate;
     }
 
-    public function getEmbededStatus(): EntityEmbededStatusInterface
-    {
-        return $this->_estatus;
-    }
 
-    // #[AppEvent(groups: [AppEvent::afterClone])]
-    public function _removeIsClone(): static
-    {
-        $this->_setClone(false);
-        return $this;
-    }
-
-    public function __clone_entity(): void
-    {
-        $this->euid = $this->getNewEuid();
-        // $this->_service->setManagerToEntity($this);
-        // Other clones
-        $clone_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__clone_(?!entity)/', $method_name));
-        foreach ($clone_methods as $method) {
-            $this->$method();
-        }
-    }
+    /*************************************************************************************
+     * APP WIRE IDENTIFIERS
+     *************************************************************************************/
 
     public function getEuid(): string
     {
         return $this->euid;
     }
 
+    // public function setEuid(
+    //     string $euid
+    // ): static {
+    //     if($this->__selfstate->isNew() || empty($this->euid ?? null)) {
+    //         if(!Encoders::isEuidFormatValid($euid)) {
+    //             throw new Exception(vsprintf('Error %s line %d: EUID "%s" is not valid!', [__METHOD__, __LINE__, $euid]));
+    //         }
+    //         $this->euid = $euid;
+    //     }
+    //     return $this;
+    // }
+
     public function getUnameThenEuid(): string
     {
-        if($this instanceof TraitUnamedInterface) {
-            return $this->getUname()->getUname();
-        }
-        return $this->getEuid();
+        return $this instanceof TraitUnamedInterface ? $this->getUname()->getId() : $this->getEuid();
     }
 
     public function defineUname(
         string $uname
-    ): static
-    {
-        if($this instanceof TraitUnamedInterface) {
-            if(strlen($uname) < 3) throw new Exception(vsprintf('Error %s line %d: Uname for %s must have at least 3 lettres, got "%s"!', [__METHOD__, __LINE__, static::class, $uname]));
+    ): static {
+        if ($this instanceof TraitUnamedInterface) {
             $this->updateUname($uname);
         }
         return $this;
     }
 
-    private function getNewEuid(): string
-    {
-        return Encoders::geUniquid($this->classname.'|');
-    }
-
     public function getClassname(): string
     {
+        if(!isset($this->classname)) {
+            $rc = new ReflectionClass(static::class);
+            $this->classname = $rc->getName();
+        }
         return $this->classname;
     }
 
     public function getShortname(
         bool $lowercase = false
-    ): string
-    {
+    ): string {
+        if(!isset($this->shortname)) {
+            $rc = new ReflectionClass(static::class);
+            $this->shortname = $rc->getShortName();
+        }
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;
     }
 
+    /**
+     * get serialization data
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        $array = ['id' => $this->id];
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidIndex()->getPropertyAccessor();
+        foreach (constant('static::SERIALIZATION_PROPS') as $attr) {
+            $array[$attr] = $accessor->getValue($this, $attr);
+        }
+        return $array;
+    }
 
+    /**
+     * unserialize data
+     *
+     * @param array $data
+     * @return void
+     */
+    public function __unserialize(array $data): void
+    {
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
+        foreach ($data as $attr => $value) {
+            if ($attr === 'id') {
+                $this->id = $value;
+                continue;
+            }
+            $accessor->setValue($this, $attr, $value);
+        }
+    }
+
+    /**
+     * serialize
+     *
+     * @return string|null
+     */
+    public function serialize(): ?string
+    {
+        $array = $this->__serialize();
+        return json_encode($array);
+    }
+
+    /**
+     * unserialize
+     *
+     * @param string $data
+     * @return void
+     */
+    public function unserialize(string $data): void
+    {
+        $data = json_decode($data, true);
+        $this->__unserialize($data);
+    }
+
+    public static function getIcon(
+        string $type = 'ux'
+    ): string {
+        return constant('static::ICON')[$type];
+    }
 }

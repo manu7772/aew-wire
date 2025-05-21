@@ -1,45 +1,33 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\Slugable;
 use Aequation\WireBundle\Entity\WireItem;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
-use Aequation\WireBundle\Entity\trait\Slug;
-use Aequation\WireBundle\Repository\WirePdfRepository;
-use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Attribute as Serializer;
-use Symfony\Component\Routing\RouterInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
-#[ORM\Entity(repositoryClass: WirePdfRepository::class)]
+#[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-// #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[ClassCustomService(WirePdfServiceInterface::class)]
 #[Vich\Uploadable]
-#[Slugable('name')]
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {
 
-    use Slug;
-
-    public const ICON = 'tabler:file-type-pdf';
-    public const FA_ICON = 'fa-solid fa-file-pdf';
-
+    public const ICON = [
+        'ux' => 'tabler:file-type-pdf',
+        'fa' => 'fa-solid fa-file-pdf'
+    ];
     public const PAPERS = ['A4', 'A5', 'A6', 'letter', 'legal'];
     public const ORIENTATIONS = ['portrait', 'landscape'];
     public const SOURCETYPES = ['undefined', 'document', 'file'];
@@ -48,10 +36,11 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     protected int $sourcetype = 0;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $description = null;
+    #[Gedmo\Translatable]
+    protected ?string $description = null;
 
-    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
-    #[ORM\Column(length: 255)]
+    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null', groups: ['persist','update'])]
+    #[ORM\Column()]
     protected ?string $filename = null;
 
     #[Vich\UploadableField(mapping: 'pdf', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname')]
@@ -60,9 +49,9 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         maxSizeMessage: 'Le fichier ne peut pas dépasser la taille de {{ limit }}{{ suffix }} : votre fichier fait {{ size }}{{ suffix }}',
         mimeTypes: ["application/pdf"],
         mimeTypesMessage: "Format invalide, vous devez indiquer un fichier PDF",
+        groups: ['persist','update'],
         // binaryFormat: false,
     )]
-    #[Serializer\Ignore]
     protected File|UploadedFile|null $file = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -71,10 +60,10 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     #[ORM\Column]
     protected ?int $size = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $mime = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $originalname = null;
 
     #[ORM\Column(length: 32)]
@@ -103,7 +92,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         $this->file = $file;
         if(HttpRequest::isCli()) {
             $filesystem = new Filesystem();
-            $dest = $filesystem->tempnam(dir: $this->_estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
+            $dest = $filesystem->tempnam(dir: $this->__estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
             $filesystem->copy($this->file->getRealPath(), $dest, true);
             try {
                 $this->file = new UploadedFile(path: $dest, originalName: $this->file->getFilename(), test: true);
@@ -123,7 +112,6 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function getFile(): File|UploadedFile|null
     {
         return $this->file;
@@ -137,7 +125,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     ): ?string
     {
         // $filter ??= $this->getLiipDefaultFilter();
-        return $this->_estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
+        return $this->__estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
     }
 
     public function updateName(): static
@@ -240,7 +228,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         string $action = 'inline'
     ): ?string
     {
-        return $this->_estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->__estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     public function getSourcetype(): int

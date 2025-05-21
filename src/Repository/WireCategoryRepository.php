@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\interface\WireCategoryRepositoryInterface;
 abstract class WireCategoryRepository extends BaseWireRepository implements WireCategoryRepositoryInterface
 {
 
-    // const ENTITY_CLASS = WireCategory::class;
-    // const NAME = 'wire_category';
+    // const NAME = WireCategory::class;
+    // const ALIAS = 'wire_category';
 
 }

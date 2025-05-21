@@ -1,0 +1,24 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+
+{% block title %}{{ 'title_generic'|trans }}{% endblock %}
+
+{% block container %}
+    <div class="max-w-3xl px-4 mt-4 pb-24 mx-auto">
+		<h1 class="text-3xl italic text-blue-700">App Entities</h1>
+
+        <div class="max-w-2xl mx-auto my-2 flex flex-col gap-2">
+            {% if class is not null %}
+            <h3>{{ class }} <a href="{{ path('app_entities') }}" title="Retour à la liste"><twig:ux:icon name="tabler:arrow-back-up" class="h-6 w-6 text-slate-600 inline-block" /></a></h3>
+            <pre>
+                {{ dump(entities) }}
+            </pre>
+            {% else %}
+                <a{{ turbo_preload(false) }} href="{{ path('admin_user_index') }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> Users</a>
+                {% for class,shortname in classnames %}
+                <a{{ turbo_preload(false) }} href="{{ path('app_entities', {class: shortname}) }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> {{ class }}</a>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+	</div>
+{% endblock %}

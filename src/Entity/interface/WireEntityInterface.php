@@ -1,34 +1,31 @@
 <?php
+
 namespace Aequation\WireBundle\Entity\interface;
 
 // Aequation
+
+use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 // Symfony
-use Symfony\Component\Uid\UuidV7 as Uuid;
+// use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Stringable;
 
-interface WireEntityInterface extends Stringable, TraitSerializableInterface
+interface WireEntityInterface extends BaseEntityInterface, TraitSerializableInterface
 {
-
-    public const IS_CLONABLE = false;
-
-    // Embeded Status
-    public function setEmbededStatus(EntityEmbededStatusInterface $estatus): void;
-    public function getEmbededStatus(): EntityEmbededStatusInterface;
+    // public const ICON = [
+    //     'ux' => 'tabler:file',
+    //     'fa' => 'fa-file'
+    //     // Add other types and their corresponding icons here
+    // ];
+    // public const SERIALIZATION_PROPS = ['id'];
     // Interface of all entities
-    public function getId(): ?Uuid;
-    public function getEuid(): ?string;
-    public function getUnameThenEuid(): string;
-    public function defineUname(string $uname): static;
-    public function __toString(): string;
-    public function __construct_entity(): void;
-    // Classname
-    public function getClassname(): string;
-    // Shortname
-    public function getShortname(bool $lowercase = false): string;
+    public function getId(): mixed;
     // Serialization
     public function serialize(): ?string;
     public function unserialize(string $data): void;
-
+    public function __serialize(): array;
+    public function __unserialize(array $data): void;
+    // Icon
+    public static function getIcon(string $type = 'ux'): string;
 }

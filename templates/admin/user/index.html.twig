@@ -1,0 +1,13 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+{% import 'admin/partials/_print.html.twig' as print %}
+
+{% set paginated = entities|shortname in ['SlidingPagination'] %}
+{% set trans_domain = options.trans_domain|default(options.shortname) %}
+{% block title %}
+	{{ options.title|default(null) is not empty ? options.title|trans|striptags : 'actions.count'|trans({'%count%': paginated ? entities.getTotalItemCount : entities|length}, trans_domain) }}
+{% endblock %}
+
+{% block main_content %}
+	<h1 class="text-2xl font-bold mb-4">User</h1>
+	{{ print.table(entities, fields, options) }}
+{% endblock %}

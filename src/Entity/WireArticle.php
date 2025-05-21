@@ -1,92 +1,97 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\Slugable;
-use Aequation\WireBundle\Entity\interface\TraitScreenableInterface;
-use Aequation\WireBundle\Entity\interface\TraitSlugInterface;
+use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
-use Aequation\WireBundle\Entity\trait\Screenable;
-use Aequation\WireBundle\Entity\trait\Slug;
-use Aequation\WireBundle\Repository\WireArticleRepository;
-use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
+use Aequation\WireBundle\Entity\trait\Categorized;
+use Aequation\WireBundle\Entity\trait\Owner;
+use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Webpageable;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+// PHP
+use DateTimeInterface;
 
-#[ORM\Entity(repositoryClass: WireArticleRepository::class)]
-#[ClassCustomService(WireArticleServiceInterface::class)]
-#[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
-#[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
-// #[UniqueEntity('name', message: 'Ce nom {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[UniqueEntity('slug', message: 'Ce slug {{ value }} existe déjà', repositoryMethod: 'findBy')]
-#[Slugable('name')]
 abstract class WireArticle extends WireItem implements WireArticleInterface
 {
 
-    use Slug, Screenable;
+    use Owner, Webpageable, Relinkable, Categorized;
 
-    public const ICON = "tabler:article";
-    public const FA_ICON = "fa-regular fa-newspaper";
+    public const ICON = [
+        'ux' => 'tabler:article',
+        'fa' => 'fa-regular fa-newspaper'
+    ];
+    public const ITEMS_ACCEPT = [
+        'addresses' => [
+            'field' => 'relinks',
+            'require' => [WireAddresslinkInterface::class],
+        ],
+        'phones' => [
+            'field' => 'relinks',
+            'require' => [WirePhonelinkInterface::class],
+        ],
+        'emails' => [
+            'field' => 'relinks',
+            'require' => [WireEmailinkInterface::class],
+        ],
+        'urls' => [
+            'field' => 'relinks',
+            'require' => [WireUrlinkInterface::class],
+        ],
+    ];
 
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    protected ?string $title = null;
-
-    #[ORM\Column]
-    protected array $content = [];
+    public function isActive(): bool
+    {
+        return parent::isActive() && !$this->isDeprecated();
+    }
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    protected ?\DateTimeInterface $start = null;
+    protected ?DateTimeInterface $start = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    protected ?\DateTimeInterface $end = null;
+    protected ?DateTimeInterface $end = null;
 
 
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): static
-    {
-        $this->title = $title;
-        return $this;
-    }
-
-    public function getContent(): array
-    {
-        return $this->content;
-    }
-
-    public function setContent(array $content): static
-    {
-        $this->content = $content;
-        return $this;
-    }
-
-    public function getStart(): ?\DateTimeInterface
+    public function getStart(): ?DateTimeInterface
     {
         return $this->start;
     }
 
-    public function setStart(?\DateTimeInterface $start): static
+    public function setStart(?DateTimeInterface $start): static
     {
         $this->start = $start;
         return $this;
     }
 
-    public function getEnd(): ?\DateTimeInterface
+    public function getEnd(): ?DateTimeInterface
     {
         return $this->end;
     }
 
-    public function setEnd(?\DateTimeInterface $end): static
+    public function setEnd(?DateTimeInterface $end): static
     {
         $this->end = $end;
         return $this;
+    }
+
+    public function isDeprecated(?DateTimeInterface $now = null): bool
+    {
+        $now = $now ?? new \DateTime();
+        $deprecated = false;
+        if($this->start) {
+            $deprecated = $this->start > $now;
+        }
+        if($this->end) {
+            $deprecated = $this->end < $now;
+        }
+        return $deprecated;
     }
 
 }

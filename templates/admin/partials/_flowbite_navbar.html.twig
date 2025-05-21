@@ -1,0 +1,139 @@
+<nav class="select-none bg-white border-admin-secondary-200 dark:bg-admin-secondary-900 dark:border-admin-secondary-700">
+	<div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+		<a href="{{ path('admin_index') }}" class="flex items-center space-x-3 rtl:space-x-reverse">
+			<img src="{{ asset('images/logo1_w.svg') }}" class="h-8 hidden dark:inline" alt="Logo"/>
+			<img src="{{ asset('images/logo1_k.svg') }}" class="h-8 dark:hidden" alt="Logo"/>
+		</a>
+		<button data-collapse-toggle="navbar-multi-level" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-admin-secondary-500 rounded-lg lg:hidden hover:bg-admin-secondary-100 focus:outline-none focus:ring-2 focus:ring-admin-secondary-200 dark:text-admin-secondary-400 dark:hover:bg-admin-secondary-700 dark:focus:ring-admin-secondary-600" aria-controls="navbar-multi-level" aria-expanded="false">
+			<span class="sr-only">Open main menu</span>
+			<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 17 14">
+				<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+			</svg>
+		</button>
+		<div class="hidden w-full lg:block lg:w-auto" id="navbar-multi-level">
+			{% set active_class = 'block py-2 px-3 text-white bg-admin-primary-700 rounded lg:bg-transparent lg:text-admin-primary-700 lg:p-0 lg:dark:text-admin-primary-500 dark:bg-admin-primary-600 lg:dark:bg-transparent' %}
+			{% set normal_class = 'block py-2 px-3 text-admin-secondary-900 rounded hover:bg-admin-secondary-100 lg:hover:bg-transparent lg:border-0 lg:hover:text-admin-secondary-700 lg:p-0 dark:text-white lg:dark:hover:text-admin-secondary-500 dark:hover:bg-admin-secondary-700 dark:hover:text-white lg:dark:hover:bg-transparent' %}
+			{% set routes = [
+                { action: 'index', subject: 'Rating', domain: 'Rating' },
+                { action: 'index', subject: 'Activity', domain: 'Activity' },
+                { action: 'index', subject: 'Peoplegroup', domain: 'Peoplegroup' },
+                { action: 'index', subject: 'User', domain: 'User' },
+            ] %}
+
+			<ul class="flex flex-col font-medium p-4 lg:p-0 mt-4 border border-admin-secondary-100 rounded-lg bg-admin-secondary-50 lg:space-x-8 rtl:space-x-reverse lg:flex-row lg:mt-0 lg:border-0 lg:bg-white dark:bg-admin-secondary-800 lg:dark:bg-admin-secondary-900 dark:border-admin-secondary-700">
+
+				{% for route in routes %}
+					{% set url = action_path(route.subject, route.action) %}
+					{% if url %}
+					<li>
+						{% set the_class = app.request.get('_route') matches '/^admin_' ~ route.domain|lower ~ '/' ? active_class : normal_class %}
+						<a href="{{ url }}" class="{{ the_class }}" aria-current="page">{{ 'names'|trans({}, route.domain) }}</a>
+					</li>
+					{% endif %}
+				{% endfor %}
+
+
+				{# <li>
+					{% set the_class = app.request.get('_route') matches '/^admin_rating/' ? active_class : normal_class %}
+					<a href="{{ path('admin_rating_index') }}" class="{{ the_class }}" aria-current="page">{{ 'names'|trans({}, 'Rating') }}</a>
+				</li>
+				<li>
+					<button id="dropdownNavbarLink" data-dropdown-toggle="dropdownNavbar" class="flex items-center justify-between w-full py-2 px-3 text-admin-secondary-900 hover:bg-admin-secondary-100 lg:hover:bg-transparent lg:border-0 lg:hover:text-admin-secondary-700 lg:p-0 lg:w-auto dark:text-white lg:dark:hover:text-admin-secondary-500 dark:focus:text-white dark:hover:bg-admin-secondary-700 lg:dark:hover:bg-transparent">Dropdown
+						<svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
+							<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+						</svg>
+					</button>
+					<!-- Dropdown menu -->
+					<div id="dropdownNavbar" class="z-10 hidden font-normal bg-white divide-y divide-admin-secondary-100 rounded-lg shadow w-44 dark:bg-admin-secondary-700 dark:divide-admin-secondary-600">
+						<ul class="py-2 text-sm text-admin-secondary-700 dark:text-admin-secondary-200" aria-labelledby="dropdownLargeButton">
+							<li>
+								<a href="#" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:hover:text-white">Dashboard</a>
+							</li>
+							<li aria-labelledby="dropdownNavbarLink">
+								<button id="doubleDropdownButton" data-dropdown-toggle="doubleDropdown" data-dropdown-placement="right-start" type="button" class="flex items-center justify-between w-full px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:hover:text-white">Dropdown<svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
+										<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+									</svg>
+								</button>
+								<div id="doubleDropdown" class="z-10 hidden bg-white divide-y divide-admin-secondary-100 rounded-lg shadow w-44 dark:bg-admin-secondary-700">
+									<ul class="py-2 text-sm text-admin-secondary-700 dark:text-admin-secondary-200" aria-labelledby="doubleDropdownButton">
+										<li>
+											<a href="{{ path('admin_rating_index') }}" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:text-admin-secondary-200 dark:hover:text-white">{{ 'Ratings'|trans }}</a>
+										</li>
+										<li>
+											<a href="{{ path('admin_user_index') }}" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:text-admin-secondary-200 dark:hover:text-white">{{ 'Users'|trans }}</a>
+										</li>
+										<li>
+											<a href="{{ path('admin_activity_index') }}" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:text-admin-secondary-200 dark:hover:text-white">{{ 'Activitys'|trans }}</a>
+										</li>
+										<li>
+											<a href="{{ path('admin_peoplegroup_index') }}" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:text-admin-secondary-200 dark:hover:text-white">{{ 'Peoplegroups'|trans }}</a>
+										</li>
+									</ul>
+								</div>
+							</li>
+							<li>
+								<a href="#" class="block px-4 py-2 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:hover:text-white">Earnings</a>
+							</li>
+						</ul>
+						<div class="py-1">
+							<a href="#" class="block px-4 py-2 text-sm text-admin-secondary-700 hover:bg-admin-secondary-100 dark:hover:bg-admin-secondary-600 dark:text-admin-secondary-200 dark:hover:text-white">Sign out</a>
+						</div>
+					</div>
+				</li>
+				<li>
+					{% set the_class = app.request.get('_route') matches '/^admin_activity/' ? active_class : normal_class %}
+					<a href="{{ path('admin_activity_index') }}" class="{{ the_class }}">{{ 'names'|trans({}, 'Activity') }}</a>
+				</li>
+				<li>
+					{% set the_class = app.request.get('_route') matches '/^admin_peoplegroup/' ? active_class : normal_class %}
+					<a href="{{ path('admin_peoplegroup_index') }}" class="{{ the_class }}">{{ 'names'|trans({}, 'Peoplegroup') }}</a>
+				</li>
+				<li class="lg:hidden">
+					<div class="block w-full border-t my-2 border-admin-secondary-500 dark:border-admin-secondary-500"></div>
+				</li>
+				<li>
+					{% set the_class = app.request.get('_route') matches '/^admin_user/' ? active_class : normal_class %}
+					<a href="{{ path('admin_user_index') }}" class="{{ the_class }}">{{ 'names'|trans({}, 'User') }}</a>
+				</li> #}
+				{% if app.user %}
+				<li class="lg:hidden">
+					<div class="block w-full border-t my-2 border-admin-secondary-500 dark:border-admin-secondary-500"></div>
+				</li>
+				<li>
+					<a href="{{ path('app_logout') }}" data-turbo="false" class="{{ normal_class }} lg:hidden">{{ 'Logout'|trans }}</a>
+					<a href="{{ path('app_logout') }}" data-turbo="false" title="{{ 'Logout'|trans ~ ' ' ~ app.user.name }}" class="{{ normal_class }} max-lg:hidden">
+						<label class="sr-only">Exit</label>
+						<span class="hover:animate-pulse">
+							<twig:ux:icon name="tabler:door-exit" class="w-6 text-admin-secondary-800 dark:text-admin-secondary-200" />
+						</span>
+					</a>
+				</li>
+				{% endif %}
+				<li>
+					<a href="{{ path('app_public') }}" data-turbo="false" class="{{ normal_class }} lg:hidden">{{ 'public_website'|trans }}</a>
+					<a href="{{ path('app_public') }}" data-turbo="false" title="{{ 'public_website'|trans }}" class="{{ normal_class }} max-lg:hidden">
+                        <label class="sr-only">{{ 'public_website'|trans }}</label>
+                        <span class="hover:animate-pulse">
+                            <twig:ux:icon name="tabler:world-www" class="w-6 text-admin-secondary-800 dark:text-admin-secondary-200" />
+                        </span>
+                    </a>
+				</li>
+				<li>
+					<button data-darkmode-switcher title="{{ 'change_darkmode'|trans }}" class="{{ normal_class }}">
+                        <label class="sr-only">{{ 'Darkmode'|trans }}</label>
+                        <span class="dark:hidden hover:animate-pulse">
+                            <twig:ux:icon name="tabler:sun-filled" class="w-6 text-admin-secondary-800" />
+                        </span>
+                        <span class="hidden dark:inline hover:animate-pulse">
+                            <twig:ux:icon name="tabler:moon-stars" class="w-6 text-admin-secondary-200" />
+                        </span>
+                    </button>
+				</li>
+			</ul>
+		</div>
+	</div>
+	{#- Tailwind declarations
+	<div class="block py-2 px-3 text-white bg-admin-secondary-700 rounded lg:bg-transparent lg:text-admin-secondary-700 lg:p-0 lg:dark:text-admin-secondary-500 dark:bg-admin-secondary-600 lg:dark:bg-transparent"></div>
+	<div class="block py-2 px-3 text-admin-secondary-900 rounded hover:bg-admin-secondary-100 lg:hover:bg-transparent lg:border-0 lg:hover:text-admin-secondary-700 lg:p-0 dark:text-white lg:dark:hover:text-admin-secondary-500 dark:hover:bg-admin-secondary-700 dark:hover:text-white lg:dark:hover:bg-transparent"></div>
+	-#}
+</nav>

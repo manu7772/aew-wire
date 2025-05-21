@@ -49,7 +49,7 @@ class Overlay implements JsonSerializable, Serializable
     protected ?array $text_classes = null;
 
     public function __construct(
-        array $data = null
+        ?array $data = null
     )
     {
         $this->position = static::OVERLAY_POSITIONS['Bas au centre'];

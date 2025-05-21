@@ -30,10 +30,10 @@ Ceci est un bloc de texte
 
 
 | Aligné à gauche  | Centré          | Aligné à droite |
-| :--------------- |:---------------:| -----:|
-| Aligné à gauche  |   ce texte        |  Aligné à droite |
-| Aligné à gauche  | est             |   Aligné à droite |
-| Aligné à gauche  | centré          |    Aligné à droite |
+| :--------------- |:---------------:| ---------------:|
+| Aligné à gauche  | ce texte        | Aligné à droite |
+| Aligné à gauche  | est             | Aligné à droite |
+| Aligné à gauche  | centré          | Aligné à droite |
 
 #### Line Breaks
 To create a line break or new line,<br>

@@ -12,30 +12,28 @@ use Doctrine\DBAL\Types\Types;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Attribute as Serializer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
-#[ORM\Entity(repositoryClass: WireImageRepository::class)]
-#[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
-#[ORM\InheritanceType('JOINED')]
 #[ORM\HasLifecycleCallbacks]
-#[ClassCustomService(WireImageServiceInterface::class)]
 #[Vich\Uploadable]
 abstract class WireImage extends WireItem implements WireImageInterface
 {
 
-    public const ICON = 'tabler:photo';
-    public const FA_ICON = 'fa-solid fa-camera';
-    public const SERIALIZATION_PROPS = ['id','euid','name','file','filename','size','mime','classname','shortname'];
+    public const ICON = [
+        'ux' => 'tabler:photo',
+        'fa' => 'fa-solid fa-camera'
+    ];
+    // public const SERIALIZATION_PROPS = ['id','euid','name','file','filename','size','mime','classname','shortname'];
     public const DEFAULT_LIIP_FILTER = "photo_q";
     public const THUMBNAIL_LIIP_FILTER = 'miniature_q';
 
-    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null')]
-    #[ORM\Column(length: 255)]
+    // #[Assert\NotNull(message: 'Le nom de fichier ne peut être null', groups: ['persist','update'])]
+    #[ORM\Column()]
     protected ?string $filename = null;
 
     #[Vich\UploadableField(mapping: '@vichmapping', fileNameProperty: 'filename', size: 'size', mimeType: 'mime', originalName: 'originalname', dimensions: 'dimensions')]
@@ -43,27 +41,28 @@ abstract class WireImage extends WireItem implements WireImageInterface
         maxSize: '12M',
         maxSizeMessage: 'Le fichier ne peut pas dépasser la taille de {{ limit }}{{ suffix }} : votre fichier fait {{ size }}{{ suffix }}',
         mimeTypes: ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"],
-        mimeTypesMessage: "Format invalide. Formats valides : JPEG, PNG, GIF, WEBP"
+        mimeTypesMessage: "Format invalide. Formats valides : JPEG, PNG, GIF, WEBP",
+        groups: ['persist','update'],
     )]
-    #[Serializer\Ignore]
     protected File|UploadedFile|null $file = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected string $vichmapping = 'photo';
 
     #[ORM\Column]
     protected ?int $size = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $mime = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $originalname = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column()]
     protected ?string $dimensions = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Gedmo\Translatable]
     protected ?string $description = null;
 
     protected bool $deleteImage = false;
@@ -88,7 +87,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
         $this->file = $file;
         if(HttpRequest::isCli()) {
             $filesystem = new Filesystem();
-            $dest = $filesystem->tempnam(dir: $this->_estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
+            $dest = $filesystem->tempnam(dir: $this->__estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
             $filesystem->copy($this->file->getRealPath(), $dest, true);
             try {
                 $this->file = new UploadedFile(path: $dest, originalName: $this->file->getFilename(), test: true);
@@ -108,13 +107,11 @@ abstract class WireImage extends WireItem implements WireImageInterface
         return $this;
     }
 
-    #[Serializer\Ignore]
     public function getFile(): File|UploadedFile|null
     {
         return $this->file;
     }
 
-    #[Serializer\Groups(['rslider'])]
     public function getFilepathname(
         $filter = null,
         array $runtimeConfig = [],
@@ -123,7 +120,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
     ): ?string
     {
         $filter ??= $this->getLiipDefaultFilter();
-        return $this->_estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
+        return $this->__estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
     }
 
     public function getLiipDefaultFilter(): string

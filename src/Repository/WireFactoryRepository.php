@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 abstract class WireFactoryRepository extends WireItemRepository implements WireFactoryRepositoryInterface
 {
 
-    // const ENTITY_CLASS = WireFactory::class;
-    // const NAME = 'wire_factory';
+    const NAME = WireFactory::class;
+    const ALIAS = 'wire_factory';
 
 }

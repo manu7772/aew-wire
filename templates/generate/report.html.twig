@@ -1,0 +1,44 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+
+{% block title %}
+	{{ 'title_generic'|trans }}
+{% endblock %}
+
+{% block container %}
+	<div class="max-w-7xl px-4 mt-4 pb-24 mx-auto">
+		<h1 class="text-3xl italic text-blue-700">Generation report</h1>
+		{# {{ parent()}} #}
+
+		<div{{turbo_memory(false)}}>
+
+			<div class="flex flex-row items-center">
+				<div class="text-center my-2">
+					{% for num,name in available_modes %}
+					{% if num == mode %}
+					<span class="rounded m-0 py-1 px-2 font-semibold bg-orange-800 text-orange-100">{{ name }}</span>
+					{% else %}
+					<a{{ turbo_preload(false) }} href="{{ path('app_report', {mode: num}) }}" class="rounded m-0 py-1 px-2 font-semibold text-sky-600 hover:bg-sky-800 hover:text-sky-100">{{ name }}</a>
+					{% endif %}
+					{% endfor %}
+				</div>
+			</div>
+
+			<div class="max-w-7xl mx-auto my-2">
+				{% for classname,reports in class_reports %}
+				<h3 class="font-black italic mb-0">Class: {{ classname }} <a{{ turbo_preload(false) }} href="{{ path('app_report_entity', {entity: classname|shortname, mode: mode}) }}">
+					<twig:ux:icon name="tabler:eye" class="h-6 w-6 text-slate-600 inline-block" />
+				</a></h3>
+				{% for report in reports %}
+				{{ dump(report) }}
+				{% endfor %}
+				{% endfor %}
+			</div>
+
+		</div>
+
+	</div>
+
+    <span class="hidden h-8 w-8 text-lime-600"></span>
+    <span class="hidden h-8 w-8 text-red-600"></span>
+    <span class="hidden bg-orange-800 text-orange-100"></span>
+{% endblock %}

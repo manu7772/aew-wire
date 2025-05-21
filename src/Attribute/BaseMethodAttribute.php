@@ -21,6 +21,11 @@ abstract class BaseMethodAttribute extends BaseClassAttribute implements AppAttr
         return $this->method;
     }
 
+    public function getMethodName(): string
+    {
+        return $this->method->name;
+    }
+
     public function __serialize(): array
     {
         $parent = parent::__serialize();

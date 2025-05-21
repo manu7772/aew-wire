@@ -1,0 +1,25 @@
+{% extends '@AequationWire/base_web.html.twig' %}
+{% import 'public/partials/_elements.html.twig' as elements %}
+
+{% block title %}Supprimer mon profil{% endblock %}
+
+{% block body %}
+    <div class="mx-auto max-w-4xl mt-6 mb-32">
+        <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-6">
+            <div class="flex gap-2 font-extrabold text-3xl text-mdark-950 dark:text-mdark-500">
+                <twig:ux:icon name="tabler:user-x" class="w-8" />
+                <h1 class="text-mdark-950 dark:text-mdark-500">Supprimer mon profil</h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ path('app_account') }}" class="btn-secondary" title="Retour à la liste">Annuler</a>
+            </div>
+        </div>
+
+        <div class="my-12">
+            {{ elements.alert_danger('Attention, vous allez supprimer définitivement votre compte.<br>Toutes les données vous concernant seront définitivement perdues.') }}
+        </div>
+
+        {{ form(deleteForm) }}
+
+    </div>
+{% endblock %}

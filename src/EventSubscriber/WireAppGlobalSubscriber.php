@@ -1,10 +1,13 @@
 <?php
 namespace Aequation\WireBundle\EventSubscriber;
 
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 // use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,10 +24,12 @@ use function Symfony\Component\String\u;
 // PHP
 use DateTime;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Security\Http\Event\CheckPassportEvent;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class WireAppGlobalSubscriber implements EventSubscriberInterface
 {
@@ -55,70 +60,88 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
             // KernelEvents::RESPONSE => 'onKernelResponse',
             KernelEvents::FINISH_REQUEST => 'onFinishRequest',
             // Login
-            CheckPassportEvent::class => ['onCheckPassport', -10],
-            LoginSuccessEvent::class => 'onLoginSuccess',
-            LoginFailureEvent::class => 'onLoginFailure',
+            // CheckPassportEvent::class => ['onCheckPassport', -10],
+            // LoginSuccessEvent::class => 'onLoginSuccess',
+            // LoginFailureEvent::class => 'onLoginFailure',
         ];
+    }
+
+    public static function isWdtRequest(
+        KernelEvent $event
+    ): bool
+    {
+        return preg_match(AppWireServiceInterface::SECONDARY_PATHS_PATTERN, $event->getRequest()->getPathInfo());
+    }
+
+    private function isAvailableActions(
+        KernelEvent $event
+    ): bool
+    {
+        return $event->isMainRequest() && !HttpRequest::isCli() && !static::isWdtRequest($event);
     }
 
     public function onRequest(RequestEvent $event): void
     {
-        if($event->isMainRequest()) {
-            $this->appWire->initialize();
-            // LOGOUT INVALID USER IMMEDIATLY!!!
-            $user = $this->userService->getUser();
-            if($user && !$user->isLoggable() && !preg_match('/^\\/_wdt\\//', $event->getRequest()->getPathInfo())) {
-                // $route_logged_out = $this->router->generate('app_logged_out');
-                if($this->appWire->getCurrent_route() !== 'app_logged_out') {
-                    // if(!$user->isLoggable()) {
-                        $response = $this->userService->logoutCurrentUser(false);
-                        $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
-                        $event->setResponse($response);
-                    // }
-                }
+        if(!$this->isAvailableActions($event)) return;
+        // LOGOUT INVALID USER IMMEDIATLY!!!
+        $user = $this->userService->getUser();
+        if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {
+            // $route_logged_out = $this->router->generate('app_logged_out');
+            if($this->appWire->getCurrent_route() !== 'app_logged_out') {
+                // if(!$user->isLoggable()) {
+                    $response = $this->userService->logoutCurrentUser(false);
+                    $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
+                    $event->setResponse($response);
+                // }
             }
-        } else if($this->appWire->isDev()) {
-            // dd(vsprintf('DEV TEST (%s line %d) : not main request with route %s and URL %s', [__METHOD__, __LINE__, $this->appWire->getCurrent_route(), $event->getRequest()->getPathInfo()]));
+        }
+        if($this->appWire->isRequiredInitialization($event)) {
+            $this->appWire->initialize($event);
         }
     }
 
     public function onException(ExceptionEvent $event): void
     {
-        // Disable control
-        if(!$this->appWire->isProd()) return;
-        if($event->getRequest()->query->get('debug', 0) === "1") {
-            return;
+        if($this->appWire->isDev()) {
+            $normalizer = $this->appWire->get(NormalizerServiceInterface::class);
+            dump($normalizer->getCreateds()->toArray());
         }
-        // Redirect to Exception Twig page
-        /** @var Throwable */
-        $exception = $event->getThrowable();
-        $statusCode = 500;
-        if(method_exists($exception, 'getCode') &&  $exception->getCode() > 0) {
-            $statusCode = $exception->getCode();
-        } else if(method_exists($exception, 'getStatusCode') &&  $exception->getStatusCode() > 0) {
-            $statusCode = $exception->getStatusCode();
-        }
-        switch (true) {
-            case $statusCode >= 100:
-                $twigpage_name = $this->getTemplateName($statusCode);
-                break;
-            // case $exception instanceof HttpExceptionInterface:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            // case $exception instanceof Error:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            // case $exception instanceof LogicException:
-            //     $twigpage_name = $this->getTemplateName($statusCode);
-            //     break;
-            default:
-                $twigpage_name = static::DEFAULT_ERROR_TEMPLATE;
-                break;
-        }
-        $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
-        $response ??= $this->appWire->getTwig()->render(name: $twigpage_name, context: $context);
-        // if($statusCode <= 0) dd($exception, $response);
-        $event->setResponse(new Response($response, $statusCode));
+        return;
+        // // Disable control
+        // if(!$this->appWire->isProd()) return;
+        // if($event->getRequest()->query->get('debug', 0) === "1") {
+        //     return;
+        // }
+        // // Redirect to Exception Twig page
+        // /** @var Throwable */
+        // $exception = $event->getThrowable();
+        // $statusCode = 500;
+        // if(method_exists($exception, 'getCode') &&  $exception->getCode() > 0) {
+        //     $statusCode = $exception->getCode();
+        // } else if(method_exists($exception, 'getStatusCode') &&  $exception->getStatusCode() > 0) {
+        //     $statusCode = $exception->getStatusCode();
+        // }
+        // switch (true) {
+        //     case $statusCode >= 100:
+        //         $twigpage_name = $this->getTemplateName($statusCode);
+        //         break;
+        //     // case $exception instanceof HttpExceptionInterface:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     // case $exception instanceof Error:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     // case $exception instanceof LogicException:
+        //     //     $twigpage_name = $this->getTemplateName($statusCode);
+        //     //     break;
+        //     default:
+        //         $twigpage_name = static::DEFAULT_ERROR_TEMPLATE;
+        //         break;
+        // }
+        // $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
+        // $response ??= $this->appWire->getTwig()->render(name: $twigpage_name, context: $context);
+        // // if($statusCode <= 0) dd($exception, $response);
+        // $event->setResponse(new Response($response, $statusCode));
     }
 
     protected function getTemplateName(
@@ -133,20 +156,24 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     // public function onKernelResponse(ResponseEvent $event): void
     // {
-    //     if(!$event->isMainRequest()) return;
+    //     if(!$this->appWire->isRequiredInitialization($event)) return;
     //     dump($this->appWire->jsonSerialize());
     // }
 
     public function onFinishRequest(FinishRequestEvent $event): void
     {
-        if(!$event->isMainRequest()) return;
-        $this->appWire->saveAppWire();
+        if(!$this->isAvailableActions($event)) return;
+        if($this->appWire->isInitializable($event) && $this->appWire->isInitialized()) {
+            $this->appWire->saveAppWire($event);
+        }
     }
 
     public function onController(ControllerEvent $event): void
     {
-        $this->appWire->initialize();
-        if(!$event->isMainRequest()) return;
+        if(!$this->isAvailableActions($event)) return;
+        if($this->appWire->isRequiredInitialization($event)) {
+            $this->appWire->initialize($event);
+        }
         // dump($this->appWire->jsonSerialize());
         return;
 
@@ -259,40 +286,40 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     //     }
     // }
 
-    public function onCheckPassport(CheckPassportEvent $event): void
-    {
-        /** @var ?WireUserInterface */
-        $user = $this->appWire->getUser();
-        if ($user instanceof WireUserInterface && !$user->isLoggable()) {
-            throw new AccountNotVerifiedAuthenticationException();
-        }
-    }
+    // public function onCheckPassport(CheckPassportEvent $event): void
+    // {
+    //     /** @var ?WireUserInterface */
+    //     $user = $this->appWire->getUser();
+    //     if ($user instanceof WireUserInterface && !$user->isLoggable()) {
+    //         throw new AccountNotVerifiedAuthenticationException();
+    //     }
+    // }
 
-    public function onLoginSuccess(LoginSuccessEvent $event): void
-    {
-        $keys = array_keys($event->getRequest()->request->all());
-        if(count($keys) >= count(static::LOGIN_PARAMS_KEYS)) {
-            if(count(array_intersect_key($keys, static::LOGIN_PARAMS_KEYS)) >= count(static::LOGIN_PARAMS_KEYS)) {
-                /** @var WireUserInterface */
-                $user = $event->getUser();
-                // if($this->security->isGranted('ROLE_EDITOR')) {
-                //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
-                // }
-                $this->userService->updateUserLastLogin($user);
-                $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
-            }
-        }
-        return;
-    }
+    // public function onLoginSuccess(LoginSuccessEvent $event): void
+    // {
+    //     $keys = array_keys($event->getRequest()->request->all());
+    //     if(count($keys) >= count(static::LOGIN_PARAMS_KEYS)) {
+    //         if(count(array_intersect_key($keys, static::LOGIN_PARAMS_KEYS)) >= count(static::LOGIN_PARAMS_KEYS)) {
+    //             /** @var WireUserInterface */
+    //             $user = $event->getUser();
+    //             // if($this->security->isGranted('ROLE_EDITOR')) {
+    //             //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
+    //             // }
+    //             $this->userService->updateUserLastLogin($user);
+    //             $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
+    //         }
+    //     }
+    //     return;
+    // }
 
-    public function onLoginFailure(LoginFailureEvent $event): void
-    {
-        if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
-            $response = new RedirectResponse(
-                $this->router->generate('app_home')
-            );
-            $event->setResponse($response);
-        }
-    }
+    // public function onLoginFailure(LoginFailureEvent $event): void
+    // {
+    //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
+    //         $response = new RedirectResponse(
+    //             $this->router->generate('app_home' --> appWire->getPublicHomeRoute())
+    //         );
+    //         $event->setResponse($response);
+    //     }
+    // }
 
 }

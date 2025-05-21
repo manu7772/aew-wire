@@ -11,7 +11,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 abstract class WirePdfRepository extends WireItemRepository implements WirePdfRepositoryInterface
 {
 
-    // const ENTITY_CLASS = WirePdf::class;
-    // const NAME = 'wire_Pdf';
+    const NAME = WirePdf::class;
+    const ALIAS = 'wirepdf';
 
 }

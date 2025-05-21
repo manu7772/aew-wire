@@ -1,41 +1,19 @@
 <!DOCTYPE html>
-<html lang="{{ app.locale }}" class="{{ app.darkmode ? 'dark' }}">
-	<head>
-		<meta charset="{{ app.charset }}">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>
-			{% block title %}Website{% endblock %}
-		</title>
-		{% block favicon %}
-		<link rel="icon" href="{% block favicon_url %}{{ asset(app.param('favicon.main', 'favicon.svg')) }}{% endblock %}">
-		{% endblock %}
+<html{{ component('html_element_attributes') }}>
+    <head>
+        <meta charset="{{ app.charset }}">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
-		{# <link rel="stylesheet" href="{{ asset('bundles/aequationwire/styles/wireadmin.css') }}"> #}
         {% endblock %}
-		{% block javascripts %}
-			{% block importmap %}{{ importmap('app') }}{% endblock %}
-		{% endblock %}
-		{{ app.getTurboMetas() }}
-	</head>
-	{% block body_outer %}
-	{# <body id="app"{{ app.getDataTurboBodyAttrs() }} data-app="{{ app.appParams(true, 'public_app') }}" class="nav-fixed" {{ stimulus_controller('globalapp') }}> #}
-	<body id="app">
-		{% block body_inner %}
-		<div class="container mx-auto">
-			{% block navbar %}
-				{% if menu is defined %}
-				{% include "@AequationWire/webpage/bases/_navbar.html.twig" with {menu: menu} %}
-				{% endif %}
-			{% endblock %}
-			{% block body %}
-				{# main content here #}
-			{% endblock %}
-		</div>
-		{% endblock %}
-		{% block after_container %}
-			{# commands, modals, etc. content here #}
-            {% include '@AequationWire/partials/_flashes.html.twig' %}
-		{% endblock %}
-	</body>
-	{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+        {{ app.getTurboMetas() }}
+    </head>
+    <body {{ stimulus_controller('aequation/wire/globalapp') }}>
+        {% block body %}
+        {% endblock %}
+        {% include "@AequationWire/partials/_flashes.html.twig" %}
+    </body>
 </html>

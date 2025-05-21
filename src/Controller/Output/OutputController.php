@@ -11,13 +11,13 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
-#[Route('/output', name: 'output_')]
+#[Route('/output', name: 'output.')]
 class OutputController extends AbstractController
 {
 
     public function __construct(
-        protected WireEntityManagerInterface $wireEM,
-        protected WirePdfServiceInterface $pdfService
+        protected WireEntityManagerInterface $wire_em,
+        protected ?WirePdfServiceInterface $pdfService
     ) {}
 
     protected function getOutputResponse(
@@ -25,6 +25,9 @@ class OutputController extends AbstractController
         string $action
     ): Response
     {
+        if(!$this->pdfService) {
+            throw $this->createNotFoundException('Le service de génération de PDF n\'est pas disponible');
+        }
         $response = new Response(status: Response::HTTP_OK);
         $response->headers->set('Content-Type', $pdf->getMime());
         $response->headers->set('Content-Disposition', $action.'; filename="' . $pdf->getFilename() . '"');
@@ -42,11 +45,14 @@ class OutputController extends AbstractController
     public function pdfOutputAction(
         string $pdf,
         string $action = 'inline',
-        string $paper = null,
+        ?string $paper = null,
         string $orientation = 'portrait'
     ): Response
     {
-        $doc = $this->wireEM->findEntityByUniqueValue($pdf);
+        if(!$this->pdfService) {
+            throw $this->createNotFoundException('Le service de génération de PDF n\'est pas disponible');
+        }
+        $doc = $this->wire_em->findEntityByUniqueValue($pdf);
         /** @var ServiceEntityRepository $repo */
         $repo = $this->pdfService->getRepository();
         $doc ??= $repo->find($pdf);

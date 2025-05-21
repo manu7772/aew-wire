@@ -3,10 +3,11 @@ namespace Aequation\WireBundle\Attribute;
 
 // PHP
 use Exception;
+use JsonSerializable;
 use ReflectionClass;
 use Serializable;
 
-abstract class BaseClassAttribute implements Serializable
+abstract class BaseClassAttribute implements Serializable, JsonSerializable
 {
 
     public readonly ReflectionClass $class;
@@ -23,6 +24,12 @@ abstract class BaseClassAttribute implements Serializable
         return $this->object ?? null;
     }
 
+    public function setObject(object $object): static
+    {
+        $this->object = $object;
+        return $this;
+    }
+
     public function setClass(object $class): static
     {
         if(!($class instanceof ReflectionClass)) {
@@ -36,6 +43,19 @@ abstract class BaseClassAttribute implements Serializable
     public function getClassname(): string
     {
         return $this->class->name;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return $this->__serialize();
+    }
+
+    public function jsonUnserialize(string|array $data): void
+    {
+        if(is_string($data)) {
+            $data = json_decode($data, true);
+        }
+        $this->__unserialize($data);
     }
 
     public function __serialize(): array

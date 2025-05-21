@@ -2,119 +2,168 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\RelationOrder;
-use Aequation\WireBundle\Entity\interface\TraitHasOrderedInterface;
+use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
+use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
-use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Entity\trait\HasOrdered;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Serializer\Attribute as Serializer;
-// PHP
-use Exception;
+use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * Use Gedmo extension for sortable
+ * @see https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/sortable.md
+ */
 #[ORM\Entity(repositoryClass: WireEcollectionRepository::class)]
+#[ORM\Table(name: 'w_ecollection')]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[ORM\HasLifecycleCallbacks]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
+#[ORM\HasLifecycleCallbacks]
+#[SerializationMapping(WireEcollection::ITEMS_ACCEPT)]
 abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
-    use HasOrdered;
 
-    public const ITEMS_ACCEPT = [
-        'items' => [WireItemInterface::class],
+    public const ICON = [
+        'ux' => 'tabler:folder',
+        'fa' => 'fa-folder'
     ];
+    public const ITEMS_ACCEPT = [
+        'items' => [
+            'field' => 'childs',
+            'require' => [WireItemInterface::class],
+        ],
+    ];
+    public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = false;
 
-    #[ORM\ManyToMany(targetEntity: WireItemInterface::class, mappedBy: 'parents', cascade: ['persist'])]
-    #[RelationOrder()]
-    #[Serializer\Ignore]
-    protected Collection $items;
+    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'parent', cascade: ['persist'], orphanRemoval: true)]
+    #[Assert\Valid(groups: ['persist','update'])]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    protected Collection $childs;
 
     public function __construct()
     {
         parent::__construct();
-        $this->items = new ArrayCollection();
+        $this->childs = new ArrayCollection();
     }
 
-
-    #[Serializer\Ignore]
-    public function getItems(
-        bool $filterActives = false
-    ): Collection
+    // Sortgroup
+    public function getSortgroup(
+        ?BetweenManyChildInterface $child = null
+    ): string
     {
-        return $this->items->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()); });
-        // return $this->items;
+        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
 
-    #[Serializer\Ignore]
+    // Position
+    public function getItemPosition(WireItemInterface $item): int|false
+    {
+        foreach ($this->childs as $ic) {
+            if($ic->getChild() === $item) return $ic->getPosition();
+        }
+        return false;
+    }
+
+    public function setItemPosition(WireItemInterface $item, int $position): static
+    {
+        foreach ($this->childs as $ic) {
+            if($ic->getChild() === $item) {
+                $ic->setPosition($position);
+                return $this;
+            }
+        }
+        return $this;
+    }
+
+    public function getItems(): Collection
+    {
+        return $this->childs->map(
+            fn(ItemCollectionInterface $ic) => $ic->getChild($this)
+        );
+    }
+
     public function getActiveItems(): Collection
     {
-        return $this->items->filter(fn($item) => $item->isActive());
+        return $this->childs
+            ->map(fn(ItemCollectionInterface $ic) => $ic->getChild())
+            ->filter(fn(WireItemInterface $item) => $item->isActive());
     }
 
-    #[Serializer\Ignore]
-    public function addItem(WireItemInterface $item): bool
+    public function setItems(iterable $items): static
     {
-        if($this->isAcceptsItemForEcollection($item, 'items')) {
-            if (!$this->hasItem($item)) $this->items->add($item);
-            if(!$item->hasParent($this)) $item->addParent($this);
+        $this->removeItems();
+        foreach ($items as $item) {
+            if($item instanceof WireItemInterface) $this->addItem($item);
+        }
+        return $this;
+    }
+
+    public function addItem(WireItemInterface $item): static
+    {
+        if($item !== $this && !$this->hasItem($item)) {
+            $ic = new ItemCollection($this, $item);
+            $this->childs->add($ic);
         } else {
-            // not acceptable
             $this->removeItem($item);
         }
-        return $this->hasItem($item);
+        return $this;
     }
 
-    #[Serializer\Ignore]
-    public function hasItem(WireEntityInterface $item): bool
+    public function hasItem(WireItemInterface $item): bool
     {
-        return $this->items->contains($item);
+        return $this->getItems()->contains($item);
     }
 
     public function removeItem(WireItemInterface $item): static
     {
-        $this->items->removeElement($item);
-        if($item->hasParent($this)) $item->removeParent($this);
+        // $this->childs = $this->childs->filter(
+        //     fn(ItemCollectionInterface $ic) => $ic->getChild() !== $item
+        // );
+        foreach ($this->childs as $child) {
+            if($child->getChild() === $item) {
+                $this->childs->removeElement($child);
+                $child->preRemove();
+                break;
+            }
+        }
         return $this;
     }
 
     public function removeItems(): static
     {
-        foreach ($this->items->toArray() as $item) {
-            $this->removeItem($item);
+        foreach ($this->childs as $child) {
+            $this->removeItem($child->getChild());
         }
         return $this;
     }
 
-    #[Serializer\Ignore]
-    public function isAcceptsItemForEcollection(
-        WireEntityInterface $item,
+    public function isAcceptsChildForParent(
+        WireItemInterface $item,
         string $property
     ): bool
     {   
         if($item !== $this) {
-            foreach (static::ITEMS_ACCEPT[$property] as $class) {
+            foreach (static::ITEMS_ACCEPT[$property] as $field => $classes) {
+                foreach ($classes as $class) {
+                    if(is_a($item, $class)) return true;
+                }
                 if(is_a($item, $class)) return true;
             }
         }
         return false;
     }
 
-    #[Serializer\Ignore]
-    public function filterAcceptedItemsForEcollection(
+    public function filterAcceptedChildsForParent(
         Collection $items,
         string $property
     ): Collection
     {
-        return $items->filter(fn($item) => $item !== $this && $this->isAcceptsItemForEcollection($item, $property));
+        return $items->filter(fn($item) => $item !== $this && $this->isAcceptsChildForParent($item, $property));
     }
 
 }

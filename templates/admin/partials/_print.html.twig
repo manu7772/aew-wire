@@ -1,0 +1,77 @@
+{% macro table(entities, fields, options) %}
+    {% import 'admin/partials/_elements.html.twig' as elements %}
+    {% import _self as self %}
+    {% set paginated = entities|shortname in ['SlidingPagination'] %}
+    {% set trans_domain = options.trans_domain|default(options.shortname) %}
+
+    <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+        <h2>{{ options.title|default(null) is not empty ? options.title|trans|raw : 'actions.count'|trans({'%count%': paginated ? entities.getTotalItemCount : entities|length}, trans_domain) }}</h2>
+        <div class="flex flex-row gap-1">
+            {{ options.top_buttons is defined ? self.include_template(options.top_buttons, {entities: entities, trans_domain: trans_domain, options: options}, 'top_buttons_' ~ options.shortname|lower ~ '_index') }}
+            {{ elements.button('new', options.shortname) }}
+        </div>
+    </div>
+
+    {% if paginated %}
+    <div class="mt-2 w-full text-right">
+        {{ knp_pagination_rel_links(entities) }}
+    </div>
+    {% endif %}
+    <table class="table-index">
+        <thead>
+            <tr>
+                {% for field_name,field in fields %}
+                {% set name = ('fields.' ~ field_name)|trans({}, trans_domain) %}
+                <th{% if field.classes is defined %} class="{{ field.classes is iterable ? field.classes|join(' ') : field.classes }}{{ paginated and entities.isSorted([[options.alias, field_name]|join('.')]) ? ' underline' }}"{% endif %}>
+                    {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
+                </th>
+                {% if loop.first and options.actions|default(false) -%}
+                <th class="text-center w-0">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
+                {%- endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for entity in entities %}
+            <tr>
+                {% for field_name,field in fields %}
+                <td{% if field.classes is defined %} class="{{ field.classes is iterable ? field.classes|join(' ') : field.classes }}"{% endif %}>
+                    {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
+                    {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
+                    {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
+                </td>
+                {% if loop.first and options.actions|default(false) %}
+                <td class="text-center w-0">
+                    <div class="flex flex-row justify-center gap-2">
+                        {{ elements.button('show', entity, {class: '', icon_class: 'w-6 inline'}) }}
+                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-6 inline'}) }}
+                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-6 inline'}) }}
+                    </div>
+                </td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if paginated %}
+    <div class="mt-2 w-full text-right">
+        {{ knp_pagination_render(entities) }}
+    </div>
+    {% endif %}
+    {# <hr class="my-2">
+    {{ dump(entities) }}#}
+{% endmacro %}
+
+{% macro include_template(template, data, name = null) %}
+    {% if template.path is defined %}
+    {{ include(template.path, data) }}
+    {% elseif template.from_string is defined %}
+    {# @see https://twig.symfony.com/doc/3.x/functions/template_from_string.html #}
+    {{ template_from_string(template.from_string, name) }}
+    {% endif %}
+{% endmacro %}

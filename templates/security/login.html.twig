@@ -1,0 +1,71 @@
+{% extends '@AequationWire/base_web.html.twig' %}
+{% import '@AequationWire/partials/_elements.html.twig' as elements %}
+
+{% block title %}{{ 'Login'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="mx-auto max-w-4xl mt-6 mb-32">
+        <div class="flex flex-row gap-2 flex-wrap justify-center items-start mb-6">
+            <div class="flex gap-2 font-extrabold text-3xl text-mdark-950 dark:text-mdark-500">
+                <h1 class="text-mdark-950 dark:text-mdark-500"><twig:ux:icon name="tabler:user-check" class="w-8 h-8 inline" /> {{ 'Login'|trans }}</h1>
+            </div>
+        </div>
+
+        <div class="max-w-xl mx-auto grid grid-cols-1 gap-3">
+            {% if error %}
+                <div data-turbo-temporary="true">
+                    {{ elements.alert_danger(error.messageKey|trans(error.messageData, 'security')) }}
+                </div>
+            {% endif %}
+
+            {% if app.user %}
+
+                <div class="mb-3">
+                    <div class="alert alert-danger text-xl font-bold text-center">
+                        {{ 'user_already_logged'|trans({'%user%': app.user.userIdentifier}) }}, <a data-turbo="false" href="{{ path('app_logout') }}">{{ 'Exit'|trans }}</a>
+                    </div>
+                </div>
+
+            {% else %}
+
+                <form method="post">
+
+                    <div class="block">
+                        <label for="username">
+                            {# <span>Email</span> #}
+                            <input type="email" value="{{ last_username }}" name="_username" id="username" class="mt-2 block text-gray-800 w-full" placeholder="{{ 'Email'|trans }}" autocomplete="email" required autofocus>
+                        </label>
+                    </div>
+                    <div class="block">
+                        <label for="password">
+                            {# <span>Password</span> #}
+                            <input type="password" name="_password" id="password" class="mt-2 block text-gray-800 w-full" placeholder="{{ 'Password'|trans }}" autocomplete="current-password" required>
+                        </label>
+                    </div>
+                    {# !!! set framework => csrf_protection: true !!! #}
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    {#
+                        Uncomment this section and add a remember_me option below your firewall to activate remember me functionality.
+                        See https://symfony.com/doc/current/security/remember_me.html
+
+                        <div class="checkbox mb-3">
+                            <input type="checkbox" name="_remember_me" id="_remember_me">
+                            <label for="_remember_me">Remember me</label>
+                        </div>
+                    #}
+                    <div class="block">
+                        <button class="btn btn-lg btn-primary mt-2 block" type="submit" data-turbo="false">{{ 'login'|trans }}</button>
+                    </div>
+                        
+                    
+                </form>
+                <div class="text-center text-xl text-mdark-950 dark:text-mdark-500">
+                    {{ 'No_account'|trans }} <twig:ux:icon name="tabler:circle-arrow-right-filled" class="w-6 inline" /> <a data-turbo="false" href="{{ path('app_register') }}" class="underline">{{ 'Register'|trans }}</a>
+                </div>
+
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

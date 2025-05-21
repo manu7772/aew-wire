@@ -1,0 +1,14 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+
+{% block title %}{{ 'Register'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="mx-auto max-w-4xl mt-6 mb-32">
+        <div class="flex flex-row gap-2 flex-wrap justify-center items-start mb-6">
+            <h1 class="title font-extrabold text-3xl text-mdark-950 dark:text-mdark-500"><twig:ux:icon name="tabler:user" width="36" class="inline" /> {{ 'Register'|trans }}</h1>
+        </div>
+
+        {{ form(registrationForm) }}
+
+    </div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends '@AequationWire/base_admin.html.twig' %}
+
+{% block title %}{{ 'title_generic'|trans }}{% endblock %}
+
+{% block container %}
+    <div class="max-w-3xl px-4 mt-4 pb-24 mx-auto">
+		<h1 class="text-3xl italic text-blue-700">Generate entities</h1>
+		{{ parent()}}
+
+		<div class="max-w-2xl mx-auto my-2">
+			<h3 class="text-center font-black">Choose your options</h3>
+			<div>{{ form(form) }}</div>
+		</div>
+
+		<div{{ turbo_memory(false) }}>
+
+			<div class="max-w-2xl mx-auto my-2">
+				{% for name,opresult in hydrateds|default([]) %}
+				<h3 class="text-center font-black">{{ name|capitalize }} {{ opresult.data|length }}</h3>
+				{% if opresult.success %}
+					{% for entity in opresult.data %}
+					<div>
+						<h4 class="text-center my-2">{{ entity.shortname }} {{ entity.name }}</h4>
+						{{ dump(entity) }}
+					</div>
+					{% endfor %}
+				{% else %}
+					<code>{{ opresult.printMessages(true) }}</code>
+					<div>{{ dump(opresult.data) }}</div>
+				{% endif %}
+				{% endfor %}
+			</div>
+
+		</div>
+
+	</div>
+{% endblock %}

@@ -11,15 +11,20 @@ use Exception;
 trait Owner
 {
 
+    #[ORM\ManyToOne(targetEntity: WireUserInterface::class)]
+    #[ORM\JoinColumn(name: 'owner_entity', nullable: true)]
+    #[CurrentUser(required: true)]
+    protected ?WireUserInterface $owner = null;
+
     public function __construct_owner(): void
     {
         if(!($this instanceof TraitOwnerInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitOwnerInterface::class]));
     }
 
-    #[ORM\ManyToOne(targetEntity: WireUserInterface::class)]
-    #[ORM\JoinColumn(name: 'owner_entity', nullable: true)]
-    #[CurrentUser(required: true)]
-    protected ?WireUserInterface $owner = null;
+    public function isOwnerRequired(): bool
+    {
+        return false;
+    }
 
     public function getOwner(): ?WireUserInterface
     {

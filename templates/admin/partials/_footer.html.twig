@@ -1,0 +1,13 @@
+<footer class="w-full bg-admin-secondary-950 text-admin-secondary-300 p-4">
+	<div class="flex flex-col gap-2 max-w-6xl mx-auto">
+		{# <h4 class="text-center text-white">Admin Wire Aequation</h4> #}
+		<div class="text-right mb-2">Création | <a href="http://aequation.fr" target="_blank" rel="noopener noreferrer">Aequation Webdesign</a></div>
+	</div>
+	<div class="relative z-[5] cursor-pointer w-fit" {{ stimulus_controller('scrollup', {startAt: 200}) }}>
+		<div class="fixed bottom-20 right-4 group flex flex-row justify-end gap-1 items-center">
+			<span class="p-2 bg-sky-950 text-white group-hover:bg-sky-700 rounded-lg">
+				{{ ux_icon('tabler:chevron-up', {class: 'h-6 w-6'}) }}
+			</span>
+		</div>
+	</div>
+</footer>
