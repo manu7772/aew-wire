@@ -60,7 +60,7 @@
         "symfony/ux-leaflet-map": "^2.23",
         "liip/imagine-bundle": "^2.13",
         "vich/uploader-bundle": "^2.4",
-        "symfonycasts/tailwind-bundle": "^0.6.1",
+        "symfonycasts/tailwind-bundle": "^0.10.0",
         "symfony/uid": "7.2.*",
         "symfony/rate-limiter": "^7.2",
         "stof/doctrine-extensions-bundle": "^1.13",
