@@ -26,17 +26,20 @@
         "importmap": {
             "@hotwired/stimulus": "^3.2.2",
             "flowbite": "^3.1.2",
-            "toastr": "^2.1.4"
+            "toastr": "^2.1.4",
+            "browser": "^0.2.6"
         }
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
-        "toastr": "^2.1.4"
+        "toastr": "^2.1.4",
+        "browser": "^0.2.6"
     },
     "DevDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
-        "toastr": "^2.1.4"
+        "toastr": "^2.1.4",
+        "browser": "^0.2.6"
     }
 }
