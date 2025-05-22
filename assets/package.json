@@ -7,12 +7,13 @@
         "symfony-ux"
     ],
     "type": "module",
-    "files": [
-        "dist"
-    ],
-    "main": "dist/toastr_controller.js",
     "symfony": {
         "controllers": {
+            "globalapp": {
+                "main": "dist/globalapp_controller.js",
+                "fetch": "eager",
+                "enabled": true
+            },
             "toastr": {
                 "main": "dist/toastr_controller.js",
                 "fetch": "eager",

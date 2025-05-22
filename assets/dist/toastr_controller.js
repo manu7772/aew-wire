@@ -7,7 +7,6 @@ export default class extends Controller {
     connect() {
         var data = JSON.parse(this.element.dataset.messages)
         var options = JSON.parse(this.element.dataset.options || '{}')
-        alert('*** Toast initial ***')
         if(options) {
             toastr.options = {...this.getDefaultOptions(), ...options}
         }

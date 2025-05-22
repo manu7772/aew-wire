@@ -95,10 +95,10 @@ class GenerationController extends AbstractController
                 $this->addFlash('success', count($classnames).' entities generated');
             }
         } else {
-            $this->addFlash('info', 'The database is not empty, no generation done');
+            $this->addFlash('warning', 'The database is not empty, no generation done');
         }
-        $redirect ??= $request->headers->get('referer');
-        return $this->redirectToRoute($redirect ?? 'app_index');
+        $redirect ??= $request->headers->get('referer', 'app_index');
+        return $this->redirectToRoute($redirect);
     }
 
     #[IsGranted("ROLE_SUPER_ADMIN")]
