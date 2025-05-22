@@ -2,10 +2,11 @@
 namespace Aequation\WireBundle\Twig\Components;
 
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Symfony\Component\Routing\Router;
 // Symfony
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-#[AsTwigComponent('html_element_attributes')]
+#[AsTwigComponent]
 class HtmlElementAttributes
 {
 
@@ -14,11 +15,11 @@ class HtmlElementAttributes
     public string $switcherUrl;
 
     public function __construct(
-        private AppWireServiceInterface $appWire,
+        AppWireServiceInterface $appWire
     ) {
-        $this->locale = $this->appWire->getLocale();
-        $this->darkmodeClass = $this->appWire->getDarkmodeClass();
-        $this->switcherUrl = 'aequation_wire_api.darkmode_switcher';
+        $this->locale = $appWire->getLocale();
+        $this->darkmodeClass = $appWire->getDarkmodeClass();
+        $this->switcherUrl = $appWire->get('router')->generate('aequation_wire_api.darkmode_switcher');
     }
 
 
