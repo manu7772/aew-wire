@@ -14,16 +14,16 @@ use Exception;
 class AppWireController extends AbstractController
 {
 
-    #[Route(path: '/appwire/data', name: 'appwire_data', methods: ['GET'])]
-    public function getAppWireData(
-        AppWireServiceInterface $appWire
-    ): JsonResponse
-    {
-        return $this->json(
-            data: $appWire->jsonSerialize(),
-            status: JsonResponse::HTTP_OK,
-        );
-    }
+    // #[Route(path: '/appwire/data', name: 'appwire_data', methods: ['GET'])]
+    // public function getAppWireData(
+    //     AppWireServiceInterface $appWire
+    // ): JsonResponse
+    // {
+    //     return $this->json(
+    //         data: $appWire->jsonSerialize(),
+    //         status: JsonResponse::HTTP_OK,
+    //     );
+    // }
 
     #[Route(path: '/darkmode/get', name: 'darkmode_get', methods: ['GET'])]
     public function getDarkmode(
