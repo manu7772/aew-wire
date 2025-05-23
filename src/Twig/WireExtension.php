@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Twig;
 
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
@@ -41,6 +42,8 @@ class WireExtension extends AbstractExtension
             new TwigFunction('field_value', [$this, 'fieldValue'], ['is_safe' => ['html']]),
             new TwigFunction('action_path', [$this->appWire, 'getActionPath']),
             new TwigFunction('action_url', [$this->appWire, 'getActionUrl']),
+            // new TwigFunction('printr', [Objects::class, 'toDebugString'], ['is_safe' => ['html']]),
+            new TwigFunction('toDump', [$this, 'toDump'], ['is_safe' => ['html']]),
             // TURBO-UX
             new TwigFunction('turbo_memory', [$this, 'turboMemory']),
             new TwigFunction('turbo_preload', [$this, 'turboPreload']),
@@ -163,6 +166,15 @@ class WireExtension extends AbstractExtension
                 break;
         }
         return (string)$value;
+    }
+
+    public function toDump(
+        mixed $something,
+        int $depth = 3,
+        array $groups = [],
+    ): ?Markup
+    {
+        return Objects::toDump($something, true, $depth, $this->appWire->get(NormalizerServiceInterface::class)->getSerializer(), $groups);
     }
 
     /**

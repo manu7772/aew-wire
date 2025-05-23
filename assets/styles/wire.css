@@ -8,6 +8,8 @@
     --font-condensed: "Ubuntu Condensed", sans-serif;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
     body {
         @apply font-display text-blue-950;

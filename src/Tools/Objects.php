@@ -8,6 +8,9 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
+// Symfony
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 // PHP
 use Attribute;
 use Exception;
@@ -15,8 +18,7 @@ use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
 use Stringable;
-use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 use Twig\Markup;
 
@@ -142,6 +144,98 @@ class Objects implements ToolInterface
                 $string = gettype($something);
                 break;
         }
+        return Strings::markup($string);
+    }
+
+    public static function toDump(
+        mixed $something,
+        bool $asHtml = false,
+        int $depth = 3,
+        ?NormalizerInterface $normalizer = null,
+        array $groups = ['debug'],
+        int $start_depth = 0,
+    ): ?Markup
+    {
+        if($start_depth >= $depth) {
+            return null;
+        }
+        $prefix = empty($start_depth) ? '' : ' : ';
+        if($asHtml) {
+            $start_section = empty($start_depth)
+                ? '<div style="margin-left: 0px; padding: 4px; background-color: black; border-radius: 6px; font-size: 14px; line-height: 16px; width: 100%; color: white; border: 1px solid blue;">'
+                : '<span style="margin-left: 0px; padding: 4px; font-size: 14px; line-height: 16px;">'
+                ;
+            $end_section = empty($start_depth) ? '</div>' : '</span>';
+            $start_line = $prefix;
+            $end_line = null;
+            $start_type = '<span style="color: blue; font-weight: thin; font-style: italic;">';
+            $end_type = '</span>&nbsp;';
+            $start_value = '<span style="color: lime; font-weight: bold;">';
+            $end_value = '</span>';
+            $start_ul = '<ul style="margin-left: 16px; width: 100%; list-style-type: none;">';
+            $end_ul = '</ul>';
+            $start_li = '<li style="width: 100%;">';
+            $end_li = '</li>';
+        } else {
+            $start_section = null;
+            $end_section = null;
+            $start_line = str_pad('', $start_depth * 4, ' ', STR_PAD_LEFT).$prefix;
+            $end_line = PHP_EOL;
+            $start_type = null;
+            $end_type = ' ';
+            $start_value = null;
+            $end_value = null;
+            $start_ul = null;
+            $end_ul = null;
+            $start_li = null;
+            $end_li = null;
+        }
+        $string = $start_section;
+        switch (true) {
+            case is_null($something) || is_bool($something):
+                $string .= vsprintf('%s%s[%s]%s %s%s%s%s', [$start_line, $start_type, gettype($something), $end_type, $start_value, json_encode($something), $end_value, $end_line]);
+                break;
+            case is_object($something) && $something instanceof BaseEntityInterface:
+                $string = vsprintf('%s%s[%s] %s (#%d) U:%s%s', [$start_line, $start_type, $something->getClassname(), $something->__toString(), $something->getId() ?? 'null', $something->getUnameThenEuid(), $end_value]);
+                if($normalizer) {
+                    $data = $normalizer->normalize($something, null, ['groups' => $groups]);
+                    if(is_iterable($data)) {
+                        $string .= $start_ul;
+                        foreach ($data as $key => $value) {
+                            $string .= vsprintf('%s%s %s %s', [$start_li, $key, static::toDump($value, $asHtml, $depth, $normalizer, $groups, $start_depth + 1), $end_li]);
+                        }
+                        $string .= $end_ul;
+                    } else {
+                        $string .= vsprintf('%s%s[%s]%s %s%s%s%s', [$start_line, $start_type, gettype($data), $end_type, $start_value, $data, $end_value, $end_line]);
+                    }
+                }
+                $string .= vsprintf('%s', [$end_line]);
+                break;
+            case is_object($something) && $something instanceof Stringable:
+                $string .= vsprintf('%s%s[%s]%s %s%s%s%s', [$start_line, $start_type, get_class($something), $end_type, $start_value, $something->__toString(), $end_value, $end_line]);
+                break;
+            case is_object($something) && !is_iterable($something):
+                $string .= vsprintf('%s%s[%s]%s %s%s%s%s', [$start_line, $start_type, get_class($something), $end_type, $start_value, null, $end_value, $end_line]);
+                break;
+            case is_iterable($something):
+                $string .= vsprintf('%s%s[%s]%s %s%s%s', [$start_line, $start_type, gettype($something), $end_type, $start_value, count($something).' elements', $end_value]);
+                if(count($something) > 0) {
+                    $string .= $start_ul;
+                    foreach ($something as $key => $value) {
+                        $string .= vsprintf('%s%s %s %s', [$start_li, $key, static::toDump($value, $asHtml, $depth, $normalizer, $groups, $start_depth + 1), $end_li]);
+                    }
+                    $string .= $end_ul;
+                }
+                $string .= vsprintf('%s', [$end_line]);
+                break;
+            case is_scalar($something):
+                $string .= vsprintf('%s%s[%s]%s %s%s%s%s', [$start_line, $start_type, gettype($something).(is_string($something) ? ' - length: '.strlen($something).' char.' : ''), $end_type, $start_value, $something, $end_value, $end_line]);
+                break;
+            default:
+                // $string = gettype($something);
+                break;
+        }
+        $string .= $end_section;
         return Strings::markup($string);
     }
 

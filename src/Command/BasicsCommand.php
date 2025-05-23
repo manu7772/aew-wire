@@ -63,13 +63,14 @@ class BasicsCommand extends BaseCommand
         $question = new Question(vsprintf('Indiquez le chemin vers les données (default: %s) :', [static::DEFAULT_DATA_PATH]), static::DEFAULT_DATA_PATH);
         $question->setAutocompleterValues($paths);
         $path = $helper->ask($input, $output, $question);
-        $io->writeln(vsprintf('- Chemin vers les données de génération : %s', [$this->wireEm->appWire->getProjectDir($path)]));
+        $this->hydrator->setCurrentPath($path);
+        $io->writeln(vsprintf('- Chemin vers les données de génération : %s', [$this->hydrator->getCurrentPath()]));
         /** Get YAML files data */
-        $data = $this->hydrator->getPathYamlData($path);
-        if (false === $data) {
-            $io->error(vsprintf('Le chemin de répertoire %s est invalide', [$path]));
-            return Command::FAILURE;
-        } else if (empty($data)) {
+        $data = $this->hydrator->getYamlData();
+        // echo Objects::toDump($data, false, 3, $this->hydrator->getSerializer(), $this->hydrator::getNormalizeGroups(null, 'debug'));
+        // dd($data);
+
+        if (empty($data)) {
             $io->warning(vsprintf('Aucun fichier de données n\'a été trouvé dans le répertoire %s', [$path]));
             return Command::INVALID;
         }
@@ -79,24 +80,23 @@ class BasicsCommand extends BaseCommand
         $classnames = $this->wireEm->getEntityNames(false, false, true);
         $entities_data = [];
         $lines = [];
-        foreach ($data as $filename => $d) {
-            $count = count($d['items'] ?? []);
-            $available = $count > 0 && class_exists($d['entity']) && in_array($d['entity'], $classnames) && ($d['enabled'] ?? true);
-            if ($available) $entities_data[$d['entity']] = $d;
+        $counter = 1;
+        foreach ($data as $classname => $d) {
+            $count = count($d);
+            $available = $count > 0 && in_array($classname, $classnames);
+            if ($available) $entities_data[$classname] = $d;
             $start = $available ? '' : '<fg=gray>';
             $end = $available ? '' : '</>';
             $lines[] = [
-                $start.($d['order'] ?? '?').$end,
-                $start.$filename.$end,
-                $start.$d['entity'].$end,
-                $start.(class_exists($d['entity']) ? Objects::getShortname($d['entity']) : '???').$end,
+                $start.($counter++).$end,
+                $start.$classname.$end,
+                $start.Objects::getShortname($classname).$end,
                 $start.$count.$end,
                 $available ? '<fg=green>Oui</>' : $start.'Non'.$end,
-                $d['enabled'] ?? true ? '<fg=green>Oui</>' : '<fg=red>Non</>',
             ];
         }
         $io->table(
-            ['Ord', 'File', 'Classname', 'Name', 'Count', 'Available', 'Enabled'],
+            ['Ord', 'Classname', 'Name', 'Count', 'Available'],
             $lines
         );
 
@@ -115,14 +115,15 @@ class BasicsCommand extends BaseCommand
         $classnames = $helper->ask($input, $output, $question);
         if (in_array(static::ALL_CLASSES, $classnames)) $classnames = array_keys($entities_data);
         // Filter data
-        $entities_data = array_filter($entities_data, fn($d) => in_array($d['entity'], $classnames));
+        $entities_data = array_filter($entities_data, fn($classname) => in_array($classname, $classnames), ARRAY_FILTER_USE_KEY);
         $lines = [];
-        foreach ($entities_data as $class => $values) {
+        $counter = 1;
+        foreach ($entities_data as $classname => $values) {
             $lines[] = [
-                $values['order'],
-                $class,
-                Objects::getShortname($class),
-                count($values['items']),
+                $counter++,
+                $classname,
+                Objects::getShortname($classname),
+                count($values),
             ];
         }
         $io->writeln('<info>Entités à générer :</info>');
