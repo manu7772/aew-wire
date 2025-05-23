@@ -27,6 +27,10 @@ interface NormalizerServiceInterface extends WireServiceInterface
      */
     public const DEEP_POPULATE_MODE = true;
     public const NORMALIZATION_GROUPS = [
+        '_universal' => [
+            'normalize' => ['identifier', '__type__'],
+            'denormalize' => ['__type__'],
+        ],
         '_default' => [
             'normalize' => ['identifier', '__shortname__.__type__', '__type__'],
             'denormalize' => ['__shortname__.__type__', '__type__'],
@@ -53,8 +57,8 @@ interface NormalizerServiceInterface extends WireServiceInterface
     public function findCreated(string $euidOrUname): ?BaseEntityInterface;
     public function findUnameCreated(string $euidOrUname): ?UnameInterface;
     // public function cleanAndPrepareDataToDeserialize(array &$data, string $classname, ?string $uname = null): ?BaseEntityInterface;
-    public static function getNormalizeGroups(string|BaseEntityInterface $class, ?string $type = null): array;
-    public static function getDenormalizeGroups(string|BaseEntityInterface $class, ?string $type = null): array;
+    public static function getNormalizeGroups(null|string|BaseEntityInterface $class, ?string $type = null): array;
+    public static function getDenormalizeGroups(null|string|BaseEntityInterface $class, ?string $type = null): array;
     // Normalize
     public function normalize(mixed $data, ?string $format = null, ?array $context = [], ?bool $convertToArrayList = false): array|string|int|float|bool|ArrayObject|null;
     public function denormalize(mixed $data, string $classname, ?string $format = null, ?array $context = []): mixed;

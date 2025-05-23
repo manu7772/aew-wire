@@ -1,1 +1,1 @@
-<html lang="{{ locale }}" class="{{ darkmodeClass }}" data-darkmode-switcher-url="{{ switcherUrl }}">
+<html lang="{{ locale }}" {% if darkmodeClass is not null %}class="{{ darkmodeClass }}"{% endif %} data-darkmode-switcher-url="{{ switcherUrl }}">

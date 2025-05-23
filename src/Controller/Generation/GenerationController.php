@@ -26,7 +26,7 @@ class GenerationController extends AbstractController
 {
     public const GENERATION_MODE = 2;
 
-    #[IsGranted("ROLE_SUPER_ADMIN")]
+    // #[IsGranted("ROLE_SUPER_ADMIN")]
     #[Route('/report/{mode<\d>}', name: 'generate_report', defaults: ['mode' => GenerationController::GENERATION_MODE])]
     public function report(
         int $mode,
@@ -34,7 +34,7 @@ class GenerationController extends AbstractController
     ): Response
     {
         $mode = array_key_exists($mode, NormalizerServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
-        return $this->render('generate/report.html.twig', [
+        return $this->render('@AequationWire/generate/report.html.twig', [
             'normalizer' => $normalizer,
             'class_reports' => $normalizer->getReport([], $mode),
             'available_modes' => NormalizerServiceInterface::AVAILABLE_MODES,
@@ -42,7 +42,7 @@ class GenerationController extends AbstractController
         ]);
     }
 
-    #[IsGranted("ROLE_SUPER_ADMIN")]
+    // #[IsGranted("ROLE_SUPER_ADMIN")]
     #[Route('/report/{entity<\w+>}/{mode<\d>}', name: 'generate_report_entity', defaults: ['mode' => GenerationController::GENERATION_MODE])]
     public function reportEntity(
         string $entity,
@@ -51,7 +51,7 @@ class GenerationController extends AbstractController
     ): Response
     {
         $mode = array_key_exists($mode, NormalizerServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
-        return $this->render('generate/report_entity.html.twig', [
+        return $this->render('@AequationWire/generate/report_entity.html.twig', [
             'normalizer' => $normalizer,
             'entity' => $entity,
             'class_reports' => $normalizer->getReport([$entity], $mode),
@@ -73,13 +73,19 @@ class GenerationController extends AbstractController
         $normalizer = $wireEm->getNormaliserService();
         $data = $normalizer->getYamlData([], 0);
         $classnames = array_keys($data);
-        $bddcounts = 0;
+        // $bddcounts = 0;
+        $need_generate = false;
         foreach ($classnames as $classname) {
             if(in_array(Objects::getShortname($classname), ['Factory', 'User', 'Webpage'])) {
-                $bddcounts += $wireEm->getEntitiesCount($classname);
+                // $bddcounts += $wireEm->getEntitiesCount($classname);
+                if($wireEm->getEntitiesCount($classname) > 0) {
+                    $this->addFlash('warning', 'Data for '.Objects::getShortname($classname).' is missing in the Database, generation is required');
+                    $need_generate = true;
+                    break;
+                }
             }
         }
-        if(empty($bddcounts)) {
+        if($need_generate) {
             $error = null;
             foreach ($classnames as $classname) {
                 try {
@@ -95,7 +101,7 @@ class GenerationController extends AbstractController
                 $this->addFlash('success', count($classnames).' entities generated');
             }
         } else {
-            $this->addFlash('warning', 'The database is not empty, no generation done');
+            $this->addFlash('warning', 'The database has minimum data, no generation done');
         }
         $redirect ??= $request->headers->get('referer', 'app_index');
         return $this->redirectToRoute($redirect);
@@ -150,7 +156,7 @@ class GenerationController extends AbstractController
             // dd($classes, $flush, $hydrateds);
         }
 
-        return $this->render('generate/generate.html.twig', [
+        return $this->render('@AequationWire/generate/generate.html.twig', [
             'hydrateds' => $hydrateds,
             'classnames' => $classnames,
             'form' => $form,
@@ -177,7 +183,7 @@ class GenerationController extends AbstractController
         } else {
             $class = null;
         }
-        return $this->render('generate/entities.html.twig', [
+        return $this->render('@AequationWire/generate/entities.html.twig', [
             'classnames' => $wireEm->getEntityNames(true, $allnamespaces, $onlyInstantiables),
             'class' => $class,
             'entities' => $entities,
@@ -190,7 +196,7 @@ class GenerationController extends AbstractController
         UnameServiceInterface $service
     ): Response
     {
-        return $this->render('generate/orphanunames.html.twig', [
+        return $this->render('@AequationWire/generate/orphanunames.html.twig', [
             'unames' => $service->findOrphanUnames(),
         ]);
     }
@@ -205,7 +211,7 @@ class GenerationController extends AbstractController
     {
         /** @var UnameServiceInterface */
         $results = $service->removeOrphanUnames($uname);
-        return $this->render('generate/orphanunames.html.twig', [
+        return $this->render('@AequationWire/generate/orphanunames.html.twig', [
             'unames' => $service->findOrphanUnames(),
             'results' => $results,
             'uname' => $uname,
@@ -302,7 +308,7 @@ class GenerationController extends AbstractController
             ],
         ];
 
-        return $this->render('generate/uow.html.twig', [
+        return $this->render('@AequationWire/generate/uow.html.twig', [
             'entities' => $entities,
             'UnitOfWork' => $uow,
             'em' => $em,

@@ -204,43 +204,45 @@ class NormalizerService implements NormalizerServiceInterface
      * @return array
      */
     private static function _getGroups(
-        string|BaseEntityInterface $class,
+        null|string|BaseEntityInterface $class,
         string $type
     ): array {
         if ($class instanceof BaseEntityInterface) {
             $class = $class->getClassname();
         }
-        $shortname = null;
-        if (class_exists($class) || interface_exists($class)) {
-            $shortname = Objects::getShortname($class, true);
-        } else {
-            // return [];
-            // throw new Exception(vsprintf('Error %s line %d: Class %s not found or not instance of %s!', [__METHOD__, __LINE__, $class, BaseEntityInterface::class]));
-        }
-        $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
-        if (empty($type) || $type === '_default') $type = static::MAIN_GROUP;
-        $groups = [
-            'normalize' => [],
-            'denormalize' => [],
-        ];
+        $shortname = class_exists($class) || interface_exists($class) ? Objects::getShortname($class, true) : null;
         if($shortname) {
+            $types = static::NORMALIZATION_GROUPS[$type] ?? static::NORMALIZATION_GROUPS['_default'];
+            if (empty($type) || $type === '_default') $type = static::MAIN_GROUP;
+            $groups = [
+                'normalize' => [],
+                'denormalize' => [],
+            ];
             foreach ($types as $name => $values) {
                 foreach ($values as $group_name) {
                     $groups[$name][] = preg_replace(['/__shortname__/', '/__type__/'], [$shortname, $type], $group_name);
                 }
             }
             // Control
-            foreach ($groups as $n => $grps) {
-                if(empty($grps)) {
-                    throw new Exception(vsprintf('Error %s line %d: in %s context, no groups found for %s with type "%s"!', [__METHOD__, __LINE__, $n, $class, $type]));
-                }
-                foreach ($grps as $grp) {
-                    if(!is_string($grp)) {
-                        throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is not a string, got %s!', [__METHOD__, __LINE__, $n, $class, $type, gettype($grp)]));
-                    }
-                    if(empty($grp) || preg_match('/\\.$/', $grp)) {
-                        throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is empty or not valid. Got "%s"!', [__METHOD__, __LINE__, $n, $class, $type, $grp]));
-                    }
+            // foreach ($groups as $n => $grps) {
+            //     if(empty($grps)) {
+            //         throw new Exception(vsprintf('Error %s line %d: in %s context, no groups found for %s with type "%s"!', [__METHOD__, __LINE__, $n, $class, $type]));
+            //     }
+            //     foreach ($grps as $grp) {
+            //         if(!is_string($grp)) {
+            //             throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is not a string, got %s!', [__METHOD__, __LINE__, $n, $class, $type, gettype($grp)]));
+            //         }
+            //         if(empty($grp) || preg_match('/\\.$/', $grp)) {
+            //             throw new Exception(vsprintf('Error %s line %d: in %s context, one of groups for %s with type "%s" is empty or not valid. Got "%s"!', [__METHOD__, __LINE__, $n, $class, $type, $grp]));
+            //         }
+            //     }
+            // }
+        } else {
+            // No shortname, so no classname
+            $types = static::NORMALIZATION_GROUPS['_universal'];
+            foreach ($types as $name => $values) {
+                foreach ($values as $group_name) {
+                    $groups[$name][] = preg_replace(['/__type__/'], [$type], $group_name);
                 }
             }
         }
@@ -254,7 +256,7 @@ class NormalizerService implements NormalizerServiceInterface
      * @return array
      */
     public static function getNormalizeGroups(
-        string|BaseEntityInterface $class,
+        null|string|BaseEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
         return static::_getGroups($class, $type)['normalize'];
@@ -267,7 +269,7 @@ class NormalizerService implements NormalizerServiceInterface
      * @return array
      */
     public static function getDenormalizeGroups(
-        string|BaseEntityInterface $class,
+        null|string|BaseEntityInterface $class,
         ?string $type = null, // ['hydrate','model','clone','debug'...]
     ): array {
         return static::_getGroups($class, $type)['denormalize'];
@@ -440,6 +442,10 @@ class NormalizerService implements NormalizerServiceInterface
     {
         $path ??= $this->appWire->getProjectDir(static::DEFAULT_DATA_PATH);
         $currentPath = new SplFileInfo($path);
+        if (!$currentPath->isDir()) {
+            $path = $this->appWire->getProjectDir($path);
+            $currentPath = new SplFileInfo($path);
+        }
         if (!$currentPath->isDir()) {
             throw new Exception(vsprintf('Error %s line %d: path %s is not a directory!', [__METHOD__, __LINE__, $path]));
         }
@@ -660,8 +666,8 @@ class NormalizerService implements NormalizerServiceInterface
                         $data[$rawData['order']] ??= [];
                         $data[$rawData['order']][] = $new_entityContainer;
                     } else {
-                        $message = vsprintf('Error %s line %d: entity %s is not valid!%s%s', [__METHOD__, __LINE__, $rawData['entity'], PHP_EOL, $new_entityContainer->getMessagesAsString(false)]);
-                        $this->logger->error($message);
+                        // $message = vsprintf('Error %s line %d: entity %s is not valid!%s%s', [__METHOD__, __LINE__, $rawData['entity'], PHP_EOL, $new_entityContainer->getMessagesAsString(false)]);
+                        // $this->logger->error($message);
                         // throw new Exception($message);
                     }
                 }

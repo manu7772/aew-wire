@@ -14,10 +14,32 @@ use Exception;
 class AppWireController extends AbstractController
 {
 
+    // #[Route(path: '/appwire/data', name: 'appwire_data', methods: ['GET'])]
+    // public function getAppWireData(
+    //     AppWireServiceInterface $appWire
+    // ): JsonResponse
+    // {
+    //     return $this->json(
+    //         data: $appWire->jsonSerialize(),
+    //         status: JsonResponse::HTTP_OK,
+    //     );
+    // }
+
+    #[Route(path: '/darkmode/get', name: 'darkmode_get', methods: ['GET'])]
+    public function getDarkmode(
+        AppWireServiceInterface $appWire
+    ): JsonResponse
+    {
+        return $this->json(
+            data: $appWire->getDarkmode(),
+            status: JsonResponse::HTTP_OK,
+        );
+    }
+
     #[Route('/darkmode/{darkmode}', name: 'darkmode_switcher', defaults: ['darkmode' => null], methods: ['GET','POST'])]
     public function darkmodeSwitcher(
         AppWireServiceInterface $appWire,
-        string $darkmode = 'auto'
+        ?string $darkmode = 'auto'
     ): JsonResponse
     {
         $darkmode = match ($darkmode) {
@@ -29,7 +51,7 @@ class AppWireController extends AbstractController
         return $this->json(
             data: ['darkmode' => $appWire->getDarkmode()],
             status: JsonResponse::HTTP_OK,
-            context: $appWire->jsonSerialize(),
+            // context: $appWire->jsonSerialize(),
         );
     }
 

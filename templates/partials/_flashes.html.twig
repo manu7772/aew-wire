@@ -1,5 +1,3 @@
 <div{{ turbo_memory(false) }}>
-    {% set flashes = app.flashes %}
-    <span{{ turbo_memory(false) }} {{ stimulus_controller('aequation/wire/toastr') }} data-messages="{{ flashes|json_encode }}"></span>
-    {# {{ dump(flashes) }} #}
+    <span {{ stimulus_controller('aequation/wire/toastr') }} data-messages="{{ app.flashes|json_encode }}"></span>
 </div>
