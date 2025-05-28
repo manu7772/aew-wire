@@ -18,6 +18,7 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function isLoggable(): bool;
     public function isVerified(): bool;
     public function updateLastLogin(): static;
+    public function isSadmin(): bool;
 
     public function getEmail(): ?string;
     public function setEmail(string $email): static;

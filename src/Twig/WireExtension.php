@@ -60,6 +60,7 @@ class WireExtension extends AbstractExtension
         return [
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
+            new TwigFilter('tailwind_merge', [$this, 'tailwindMerge']),
         ];
     }
 
@@ -75,6 +76,17 @@ class WireExtension extends AbstractExtension
     //     ];
     // }
 
+
+    /*************************************************************************************
+     * FILTERS
+     *************************************************************************************/
+
+    public function tailwindMerge(string $classes1, string $classes2 = ''): string
+    {
+        $classes1 = preg_split('/\s+/', $classes1);
+        $classes2 = preg_split('/\s+/', $classes2);
+        return implode(' ', array_unique(array_merge($classes1, $classes2)));
+    }
 
     /*************************************************************************************
      * FUNCTIONS
