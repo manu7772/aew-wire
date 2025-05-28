@@ -14,6 +14,7 @@
     <body {{ stimulus_controller('aequation/wire/globalapp') }}>
         {% block body %}
         {% endblock %}
+        {% include "@AequationWire/partials/_scrollup.html.twig" %}
         {% include "@AequationWire/partials/_flashes.html.twig" %}
     </body>
 </html>
