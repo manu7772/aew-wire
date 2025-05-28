@@ -2,7 +2,7 @@
     "name": "@aequation/wire",
     "description": "Utilities integration for Symfony",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "keywords": [
         "symfony-ux"
     ],
