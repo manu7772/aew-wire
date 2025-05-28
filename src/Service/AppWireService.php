@@ -62,6 +62,7 @@ use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Translation\TranslatableMessage;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use UnitEnum;
 
 /**
@@ -197,11 +198,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $session instanceof FlashBagAwareSessionInterface ? $session->getFlashBag() : null;
     }
 
-    public function addFlash(string $type, string $message): void
+    public function addFlash(string $type, string|TranslatableInterface $message): void
     {
         if($flashbag = $this->getFlashBag()) {
-            if($message instanceof TranslatableMessage) {
-                $message = $this->get('translator')->trans($message->getMessage(), $message->getParameters(), $message->getDomain());
+            if($message instanceof TranslatableInterface) {
+                $message = $message->trans($this->get('translator')/*, $this->getLocale()*/);
+                // $message = $this->get('translator')->trans($message->getMessage(), $message->getParameters(), $message->getDomain());
             }
             $flashbag->add($type, $message);
         }
@@ -1317,6 +1319,18 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function isDev(): bool
     {
         return $this->kernel->getEnvironment() === 'dev';
+    }
+
+    /**
+     * is dev environment
+     * 
+     * @return bool
+     */
+    public function isDevOrSadmin(): bool
+    {
+        if($this->isDev()) return true;
+        $user = $this->getUser();
+        return $user instanceof WireUserInterface && $user->isSadmin() ?: false;
     }
 
     /**

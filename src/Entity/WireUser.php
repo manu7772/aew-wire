@@ -136,6 +136,11 @@ abstract class WireUser extends WireItem implements WireUserInterface
             ;
     }
 
+    public function isSadmin(): bool
+    {
+        return $this->HasRole(static::ROLE_SUPER_ADMIN);
+    }
+
     public function isEqualTo(UserInterface $user): bool
     {
         /** @var WireUserInterface $user */

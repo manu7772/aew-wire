@@ -50,7 +50,7 @@ class SecuritySubscriber implements EventSubscriberInterface
         $user = $event->getUser();
         $this->userService->updateUserLastLogin($user);
         // $this->appWire->integrateUserContext($user);
-        $this->appWire->addFlash('success', new TranslatableMessage('Login_successful'));
+        $this->appWire->addFlash('success', new TranslatableMessage('Login_successful', [], 'security'));
     }
 
     // public function onLoginFailure(LoginFailureEvent $event): void
@@ -70,7 +70,7 @@ class SecuritySubscriber implements EventSubscriberInterface
         $user = $event->getToken()->getUser();
         // $this->userService->setDarkmode($user->isDarkmode());
         // dump($this->userService->getDarkmode());
-        $this->appWire->addFlash('info', new TranslatableMessage('Logout_successful'));
+        $this->appWire->addFlash('warning', new TranslatableMessage('Logout_successful', [], 'security'));
     }
 
     public function onCheckPassport(CheckPassportEvent $event): void
