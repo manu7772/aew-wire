@@ -140,21 +140,25 @@ class BasicsCommand extends BaseCommand
         }
 
         foreach ($entities_data as $class => $data) {
-            $opresult = $this->hydrator->generateEntities(
-                $class,
-                $data['items'],
-                $replace,
-                $io,
-                true
-            );
+            $opresult = $this->hydrator->generateEntitiesFromClass($class, $replace, $io, true);
+            // $opresult = $this->hydrator->generateEntities(
+            //     $class,
+            //     $data['items'],
+            //     $replace,
+            //     $io,
+            //     true
+            // );
             if ($opresult->isSuccess()) {
                 // $io->success(vsprintf('Entités générées pour %s', [$class]));
-            } else {
+            } else if ($opresult->isFail()) {
                 $io->error(vsprintf('Erreur(s) lors de la génération des entités pour %s', [$class]));
-                // dd($opresult->getMessages());
+                dd($opresult->dump());
                 $this->printMessages($opresult, $io);
                 $io->warning('Process aborted.');
                 return Command::FAILURE;
+            } else {
+                $io->warning(vsprintf('Aucune entité générée pour %s', [$class]));
+                // $this->printMessages($opresult, $io);
             }
             try {
                 // $this->wireEm->getEm()->flush();

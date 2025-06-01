@@ -180,9 +180,9 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         //     throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
         // }
         $request = $this->getRequest();
-        if(!$request) {
-            throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
-        }
+        // if(!$request) {
+        //     throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
+        // }
         $session = $request?->hasSession() ? $request->getSession() : null;
         return $session;
     }
