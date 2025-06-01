@@ -805,8 +805,12 @@ class NormalizerService implements NormalizerServiceInterface
                 $this->wireEm->incDebugMode();
                 $entity = $this->getSerializer()->denormalize($data, $classname, null, $context);
                 $this->wireEm->decDebugMode();
+                $opresult->addSuccess(vsprintf('L\'entité %s a été générée', [$entity->__toString()]));
                 $opresult->addData(spl_object_hash($entity), $entity);
                 $em->persist($entity);
+            }
+            if(empty($opresult->getData())) {
+                $opresult->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
             }
         } else {
             $opresult->addDanger(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));

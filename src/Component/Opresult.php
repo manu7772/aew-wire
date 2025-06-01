@@ -242,7 +242,7 @@ class Opresult implements OpresultInterface
             'isPartialSuccess' => $this->isPartialSuccess(),
             'hasFail' => $this->hasFail(),
             'isFail' => $this->isFail(),
-            'data' => $this->data,
+            'data' => json_encode($this->data),
             'messages' => $this->messages,
             'cont_valid' => $this->isContainerValid(),
             'hasEmbeddeds' => $this->hasOpresults(),
