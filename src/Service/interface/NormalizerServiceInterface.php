@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 // PHP
 use ArrayObject;
 use Doctrine\Common\Collections\Collection;
+use Psr\Log\LoggerInterface;
 use SplFileInfo;
 
 interface NormalizerServiceInterface extends WireServiceInterface
@@ -46,6 +47,8 @@ interface NormalizerServiceInterface extends WireServiceInterface
         2 => 'Compiled data',
         3 => 'EntityContainers',
     ];
+
+    public function __construct(AppWireServiceInterface $appWire, WireEntityManagerInterface $wireEm, SerializerInterface $serializer, LoggerInterface $logger);
 
     public function getSerializer(): SerializerInterface & NormalizerInterface & DenormalizerInterface;
     // Createds

@@ -152,7 +152,7 @@ class BasicsCommand extends BaseCommand
                 // $io->success(vsprintf('Entités générées pour %s', [$class]));
             } else if ($opresult->isFail()) {
                 $io->error(vsprintf('Erreur(s) lors de la génération des entités pour %s', [$class]));
-                dd($opresult->dump());
+                // dd($opresult->dump());
                 $this->printMessages($opresult, $io);
                 $io->warning('Process aborted.');
                 return Command::FAILURE;
