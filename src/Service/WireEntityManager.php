@@ -53,6 +53,9 @@ use Psr\Log\LoggerInterface;
 use Exception;
 use Closure;
 use ReflectionMethod;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
 /**
@@ -93,6 +96,7 @@ class WireEntityManager implements WireEntityManagerInterface
         public readonly CacheServiceInterface $cacheService,
         protected UploaderHelper $vichHelper,
         protected CacheManager $liipCache,
+        public readonly ValidatorInterface $validator,
         public readonly LoggerInterface $logger,
         public readonly SurveyRecursionInterface $surveyRecursion,
     ) {
@@ -456,6 +460,15 @@ class WireEntityManager implements WireEntityManagerInterface
         }
     }
 
+    public function validateEntity(
+        BaseEntityInterface $entity,
+        array $addGroups = [],
+        Constraint|array|null $constraints = null
+    ): ConstraintViolationListInterface
+    {
+        $groups = $entity->__selfstate->isNew() ? ['persist'] : ['update'];
+        return $this->validator->validate($entity, $constraints, array_unique(array_merge($groups, $addGroups)));
+    }
 
     /****************************************************************************************************/
     /** REPOSITORY / QUERYS                                                                             */

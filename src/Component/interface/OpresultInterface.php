@@ -26,9 +26,10 @@ interface OpresultInterface
 
     public function isSuccess(): bool;
     public function hasSuccess(): bool;
+    public function isPartialSuccess(): bool;
+    public function isRelativeSuccess(): bool;
     public function isUndone(): bool;
     public function hasUndone(): bool;
-    public function isPartialSuccess(): bool;
     public function hasFail(): bool;
     public function isFail(): bool;
     public function isWarning(): bool;

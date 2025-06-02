@@ -20,6 +20,9 @@ use Closure;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
 interface WireEntityManagerInterface extends WireServiceInterface
@@ -42,6 +45,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
         CacheServiceInterface $cacheService,
         UploaderHelper $vichHelper,
         CacheManager $liipCache,
+        ValidatorInterface $validator,
         LoggerInterface $logger,
         SurveyRecursionInterface $surveyRecursion,
     );
@@ -111,6 +115,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     // Entity Events
     public function postLoaded(BaseEntityInterface $entity): void;
     public function postCreated(BaseEntityInterface $entity): void;
+    public function validateEntity(BaseEntityInterface $entity, array $addGroups = [], Constraint|array|null $constraints = null): ConstraintViolationListInterface;
 
     // Find
     public function findEntityById(string $classname, string $id): ?BaseEntityInterface;

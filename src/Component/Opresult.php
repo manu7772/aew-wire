@@ -109,6 +109,11 @@ class Opresult implements OpresultInterface
 
     // RESULTS
 
+    /**
+     * Check if all results are successful OR if there are no other results at all
+     * 
+     * @return bool
+     */
     public function isSuccess(): bool
     {
         foreach($this->embeddeds as $opresult) {
@@ -116,100 +121,142 @@ class Opresult implements OpresultInterface
                 return false;
             }
         }
-        return $this->actions[static::ACTION_SUCCESS] > 0
-            && $this->actions[static::ACTION_UNDONE] === 0
+        return
+            $this->actions[static::ACTION_UNDONE] === 0
             && $this->actions[static::ACTION_WARNING] === 0
             && $this->actions[static::ACTION_DANGER] === 0
             ;
     }
 
+    /**
+     * Check if there is at least one successful result, but also at least one undone, warning or danger result
+     * 
+     * @return bool
+     */
+    public function isPartialSuccess(): bool
+    {
+        return $this->hasSuccess()
+            && ($this->hasUndone() || $this->hasWarning() || $this->hasFail())
+            ;
+    }
+
+    /**
+     * Check if there is at least one successful result, but also at least one danger result
+     * 
+     * @return bool
+     */
+    public function isRelativeSuccess(): bool
+    {
+        return $this->hasSuccess() && $this->hasFail();
+    }
+
+    /**
+     * Check if there is at least one successful result
+     * 
+     * @return bool
+     */
     public function hasSuccess(): bool
     {
         foreach($this->embeddeds as $opresult) {
-            if(!$opresult->hasSuccess()) {
-                return false;
+            if($opresult->hasSuccess()) {
+                return true;
             }
         }
         return $this->actions[static::ACTION_SUCCESS] > 0;
     }
 
+    /**
+     * Check if there is ONLY undone results
+     * 
+     * @return bool
+     */
     public function isUndone(): bool
     {
-        foreach($this->embeddeds as $opresult) {
-            if(!$opresult->isUndone()) {
-                return false;
-            }
-        }
-        return $this->actions[static::ACTION_UNDONE] > 0
+        $has = $this->actions[static::ACTION_UNDONE] > 0
             && $this->actions[static::ACTION_SUCCESS] === 0
             && $this->actions[static::ACTION_WARNING] === 0
             && $this->actions[static::ACTION_DANGER] === 0
             ;
+        foreach($this->embeddeds as $opresult) {
+            $has = $has && $opresult->isUndone();
+        }
+        return $has;
     }
 
+    /**
+     * Check if there is at least one undone result
+     * 
+     * @return bool
+     */
     public function hasUndone(): bool
     {
         foreach($this->embeddeds as $opresult) {
-            if(!$opresult->hasUndone()) {
-                return false;
+            if($opresult->hasUndone()) {
+                return true;
             }
         }
         return $this->actions[static::ACTION_UNDONE] > 0;
     }
 
-    public function isPartialSuccess(): bool
+    /**
+     * Check if there are danger results, without any success result
+     * 
+     * @return bool
+     */
+    public function isFail(): bool
     {
-        foreach($this->embeddeds as $opresult) {
-            if(!$opresult->isPartialSuccess()) {
-                return false;
-            }
-        }
-        return ($this->actions[static::ACTION_SUCCESS] > 0 || $this->actions[static::ACTION_UNDONE] > 0)
-            && ($this->actions[static::ACTION_WARNING] > 0 || $this->actions[static::ACTION_DANGER] > 0)
+        $has = $this->actions[static::ACTION_SUCCESS] === 0
+            && $this->actions[static::ACTION_DANGER] > 0
             ;
+        foreach($this->embeddeds as $opresult) {
+            $has = $has && $opresult->isFail();
+        }
+        return $has;
     }
 
+    /**
+     * Check if there is any danger results
+     * 
+     * @return bool
+     */
     public function hasFail(): bool
     {
         foreach($this->embeddeds as $opresult) {
-            if(!$opresult->hasFail()) {
-                return false;
+            if($opresult->hasFail()) {
+                return true;
             }
         }
         return $this->actions[static::ACTION_DANGER] > 0;
     }
 
-    public function isFail(): bool
-    {
-        foreach($this->embeddeds as $opresult) {
-            if(!$opresult->isFail()) {
-                return false;
-            }
-        }
-        return $this->actions[static::ACTION_SUCCESS] === 0
-            && $this->actions[static::ACTION_DANGER] > 0
-            ;
-    }
-
+    /**
+     * Check if all results are warning results
+     * 
+     * @return bool
+     */
     public function isWarning(): bool
     {
-        foreach($this->embeddeds as $opresult) {
-            if(!$opresult->isWarning()) {
-                return false;
-            }
-        }
-        return $this->actions[static::ACTION_SUCCESS] === 0
+        $has = $this->actions[static::ACTION_SUCCESS] === 0
             && $this->actions[static::ACTION_UNDONE] === 0
             && $this->actions[static::ACTION_WARNING] > 0
             && $this->actions[static::ACTION_DANGER] === 0
             ;
+        foreach($this->embeddeds as $opresult) {
+            $has = $has && $opresult->isWarning();
+        }
+        return $has;
     }
 
+    /**
+     * Check if there is at least one warning result
+     * 
+     * @return bool
+     */
     public function hasWarning(): bool
     {
         foreach($this->embeddeds as $opresult) {
-            if(!$opresult->hasWarning()) {
-                return false;
+            if($opresult->hasWarning()) {
+                return true;
             }
         }
         return $this->actions[static::ACTION_WARNING] > 0;
@@ -226,7 +273,7 @@ class Opresult implements OpresultInterface
                 return false;
             }
         }
-        return array_sum($this->actions) > 0;
+        return array_sum($this->actions) > 0 || $this->isSuccess();
     }
 
     public function getContainer(): array
@@ -242,7 +289,7 @@ class Opresult implements OpresultInterface
             'isPartialSuccess' => $this->isPartialSuccess(),
             'hasFail' => $this->hasFail(),
             'isFail' => $this->isFail(),
-            'data' => json_encode($this->data),
+            // 'data' => json_encode($this->data),
             'messages' => $this->messages,
             'cont_valid' => $this->isContainerValid(),
             'hasEmbeddeds' => $this->hasOpresults(),

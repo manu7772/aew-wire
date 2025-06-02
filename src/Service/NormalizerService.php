@@ -29,7 +29,6 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Psr\Log\LoggerInterface;
 // PHP
@@ -61,7 +60,6 @@ class NormalizerService implements NormalizerServiceInterface
         public readonly AppWireServiceInterface $appWire,
         public readonly WireEntityManagerInterface $wireEm,
         public readonly SerializerInterface $serializer,
-        public readonly ValidatorInterface $validator,
         public readonly LoggerInterface $logger
     ) {
         // Set the default path for the generator
@@ -805,20 +803,32 @@ class NormalizerService implements NormalizerServiceInterface
                 $this->wireEm->incDebugMode();
                 $entity = $this->getSerializer()->denormalize($data, $classname, null, $context);
                 $this->wireEm->decDebugMode();
-                $opresult->addSuccess(vsprintf('L\'entité %s a été générée', [$entity->__toString()]));
-                $opresult->addData(spl_object_hash($entity), $entity);
-                $em->persist($entity);
+                // Check if entity is valid
+                $errors = $this->wireEm->validateEntity($entity);
+                if($errors->count() > 0) {
+                    foreach ($errors as $error) {
+                        $opresult->addDanger(vsprintf('Erreur de validation de l\'entité %s :%s- %s', [Objects::toDebugString($entity), PHP_EOL, $error->getMessage()]));
+                    }
+                    return $opresult;
+                    // break;
+                } else {
+                    $opresult->addSuccess(vsprintf('L\'entité %s a été générée', [$entity->__toString()]));
+                    $opresult->addData(spl_object_hash($entity), $entity);
+                    $em->persist($entity);
+                }
             }
             if(empty($opresult->getData())) {
                 $opresult->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
             }
+            if($flush) {
+                try {
+                    $em->flush();
+                } catch (\Throwable $th) {
+                    $opresult->addDanger(vsprintf('La classe %s n\'a pas pu être enregistrée dans la base de données:%s- %s', [$classname, PHP_EOL, $th->getMessage()]));
+                }
+            }
         } else {
-            $opresult->addDanger(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
-            // $opresult->addUndone(vsprintf('La class d\'entité %s n\'a donné aucun résultat', [$classname]));
-        }
-        if($flush) {
-            // dump('FLUSHING '.$classname.': '.count($opresult->getData()));
-            $em->flush();
+            $opresult->addWarning(vsprintf('La classe %s n\'est pas une entité instantiable ou valide', [$classname]));
         }
         return $opresult;
     }
@@ -858,8 +868,8 @@ class NormalizerService implements NormalizerServiceInterface
                 continue;
             }
             // Validation
-            $errors = $this->validator->validate($entity, null, $entity->__selfstate->isNew() ? ['persist'] : ['update']);
-            if (count($errors) > 0) {
+            $errors = $this->wireEm->validateEntity($entity);
+            if ($errors->count() > 0) {
                 $messages = [];
                 foreach ($errors as $error) {
                     $messages[] = $error->getMessage();

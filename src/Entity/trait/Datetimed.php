@@ -19,19 +19,21 @@ use Exception;
 trait Datetimed
 {
     #[ORM\ManyToOne(targetEntity: WireLanguageInterface::class, fetch: 'EAGER')]
-    #[Assert\NotNull()]
+    #[Assert\NotNull(groups: ['persist','update'], message: 'La langue doit être renseignée.')]
     protected WireLanguageInterface $langage;
     // language choices
     protected array $languageChoices;
 
     #[ORM\Column(updatable: false, nullable: false)]
-    #[Assert\NotNull()]
+    #[Assert\NotNull(groups: ['persist','update'], message: 'La date de création doit être renseignée.')]
     protected DateTimeImmutable $createdAt;
 
     #[ORM\Column(nullable: true)]
+    #[Assert\NotNull(groups: ['update'], message: 'La date de mise à jour doit être renseignée.')]
     protected ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(nullable: false)]
+    #[Assert\NotNull(groups: ['persist','update'], message: 'Le fuseau horaire doit être renseigné.')]
     protected string $timezone;
 
     public function __construct_datetimed(): void
