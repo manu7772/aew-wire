@@ -404,7 +404,6 @@ class WireEntityManager implements WireEntityManagerInterface
             if(in_array($eventName, $triggers) && is_a($entity, $interface)) {
                 switch ($interface) {
                     case TraitOwnerInterface::class:
-                        // TraitOwnerInterface
                         /** @var TraitOwnerInterface $entity */
                         if(empty($entity->getOwner())) {
                             $user = $this->appWire->getUser();
@@ -422,7 +421,6 @@ class WireEntityManager implements WireEntityManagerInterface
                         }
                         break;
                     case TraitWebpageableInterface::class:
-                        // TraitWebpageableInterface
                         /** @var TraitWebpageableInterface $entity */
                         $unames = [
                             'User' => 'wp_user_presentation',
@@ -433,23 +431,29 @@ class WireEntityManager implements WireEntityManagerInterface
                         }
                         break;
                     case TraitDatetimedInterface::class:
-                        // TraitDatetimedInterface
                         /** @var TraitDatetimedInterface $entity */
                         if(empty($entity->getLanguage())) {
                             if($defaultLanguage = $this->appWire->getCurrentLanguage()) {
                                 $entity->setLanguage($defaultLanguage);
                                 // Default timezone setted automatically
-                            } else if($this->isDebugMode()) {
-                                foreach ($this->getNormaliserService()->getCreateds() as $ent) {
-                                    if($ent instanceof WireLanguageInterface && $ent->isPrefered()) {
-                                        $entity->setLanguage($ent);
-                                    }
+                            } else {
+                                $prefered_languages = $this->appWire->get(WireLanguageService::class)->getPreferedLanguage();
+                                if(!empty($prefered_languages)) {
+                                    $entity->setLanguage($prefered_languages);
+                                // } else {
+                                //     foreach ($this->getNormaliserService()->getCreateds() as $ent) {
+                                //         if($ent instanceof WireLanguageInterface && $ent->isPrefered()) {
+                                //             $entity->setLanguage($ent);
+                                //         }
+                                //     }
                                 }
                             }
                         }
+                        // if($this->appWire->isDev() && (empty($entity->getTimezone()) || empty($entity->getLanguage()))) {
+                        //     throw new Exception(vsprintf('Error %s line %d: entity %s has no timezone or language!', [__METHOD__, __LINE__, Objects::toDebugString($entity)]));
+                        // }
                         break;
                     case TraitUnamedInterface::class:
-                        // TraitUnamedInterface
                         /** @var TraitUnamedInterface $entity */
                         if(empty($entity->getUname())) {
                             $this->postCreated($entity->getUname());

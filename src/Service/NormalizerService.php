@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 use ArrayObject;
 use Exception;
 use SplFileInfo;
+use Throwable;
 
 /**
  * Normalizer service
@@ -823,7 +824,8 @@ class NormalizerService implements NormalizerServiceInterface
             if($flush) {
                 try {
                     $em->flush();
-                } catch (\Throwable $th) {
+                    $em->clear();
+                } catch (Throwable $th) {
                     $opresult->addDanger(vsprintf('La classe %s n\'a pas pu être enregistrée dans la base de données:%s- %s', [$classname, PHP_EOL, $th->getMessage()]));
                 }
             }

@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 interface WireLanguageServiceInterface extends WireEntityServiceInterface
 {
 
+    public function getBrowserLocale(?string $defaultLocale = null): string;
     public function setLocale(string $locale);
     public function getLocale(): string;
     public static function getTimezoneRegions(): array;
