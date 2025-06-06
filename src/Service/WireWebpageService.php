@@ -2,9 +2,13 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
+use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Tools\Files;
+use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 // PHP
@@ -19,6 +23,8 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
     public const FILES_FOLDER = 'webpage/';
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
+    protected array $defaultWebpages = [];
+
     public function checkDatabase(
         ?OpresultInterface $opresult = null,
         bool $repair = false
@@ -31,11 +37,65 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         return $opresult;
     }
 
+    /**
+     * Create a new WireMenu entity.
+     * 1. Add default/prefered Websections.
+     * 
+     * @param array|false $data
+     * @param array $context
+     * @return WireWebpageInterface
+     */
+    public function createEntity(
+        array|false $data = false, // ---> do not forget uname if wanted!
+        array $context = []
+    ): WireWebpageInterface
+    {
+        /** @var WireWebpageInterface */
+        $entity = $this->wireEm->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        // 1. Add default/prefered Websections
+        foreach ($this->appWire->get(WireWebsectionServiceInterface::class)->getPreferedWebsections() as $websection) {
+            $entity->addWebsection($websection);
+        }
+        return $entity;
+    }
+
     public function getPreferedWebpage(): ?WireWebpageInterface
     {
         /** @var EntityRepository */
         $repository = $this->getRepository();
         return $repository->findOneBy(['prefered' => true, 'enabled' => true]);
+    }
+
+    public function getWebpageFor(
+        string|BaseEntityInterface $entity,
+        bool $attributeToEntity = false,
+        bool $onlyActiveWebpage = true
+    ): ?WireWebpageInterface
+    {
+        if(is_a($entity, TraitWebpageableInterface::class, true)) {
+            if($entity instanceof TraitWebpageableInterface && $entity->hasWebpage()) {
+                $webpage = $entity->getWebpage();
+                if($webpage->isActive() || !$onlyActiveWebpage) {
+                    return $webpage;
+                }
+            }
+            $classname = is_object($entity) ? $entity::class : $entity;
+            if(!$this->wireEm->entityExists($classname, true, true)) {
+                throw new Exception(vsprintf('Error %s line %d: entity "%s" does not exist in the database!', [__METHOD__, __LINE__, $classname]));
+            }
+            if(!isset($this->defaultWebpages[$classname])) {
+                $this->defaultWebpages[$classname] = null;
+                if(($uname = $entity::getDefaultWebpageUname()) && ($webpage = $this->wireEm->findEntityByUname($uname))) {
+                    /** @var WireWebpageInterface $webpage */
+                    $this->defaultWebpages[$classname] = $webpage->isActive() || !$onlyActiveWebpage ? $webpage : null;
+                    if($this->defaultWebpages[$classname] && $attributeToEntity && $entity instanceof TraitWebpageableInterface) {
+                        $entity->setWebpage($this->defaultWebpages[$classname]);
+                    }
+                }
+            }
+            return $this->defaultWebpages[$classname];
+        }
+        return null;
     }
 
     public function getWebpagesCount(

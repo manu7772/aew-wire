@@ -50,7 +50,7 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
     {
         /** @var ServiceEntityRepository */
         $repository = $this->getRepository();
-        return $repository->findBy(['prefered' => true, 'enabled' => true]);
+        return $repository->findBy(['prefered' => true]);
     }
 
     public function getWebsectionsCount(

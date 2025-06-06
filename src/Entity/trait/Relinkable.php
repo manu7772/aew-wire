@@ -85,6 +85,17 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireAddresslinkInterface);
     }
 
+    public function getPreferedAddresse(bool $firstIfNoPrefered = true): ?WireAddresslinkInterface
+    {
+        $addresses = $this->getAddresses();
+        foreach ($addresses as $relink) {
+            if($relink->isPrefered()) {
+                return $relink;
+            }
+        }
+        return $firstIfNoPrefered ? ($addresses->first() ?: null) : null;
+    }
+
     public function setAddresses(Collection $relinks): static
     {
         foreach ($this->getAddresses() as $relink) {
@@ -113,6 +124,17 @@ trait Relinkable
     public function getPhones(): Collection
     {
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WirePhonelinkInterface);
+    }
+
+    public function getPreferedPhone(bool $firstIfNoPrefered = true): ?WirePhonelinkInterface
+    {
+        $phones = $this->getPhones();
+        foreach ($phones as $relink) {
+            if($relink->isPrefered()) {
+                return $relink;
+            }
+        }
+        return $firstIfNoPrefered ? ($phones->first() ?: null) : null;
     }
 
     public function setPhones(Collection $relinks): static
@@ -145,6 +167,17 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireEmailinkInterface);
     }
 
+    public function getPreferedEmail(bool $firstIfNoPrefered = true): ?WireEmailinkInterface
+    {
+        $emails = $this->getEmails();
+        foreach ($emails as $relink) {
+            if($relink->isPrefered()) {
+                return $relink;
+            }
+        }
+        return $firstIfNoPrefered ? ($emails->first() ?: null) : null;
+    }
+
     public function setEmails(Collection $relinks): static
     {
         foreach ($this->getEmails() as $relink) {
@@ -175,6 +208,17 @@ trait Relinkable
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireUrlinkInterface);
     }
 
+    public function getPreferedUrl(bool $firstIfNoPrefered = true): ?WireUrlinkInterface
+    {
+        $urls = $this->getUrls();
+        foreach ($urls as $relink) {
+            if($relink->isPrefered()) {
+                return $relink;
+            }
+        }
+        return $firstIfNoPrefered ? ($urls->first() ?: null) : null;
+    }
+
     public function setUrls(Collection $relinks): static
     {
         foreach ($this->getUrls() as $relink) {
@@ -200,14 +244,25 @@ trait Relinkable
 
     // RsLink
 
-    public function getRs(): Collection
+    public function getRsocs(): Collection
     {
         return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireRslinkInterface);
     }
 
-    public function setRs(Collection $relinks): static
+    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRslinkInterface
     {
-        foreach ($this->getRs() as $relink) {
+        $rsocs = $this->getRsocs();
+        foreach ($rsocs as $relink) {
+            if($relink->isPrefered()) {
+                return $relink;
+            }
+        }
+        return $firstIfNoPrefered ? ($rsocs->first() ?: null) : null;
+    }
+
+    public function setRsocs(Collection $relinks): static
+    {
+        foreach ($this->getRsocs() as $relink) {
             if(!$relinks->contains($relink)) {
                 $this->removeRelink($relink);
             }
@@ -218,12 +273,12 @@ trait Relinkable
         return $this;
     }
 
-    public function addRs(WireRslinkInterface $relink): bool
+    public function addRsoc(WireRslinkInterface $relink): bool
     {
         return $this->addRelink($relink);
     }
 
-    public function removeRs(WireRslinkInterface $relink): bool
+    public function removeRsoc(WireRslinkInterface $relink): bool
     {
         return $this->removeRelink($relink);
     }

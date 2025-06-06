@@ -2,7 +2,7 @@
 <twig:HtmlElementAttributes />
     <head>
         <meta charset="{{ app.charset }}">
-        <title>{% block title %}Welcome!{% endblock %}</title>
+        <title>{% block title %}{{ (webpage.title|default(app.factory.name|default('Bonjour')))|striptags }}{% endblock %}</title>
         <link rel="icon" href="{{ asset('images/logo/favicon_114.png') }}" type="image/x-icon">
         {% block stylesheets %}
         {% endblock %}
@@ -14,7 +14,9 @@
     <body {{ stimulus_controller('aequation/wire/globalapp') }}>
         {% block body %}
         {% endblock %}
+        {% block utils %}
         {% include "@AequationWire/partials/_scrollup.html.twig" %}
         {% include "@AequationWire/partials/_flashes.html.twig" %}
+        {% endblock %}
     </body>
 </html>

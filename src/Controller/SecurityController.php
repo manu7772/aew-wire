@@ -21,6 +21,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route(path: '/security', name: 'app_')]
 class SecurityController extends AbstractController
 {
+
+    public const ROUTE_LOGGED_OUT = 'app_logged_out';
+
     #[Route(path: '/login', name: 'login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
@@ -40,6 +43,12 @@ class SecurityController extends AbstractController
     public function logout(): void
     {
         throw new LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+    }
+
+    #[Route(path: '/logged-out', name: 'logged_out')]
+    public function loggedOut(): Response
+    {
+        return $this->render('@AequationWire/security/logged_out.html.twig');
     }
 
     #[IsGranted("ROLE_USER")]

@@ -31,7 +31,7 @@ interface RelationMapperInterface
     public function getFieldMapping(string $field): FieldMapping|false;
     public function getFieldMappings(): array;
     public function getRelationValue(object $entity, string $field): null|object|array;
-    public function setRelationValue(object $entity, string $field, object|array $value): void;
+    public function setRelationValue(object $entity, string $field, object|array $value, bool $addToMany = false): void;
     // Relations
     public function getRelationFieldnames(): array;
     public function hasRelation(string $field): bool;

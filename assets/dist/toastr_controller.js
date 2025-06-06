@@ -4,26 +4,33 @@ import 'toastr/build/toastr.min.css'
 
 export default class extends Controller {
 
+    toasts = []
+
     connect() {
-        var data = JSON.parse(this.element.dataset.messages)
-        var options = JSON.parse(this.element.dataset.options || '{}')
+        let data = JSON.parse(this.element.dataset.messages)
+        let options = JSON.parse(this.element.dataset.options || '{}')
         if(options) {
             toastr.options = {...this.getDefaultOptions(), ...options}
         }
         // console.debug('Toastr options:', toastr.options)
         const const_delay = 200
-        var delay = const_delay
+        let delay = const_delay
         for (const type in data) {
             data[type].forEach(message => {
-                setTimeout(() => toastr[type](message), delay)
+                setTimeout(() => {
+                    const newtoast = toastr[type](message)
+                    this.toasts.push(newtoast)
+                }, delay)
                 delay += const_delay
             });
         }
     }
 
-    // disconnect() {
-        
-    // }
+    disconnect() {
+        for (const toast of this.toasts) {
+            toastr.remove(toast)
+        }
+    }
 
     getDefaultOptions = () => {
         const options = {

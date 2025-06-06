@@ -1,5 +1,5 @@
-{% extends '@AequationWire/base_admin.html.twig' %}
-{% import 'admin/partials/_elements.html.twig' as elements %}
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
 {% set trans_domain = user.shortname %}
 
 {% block title %}{{ 'name'|trans({}, trans_domain) }} {{ user }}{% endblock %}

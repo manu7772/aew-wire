@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\EventSubscriber;
 
+use Aequation\WireBundle\Controller\SecurityController;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
@@ -82,17 +83,20 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onRequest(RequestEvent $event): void
     {
+        if($this->appWire->isTurboFrameRequest()) {
+            throw new \LogicException('Turbo Frame requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
+        }
+        if($this->appWire->isTurboStreamRequest()) {
+            throw new \LogicException('Turbo Stream requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
+        }
         if(!$this->isAvailableActions($event)) return;
         // LOGOUT INVALID USER IMMEDIATLY!!!
         $user = $this->userService->getUser();
         if($user && !$user->isLoggable() && !static::isWdtRequest($event)) {
-            // $route_logged_out = $this->router->generate('app_logged_out');
-            if($this->appWire->getCurrent_route() !== 'app_logged_out') {
-                // if(!$user->isLoggable()) {
-                    $response = $this->userService->logoutCurrentUser(false);
-                    $response ??= new RedirectResponse($this->router->generate('app_logged_out'));
-                    $event->setResponse($response);
-                // }
+            if($this->appWire->getCurrent_route() !== SecurityController::ROUTE_LOGGED_OUT) {
+                $response = $this->userService->logoutCurrentUser(false);
+                $response ??= new RedirectResponse($this->router->generate(SecurityController::ROUTE_LOGGED_OUT));
+                $event->setResponse($response);
             }
         }
         if($this->appWire->isRequiredInitialization($event)) {

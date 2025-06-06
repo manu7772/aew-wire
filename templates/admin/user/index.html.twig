@@ -1,5 +1,5 @@
-{% extends '@AequationWire/base_admin.html.twig' %}
-{% import 'admin/partials/_print.html.twig' as print %}
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import '@AequationWire/admin/partials/_print.html.twig' as print %}
 
 {% set paginated = entities|shortname in ['SlidingPagination'] %}
 {% set trans_domain = options.trans_domain|default(options.shortname) %}
@@ -8,6 +8,6 @@
 {% endblock %}
 
 {% block main_content %}
-	<h1 class="text-2xl font-bold mb-4">User</h1>
+	<h1 class="text-3xl font-semibold mb-4">{{ 'Users'|trans([], trans_domain) }}</h1>
 	{{ print.table(entities, fields, options) }}
 {% endblock %}

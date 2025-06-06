@@ -71,6 +71,10 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     #[ORM\Column(length: 128, unique: true)]
     protected $slug;
 
+    #[ORM\Column(length: 64, nullable: false)]
+    #[Assert\NotNull(message: 'Un icône est obligatoire', groups: ['persist','update'])]
+    protected $linkicon;
+
     /**
      * Main link, regarding the static::RELINK_TYPE
      * - URL: type url or route
@@ -114,6 +118,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     {
         if(!in_array(static::RELINK_TYPE, static::RELINK_TYPES)) throw new \Exception(vsprintf('Error %s line %d: static::RELINK_TYPE is invalid. Should be one of these: %s!', [__METHOD__, __LINE__, implode(', ', static::RELINK_TYPES)]));
         parent::__construct();
+        $this->linkicon = static::ICON['ux'];
         $this->translations = new ArrayCollection();
         $targets = static::TARGETS;
         $this->target = reset($targets);
@@ -324,6 +329,17 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     public function getOwnereuid(): string
     {
         return $this->ownereuid;
+    }
+
+    public function getLinkicon(): string
+    {
+        return $this->linkicon;
+    }
+
+    public function setLinkicon(string $linkicon): static
+    {
+        $this->linkicon = $linkicon;
+        return $this;
     }
 
 }

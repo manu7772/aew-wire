@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Entity\trait;
 
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
+use Aequation\WireBundle\Tools\Strings;
 use Doctrine\Common\Collections\ArrayCollection;
 // Symfony
 use Doctrine\Common\Collections\Collection;
@@ -16,7 +17,7 @@ trait Categorized
     /**
      * @var Collection<int, WireCategoryInterface>
      */
-    #[ORM\ManyToMany(targetEntity: WireCategoryInterface::class)]
+    #[ORM\ManyToMany(targetEntity: WireCategoryInterface::class, fetch: 'EAGER')]
     protected Collection $categorys;
 
 
@@ -63,6 +64,23 @@ trait Categorized
     public function hasCategory(WireCategoryInterface $category): bool
     {
         return $this->categorys->contains($category);
+    }
+
+    public function searchCategory(string $name, bool $multipleResults = false): null|array|WireCategoryInterface
+    {
+        $isRegex = Strings::isRegex($name);
+        $results = [];
+        foreach ($this->categorys as $category) {
+            $test = $isRegex ? preg_match($name, $category->getName()) : $category->getName() === $name;
+            if ($test) {
+                if($multipleResults) {
+                    $results[] = $category;
+                } else {
+                    return $category;
+                }
+            }
+        }
+        return $multipleResults ? $results : null;
     }
 
 

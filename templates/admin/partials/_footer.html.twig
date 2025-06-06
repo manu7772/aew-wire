@@ -1,13 +1,11 @@
-<footer class="w-full bg-admin-secondary-950 text-admin-secondary-300 p-4">
-	<div class="flex flex-col gap-2 max-w-6xl mx-auto">
-		{# <h4 class="text-center text-white">Admin Wire Aequation</h4> #}
-		<div class="text-right mb-2">Création | <a href="http://aequation.fr" target="_blank" rel="noopener noreferrer">Aequation Webdesign</a></div>
+{# <footer class="bg-white rounded-lg shadow-sm mt-4 dark:bg-gray-800">
+	<div class="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
+		<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© {{ current_year() }} <a href="https://aequation.fr" target="_blank" class="hover:underline">Aequation Webdesign</a>{{ app.factory|default(false) ? ' pour ' ~ app.factory.name }}</a>. <span class="italic font-extralight">{{ 'copyrights'|trans }}</span>. <span class="italic font-extralight">{{ app.timezoneName }}</span>
+		</span>
+		<ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
+			<li>
+				<a{{ turbo_preload(false) }} href="{{ path('app_webpage', {webpage: 'mentions-legales'}) }}" class="hover:underline me-4 md:me-6">Mentions légales</a>
+			</li>
+		</ul>
 	</div>
-	<div class="relative z-[5] cursor-pointer w-fit" {{ stimulus_controller('scrollup', {startAt: 200}) }}>
-		<div class="fixed bottom-20 right-4 group flex flex-row justify-end gap-1 items-center">
-			<span class="p-2 bg-sky-950 text-white group-hover:bg-sky-700 rounded-lg">
-				{{ ux_icon('tabler:chevron-up', {class: 'h-6 w-6'}) }}
-			</span>
-		</div>
-	</div>
-</footer>
+</footer> #}

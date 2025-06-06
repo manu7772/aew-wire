@@ -13,11 +13,9 @@
 
 @layer base {
     body {
-        @apply font-display text-blue-950;
-        background-color: rgb(99, 125, 136);
+        @apply font-display text-sky-950 bg-slate-100;
         @variant dark {
-            @apply text-blue-200;
-            background-color: rgb(19, 43, 53);
+            @apply text-slate-200 bg-gray-950;
         }
     }
     h1 {

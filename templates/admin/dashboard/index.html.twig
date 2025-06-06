@@ -1,2 +1,8 @@
-{% extends '@AequationWire/base_admin.html.twig' %}
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
 
+{% block title %}Admin | Tableau de bord{% endblock %}
+
+{% block main_content %}
+<h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
+{# {{ parent() }} #}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends '@AequationWire/base_web.html.twig' %}
+{% import '@AequationWire/partials/_elements.html.twig' as elements %}
+
+{% block title %}{{ 'user_logged_out'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="flex flex-col gap-4 items-center justify-center ">
+        <div class="max-w-md w-full">
+            {{ elements.alert_danger('user_logged_out'|trans) }}
+        </div>
+    </div>
+{% endblock %}
