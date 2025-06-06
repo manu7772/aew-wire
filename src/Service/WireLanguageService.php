@@ -70,6 +70,26 @@ class WireLanguageService implements WireLanguageServiceInterface
         ];
     }
 
+
+    /**
+     * Returns the locale from the browser's Accept-Language header.
+     * If no locale is found, it returns the default locale or the preferred language.
+     * @see https://stackoverflow.com/questions/3770513/detect-browser-language-in-php
+     *
+     * @param string|null $defaultLocale
+     * @return string
+     */
+    public function getBrowserLocale(
+        ?string $defaultLocale = null
+    ): string
+    {
+        $locale = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+        if(strlen($locale) === 2) {
+            return $locale;
+        }
+        return $this->getPreferedLanguage()?->getLocale() ?? $defaultLocale;
+    }
+
     public static function getTimezoneChoices(): array
     {
         $choices = [];
@@ -78,7 +98,6 @@ class WireLanguageService implements WireLanguageServiceInterface
         }
         return $choices;
     }
-
 
     /**
      * Sets the current locale.

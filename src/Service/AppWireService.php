@@ -2,21 +2,17 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
-use Aequation\WireBundle\Entity\interface\WireItemcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\CacheServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
@@ -46,23 +42,20 @@ use Symfony\Component\Stopwatch\Stopwatch;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\UX\Turbo\TurboBundle;
 use Symfony\Bridge\Twig\AppVariable;
-use Twig\Loader\LoaderInterface;
-use Twig\Environment;
-use Twig\Markup;
-// PHP
-use BadMethodCallException;
-use DateTimeImmutable;
-use DateTimeZone;
-use Exception;
-use ReflectionClass;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
+// PHP
+use Twig\Loader\LoaderInterface;
+use Twig\Environment;
+use Twig\Markup;
+use DateTimeImmutable;
+use DateTimeZone;
+use Exception;
 use UnitEnum;
 
 /**
@@ -82,6 +75,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private readonly array $symfony;
     private readonly array $php;
     private readonly Stopwatch $stopwatch;
+    public int $survey = 0;
+    public readonly array $retrieved_session_data;
 
     // Serializable data
     private int $timestamp;
@@ -90,7 +85,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private string $firewallname;
     private array $tinyvalues = [];
     private bool $darkmode;
-    private int|WireFactoryInterface $factory;
+    private int|WireFactoryInterface $currentFactory;
 
     /**
      * AppWireService constructor.
@@ -111,8 +106,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         public readonly LocaleSwitcher $myLocaleSwitcher, // Override localeSwitcher
         RequestStack $requestStack,
         TokenStorageInterface $tokenStorage,
-        // public readonly AccessDecisionManagerInterface $accessDecisionManager,
-        // public readonly NormalizerInterface $normalizer,
     ) {
         // $this->startStopwatch();
         $this->container = $this->kernel->getContainer();
@@ -124,7 +117,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->setDebug($this->kernel->isDebug());
         $this->setLocaleSwitcher($myLocaleSwitcher);
         $this->setEnabledLocales($this->container->getParameter('locales'));
-        $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
+        // $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
     }
@@ -142,17 +135,17 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getEnabledLocales(): array
     {
-        return $this->getEnabled_locales();
+        return parent::getEnabled_locales();
     }
 
     public function getCurrentRoute(): ?string
     {
-        return $this->getCurrent_route();
+        return parent::getCurrent_route();
     }
 
     public function getCurrentRouteParameters(): array
     {
-        return $this->getCurrent_route_parameters();
+        return parent::getCurrent_route_parameters();
     }
 
     /************************************************************************************************************/
@@ -179,7 +172,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // if(!isset($this->requestStack)) { ???????????????????????????????????
         //     throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
         // }
-        $request = $this->getRequest();
+        $request = parent::getRequest();
         // if(!$request) {
         //     throw new \RuntimeException(vsprintf('Error %s line %d: session is not available or loaded yet.', [__METHOD__, __LINE__]));
         // }
@@ -701,11 +694,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         if($this->isRequiredInitialization($event)) {
             // $session = $this->getSession();
             $this->session ??= $event->getRequest()->getSession();
-            $session_data = $this->retrieveAppWire();
-            $this->jsonUnserialize($session_data);
-            $user = $this->getUser();
-            if($user instanceof WireUserInterface) {
-                $this->integrateUserContext($user);
+            $this->retrieved_session_data = $this->retrieveAppWire();
+            $this->jsonUnserialize($this->retrieved_session_data, $this->getUser());
+            // Add defaults
+            if(!isset($this->darkmode)) {
+                $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
             }
             $this->context_initialized = true;
             // dump(vsprintf('Info %s line %d: firewall %s (path: %s) is available for initialization.', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
@@ -713,13 +706,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->isInitialized();
     }
 
-    public function integrateUserContext(
-        WireUserInterface $user
-    ): void
-    {
-        $this->setTimezone($user->getTimezone());
-        $this->setDarkmode($user->isDarkmode());
-    }
+    // public function integrateUserContext(
+    //     WireUserInterface $user
+    // ): void
+    // {
+    //     $this->setTimezone($user->getTimezone());
+    //     $this->setDarkmode($user->isDarkmode());
+    // }
 
     /**
      * retrieve session data for AppWire regarding firewall
@@ -820,16 +813,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getDarkmode(): bool
     {
         $user = $this->getUser();
-        $this->darkmode ??= $user instanceof WireUserInterface
-            ? $user->isDarkmode()
-            : $this->appWire->getParameter('darkmode', false);
-        return $this->darkmode;
+        if($user instanceof WireUserInterface) {
+            return  $this->darkmode = $user->isDarkmode();
+        }
+        return $this->darkmode ??= $this->getParameter('darkmode', false);
     }
 
-    public function setDarkmode(?bool $darkmode = null): bool
+    public function setDarkmode(bool $darkmode): bool
     {
-        if(!is_bool($darkmode)) {
-            $darkmode = !$this->getDarkmode();
+        if($this->isDev() && $this->survey++ > 5) {
+            throw new Exception(vsprintf('Error %s line %d: can not set darkmode, too many attempts!', [__METHOD__, __LINE__]));
         }
         $user = $this->getUser();
         if($user instanceof WireUserInterface) {
@@ -840,6 +833,15 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             return $this->darkmode = $user->isDarkmode();
         }
         return $this->darkmode = $darkmode;
+    }
+
+    public function toggleDarkmode(): bool
+    {
+        if(!isset($this->darkmode)) {
+            throw new Exception(vsprintf('Error %s line %d: can not toggle darkmode because it is not set!', [__METHOD__, __LINE__]));
+            
+        }
+        return $this->setDarkmode(!$this->getDarkmode());
     }
 
     public function getDarkmodeClass(): string
@@ -908,6 +910,14 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                     $this->currentFactory = $factory;
                 }
                 break;
+            default:
+                if($this->isDev()) {
+                    throw new Exception(vsprintf('Error %s line %d: data %s is not recognized to remember any Factory!', [__METHOD__, __LINE__, json_encode($factory)]));
+                }
+                break;
+        }
+        if($this->isDev() && empty($this->currentFactory)) {
+            throw new Exception(vsprintf('Error %s line %d: can not set current factory with data %s!', [__METHOD__, __LINE__, json_encode($factory)]));
         }
         return $this;
     }
@@ -1195,15 +1205,39 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     }
 
     public function jsonUnserialize(
-        array $data
+        array $data,
+        ?WireUserInterface $user
     ): void {
         $propertyAccessor = PropertyAccess::createPropertyAccessorBuilder()->getPropertyAccessor();
         foreach (static::UNSERIALIZE_PROPERTIES as $property => $method) {
+            // Check values in flashbag
+            if($aw_flashes = $this->getFlashes('appwire')) {
+                // dump($aw_flashes);
+                foreach ($aw_flashes as $values) {
+                    $data = array_merge($data, $values);
+                }
+            }
+            // if property is defined in data
             if(isset($data[$property])) {
                 if(is_string($method)) {
                     $this->{$method}($data[$property]);
                 } else if($method) {
                     $propertyAccessor->setValue($this, $property, $data[$property]);
+                } else {
+                    // if method is false, custom action
+                    switch ($property) {
+                        case 'timezone':
+                            $this->setTimezone($user?->getTimezone() ?: $data[$property]);
+                            break;
+                        case 'darkmode':
+                            $this->setDarkmode($user?->isDarkmode() ?: $data[$property]);
+                            break;
+                        default:
+                            if($this->isDev()) {
+                                throw new Exception(vsprintf('Error %s line %d: property "%s" is not supported for custom action!', [__METHOD__, __LINE__, $property]));
+                            }
+                            break;
+                    }
                 }
             }
         }

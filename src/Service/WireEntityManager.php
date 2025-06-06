@@ -2,14 +2,9 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-
 use Aequation\WireBundle\Attribute\CacheManaged;
-use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\EntityContainer;
-use Aequation\WireBundle\Component\EntityEmbededStatus;
-use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Component\interface\EntityContainerInterface;
-use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
@@ -18,7 +13,6 @@ use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
-use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
@@ -31,6 +25,7 @@ use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
+use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Encoders;
@@ -41,21 +36,19 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\UnitOfWork;
-use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Psr\Log\LoggerInterface;
 // PHP
 use Exception;
 use Closure;
-use ReflectionMethod;
-use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
 /**
@@ -177,6 +170,16 @@ class WireEntityManager implements WireEntityManagerInterface
     public function getEntityService(
         string|BaseEntityInterface $entity
     ): ?WireEntityServiceInterface {
+        if(is_string($entity) && !class_exists($entity)) {
+            $classnames = $this->resolveFinalEntitiesByNames($entity, false);
+            foreach ($classnames as $classname) {
+                if($service = $this->appWire->getClassService($classname)) {
+                    // dd($entity.' => '.implode(' / ', $classnames).' => Class: '.$classname.' => Service: '.$service);
+                    return $service;
+                }
+            }
+            throw new Exception(vsprintf('Error %s line %d: no final entity found for interface %s!', [__METHOD__, __LINE__, $entity]));
+        }
         return $this->appWire->getClassService($entity);
     }
 
@@ -404,7 +407,6 @@ class WireEntityManager implements WireEntityManagerInterface
             if(in_array($eventName, $triggers) && is_a($entity, $interface)) {
                 switch ($interface) {
                     case TraitOwnerInterface::class:
-                        // TraitOwnerInterface
                         /** @var TraitOwnerInterface $entity */
                         if(empty($entity->getOwner())) {
                             $user = $this->appWire->getUser();
@@ -422,7 +424,6 @@ class WireEntityManager implements WireEntityManagerInterface
                         }
                         break;
                     case TraitWebpageableInterface::class:
-                        // TraitWebpageableInterface
                         /** @var TraitWebpageableInterface $entity */
                         $unames = [
                             'User' => 'wp_user_presentation',
@@ -433,23 +434,30 @@ class WireEntityManager implements WireEntityManagerInterface
                         }
                         break;
                     case TraitDatetimedInterface::class:
-                        // TraitDatetimedInterface
                         /** @var TraitDatetimedInterface $entity */
                         if(empty($entity->getLanguage())) {
                             if($defaultLanguage = $this->appWire->getCurrentLanguage()) {
                                 $entity->setLanguage($defaultLanguage);
                                 // Default timezone setted automatically
-                            } else if($this->isDebugMode()) {
-                                foreach ($this->getNormaliserService()->getCreateds() as $ent) {
-                                    if($ent instanceof WireLanguageInterface && $ent->isPrefered()) {
-                                        $entity->setLanguage($ent);
-                                    }
+                            } else {
+                                /** @var WireLanguageServiceInterface */
+                                $service = $this->getEntityService(WireLanguageInterface::class);
+                                if($prefered = $service->getPreferedLanguage()) {
+                                    $entity->setLanguage($prefered);
+                                // } else {
+                                //     foreach ($this->getNormaliserService()->getCreateds() as $ent) {
+                                //         if($ent instanceof WireLanguageInterface && $ent->isPrefered()) {
+                                //             $entity->setLanguage($ent);
+                                //         }
+                                //     }
                                 }
                             }
                         }
+                        // if($this->appWire->isDev() && (empty($entity->getTimezone()) || empty($entity->getLanguage()))) {
+                        //     throw new Exception(vsprintf('Error %s line %d: entity %s has no timezone or language!', [__METHOD__, __LINE__, Objects::toDebugString($entity)]));
+                        // }
                         break;
                     case TraitUnamedInterface::class:
-                        // TraitUnamedInterface
                         /** @var TraitUnamedInterface $entity */
                         if(empty($entity->getUname())) {
                             $this->postCreated($entity->getUname());

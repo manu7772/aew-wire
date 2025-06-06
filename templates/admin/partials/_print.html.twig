@@ -1,5 +1,5 @@
 {% macro table(entities, fields, options) %}
-    {% import 'admin/partials/_elements.html.twig' as elements %}
+    {% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
     {% import _self as self %}
     {% set paginated = entities|shortname in ['SlidingPagination'] %}
     {% set trans_domain = options.trans_domain|default(options.shortname) %}

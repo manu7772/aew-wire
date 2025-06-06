@@ -36,16 +36,16 @@ class AppWireController extends AbstractController
         );
     }
 
-    #[Route('/darkmode/{darkmode}', name: 'darkmode_switcher', defaults: ['darkmode' => null], methods: ['GET','POST'])]
+    #[Route('/darkmode/{darkmode<^(on|off|toggle)$>}', name: 'darkmode_switcher', defaults: ['darkmode' => 'toggle'], methods: ['GET','POST'])]
     public function darkmodeSwitcher(
         AppWireServiceInterface $appWire,
-        ?string $darkmode = 'auto'
+        string $darkmode = 'toggle'
     ): JsonResponse
     {
         $darkmode = match ($darkmode) {
             'on' => true,
             'off' => false,
-            default => null,
+            default => !$appWire->getDarkmode(), // toggle
         };
         $appWire->setDarkmode($darkmode);
         return $this->json(

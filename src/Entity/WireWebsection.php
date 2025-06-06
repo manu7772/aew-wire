@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Unamed;
@@ -40,7 +41,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     protected ?string $name = null;
 
-    #[ORM\ManyToOne(targetEntity: WireMenuInterface::class)]
+    #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
     protected WireMenuInterface $mainmenu;
 
     #[ORM\Column()]
@@ -64,6 +65,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     #[ORM\OneToMany(targetEntity: WireWebsectionTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
     protected $translations;
 
+    public ?WireWebpageInterface $tempWebpage = null;
     protected readonly TwigfileMetadata $twigfileMetadata;
 
 
@@ -79,6 +81,17 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
         return empty($this->name) ? parent::__toString() : $this->name;
     }
 
+    public function setTempWebpage(?WireWebpageInterface $webpage): static
+    {
+        $this->tempWebpage = $webpage;
+        return $this; // --> IMPORTANT
+    }
+
+    public function getTempWebpage(): ?WireWebpageInterface
+    {
+        return $this->tempWebpage;
+    }
+
     public function getName(): ?string
     {
         return $this->name;
@@ -90,12 +103,19 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
         return $this;
     }
 
-    public function getMainmenu(): WireMenuInterface
+    public function getMainmenu(
+        bool $useTempWebpage = false
+    ): ?WireMenuInterface
     {
-        return $this->mainmenu;
+        if($this->mainmenu) {
+            return $this->mainmenu;
+        }
+        return $useTempWebpage && $this->tempWebpage
+            ? $this->tempWebpage->getMainmenu()
+            : null;
     }
 
-    public function setMainmenu(WireMenuInterface $mainmenu): static
+    public function setMainmenu(?WireMenuInterface $mainmenu): static
     {
         $this->mainmenu = $mainmenu;
         return $this;

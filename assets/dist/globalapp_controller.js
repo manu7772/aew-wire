@@ -7,13 +7,11 @@ export default class extends Controller {
     darkmodeSwitchers = document.querySelectorAll('[data-darkmode-switcher]')
     classHolder = document.querySelector('[data-darkmode-switcher-url]')
     darkModeUrl = this.classHolder ? this.classHolder.getAttribute('data-darkmode-switcher-url') : null
-    // Openers
-    openers = document.querySelectorAll('.opener')
-    togglers = document.querySelectorAll('.element-toggler')
+    // Modal confirm
+    modalConfirms = document.querySelectorAll('[data-modal-confirm]')
 
     connect() {
         initFlowbite();
-        // console.debug('Globalapp controller connected')
         const apddata = JSON.parse(this.element.getAttribute('data-app'))
         for (const switcher of this.darkmodeSwitchers) {
             if(!this.darkModeUrl) {
@@ -23,28 +21,10 @@ export default class extends Controller {
                 switcher.addEventListener('click', this.darkSwitcher)
             }
         }
-        for (const opener of this.openers) {
-            const submenu = document.querySelector('[aria-labelledby="' + opener.getAttribute('id') + '"]')
-            if(submenu) {
-                submenu.style.opacity = 0
-                if (!submenu.classList.contains('hidden')) submenu.classList.add('hidden')
-                opener.addEventListener('click', this.openOpener)
-                opener.addEventListener('focusin', this.openOpener)
-                opener.addEventListener('focusout', this.closeOpener)
-            }
-        }
-        for (const toggler of this.togglers) {
-            const toggledElement = document.querySelector('#' + toggler.getAttribute('aria-controls'))
-            if (toggledElement) {
-                const toggle_trigger = toggler.getAttribute('data-toggle-trigger') || 'click'
-                toggler.addEventListener(toggle_trigger, this.toggleItem)
-            }
-        }
-        // console.debug('Globalapp controller data', apddata)
-        // console.info('*** Darkmode Switchers', this.darkmodeSwitchers)
-        // console.info('*** Darkmode Class Holder', this.classHolder)
-        // console.info('*** Darkmode URL', this.darkModeUrl)
-    
+        for (const modalConf of this.modalConfirms) {
+            modalConf.addEventListener('click', this.modalConfirm)
+            modalConf.addEventListener('submit', this.modalConfirm)
+        }    
     }
 
     disconnect() {
@@ -55,22 +35,9 @@ export default class extends Controller {
                 switcher.removeEventListener('click', this.darkSwitcher)
             }
         }
-        for (const opener of this.openers) {
-            const submenu = document.querySelector('[aria-labelledby="' + opener.getAttribute('id') + '"]')
-            if(submenu) {
-                submenu.style.opacity = 0
-                submenu.classList.add('hidden')
-                opener.removeEventListener('click', this.openOpener)
-                opener.removeEventListener('focusin', this.openOpener)
-                opener.removeEventListener('focusout', this.closeOpener)
-            }
-        }
-        for (const toggler of this.togglers) {
-            const toggledElement = document.querySelector('#' + toggler.getAttribute('aria-controls'))
-            if (toggledElement) {
-                const toggle_trigger = toggler.getAttribute('data-toggle-trigger') || 'click'
-                toggler.removeEventListener(toggle_trigger, this.toggleItem)
-            }
+        for (const modalConf of this.modalConfirms) {
+            modalConf.removeEventListener('click', this.modalConfirm)
+            modalConf.removeEventListener('submit', this.modalConfirm)
         }
     }
 
@@ -78,6 +45,7 @@ export default class extends Controller {
         if(!this.classHolder) return
         if (dm && !this.classHolder.classList.contains('dark')) this.classHolder.classList.add('dark')
         if (!dm && this.classHolder.classList.contains('dark')) this.classHolder.classList.remove('dark')
+        console.debug('Darkmode set to:', dm, this.classHolder.classList.contains('dark') ? 'dark' : '(light)')
     }
 
     toggleDarkmode = () => {
@@ -96,6 +64,7 @@ export default class extends Controller {
         fetch(this.darkModeUrl, { headers: headers })
             .then((response) => response.json())
             .then((response) => {
+                console.debug('Darkmode response:', response.darkmode)
                 this.setDarkmode(response.darkmode)
             })
             .catch((error) => {
@@ -103,31 +72,53 @@ export default class extends Controller {
             })
     }
 
-    openOpener = (event) => {
-        const opener = event.target.closest('.opener')
-        const submenu = document.querySelector('[aria-labelledby="' + opener.getAttribute('id') + '"]')
-        submenu.classList.remove('hidden')
-        submenu.style.animation = 'showit 1s cubic-bezier(0, 0, 0.2, 1)'
-        submenu.style.opacity = 1
+    modalConfirm = (event) => {
+        event.preventDefault()
+        const main = event.target.closest('[data-modal-confirm]')
+        const modal_id = main.getAttribute('data-modal-target')
+        // console.debug('Modal confirm triggered for:', modal_id, main)
+        const the_modal = FlowbiteInstances.getInstance('Modal', modal_id);
+        if(the_modal) {
+            if(the_modal.isHidden()) {
+                the_modal.show()
+            }
+            console.debug('Modal confirm instance found:', the_modal)
+            switch (true) {
+                case ['FORM'].includes(main.nodeName):
+                    const form_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
+                    for (const trigger of form_triggers) {
+                        trigger.addEventListener('click', (e) => {
+                            the_modal.destroyAndRemoveInstance()
+                            main.submit()
+                        })
+                    }
+                    break;
+                case ['BUTTON', 'A'].includes(main.nodeName):
+                    const url = main.getAttribute('href') || main.getAttribute('data-url')
+                    if(url) {
+                        const abutton_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
+                        for (const trigger of abutton_triggers) {
+                            trigger.addEventListener('click', (e) => {
+                                the_modal.destroyAndRemoveInstance()
+                                window.location.href = url
+                            })
+                        }
+                    } else {
+                        console.warn('No URL found for modal confirm with BUTTON or A. Please provide a valid URL.')
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
-    closeOpener = (event) => {
-        const opener = event.target.closest('.opener')
-        const submenu = document.querySelector('[aria-labelledby="' + opener.getAttribute('id') + '"]')
-        submenu.style.animation = 'hideit .3s cubic-bezier(0, 0, 0.2, 1)'
-        submenu.style.opacity = 0
-        setTimeout(() => { submenu.classList.add('hidden') }, 500)
-    }
-
-    toggleItem = (event) => {
-        const toggler = event.target.closest('.element-toggler')
-        const toggleClass = toggler.getAttribute('data-toggle-class') || 'hidden'
-        const childToggles = toggler.querySelectorAll('[child-toggle]')
-        const toggledElement = document.querySelector('#' + toggler.getAttribute('aria-controls'))
-        if(toggledElement) {
-            toggledElement.classList.toggle(toggleClass)
-            for (const $childToggle of childToggles) {
-                $childToggle.classList.toggle(toggleClass)
+    // Remove and destroy all Flowbite instances
+    destroyAllFlowbiteInstances = () => {
+        for (const [name, instances] of Object.entries(FlowbiteInstances.getAllInstances())) {
+            for (const [instance_id, instance] of Object.entries(instances)) {
+                // console.debug('*** Destroying Flowbite instance ' + instance_id + ':', instance)
+                FlowbiteInstances.destroyAndRemoveInstance(instance_id)
             }
         }
     }

@@ -16,6 +16,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 // PHP
 use Twig\Markup;
 use Closure;
+use Doctrine\Common\Collections\Collection;
 use Exception;
 use ReflectionClass;
 use Throwable;
@@ -146,12 +147,40 @@ class RelationMapper implements RelationMapperInterface
         return $value;
     }
 
-    public function setRelationValue(object $entity, string $field, object|array $value): void
+    public function setRelationValue(object $entity, string $field, object|array $value, bool $addToMany = false): void
     {
+        $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
+        if($addToMany) {
+            try {
+                $before = $this->classMetadata->getFieldValue($entity, $field);
+            } catch (Throwable $th) {
+                $before = $accessor->getValue($entity, $field);
+            }
+            if(!empty($before) && is_iterable($before)) {
+                switch (true) {
+                    case $before instanceof Collection:
+                        // Collection
+                        foreach ($value as $item) {
+                            if(!$before->contains($item)) {
+                                $before->add($item);
+                            }
+                        }
+                        break;
+                    default:
+                        // array
+                        foreach ($value as $item) {
+                            if(!in_array($item, $before, true)) {
+                                $before[] = $item;
+                            }
+                        }
+                        break;
+                }
+                $value = $before;
+            }
+        }
         try {
             $this->classMetadata->setFieldValue($entity, $field, $value);
         } catch (Throwable $th) {
-            $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
             $accessor->setValue($entity, $field, $value);
         }
     }

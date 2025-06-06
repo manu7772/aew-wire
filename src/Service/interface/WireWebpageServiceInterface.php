@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 // PHP
 use SplFileInfo;
@@ -9,6 +10,7 @@ interface WireWebpageServiceInterface extends WireEntityServiceInterface
 {
 
     public function getPreferedWebpage(): ?WireWebpageInterface;
+    public function getWebpageFor(string|BaseEntityInterface $entity, bool $attributeToEntity = false, bool $onlyActiveWebpage = true): ?WireWebpageInterface;
     public function getWebpagesCount(
             bool $onlyActives = false,
             array $criteria = []

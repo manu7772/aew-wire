@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 use ArrayObject;
 use Exception;
 use SplFileInfo;
+use Throwable;
 
 /**
  * Normalizer service
@@ -147,10 +148,28 @@ class NormalizerService implements NormalizerServiceInterface
     }
 
     /**
+     * Cleanup createds
+     * This method is used to remove entities from the createds list that are no longer managed by the EntityManager.
+     */
+    protected function cleanupCreateds(
+        bool $clearEm = true // if true, clear EntityManager before cleanup
+    ): void
+    {
+        if($clearEm) {
+            $this->wireEm->getEntityManager()->clear();
+        }
+        foreach ($this->createds as $entity) {
+            if(!$entity->__estatus->isContained()) {
+                // If the entity is not managed by the EntityManager, we can remove it from createds
+                $this->createds->removeElement($entity);
+            }
+        }
+    }
+
+    /**
      * remove entity from persisted entities
      * Returns true if createds list is empty
      * 
-     * @param BaseEntityInterface $entity
      * @return bool
      */
     public function clearPersisteds(): bool
@@ -794,7 +813,7 @@ class NormalizerService implements NormalizerServiceInterface
         bool $flush = true
     ): OpresultInterface {
         $opresult = new Opresult();
-        $em = $this->wireEm->getEm();
+        $em = $this->wireEm->getEntityManager();
         if($classname = $this->getEntityClassname($classname)) {
             $all_data = $this->getYamlData([$classname], 3);
             foreach (reset($all_data) as $data) {
@@ -823,7 +842,8 @@ class NormalizerService implements NormalizerServiceInterface
             if($flush) {
                 try {
                     $em->flush();
-                } catch (\Throwable $th) {
+                    $this->cleanupCreateds(true);
+                } catch (Throwable $th) {
                     $opresult->addDanger(vsprintf('La classe %s n\'a pas pu être enregistrée dans la base de données:%s- %s', [$classname, PHP_EOL, $th->getMessage()]));
                 }
             }
@@ -852,6 +872,7 @@ class NormalizerService implements NormalizerServiceInterface
         ];
         $progress = $io ? $io->progressIterate($items) : $items;
         $count = 0;
+        $em = $this->wireEm->getEntityManager();
         foreach ($progress as $data) {
             /** @var BaseEntityInterface $entity */
             $entity = $this->denormalizeEntity($data, $classname, context: $context);
@@ -863,7 +884,7 @@ class NormalizerService implements NormalizerServiceInterface
             if (!$replace && $entity->getSelfState()->isLoaded()
                 // && $entity->getEmbededStatus()->isContained()
             ) {
-                $this->wireEm->getEm()->detach($entity);
+                $em->detach($entity);
                 $opresult->addWarning(vsprintf('L\'entité %s existe déjà, elle ne sera pas modifiée.', [Objects::toDebugString($entity)]));
                 continue;
             }
@@ -880,10 +901,10 @@ class NormalizerService implements NormalizerServiceInterface
                 continue;
             }
             if($entity->getSelfState()->isNew()) {
-                $this->wireEm->getEm()->persist($entity);
+                $em->persist($entity);
                 $opresult->addSuccess(vsprintf('L\'entité %s a été CRÉÉE', [Objects::toDebugString($entity)]));
             } else {
-                $action = $this->wireEm->getEm()->getUnitOfWork()->isScheduledForUpdate($entity) ? 'MODIFIÉE' : 'NON MODIFIÉE';
+                $action = $em->getUnitOfWork()->isScheduledForUpdate($entity) ? 'MODIFIÉE' : 'NON MODIFIÉE';
                 $opresult->addSuccess(vsprintf('L\'entité %s a été %s', [Objects::toDebugString($entity), $action]));
             }
             // $opresult->addData($entity->getUnameThenEuid(), $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));
@@ -892,7 +913,7 @@ class NormalizerService implements NormalizerServiceInterface
         }
         if ($count > 0 && $flush) {
             // dd($opresult->getData());
-            $this->wireEm->getEm()->flush();
+            $em->flush();
         }
         foreach ($opresult->getData() as $euid => $entity) {
             // $opresult->addData($euid, $this->normalizeEntity($entity, context: [AbstractNormalizer::GROUPS => static::getNormalizeGroups($entity, 'debug')]));

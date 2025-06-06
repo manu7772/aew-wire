@@ -25,7 +25,7 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
     protected $webpage;
 
     #[ORM\Id]
-    #[ORM\ManyToOne(targetEntity: WireWebsectionInterface::class)]
+    #[ORM\ManyToOne(targetEntity: WireWebsectionInterface::class, fetch: 'EAGER')]
     #[Assert\NotNull(groups: ['persist','update'])]
     protected WireWebsectionInterface $websection;
 

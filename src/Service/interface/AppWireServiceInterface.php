@@ -35,11 +35,11 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public const DEFAULT_HOME_ROUTE = 'app_home';
     public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
     public const UNSERIALIZE_PROPERTIES = [
-        'darkmode' => true,
-        'timezone' => true,
+        'darkmode' => false, // --> false: custom action
+        'timezone' => false, // --> false: custom action
         'datenow' => true,
-        'tinyvalues' => 'mergeTinyvalues',
-        'factory' => 'setFactory',
+        'tinyvalues' => 'mergeTinyvalues', // --> USE method
+        'factory' => true,
     ];
     public const SECONDARY_PATHS_PATTERN = '#^\\/(_(profiler|wdt)|css|images|js|assets)\\/#';
     public const APP_WIRE_SESSION_PREFIX = 'appwire_';
@@ -89,7 +89,8 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isRequiredInitialization(KernelEvent $event): bool;
     public function initialize(KernelEvent $event): bool;
     public function isInitialized(): bool;
-    public function integrateUserContext(WireUserInterface $user): void;
+    public function isLocked(): bool;
+    // public function integrateUserContext(WireUserInterface $user): void;
     public function saveAppWire(KernelEvent $event): bool;
     public function clearAppWire(?string $firewall = null): bool;
     public function resetAppWire(KernelEvent $event): bool;
@@ -123,13 +124,14 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function setTinyvalues(array $values): static;
     // Serialization
     public function jsonSerialize(): mixed;
-    public function jsonUnserialize(array $data): void;
+    public function jsonUnserialize(array $data, ?WireUserInterface $user): void;
     // Twig
     public function getTwig(): Environment;
     public function getTwigLoader(): LoaderInterface;
     // Darkmode
     public function getDarkmode(): bool;
-    public function setDarkmode(?bool $darkmode = null): bool;
+    public function setDarkmode(bool $darkmode): bool;
+    public function toggleDarkmode(): bool;
     public function getDarkmodeClass(): string;
     // Timestamp / Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
@@ -150,6 +152,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isPublic(): bool;
     public function isPrivate(): bool;
     public function isDev(): bool;
+    public function isDevOrSadmin(): bool;
     public function isProd(): bool;
     public function isTest(): bool;
     public function getFirewalls(): array;

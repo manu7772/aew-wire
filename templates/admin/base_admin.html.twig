@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<twig:HtmlElementAttributes />
+    <head>
+        <meta charset="{{ app.charset }}">
+        <title>{% block title %}Admin{% endblock %}</title>
+        <link rel="icon" href="{{ asset('images/logo/favicon_114.png') }}" type="image/x-icon">
+        {% block stylesheets %}
+        {% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('@aequation/wire') }}{% endblock %}
+        {% endblock %}
+        {{ app.getTurboMetas() }}
+    </head>
+    <body {{ stimulus_controller('aequation/wire/globalapp') }}>
+
+        {{ include('@AequationWire/admin/partials/_navbar.html.twig', {}, true) }}
+        {{ include('@AequationWire/admin/partials/_aside.html.twig', {}, true) }}
+        <div class="p-2 xl:p-4 xl:ml-64">
+            <div class="p-4 mt-14 min-h-64 overflow-auto">
+                {% block main_content %}
+                {{ include('@AequationWire/admin/partials/_content.html.twig', {}, true) }}
+                {% endblock %}
+                {% block footer %}
+                {{ include('@AequationWire/admin/partials/_footer.html.twig', {}, true) }}
+                {% endblock %}
+            </div>
+        </div>
+
+        {% block utils %}
+        {% include "@AequationWire/partials/_scrollup.html.twig" %}
+        {% include "@AequationWire/partials/_flashes.html.twig" %}
+        {% endblock %}
+
+    </body>
+</html>

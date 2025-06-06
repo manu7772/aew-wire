@@ -38,7 +38,7 @@ abstract class WireRslink extends WireRelink implements WireRslinkInterface
     {
         return $this->isUrl()
             ? $this->mainlink
-            : $this->__estatus->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceTypeIfRoute);
+            : $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceTypeIfRoute);
     }
 
     public function setRoute(?string $route): static

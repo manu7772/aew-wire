@@ -26,6 +26,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use DateInterval;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\Collection;
+use Exception;
 
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
@@ -337,6 +338,10 @@ abstract class WireUser extends WireItem implements WireUserInterface
     public function setDarkmode(bool $darkmode): static
     {
         $this->darkmode = $darkmode;
+        // Update in AppWireService if necessary
+        if($this->getSelfState()->appWire->getDarkmode() !== $this->isDarkmode()) {
+            $this->getSelfState()->appWire->setDarkmode($this->isDarkmode());
+        }
         return $this;
     }
 

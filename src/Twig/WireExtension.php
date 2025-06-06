@@ -2,6 +2,9 @@
 namespace Aequation\WireBundle\Twig;
 
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
@@ -9,6 +12,7 @@ use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
 // Symfony
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\PropertyAccess\PropertyAccess;
@@ -58,6 +62,7 @@ class WireExtension extends AbstractExtension
     public function getFilters(): array
     {
         return [
+            new TwigFilter('filter_active', [$this, 'filterActive']),
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
             new TwigFilter('tailwind_merge', [$this, 'tailwindMerge']),
@@ -80,6 +85,22 @@ class WireExtension extends AbstractExtension
     /*************************************************************************************
      * FILTERS
      *************************************************************************************/
+
+    public function filterActive(
+        ArrayCollection|array $items,
+        bool $keepEmptyCollections = false
+    ): ArrayCollection|array
+    {
+        $type = gettype($items);
+        if($type === 'array') {
+            $items = new ArrayCollection($items);
+        }
+        $items = $items->filter(fn(WireItemInterface $item) => $item instanceof WireEcollectionInterface ? $item->isActive() && ($keepEmptyCollections || !$item->getItems()->isEmpty()) : $item->isActive());
+        // Filtered items
+        return $type === 'array'
+            ? $items->toArray()
+            : $items;
+    }
 
     public function tailwindMerge(string $classes1, string $classes2 = ''): string
     {

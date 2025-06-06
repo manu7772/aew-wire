@@ -449,7 +449,14 @@ class EntityContainer implements EntityContainerInterface
                     case 'reverse':
                         $this->normalizer->logger->info(vsprintf('Applying reverse extra data to entity %s: %s', [$this->classname, json_encode($values)]));
                         foreach ($values as $uname => $property) {
-                            if($target = $this->normalizer->findEntityByUname($uname)) {
+                            if($this->wireEm->entityExists($uname)) {
+                                // not Uname, but entity classname -> apply to all entities of this type
+                                $service = $this->wireEm->getEntityService($uname);
+                                foreach ($service->findAll() as $rev_entity) {
+                                    Objects::setPropertyValue($rev_entity, $property, $this->entity);
+                                }
+                            } else if($target = $this->normalizer->findEntityByUname($uname)) {
+                                // Found by Uname
                                 Objects::setPropertyValue($target, $property, $this->entity);
                             } else if($this->wireEm->isDev()) {
                                 throw new Exception(vsprintf('Error %s line %d: Entity unamed %s not found!', [__METHOD__, __LINE__, $uname]));
@@ -786,14 +793,21 @@ class EntityContainer implements EntityContainerInterface
     {
         $this->throwErrors();
         if(empty($this->rawdata)) {
+            $this->rawdata = [
+                'classname' => $this->classname,
+                'shortname' => Objects::getShortname($this->classname),
+            ];
             $this->wireEm->incDebugMode();
             $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.spl_object_hash($this), 3, vsprintf('Error %s line %d: recursion limit reached!', [__METHOD__, __LINE__]));
             $dependencies = $this->getRelationMapper();
-            if(!$this->isValid()) dd($this->controls->getMessages());
+            // if(!$this->isValid()) dd($this->controls->getMessages());
             foreach ($this->data as $property => $value) {
                 if(in_array($property, $dependencies->getRelationFieldnames())) {
                     // Relation
                     switch (true) {
+                        case empty($value):
+                            // Value is empty, do not set
+                            break;
                         case $dependencies->isToOneRelation($property):
                             // ToOne relation
                             $value = [$value];
@@ -806,9 +820,7 @@ class EntityContainer implements EntityContainerInterface
                         default:
                             // ToMany relation
                             assert($dependencies->isToManyRelation($property), vsprintf('Error %s line %d: relation %s is not valid, it should be array for multiple values!', [__METHOD__, __LINE__, $property]));
-                            // $origin = $value;
                             NormalizerService::UnhumanizeEntitiesYamlData($value);
-                            // dd($this->classname, $origin, $value);
                             $this->rawdata[$property] = [];
                             foreach($value as $val) {
                                 $val['classname'] = $this->resolveRelationClassnameByData($val, $property, $dependencies);
@@ -824,8 +836,6 @@ class EntityContainer implements EntityContainerInterface
                     // Column
                     $this->rawdata[$property] = $value;
                 }
-                $this->rawdata['classname'] = $this->classname;
-                $this->rawdata['shortname'] = Objects::getShortname($this->classname);
                 $this->tryFindEntity();
             }
             $this->globalControl();
@@ -892,7 +902,7 @@ class EntityContainer implements EntityContainerInterface
                                 }
                             }
                             // dump($this->data[$property]);
-                            $this->getRelationMapper()->setRelationValue($this->entity, $property, $this->data[$property]);
+                            $this->getRelationMapper()->setRelationValue($this->entity, $property, $this->data[$property], true);
                             unset($this->data[$property]);
                         }
                     } else {

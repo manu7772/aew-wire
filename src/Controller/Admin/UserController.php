@@ -33,7 +33,7 @@ final class UserController extends AbstractController
     ): Response
     {
         $this->denyAccessUnlessGranted('index', 'User', $this->translator->trans('access_denied'));
-        return $this->render('admin/user/index.html.twig', $this->userService->getPaginatedContextData($request));
+        return $this->render('@AequationWire/admin/user/index.html.twig', $this->userService->getPaginatedContextData($request));
     }
 
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
@@ -52,7 +52,7 @@ final class UserController extends AbstractController
             return $this->redirectToRoute('index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/user/new.html.twig', [
+        return $this->render('@AequationWire/admin/user/new.html.twig', [
             'user' => $user,
             'form' => $form,
         ]);
@@ -64,7 +64,7 @@ final class UserController extends AbstractController
     ): Response
     {
         $this->denyAccessUnlessGranted('show', $user, $this->translator->trans('access_denied'));
-        return $this->render('admin/user/show.html.twig', [
+        return $this->render('@AequationWire/admin/user/show.html.twig', [
             'user' => $user,
         ]);
     }
@@ -84,7 +84,7 @@ final class UserController extends AbstractController
             return $this->redirectToRoute('index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/user/edit.html.twig', [
+        return $this->render('@AequationWire/admin/user/edit.html.twig', [
             'user' => $user,
             'form' => $form,
         ]);

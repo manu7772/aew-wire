@@ -39,7 +39,7 @@ class SecuritySubscriber implements EventSubscriberInterface
 
     public function onSwitchUser(SwitchUserEvent $event)
     {
-        if($this->appWire->isDev()) {
+        if($this->appWire->isDevOrSadmin()) {
             dd('[DEV] USER SWITCHED (in '.__METHOD__.' / line '.__LINE__.'), not supported yet!', $event);
         }
     }
@@ -65,12 +65,17 @@ class SecuritySubscriber implements EventSubscriberInterface
 
     public function onLogoutSuccess(LogoutEvent $event)
     {
-        // dump($event->getRequest()->getSession()->all());
-        /** @var User */
+        /** @var ?WireUserInterface */
         $user = $event->getToken()->getUser();
-        // $this->userService->setDarkmode($user->isDarkmode());
-        // dump($this->userService->getDarkmode());
         $this->appWire->addFlash('warning', new TranslatableMessage('Logout_successful', [], 'security'));
+        if($user) {
+            $this->appWire->getFlashBag()->add('appwire', [
+                'timezone' => $user->getTimezone(),
+                'darkmode' => $user->isDarkmode(),
+            ]);
+            // $this->appWire->integrateUserContext($user); // --> keep user context in logged out session (darkmode, language, etc.)
+            if($this->appWire->isDevOrSadmin()) $this->appWire->addFlash('info', vsprintf('<div>Mode %s - %s</div>', [$this->appWire->getDarkmode() ? 'sombre' : 'clair', $this->appWire->getTimezoneName()]));
+        }
     }
 
     public function onCheckPassport(CheckPassportEvent $event): void

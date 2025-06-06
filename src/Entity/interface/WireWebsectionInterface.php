@@ -5,8 +5,10 @@ use Aequation\WireBundle\Component\TwigfileMetadata;
 
 interface WireWebsectionInterface extends WireEntityInterface, TraitUnamedInterface
 {
-    public function getMainmenu(): WireMenuInterface;
-    public function setMainmenu(WireMenuInterface $mainmenu): static;
+    public function setTempWebpage(?WireWebpageInterface $webpage): static;
+    public function getTempWebpage(): ?WireWebpageInterface;
+    public function getMainmenu(bool $useTempWebpage = false): ?WireMenuInterface;
+    public function setMainmenu(?WireMenuInterface $mainmenu): static;
     public function getTwigfileChoices(): array;
     public function getTwigfileName(): ?string;
     public function getTwigfile(): ?string;

@@ -15,27 +15,32 @@ interface TraitRelinkableInterface extends BaseEntityInterface
 
     // AddressLink
     public function getAddresses(): Collection;
+    public function getPreferedAddresse(bool $firstIfNoPrefered = true): ?WireAddresslinkInterface;
     public function setAddresses(Collection $relinks): static;
     public function addAddresse(WireAddresslinkInterface $relink): bool;
     public function removeAddresse(WireAddresslinkInterface $relink): bool;
     // PhoneLink
     public function getPhones(): Collection;
+    public function getPreferedPhone(bool $firstIfNoPrefered = true): ?WirePhonelinkInterface;
     public function setPhones(Collection $relinks): static;
     public function addPhone(WirePhonelinkInterface $relink): bool;
     public function removePhone(WirePhonelinkInterface $relink): bool;
     // EmailLink
     public function getEmails(): Collection;
+    public function getPreferedEmail(bool $firstIfNoPrefered = true): ?WireEmailinkInterface;
     public function setEmails(Collection $relinks): static;
     public function addEmail(WireEmailinkInterface $relink): bool;
     public function removeEmail(WireEmailinkInterface $relink): bool;
     // UrlLink
     public function getUrls(): Collection;
+    public function getPreferedUrl(bool $firstIfNoPrefered = true): ?WireUrlinkInterface;
     public function setUrls(Collection $relinks): static;
     public function addUrl(WireUrlinkInterface $relink): bool;
     public function removeUrl(WireUrlinkInterface $relink): bool;
     // RsLink
-    public function getRs(): Collection;
-    public function setRs(Collection $relinks): static;
-    public function addRs(WireRslinkInterface $relink): bool;
-    public function removeRs(WireRslinkInterface $relink): bool;
+    public function getRsocs(): Collection;
+    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRslinkInterface;
+    public function setRsocs(Collection $relinks): static;
+    public function addRsoc(WireRslinkInterface $relink): bool;
+    public function removeRsoc(WireRslinkInterface $relink): bool;
 }

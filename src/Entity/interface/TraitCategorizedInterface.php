@@ -10,4 +10,5 @@ interface TraitCategorizedInterface
     public function addCategory(WireCategoryInterface $category): static;
     public function removeCategory(WireCategoryInterface $category): static;
     public function hasCategory(WireCategoryInterface $category): bool;
+    public function searchCategory(string $name, bool $multipleResults = false): null|array|WireCategoryInterface;
 }

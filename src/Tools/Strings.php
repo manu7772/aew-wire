@@ -40,6 +40,17 @@ class Strings implements ToolInterface
 		);
 	}
 
+
+	/***********************************************************************
+	 * REGEX
+	 ***********************************************************************/
+
+	public static function isRegex(string $string): bool
+	{
+		return @preg_match($string, '') !== false;
+	}
+
+
 	/**
 	 * Split a string into lines
 	 * @see https://onlinephp.io/c/43489

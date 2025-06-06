@@ -15,9 +15,7 @@ class DashboardController extends AbstractController
     public function index(): Response
     {
         $this->addFlash('success', 'Welcome to the admin dashboard!');
-        return $this->render('@AequationWire/admin/dashboard/index.html.twig', [
-            'controller_name' => 'DashboardController',
-        ]);
+        return $this->render('@AequationWire/admin/dashboard/index.html.twig');
     }
 
 }

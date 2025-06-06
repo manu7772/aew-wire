@@ -29,7 +29,6 @@ trait Datetimed
     protected DateTimeImmutable $createdAt;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\NotNull(groups: ['update'], message: 'La date de mise à jour doit être renseignée.')]
     protected ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(nullable: false)]
