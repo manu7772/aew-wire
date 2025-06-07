@@ -802,39 +802,41 @@ class EntityContainer implements EntityContainerInterface
             $dependencies = $this->getRelationMapper();
             // if(!$this->isValid()) dd($this->controls->getMessages());
             foreach ($this->data as $property => $value) {
-                if(in_array($property, $dependencies->getRelationFieldnames())) {
-                    // Relation
-                    switch (true) {
-                        case empty($value):
-                            // Value is empty, do not set
-                            break;
-                        case $dependencies->isToOneRelation($property):
-                            // ToOne relation
-                            $value = [$value];
-                            NormalizerService::UnhumanizeEntitiesYamlData($value);
-                            $value = reset($value);
-                            $value['classname'] = $this->resolveRelationClassnameByData($value, $property, $dependencies);
-                            $value['shortname'] = Objects::getShortname($value['classname']);
-                            $this->rawdata[$property] = $value;
-                            break;
-                        default:
-                            // ToMany relation
-                            assert($dependencies->isToManyRelation($property), vsprintf('Error %s line %d: relation %s is not valid, it should be array for multiple values!', [__METHOD__, __LINE__, $property]));
-                            NormalizerService::UnhumanizeEntitiesYamlData($value);
-                            $this->rawdata[$property] = [];
-                            foreach($value as $val) {
-                                $val['classname'] = $this->resolveRelationClassnameByData($val, $property, $dependencies);
-                                $val['shortname'] = Objects::getShortname($val['classname']);
-                                $this->rawdata[$property][] = $val;
-                            }
-                            break;
+                if(!empty($value)) {
+                    if(in_array($property, $dependencies->getRelationFieldnames())) {
+                        // Relation
+                        switch (true) {
+                            case empty($value):
+                                // Value is empty, do not set
+                                break;
+                            case $dependencies->isToOneRelation($property):
+                                // ToOne relation
+                                $value = [$value];
+                                NormalizerService::UnhumanizeEntitiesYamlData($value);
+                                $value = reset($value);
+                                $value['classname'] = $this->resolveRelationClassnameByData($value, $property, $dependencies);
+                                $value['shortname'] = Objects::getShortname($value['classname']);
+                                $this->rawdata[$property] = $value;
+                                break;
+                            default:
+                                // ToMany relation
+                                assert($dependencies->isToManyRelation($property), vsprintf('Error %s line %d: relation %s is not valid, it should be array for multiple values!', [__METHOD__, __LINE__, $property]));
+                                NormalizerService::UnhumanizeEntitiesYamlData($value);
+                                $this->rawdata[$property] = [];
+                                foreach($value as $val) {
+                                    $val['classname'] = $this->resolveRelationClassnameByData($val, $property, $dependencies);
+                                    $val['shortname'] = Objects::getShortname($val['classname']);
+                                    $this->rawdata[$property][] = $val;
+                                }
+                                break;
+                        }
+                    } else if($property === static::EXTRA_DATA_NAME) {
+                        // some extra data
+                        $this->extradata = $value;
+                    } else {
+                        // Column
+                        $this->rawdata[$property] = $value;
                     }
-                } else if($property === static::EXTRA_DATA_NAME) {
-                    // some extra data
-                    $this->extradata = $value;
-                } else {
-                    // Column
-                    $this->rawdata[$property] = $value;
                 }
                 $this->tryFindEntity();
             }

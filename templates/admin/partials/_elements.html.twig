@@ -16,7 +16,7 @@
     #}
     {% set shortname = entity.shortname|default(entity) %}
     {% set trans_domain = options.trans_domain|default(shortname) %}
-    {% set class = options.class is defined ? options.class : 'px-2 py-1 rounded-md bg-admin-primary-700 hover:bg-admin-primary-600 text-admin-primary-100 hover:text-admin-primary-50' %}
+    {% set class = options.class is defined ? options.class : 'px-2 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-blue-50' %}
     {% set has_text = options.text|default(null) is not empty %}
     {% set has_icon = options.icon is not defined or options.icon != false %}
     {% set icon_class = 'w-6 h-6 inline' %}
@@ -100,15 +100,15 @@
         </form>
         <div id="{{ modal_id }}" tabindex="-1" data-modal-options="{{ {placement: 'top-center'}|json_encode }}" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
             <div class="relative p-4 w-full max-w-md max-h-full">
-                <div class="relative bg-white rounded-lg shadow-sm dark:bg-admin-secondary-700">
-                    <button type="button" class="absolute top-3 end-2.5 text-admin-secondary-400 bg-transparent hover:bg-admin-secondary-200 hover:text-admin-secondary-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-admin-secondary-600 dark:hover:text-white" data-modal-hide="{{ modal_id }}">
+                <div class="relative bg-white rounded-lg shadow-sm dark:bg-emerald-700">
+                    <button type="button" class="absolute top-3 end-2.5 text-emerald-400 bg-transparent hover:bg-emerald-200 hover:text-emerald-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-emerald-600 dark:hover:text-white" data-modal-hide="{{ modal_id }}">
                         <twig:ux:icon name="tabler:x" class="w-6 h-6" />
                         <span class="sr-only">{{ 'Close'|trans }}</span>
                     </button>
                     <div class="p-4 md:p-5 text-center">
-                        <twig:ux:icon name="tabler:trash" class="mx-auto mb-4 text-admin-secondary-400 w-12 h-12 dark:text-admin-secondary-200" />
-                        <h3 class="mb-5 text-lg font-normal text-admin-secondary-500 dark:text-admin-secondary-400">{{ options.confirm|default('actions.confirm_delete'|trans({}, trans_domain)) }}</h3>
-                        <button data-modal-hide="{{ modal_id }}" type="button" class="py-2.5 px-5 ms-3 text-sm font-medium text-admin-secondary-900 bg-white rounded-lg border border-admin-secondary-200 hover:bg-admin-secondary-100 hover:text-blue-700 dark:bg-admin-secondary-800 dark:text-admin-secondary-400 dark:border-admin-secondary-600 dark:hover:text-white dark:hover:bg-admin-secondary-700">{{ 'false'|trans }}</button>
+                        <twig:ux:icon name="tabler:trash" class="mx-auto mb-4 text-emerald-400 w-12 h-12 dark:text-emerald-200" />
+                        <h3 class="mb-5 text-lg font-normal text-emerald-500 dark:text-emerald-400">{{ options.confirm|default('actions.confirm_delete'|trans({}, trans_domain)) }}</h3>
+                        <button data-modal-hide="{{ modal_id }}" type="button" class="py-2.5 px-5 ms-3 text-sm font-medium text-emerald-900 bg-white rounded-lg border border-emerald-200 hover:bg-emerald-100 hover:text-blue-700 dark:bg-emerald-800 dark:text-emerald-400 dark:border-emerald-600 dark:hover:text-white dark:hover:bg-emerald-700">{{ 'false'|trans }}</button>
                         <button data-modal-confirm-trigger data-modal-hide="{{ modal_id }}" type="button" class="text-white bg-red-600 hover:bg-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">{{ 'true'|trans }}</button>
                     </div>
                 </div>

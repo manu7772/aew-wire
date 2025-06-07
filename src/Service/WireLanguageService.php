@@ -1,21 +1,22 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Locale;
+use DateTimeZone;
+use Knp\Component\Pager\PaginatorInterface;
 use Aequation\WireBundle\Component\Opresult;
-use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Aequation\WireBundle\Repository\BaseWireRepository;
+use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Repository\WireLanguageRepository;
+use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
+// Symfony
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
+// PHP
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
-use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
-use Aequation\WireBundle\Service\trait\TraitBaseService;
-// Symfony
-use Knp\Component\Pager\PaginatorInterface;
-use Symfony\Component\HttpFoundation\Request;
-// PHP
-use DateTimeZone;
-use Locale;
 
 /**
  * Language/Locale service
@@ -258,11 +259,13 @@ class WireLanguageService implements WireLanguageServiceInterface
         ];
         $model = $this->createModel();
         $entities = $this->getPaginated();
+        /** @var BaseWireRepository */
+        $repo = $this->getRepository();
         return [
             'entities' => $entities,
             'fields' => $fields,
             'options' => [
-                'alias' => WireLanguageRepository::ALIAS,
+                'alias' => $repo->getDefaultAlias(),
                 'classname' => $model->getClassname(),
                 'shortname' => $model->getShortname(),
                 'trans_domain' => $model->getShortname(),
