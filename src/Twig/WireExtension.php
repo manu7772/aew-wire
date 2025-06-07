@@ -87,10 +87,14 @@ class WireExtension extends AbstractExtension
      *************************************************************************************/
 
     public function filterActive(
-        ArrayCollection|array $items,
+        null|ArrayCollection|array $items,
         bool $keepEmptyCollections = false
     ): ArrayCollection|array
     {
+        if(empty($items)) {
+            // If items is empty, return empty array
+            return [];
+        }
         $type = gettype($items);
         if($type === 'array') {
             $items = new ArrayCollection($items);
