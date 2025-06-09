@@ -107,7 +107,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
         bool $useTempWebpage = false
     ): ?WireMenuInterface
     {
-        if($this->mainmenu) {
+        if($this->mainmenu ?? null) {
             return $this->mainmenu;
         }
         return $useTempWebpage && $this->tempWebpage

@@ -416,7 +416,7 @@ class EntityContainer implements EntityContainerInterface
         }
         if($this->entity->getSelfState()->isNew() && !$this->entity->getSelfState()->isModel() && !$this->willPersist()) {
             // New entity and not allowed to persist
-            $this->wireEm->logger->warning(vsprintf('Error %s line %d: Entity %s is new and not allowed to persist!', [__METHOD__, __LINE__, $this->entity::class]));
+            // $this->wireEm->logger->warning(vsprintf('Error %s line %d: Entity %s is new and not allowed to persist!', [__METHOD__, __LINE__, $this->entity::class]));
             return null;
         }
         if($this->entity->getSelfState()->isLoaded() && !$this->willUpdate()) {
@@ -447,7 +447,7 @@ class EntityContainer implements EntityContainerInterface
             foreach ($this->extradata as $action => $values) {
                 switch ($action) {
                     case 'reverse':
-                        $this->normalizer->logger->info(vsprintf('Applying reverse extra data to entity %s: %s', [$this->classname, json_encode($values)]));
+                        // $this->normalizer->logger->info(vsprintf('Applying reverse extra data to entity %s: %s', [$this->classname, json_encode($values)]));
                         foreach ($values as $uname => $property) {
                             if($this->wireEm->entityExists($uname)) {
                                 // not Uname, but entity classname -> apply to all entities of this type
@@ -464,7 +464,7 @@ class EntityContainer implements EntityContainerInterface
                         }
                         break;
                     default:
-                        $this->normalizer->logger->warning(vsprintf('Error %s line %d: Unknown action %s in extra data!', [__METHOD__, __LINE__, $action]));
+                        // $this->normalizer->logger->warning(vsprintf('Error %s line %d: Unknown action %s in extra data!', [__METHOD__, __LINE__, $action]));
                         break;
                 }
             }
@@ -966,7 +966,7 @@ class EntityContainer implements EntityContainerInterface
             }
 
             if(!$this->isValid()) {
-                $this->normalizer->logger->error(vsprintf('Error %s line %d: EntityContainer %s has errors!', [__METHOD__, __LINE__, $this->getClassname()]));
+                // $this->normalizer->logger->error(vsprintf('Error %s line %d: EntityContainer %s has errors!', [__METHOD__, __LINE__, $this->getClassname()]));
             }
     
             $this->compiledControl = true;

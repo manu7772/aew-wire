@@ -10,4 +10,14 @@
 {% block main_content %}
 	<h1 class="text-3xl font-semibold mb-4">{{ 'Users'|trans([], trans_domain) }}</h1>
 	{{ print.table(entities, fields, options) }}
+
+	{% if app.dev %}
+		<div class="my-2 w-full">
+			{{ dump(app.jsonSerialize()) }}
+		</div>
+		{# <div class="my-2 w-full">
+			{{ dump(entities, fields, options) }}
+		</div> #}
+	{% endif %}
+
 {% endblock %}

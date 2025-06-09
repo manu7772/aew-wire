@@ -207,6 +207,11 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return array_unique($roles);
     }
 
+    public function getHigherRole(): ?string
+    {
+        return $this->getEmbededStatus()->service->getUpperRole($this->getRoles());
+    }
+
     /**
      * Set Roles
      * 

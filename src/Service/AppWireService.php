@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Service;
 
 // Aequation
 use Aequation\WireBundle\Attribute\ClassCustomService;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
@@ -10,6 +11,7 @@ use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
@@ -1663,11 +1665,12 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     ): string|false
     {
         $route = false;
-        $name = is_object($subject) ? $subject->getShortname() : $subject;
+        $name = $subject instanceof ClassDescriptionInterface ? $subject->getShortname(true) : $subject;
         if(class_exists($name)) {
             $name = Objects::getShortname($name, true);
         }
         $name = strtolower($name);
+        /** @var ?WireUserInterface $user */
         $user ??= $this->getUser();
         $action = strtolower($action);
         $is_public = $firewall
@@ -1677,6 +1680,17 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $prefix = $is_public ? 'app_' : 'admin_';
             $route = $prefix.$name.'_'.$action;
             if($this->routeExists($route)) return $route;
+        // } else {
+        //     throw new Exception(vsprintf('Error %s line %d: user %s (%s) is not granted for action "%s" on subject "%s" (context: %s / firewall: %s)!', [
+        //         __METHOD__,
+        //         __LINE__,
+        //         $user?->getEmail() ?: 'anonymous',
+        //         $user?->getHigherRole() ?: 'anon.',
+        //         $action,
+        //         $name,
+        //         $is_public ? 'public' : 'admin',
+        //         $firewall ?: $this->getFirewallName()
+        //     ]));
         }
         return false;
     }

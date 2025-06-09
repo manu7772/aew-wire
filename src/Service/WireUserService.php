@@ -336,6 +336,17 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
             : $upper_roles;
     }
 
+    public function getUpperRole(array $roles): ?string
+    {
+        $upper = reset($roles);
+        foreach($roles as $role) {
+            if(count($this->map[$role] ?? []) > count($this->map[$upper] ?? [])) {
+                $upper = $role;
+            }
+        }
+        return $upper;
+    }
+
     public function compareUsers(
         WireUserInterface $manager,
         WireUserInterface $subordinate

@@ -17,43 +17,43 @@
         {{ knp_pagination_rel_links(entities) }}
     </div>
     {% endif %}
-    <table class="w-full border-collapse border border-teal-700 dark:border-blue-300 text-teal-800 dark:text-blue-400">
+    <table class="w-full border-collapse border border-teal-700 dark:border-blue-100 text-teal-800 dark:text-blue-400">
         <thead>
-            <tr class="hover:bg-blue-300 hover:dark:bg-blue-950">
+            <tr>
                 {% for field_name,field in fields %}
                 {% set name = ('fields.' ~ field_name)|trans({}, trans_domain) %}
-                <th class="px-3 py-1 border border-teal-600 dark:border-blue-200 text-teal-950 bg-blue-500 dark:bg-blue-600 whitespace-nowrap align-top">
+                <th class="px-3 py-1 border border-teal-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">
                     {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
                 </th>
                 {% if loop.first and options.actions|default(false) -%}
-                <th class="px-3 py-1 border border-teal-600 dark:border-blue-200 text-teal-950 bg-blue-500 dark:bg-blue-600 whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
+                <th class="px-3 py-1 border border-teal-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
                 {%- endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
         {% for entity in entities %}
-            <tr class="hover:bg-blue-300 hover:dark:bg-blue-950">
+            <tr class="group-tr cursor-default">
                 {% for field_name,field in fields %}
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-300 align-top">
+                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 text-teal-950 dark:text-blue-100 align-top group-tr:hover:text-teal-800 group-tr:hover:dark:text-white">
                     {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
                     {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
                     {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
                 </td>
                 {% if loop.first and options.actions|default(false) %}
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-300 align-top">
+                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 text-teal-950 dark:text-blue-100 align-top">
                     <div class="flex flex-row justify-center gap-2">
-                        {{ elements.button('show', entity, {class: '', icon_class: 'w-6 inline'}) }}
-                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-6 inline'}) }}
-                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-6 inline'}) }}
+                        {{ elements.button('show', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
+                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
+                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
                     </div>
                 </td>
                 {% endif %}
                 {% endfor %}
             </tr>
         {% else %}
-            <tr class="hover:bg-blue-300 hover:dark:bg-blue-950">
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-300 align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
+            <tr>
+                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
             </tr>
         {% endfor %}
         </tbody>

@@ -4,18 +4,12 @@ namespace Aequation\WireBundle\Entity\interface;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusContainerInterface;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Dom\Entity;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 // PHP
 use Stringable;
 
-interface BaseEntityInterface extends Stringable
+interface BaseEntityInterface extends Stringable, ClassDescriptionInterface
 {
-    // Classname
-    public function getClassname(): string;
-    // Shortname
-    public function getShortname(bool $lowercase = false): string;
-    
     // public const DO_EMBED_STATUS_EVENTS = [];
     // public function __toString(): string;
     public function __construct_entity(): void;
