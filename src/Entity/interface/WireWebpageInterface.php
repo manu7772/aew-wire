@@ -7,7 +7,7 @@ use Twig\Markup;
 interface WireWebpageInterface extends WireItemInterface, TraitPreferedInterface
 {
 
-    public function getMainmenu(): WireMenuInterface;
+    public function getMainmenu(): ?WireMenuInterface;
     public function setMainmenu(WireMenuInterface $mainmenu): static;
     public function getSections(): Collection;
     public function getWebsections(?string $type = null): Collection;
