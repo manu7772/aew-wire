@@ -1,11 +1,6 @@
 <?php
 namespace Aequation\WireBundle\Routing;
 
-use Aequation\WireBundle\Controller\API\AppWireController;
-use Aequation\WireBundle\Controller\EntityAdminController;
-use Aequation\WireBundle\Controller\RegistrationController;
-use Aequation\WireBundle\Controller\SecurityController;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Config\Loader\LoaderResolverInterface;
