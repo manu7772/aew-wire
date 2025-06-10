@@ -20,8 +20,3 @@ services:
             - '../src/Entity/'
             - '../src/Attribute/'
             - '../src/Model/'
-
-    # aequation_wire.routing_loader:
-    #     class: Aequation\WireBundle\Routing\ExtraLoader
-    #     tags:
-    #         - { name: routing.loader }
