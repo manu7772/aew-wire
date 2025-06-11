@@ -25,6 +25,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 
@@ -118,6 +119,14 @@ abstract class WireUser extends WireItem implements WireUserInterface
      */
     #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'associates')]
     protected Collection $factorys;
+
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->relinks = new ArrayCollection();
+        $this->factorys = new ArrayCollection();        
+    }
 
 
     public function __toString(): string
