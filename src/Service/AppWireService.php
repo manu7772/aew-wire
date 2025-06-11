@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Service;
 
 // Aequation
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Attribute\DebugToOptimize;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
@@ -122,6 +122,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
+        // dump($this->getCurrentRoute(), $this->getRouteHome(), $this->isRouteHome(), $this->getRouteAdmin(), $this->isRouteAdmin());
     }
 
 
@@ -1524,7 +1525,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->get('router')->getRouteCollection();
     }
 
-    public function getPublicHomeRoute(): string
+    public function getRouteHome(): string
     {
         $route = $this->getParam('home_route', static::DEFAULT_HOME_ROUTE);
         if($this->isDev()) {
@@ -1533,6 +1534,27 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             }
         }
         return $route;
+    }
+
+    public function isRouteHome(): bool
+    {
+        return $this->isCurrentRoute($this->getRouteHome());
+    }
+
+    public function getRouteAdmin(): string
+    {
+        $route = $this->getParam('admin_route', static::DEFAULT_ADMIN_ROUTE);
+        if($this->isDev()) {
+            if(!$this->routeExists($route)) {
+                throw new Exception(vsprintf('Error %s line %d: public home route %s does not exist!', [__METHOD__, __LINE__, $route]));
+            }
+        }
+        return $route;
+    }
+
+    public function isRouteAdmin(): bool
+    {
+        return $this->isCurrentRoute($this->getRouteAdmin());
     }
 
     /**
@@ -1563,28 +1585,33 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * @param mixed $param
      * @return bool
      */
+    #[DebugToOptimize(type: 'warning', description: 'Cette méthode utilise beaucoup de ressources, il faut optimiser les appels multiples')]
     public function isCurrentRoute(
         string $route,
         mixed $param = null
     ): bool {
-        // dump($this->getCurrent_route(), $this->getCurrent_route_parameters(), $param instanceof MenuInterface ? $param->getItems() : null);
+        // dump('isCurrentRoute '.$route.' : '.json_encode($this->getCurrentRoute()));
+        // if($this->getCurrentRoute() === $route) {
+        //     return true;
+        // }
+        // dump($this->getCurrentRoute(), $this->getCurrentRouteParameters(), $param instanceof MenuInterface ? $param->getItems() : null);
         if($param instanceof WireWebpageInterface) {
-            if($param->isPrefered() && $this->getCurrent_route() === $this->getPublicHomeRoute()) return true;
+            if($param->isPrefered() && $this->getCurrentRoute() === $this->getRouteHome()) return true;
         }
-        if($route !== $this->getCurrent_route()) return false;
+        if($route !== $this->getCurrentRoute()) return false;
         if(!empty($param)) {
             if($param instanceof SluggableInterface) {
                 if($param instanceof WireWebpageInterface) {
-                    if($param->isPrefered() && empty($this->getCurrent_route_parameters())) return true;
+                    if($param->isPrefered() && empty($this->getCurrentRouteParameters())) return true;
                 }
                 if($param instanceof WireEcollectionInterface) {
                     foreach ($param->getItems() as $item) {
-                        if(in_array($item->getSlug(), $this->getCurrent_route_parameters())) return true;
+                        if(in_array($item->getSlug(), $this->getCurrentRouteParameters())) return true;
                     }
                 }
                 $param = $param->getSlug();
             }
-            return in_array($param, $this->getCurrent_route_parameters());
+            return in_array($param, $this->getCurrentRouteParameters());
         }
         return true;
     }
@@ -1596,7 +1623,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      */
     public function getCurrent_route_object(): ?Route
     {
-        $route = $this->getCurrent_route();
+        $route = $this->getCurrentRoute();
         return $route
             ? $this->getRoutes()->get($route)
             : null;
@@ -1628,7 +1655,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $valids = array_intersect((array)$methods, $$route_methods);
             if(empty($valids)) return null;
         }
-        $current_route = $this->getCurrent_route();
+        $current_route = $this->getCurrentRoute();
         // if(!$this->getRoutes()->get($route)) return null;
 
         // ? : avoid if is same as current route / includes logic security

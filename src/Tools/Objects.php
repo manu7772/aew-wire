@@ -512,8 +512,8 @@ class Objects implements ToolInterface
         //                 $attr->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
         //                 $attr->setProperty($property);
         //             }
-        //             $attributes[$property->name] ??= [];
-        //             $attributes[$property->name][] = $attr;
+        //             $attributes[$reflClass->name.'::'.$property->name] ??= [];
+        //             $attributes[$reflClass->name.'::'.$property->name][] = $attr;
         //         }
         //     }
         // }
@@ -549,8 +549,8 @@ class Objects implements ToolInterface
                     $attribute->setClass(is_object($objectOrClass) ? $objectOrClass : $reflClass);
                     $attribute->setMethod($method);
                 }
-                $attributes[$method->name] ??= [];
-                $attributes[$method->name][] = $attribute;
+                $attributes[$reflClass->name.'::'.$method->name] ??= [];
+                $attributes[$reflClass->name.'::'.$method->name][] = $attribute;
             }
         }
         return $attributes;
@@ -582,8 +582,8 @@ class Objects implements ToolInterface
         //                 $attr->setConstant($reflClassConstant);
         //                 // $attr->setValue($value);
         //             }
-        //             $attributes[$reflClassConstant->name] ??= [];
-        //             $attributes[$reflClassConstant->name][] = $attr;
+        //             $attributes[$reflClass->name.'::'.$reflClassConstant->name] ??= [];
+        //             $attributes[$reflClass->name.'::'.$reflClassConstant->name][] = $attr;
         //         }
         //     }
         // }

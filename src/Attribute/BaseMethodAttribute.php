@@ -9,10 +9,12 @@ abstract class BaseMethodAttribute extends BaseClassAttribute implements AppAttr
 {
 
     public readonly ReflectionMethod $method;
+    public readonly int $startLine;
 
     public function setMethod(ReflectionMethod $method): static
     {
         $this->method = $method;
+        $this->startLine = $method->getStartLine();
         return $this;
     }
 
@@ -24,6 +26,11 @@ abstract class BaseMethodAttribute extends BaseClassAttribute implements AppAttr
     public function getMethodName(): string
     {
         return $this->method->name;
+    }
+
+    public function getStartLine(): int
+    {
+        return $this->startLine;
     }
 
     public function __serialize(): array

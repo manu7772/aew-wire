@@ -1,12 +1,12 @@
 <?php
 namespace Aequation\WireBundle\DependencyInjection;
 
-use Aequation\WireBundle\AequationWireBundle;
-use Doctrine\DBAL\DriverManager;
-use Exception;
 // Symfony
+use Doctrine\DBAL\DriverManager;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+// PHP
+use Exception;
 use Throwable;
 
 Class WireConfigurators
@@ -50,48 +50,48 @@ Class WireConfigurators
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are configured onlyu for prepend!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                 }
                 break;
-            case 'Siteparams':
-                if($asPrepend) {
-                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured for prepend!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
-                    return;
-                }
-                /** @var Connection $connexion */
-                $connexion = DriverManager::getConnection(['url' => $_ENV['DATABASE_URL']]);
-                try {
-                    $database_params = $connexion->executeQuery('SELECT P.name, P.paramvalue, P.dispatch FROM siteparams as P')->fetchAllAssociative();
-                } catch (Throwable $th) {
-                    $database_params = false;
-                }
-                if(empty($database_params)) return;
-                $params = array_map(
-                    function($param) {
-                        $param['paramvalue'] = json_decode($param['paramvalue'], true);
-                        return $param;
-                    },
-                    $database_params
-                );
-                if(static::EXECUTE_DISPATCH) {
-                    foreach ($params as $idx => $param) {
-                        $remove = false;
-                        if($param['dispatch'] && is_array($param['paramvalue']) && !array_is_list($param['paramvalue'])) {
-                            foreach ($param['paramvalue'] as $key => $val) {
-                                if(preg_match('/^[\w\d_-]+$/', $key)) {
-                                    $newid = $param['name'].'.'.$key;
-                                    $params[] = [
-                                        'name' => $newid,
-                                        'paramvalue' => $val,
-                                    ];
-                                    $remove = true;
-                                }
-                            }
-                        }
-                        if($remove && static::REMOVE_DISPATCHEDS) unset($params[$idx]);
-                    }
-                }
-                foreach ($params as $param) {
-                    $container->setParameter($param['name'], $param['paramvalue']);
-                }
-                break;
+            // case 'Siteparams':
+            //     if($asPrepend) {
+            //         trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured for prepend!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+            //         return;
+            //     }
+            //     /** @var Connection $connexion */
+            //     $connexion = DriverManager::getConnection(['url' => $_ENV['DATABASE_URL']]);
+            //     try {
+            //         $database_params = $connexion->executeQuery('SELECT P.name, P.paramvalue, P.dispatch FROM siteparams as P')->fetchAllAssociative();
+            //     } catch (Throwable $th) {
+            //         $database_params = false;
+            //     }
+            //     if(empty($database_params)) return;
+            //     $params = array_map(
+            //         function($param) {
+            //             $param['paramvalue'] = json_decode($param['paramvalue'], true);
+            //             return $param;
+            //         },
+            //         $database_params
+            //     );
+            //     if(static::EXECUTE_DISPATCH) {
+            //         foreach ($params as $idx => $param) {
+            //             $remove = false;
+            //             if($param['dispatch'] && is_array($param['paramvalue']) && !array_is_list($param['paramvalue'])) {
+            //                 foreach ($param['paramvalue'] as $key => $val) {
+            //                     if(preg_match('/^[\w\d_-]+$/', $key)) {
+            //                         $newid = $param['name'].'.'.$key;
+            //                         $params[] = [
+            //                             'name' => $newid,
+            //                             'paramvalue' => $val,
+            //                         ];
+            //                         $remove = true;
+            //                     }
+            //                 }
+            //             }
+            //             if($remove && static::REMOVE_DISPATCHEDS) unset($params[$idx]);
+            //         }
+            //     }
+            //     foreach ($params as $param) {
+            //         $container->setParameter($param['name'], $param['paramvalue']);
+            //     }
+            //     break;
             case 'Framework':
                 $origin_framework = $container->hasParameter('Framework') ? $container->getParameter('Framework') : [];
                 $framework_config = array_merge(static::getFrameworkConfig(), $origin_framework);
@@ -142,6 +142,7 @@ Class WireConfigurators
                         // 'purge_css' => [
                         //     'paths' => [
                         //         '%kernel.project_dir%/templates',
+                        //         '%kernel.project_dir%/vendor/aequation/wire/templates',
                         //     ],
                         //     'whitelist' => [],
                         // ],
@@ -213,6 +214,7 @@ Class WireConfigurators
                 throw new Exception(vsprintf('Error %s line %d: "%s" parameters are not configured!', [__METHOD__, __LINE__, $name]));
                 break;
         }
+        // dd($container->getParameterBag()->all());
     }
 
     private static function isAssetMapperAvailable(ContainerBuilder $container): bool

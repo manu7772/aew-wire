@@ -5,7 +5,6 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
 use Aequation\WireBundle\Attribute\interface\CssClassesInterface;
-use Aequation\WireBundle\Event\WireEntityEvent;
 use Aequation\WireBundle\Tools\Iterables;
 // PHP
 use Attribute;
@@ -55,6 +54,16 @@ class CssClasses extends BaseClassAttribute implements AppAttributeConstantInter
         return $this->method;
     }
 
+    public function getMethodName(): ?string
+    {
+        return isset($this->method) ? $this->method->name : null;
+    }
+
+    public function getStartLine(): ?int
+    {
+        return $this->startLine ?? null;
+    }
+
     public function setProperty(ReflectionProperty|string $property): static
     {
         $this->property = is_string($property) ? new ReflectionProperty($this->class->name, $property) : $property;
@@ -68,6 +77,11 @@ class CssClasses extends BaseClassAttribute implements AppAttributeConstantInter
     public function getProperty(): ReflectionProperty
     {
         return $this->property;
+    }
+
+    public function getPropertyName(): ?string
+    {
+        return isset($this->property) ? $this->property->name : null;
     }
 
     public function getValue(): mixed

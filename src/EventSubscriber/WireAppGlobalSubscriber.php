@@ -320,7 +320,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     // {
     //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
     //         $response = new RedirectResponse(
-    //             $this->router->generate('app_home' --> appWire->getPublicHomeRoute())
+    //             $this->router->generate($this->appWire->getRouteHome())
     //         );
     //         $event->setResponse($response);
     //     }

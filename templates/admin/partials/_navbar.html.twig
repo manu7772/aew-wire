@@ -8,7 +8,7 @@
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
                     </svg>
                 </button>
-                <a{{ turbo_preload(false) }} href="{{ path('app_public') }}" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <a{{ turbo_preload(false) }} href="{{ path(app.routeHome) }}" class="flex items-center space-x-3 rtl:space-x-reverse">
                     {% set logo = 'images/logo/vetoalliance_logowebgrand_coul1.png' %}
                     {% if logo is defined %}
                     <img src="{{ asset(logo) }}" class="h-8" alt="logo {{ app.factory.name|default('entreprise') }}"/>
@@ -43,10 +43,10 @@
                         </div>
                         <ul class="py-1" role="none">
                             <li>
-                                <a{{ turbo_preload(false) }} href="{{ path('admin_index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'dashboard'|trans|capitalize }}</a>
+                                <a{{ turbo_preload(false) }} href="{{ path(app.routeAdmin) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'dashboard'|trans|capitalize }}</a>
                             </li>
                             <li>
-                                <a{{ turbo_preload(false) }} href="{{ path('app_public') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'website'|trans|capitalize }}</a>
+                                <a{{ turbo_preload(false) }} href="{{ path(app.routeHome) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'website'|trans|capitalize }}</a>
                             </li>
                             <li>
                                 <a{{ turbo_preload(false) }} href="{{ path('app_logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'logout'|trans }}</a>
