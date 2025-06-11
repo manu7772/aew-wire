@@ -19,6 +19,7 @@ use Closure;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 use ReflectionClass;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Throwable;
 
 class RelationMapper implements RelationMapperInterface
@@ -29,11 +30,13 @@ class RelationMapper implements RelationMapperInterface
     public readonly ?ClassMetadata $classMetadata;
     protected array|false $relations;
     protected Opresult $controls;
+    public readonly PropertyAccessorInterface $accessor;
 
     public function __construct(
         public readonly string $classname,
         public readonly WireEntityManagerInterface $wireEm,
     ) {
+        $this->accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
         $this->controls = new Opresult();
         if(!$this->wireEm->entityExists($this->classname, true, false)) {
             $this->addError(vsprintf('Error %s line %d: classname %s is not a valid entity', [__METHOD__, __LINE__, $this->classname]));
@@ -138,24 +141,22 @@ class RelationMapper implements RelationMapperInterface
 
     public function getRelationValue(object $entity, string $field): null|object|array
     {
-        try {
-            $value = $this->classMetadata->getFieldValue($entity, $field);
-        } catch (Throwable $th) {
-            $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
-            $value = $accessor->getValue($entity, $field);
-        }
-        return $value;
+        // if($this->hasField($field) || $this->hasRelation($field)) {
+        //     $value = $this->classMetadata->getFieldValue($entity, $field);
+        // } else {
+            // $value = $this->accessor->getValue($entity, $field);
+        // }
+        return $this->accessor->getValue($entity, $field);
     }
 
     public function setRelationValue(object $entity, string $field, object|array $value, bool $addToMany = false): void
     {
-        $accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
         if($addToMany) {
-            try {
-                $before = $this->classMetadata->getFieldValue($entity, $field);
-            } catch (Throwable $th) {
-                $before = $accessor->getValue($entity, $field);
-            }
+            // if($this->hasField($field) || $this->hasRelation($field)) {
+            //     $before = $this->classMetadata->getFieldValue($entity, $field);
+            // } else {
+                $before = $this->accessor->getValue($entity, $field);
+            // }
             if(!empty($before) && is_iterable($before)) {
                 switch (true) {
                     case $before instanceof Collection:
@@ -178,11 +179,11 @@ class RelationMapper implements RelationMapperInterface
                 $value = $before;
             }
         }
-        try {
-            $this->classMetadata->setFieldValue($entity, $field, $value);
-        } catch (Throwable $th) {
-            $accessor->setValue($entity, $field, $value);
-        }
+        // try {
+        //     $this->classMetadata->setFieldValue($entity, $field, $value);
+        // } catch (Throwable $th) {
+            $this->accessor->setValue($entity, $field, $value);
+        // }
     }
 
 
@@ -228,12 +229,15 @@ class RelationMapper implements RelationMapperInterface
 
     public function isAvailableRelation(string $field, object|string $entity): bool
     {
+        if(!$this->wireEm->entityExists($this->classname, true, false)) {
+            return false;
+        }
         if($this->hasRelation($field)) {
-            try {
-                $cmd = $this->wireEm->getClassMetadata($entity);
-            } catch (Exception $e) {
-                return false;
-            }
+            // try {
+            //     $cmd = $this->wireEm->getClassMetadata($entity);
+            // } catch (Exception $e) {
+            //     return false;
+            // }
             $class = $this->relations[$field]['require_metadata'];
             return is_a($entity, $class, true);
         }
