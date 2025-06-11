@@ -60,6 +60,7 @@ final class LanguageController extends AbstractController
 
     // #[Route('/{id}', name: 'show', methods: ['GET'])]
     // public function show(
+    //     #[MapEntity(id: 'id')]
     //     WireLanguageInterface $language
     // ): Response
     // {
@@ -72,6 +73,7 @@ final class LanguageController extends AbstractController
     // #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     // public function edit(
     //     Request $request,
+    //     #[MapEntity(id: 'id')]
     //     WireLanguageInterface $language
     // ): Response
     // {
@@ -93,6 +95,7 @@ final class LanguageController extends AbstractController
     // #[Route('/{id}', name: 'delete', methods: ['POST'])]
     // public function delete(
     //     Request $request,
+    //     #[MapEntity(id: 'id')]
     //     WireLanguageInterface $language
     // ): Response
     // {

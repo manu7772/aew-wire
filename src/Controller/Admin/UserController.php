@@ -6,6 +6,7 @@ use Aequation\WireBundle\Form\UserType;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -58,8 +59,9 @@ final class UserController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'show', methods: ['GET'])]
+    #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
     public function show(
+        #[MapEntity(mapping:['id' => 'id'])]
         WireUserInterface $user
     ): Response
     {
@@ -72,6 +74,7 @@ final class UserController extends AbstractController
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
         Request $request,
+        #[MapEntity(mapping:['id' => 'id'])]
         WireUserInterface $user
     ): Response
     {
@@ -93,6 +96,7 @@ final class UserController extends AbstractController
     #[Route('/{id}', name: 'delete', methods: ['POST'])]
     public function delete(
         Request $request,
+        #[MapEntity(mapping:['id' => 'id'])]
         WireUserInterface $user
     ): Response
     {
