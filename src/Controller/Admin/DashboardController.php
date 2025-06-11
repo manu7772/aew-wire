@@ -13,11 +13,8 @@ class DashboardController extends AbstractController
 {
 
     #[Route(name: 'index')]
-    public function index(
-        AppWireServiceInterface $appWire
-    ): Response
+    public function index(): Response
     {
-        dump($appWire->getCurrentRoute(), $appWire->getRouteHome(), $appWire->isRouteHome(), $appWire->getRouteAdmin(), $appWire->isRouteAdmin());
         $this->addFlash('success', 'Welcome to the admin dashboard!');
         return $this->render('@AequationWire/admin/dashboard/index.html.twig');
     }
