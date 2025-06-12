@@ -25,6 +25,7 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function getUserIdentifier(): string;
     // Roles
     public function getRoles(): array;
+    public function getHigherRole(): ?string;
     public function setRoles(array $roles): static;
     public function addRole(string|array $role): static;
     public function removeRole(string|array $roles): static;

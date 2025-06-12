@@ -1,0 +1,36 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}Admin | Tableau de bord{% endblock %}
+
+{% block main_content %}
+<h1 class="text-3xl font-semibold mb-4">Plans d'optimisation du site</h1>
+<div>
+    <table class="border-collapse w-full text-sm text-left text-gray-800 dark:text-gray-200 cursor-default">
+        <thead>
+            <tr class="border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700">
+                <th class="p-2 text-center">Type</th>
+                <th class="p-2">Classe</th>
+                <th class="p-2">Methode</th>
+                <th class="p-2">Ligne</th>
+                <th class="p-2">Optimisation à développer</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attrs in toOptimize %}
+            {% for attr in attrs %}
+            <tr class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
+                <td class="p-2 align-top text-center font-light" title="{{ attr.typeLabel }}"><twig:ux:icon name="{{ attr.typeIcon.name }}" class="{{ attr.typeIcon.class }}" /></td>
+                <td class="p-2 align-top font-light" title="{{ attr.classname }}">{{ attr.classname|shortname }}</td>
+                <td class="p-2 align-top font-light">{{ attr.methodName }}()</td>
+                <td class="p-2 align-top font-light italic">L.{{ attr.startLine|default("?") }}</td>
+                <td class="p-2 align-top font-bold">{{ attr.description }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    {# <pre>
+        {{ dump(toOptimize) }}
+    </pre> #}
+</div>
+{% endblock %}

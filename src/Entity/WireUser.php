@@ -25,6 +25,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 
@@ -120,6 +121,14 @@ abstract class WireUser extends WireItem implements WireUserInterface
     protected Collection $factorys;
 
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->relinks = new ArrayCollection();
+        $this->factorys = new ArrayCollection();        
+    }
+
+
     public function __toString(): string
     {
         return $this->getCivilName().' ['.$this->email.']';
@@ -205,6 +214,11 @@ abstract class WireUser extends WireItem implements WireUserInterface
         // guarantee every user at least has ROLE_USER
         array_unshift($roles, static::ROLE_USER);
         return array_unique($roles);
+    }
+
+    public function getHigherRole(): ?string
+    {
+        return $this->getEmbededStatus()->service->getUpperRole($this->getRoles());
     }
 
     /**

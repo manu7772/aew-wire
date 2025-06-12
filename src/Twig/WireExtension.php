@@ -44,6 +44,7 @@ class WireExtension extends AbstractExtension
             new TwigFunction('user_granted', [$this->appWire, 'isUserGranted']),
             new TwigFunction('list_roles', [$this, 'listRoles'], ['is_safe' => ['html']]),
             new TwigFunction('field_value', [$this, 'fieldValue'], ['is_safe' => ['html']]),
+            new TwigFunction('print_attributes', [$this, 'printAttributes'], ['is_safe' => ['html']]),
             new TwigFunction('action_path', [$this->appWire, 'getActionPath']),
             new TwigFunction('action_url', [$this->appWire, 'getActionUrl']),
             // new TwigFunction('printr', [Objects::class, 'toDebugString'], ['is_safe' => ['html']]),
@@ -87,10 +88,14 @@ class WireExtension extends AbstractExtension
      *************************************************************************************/
 
     public function filterActive(
-        ArrayCollection|array $items,
+        null|ArrayCollection|array $items,
         bool $keepEmptyCollections = false
     ): ArrayCollection|array
     {
+        if(empty($items)) {
+            // If items is empty, return empty array
+            return [];
+        }
         $type = gettype($items);
         if($type === 'array') {
             $items = new ArrayCollection($items);
@@ -199,6 +204,24 @@ class WireExtension extends AbstractExtension
                 break;
         }
         return (string)$value;
+    }
+
+    public function printAttributes(
+        array $attributes
+    ): Markup
+    {
+        $markup = '';
+        foreach ($attributes as $key => $value) {
+            if(is_string($value) || is_numeric($value) || is_bool($value)) {
+                // Only string, numeric or boolean values are allowed
+                $markup .= ' '.$key.'="'.htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8').'"';
+            } else if(is_array($value)) {
+                // If value is an array, convert it to a string
+                $markup .= ' '.$key.'="'.htmlspecialchars(implode(' ', $value), ENT_QUOTES, 'UTF-8').'"';
+            }
+        }
+        dump(trim($markup));
+        return Strings::markup(trim($markup));
     }
 
     public function toDump(

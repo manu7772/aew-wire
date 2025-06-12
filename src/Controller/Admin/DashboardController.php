@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

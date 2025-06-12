@@ -1,27 +1,55 @@
 <aside id="default-sidebar" class="fixed top-14 left-0 z-40 w-64 h-screen transition-transform -translate-x-full xl:translate-x-0" aria-label="Sidenav">
-    <div class="overflow-y-auto py-5 px-3 h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div class="font-condensed overflow-y-auto py-5 px-3 h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <ul class="space-y-2">
             <li>
-                <a href="{{ path('admin_index') }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <twig:ux:icon name="tabler:dashboard-filled" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-                    <span class="ml-3">{{ 'dashboard'|trans|capitalize }}</span>
+                {% if app.isRouteAdmin() %}
+                <a href="{{ path(app.routeHome) }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <twig:ux:icon name="tabler:world-www" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+                    <span class="ml-3 font-condensed">{{ 'homepage'|trans|capitalize }}</span>
                 </a>
+                {% else %}
+                <a href="{{ path(app.routeAdmin) }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <twig:ux:icon name="tabler:dashboard-filled" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+                    <span class="ml-3 font-condensed">{{ 'dashboard'|trans|capitalize }}</span>
+                </a>
+                {% endif %}
             </li>
             <li>
-                <button type="button" class="flex items-center p-2 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-sales" data-collapse-toggle="dropdown-sales">
+                {% set open = app.current_route matches '/^admin_user_/' %}
+                <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-{{ 'Users' }}" data-collapse-toggle="dropdown-{{ 'Users' }}">
                     <twig:ux:icon name="tabler:users" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
                     <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'Users'|trans([], 'User') }}</span>
                     <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
                 </button>
-                <ul id="dropdown-sales" class="hidden py-2 space-y-2">
+                <ul id="dropdown-{{ 'Users' }}" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
+                    {% if app.isUserGranted(app.user, 'index', 'User') %}
                     <li>
-                        <a href="{{ path('admin_user_index') }}" class="flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Liste</a>
+                        <a href="{{ path('admin_user_index') }}" class="{{ app.isCurrentRoute('admin_user_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Liste</a>
+                    </li>
+                    {% endif %}
+                    {% if app.isUserGranted(app.user, 'new', 'User') %}
+                    <li>
+                        <a href="{{ path('admin_user_new') }}" class="{{ app.isCurrentRoute('admin_user_new') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Créer</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <li>
+                <button type="button" class="flex items-center p-2 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-super-admin" data-collapse-toggle="dropdown-super-admin">
+                    <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'ROLE_SUPER_ADMIN'|trans }}</span>
+                    <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
+                </button>
+                <ul id="dropdown-super-admin" class="hidden py-2 space-y-2">
+                    <li>
+                        <a{{ turbo_preload(false) }} href="{{ path('sadmin_debug_to_optimize') }}" class="flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Optimisations</a>
                     </li>
                     <li>
-                        <a href="{{ path('admin_user_new') }}" class="flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Créer</a>
+                        <a{{ turbo_preload(false) }} href="{{ path('demo_page') }}" class="flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Demo pages</a>
                     </li>
                 </ul>
             </li>
+            {% endif %}
         </ul>
         <ul class="pt-5 mt-5 space-y-2 border-t border-gray-200 dark:border-gray-700">
             {# <li>
@@ -31,7 +59,14 @@
                 </a>
             </li> #}
             <li>
-                {% if pages|default(null) is empty %}
+                <a href="{{ path('admin_language_index') }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <twig:ux:icon name="tabler:flag" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+                    <span class="ml-3">{{ 'Language'|trans|capitalize }}</span>
+                </a>
+            </li>
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <li>
+                {# {% if pages|default(null) is empty %}
                 <li>
                     <a{{ turbo_preload(false) }} href="{{ path('demo_page') }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <twig:ux:icon name="tabler:file-spark" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
@@ -51,8 +86,9 @@
                     </li>
                     {% endfor %}
                 </ul>
-                {% endif %}
+                {% endif %} #}
             </li>
+            {% endif %}
             <li>
                 <a{{ turbo_preload(false) }} href="{{ path('app_public') }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
                     <twig:ux:icon name="tabler:help-circle" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />

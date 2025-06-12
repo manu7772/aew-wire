@@ -2,9 +2,9 @@
     <div class="flex flex-row gap-1 items-center justify-center">
         <div>{{ title }}</div>
         {% if sorted %}
-        {{ ux_icon('tabler:caret-' ~ (direction == 'desc' ? 'down' : 'up') ~ '-filled', {class: "w-6"}) }}
+        {{ ux_icon('tabler:chevron-' ~ (direction == 'desc' ? 'down' : 'up'), {class: "w-5 h-5 inline-block"}) }}
         {% else %}
-        {{ ux_icon('tabler:caret-' ~ (direction == 'desc' ? 'down' : 'up') ~ '-filled', {class: "w-6 opacity-25"}) }}
+        {{ ux_icon('tabler:chevron-' ~ (direction == 'desc' ? 'down' : 'up'), {class: "w-5 h-5 inline-block opacity-25"}) }}
         {% endif %}
     </div>
 </a>

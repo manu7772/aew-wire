@@ -7,6 +7,7 @@ use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Repository\BaseWireRepository;
 use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -335,6 +336,17 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
             : $upper_roles;
     }
 
+    public function getUpperRole(array $roles): ?string
+    {
+        $upper = reset($roles);
+        foreach($roles as $role) {
+            if(count($this->map[$role] ?? []) > count($this->map[$upper] ?? [])) {
+                $upper = $role;
+            }
+        }
+        return $upper;
+    }
+
     public function compareUsers(
         WireUserInterface $manager,
         WireUserInterface $subordinate
@@ -427,11 +439,14 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         ];
         $model = $this->createModel();
         $entities = $this->getPaginated();
+        /** @var BaseWireRepository */
+        $repo = $this->getRepository();
         return [
             'entities' => $entities,
+            'trans_domain' => $model->getShortname(),
             'fields' => $fields,
             'options' => [
-                'alias' => WireUserRepository::ALIAS,
+                'alias' => $repo->getDefaultAlias(),
                 'classname' => $model->getClassname(),
                 'shortname' => $model->getShortname(),
                 'trans_domain' => $model->getShortname(),

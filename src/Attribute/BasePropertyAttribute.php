@@ -30,6 +30,11 @@ abstract class BasePropertyAttribute extends BaseClassAttribute implements AppAt
         return $this->property;
     }
 
+    public function getPropertyName(): string
+    {
+        return $this->property->name;
+    }
+
     public function getvalue(): mixed
     {
         return $this->propertyAccessor->getValue($this->object, $this->property->name);

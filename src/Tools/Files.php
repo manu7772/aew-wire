@@ -119,6 +119,20 @@ class Files implements ToolInterface
         return $finder;
     }
 
+    public static function findPhpFiles(
+        string|array $dirs,
+        ?string $search = null
+    ): Finder
+    {
+        $finder = static::getNewFinder();
+        if(!empty($search)) {
+            $finder->files()->in($dirs)->name('*.php')->contains($search);
+        } else {
+            $finder->files()->in($dirs)->name('*.php');
+        }
+        return $finder;
+    }
+
 
 
 

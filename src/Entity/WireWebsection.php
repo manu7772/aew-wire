@@ -42,7 +42,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     protected ?string $name = null;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
-    protected WireMenuInterface $mainmenu;
+    protected ?WireMenuInterface $mainmenu = null;
 
     #[ORM\Column()]
     #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
@@ -107,7 +107,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
         bool $useTempWebpage = false
     ): ?WireMenuInterface
     {
-        if($this->mainmenu) {
+        if($this->mainmenu ?? null) {
             return $this->mainmenu;
         }
         return $useTempWebpage && $this->tempWebpage

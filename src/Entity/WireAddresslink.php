@@ -139,7 +139,7 @@ abstract class WireAddresslink extends WireRelink implements WireAddresslinkInte
 
     public function getCodePostal(): ?string
     {
-        return str_pad($this->codePostal, 5, '0', STR_PAD_LEFT);
+        return !empty($this->codePostal) ? str_pad($this->codePostal, 5, '0', STR_PAD_LEFT) : null;
     }
 
     public function setUrl(?string $url): static

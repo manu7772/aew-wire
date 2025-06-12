@@ -33,6 +33,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
 {
 
     public const DEFAULT_HOME_ROUTE = 'app_home';
+    public const DEFAULT_ADMIN_ROUTE = 'admin_index';
     public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
     public const UNSERIALIZE_PROPERTIES = [
         'darkmode' => false, // --> false: custom action
@@ -69,7 +70,14 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getEnabled_locales(): array;
     public function getFlashes(string|array|null $types = null): array;
     public function getCurrent_route(): ?string;
+    public function getCurrentRoute(): ?string;
     public function getCurrent_route_parameters(): array;
+    public function getCurrentRouteParameters(): array;
+
+    // Environment info
+    public function getSymfonyInfo(?string $name = null): mixed;
+    public function getPhpInfo(?string $name = null): mixed;
+    public function getDatabaseInfo(?string $name = null): mixed;
 
     public function getContainer(): ContainerInterface;
     public function has(string $id): bool;
@@ -163,7 +171,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isMainFirewall(): bool;
     // Routes
     public function getRoutes(): RouteCollection;
-    public function getPublicHomeRoute(): string;
+    public function getRouteHome(): string;
+    public function isRouteHome(): bool;
+    public function getRouteAdmin(): string;
+    public function isRouteAdmin(): bool;
     public function routeExists(string $route, bool|array $control_generation = false): bool;
     public function getUrlIfExists(string $route, array $parameters = [], ?int $referenceType = null, null|array|string $methods = null): ?string;
 

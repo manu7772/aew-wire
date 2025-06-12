@@ -1,0 +1,8 @@
+<div class="relative z-50 cursor-pointer w-fit" {{ stimulus_controller('@aequation/wire/scrollup', {startAt: 200}) }}>
+    <div class="fixed bottom-24 right-4 group flex flex-row justify-end gap-1 items-center">
+        <span class="px-6 py-2 bg-teal-light text-slate-950 rounded-tl-lg rounded-bl-lg hidden group-hover:inline-block">{{ 'scrollup'|trans }}</span>
+        <span class="p-4 bg-slate-950 text-white group-hover:bg-teal-medium rounded-tr-lg rounded-br-lg">
+            <twig:ux:icon name="tabler:square-rounded-chevron-up-filled" class="h-6 w-6" />
+        </span>
+    </div>
+</div>

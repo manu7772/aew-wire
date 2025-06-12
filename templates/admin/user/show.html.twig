@@ -1,10 +1,12 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
 {% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
-{% set trans_domain = user.shortname %}
 
 {% block title %}{{ 'name'|trans({}, trans_domain) }} {{ user }}{% endblock %}
 
 {% block main_content %}
+    {% if user is empty %}
+    {{ elements.alert_warning('not_found'|trans([], trans_domain)) }}
+    {% else %}
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
         <h1><twig:ux:icon name="tabler:user-filled" class="w-8 inline pr-1" />{{ user.name|default(user.email) }} {% if user.name|default(user.email) != user.email %}<span class="text-base font-light">{{ user.email }}</span>{% endif %}</h1>
         <div class="flex flex-row gap-1">
@@ -13,7 +15,6 @@
             {{ elements.button('edit', user) }}
         </div>
     </div>
-
     <table class="table-show">
         <tbody>
             <tr>
@@ -33,59 +34,14 @@
                 <td>{{ user.firstname }}</td>
             </tr>
             <tr>
+                <th class="w-1">{{ 'fields.slug'|trans({}, trans_domain) }}</th>
+                <td>{{ user.slug }}</td>
+            </tr>
+            <tr>
                 <th class="w-1">{{ 'fields.roles'|trans({}, trans_domain) }}</th>
                 <td>{{ list_roles(user) }}</td>
             </tr>
         </tbody>
     </table>
-
-    {% set rating_domain = 'Rating' %}
-    <h3 class="mt-6 mb-2 text-center">{{ 'actions.count'|trans({'%count%': user.ratings|length}, rating_domain) }}</h3>
-    <table class="table-index">
-        <thead>
-            <tr>
-                <th class="text-center w-0">{{ 'fields.id'|trans({}, rating_domain) }}</th>
-                <th class="text-center w-0">{{ 'actions.actions'|trans({}, rating_domain) }}</th>
-                <th>{{ 'fields.client'|trans({}, rating_domain) }}</th>
-                <th>{{ 'fields.manager'|trans({}, rating_domain) }}</th>
-                <th class="text-center">{{ 'fields.validatedAt'|trans({}, rating_domain) }}</th>
-                <th class="text-center">{{ 'fields.updatedAt'|trans({}, rating_domain) }}</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for rating in user.ratings %}
-            <tr>
-                <td class="text-center w-0">{{ rating.id }}</td>
-                <td class="text-center w-0">
-                    <div class="flex flex-row justify-center gap-2">
-                        {{ elements.button('show', rating, {class: '', icon_class: 'w-6 inline'}) }}
-                        {{ elements.button('edit', rating, {class: '', icon_class: 'w-6 inline'}) }}
-                        {{ elements.button('delete', rating, {class: '', icon_class: 'w-6 inline'}) }}
-                    </div>
-                </td>
-                <td>
-                    {% if rating.client %}
-                        {{ rating.client.email }}
-                    {% else %}
-                        <span class="italic opacity-50">Aucun</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if rating.manager %}
-                        {{ rating.manager.email }}
-                    {% else %}
-                        <span class="italic opacity-50">Aucun</span>
-                    {% endif %}
-                </td>
-                {% set icon %}<span class="mr-2"><twig:ux:icon name="tabler:check" class="w-6 text-success-700 dark:text-success-400 inline-block" /></span>{% endset %}
-                <td class="text-center">{{ (rating.validatedAt ? icon ~ rating.validatedAt|date('Y-m-d H:i') : '<span class="italic opacity-60">' ~ 'actions.bouillon'|trans({}, rating_domain) ~ '</span>')|raw }}</td>
-                <td class="text-center">{{ rating.updatedAt ? rating.updatedAt|date('Y-m-d H:i') : '...' }}</td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="100%">{{ 'actions.count'|trans({'%count%': user.ratings|length}, rating_domain) }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% endif %}
 {% endblock %}

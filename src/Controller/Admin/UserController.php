@@ -3,28 +3,51 @@ namespace Aequation\WireBundle\Controller\Admin;
 
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Form\UserType;
-use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
+// PHP
+use RuntimeException;
 
 #[Route('/admin/user', name: 'admin_user_')]
 #[IsGranted("ROLE_COLLABORATOR")]
-final class UserController extends AbstractController
+class UserController extends AbstractController
 {
+    public const ENTITY_CLASS = WireUserInterface::class;
+
+    public readonly WireEntityServiceInterface $service;
 
     public function __construct(
-        protected WireUserServiceInterface $userService,
+        protected WireEntityManagerInterface $wireEm,
         protected EntityManagerInterface $entityManager,
         protected TranslatorInterface $translator
     )
     {
-        // dump($this->getSubscribedServices());
+        $this->service = $this->wireEm->getEntityService(static::ENTITY_CLASS);
+        if (!is_a($this->service->getEntityClassname(), static::ENTITY_CLASS, true)) {
+            throw new RuntimeException(vsprintf('Error %s line %d: Service found does not manage an instance of "%s".', [__METHOD__, __LINE__, static::ENTITY_CLASS]));
+        }
+    }
+
+    public function getEntityClassname(): string
+    {
+        return $this->service->getEntityClassname();
+    }
+
+    public function getEntityShortname(
+        bool $lowercase = false
+    ): string
+    {
+        $shortname = $this->service->getEntityShortname();
+        return $lowercase ? strtolower($shortname) : $shortname;
     }
 
     #[Route(name: 'index', methods: ['GET'])]
@@ -32,8 +55,11 @@ final class UserController extends AbstractController
         Request $request
     ): Response
     {
-        $this->denyAccessUnlessGranted('index', 'User', $this->translator->trans('access_denied'));
-        return $this->render('@AequationWire/admin/user/index.html.twig', $this->userService->getPaginatedContextData($request));
+        $this->denyAccessUnlessGranted('index', $this->getEntityShortname(), $this->translator->trans('access_denied'));
+        return $this->render(
+            '@AequationWire/admin/'.$this->getEntityShortname(true).'/index.html.twig',
+            $this->service->getPaginatedContextData($request)
+        );
     }
 
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
@@ -41,67 +67,70 @@ final class UserController extends AbstractController
         Request $request
     ): Response
     {
-        $this->denyAccessUnlessGranted('new', 'User', $this->translator->trans('access_denied'));
-        $user = $this->userService->createEntity();
-        $form = $this->createForm(UserType::class, $user);
+        $this->denyAccessUnlessGranted('new', $this->getEntityShortname(), $this->translator->trans('access_denied'));
+        $entity = $this->service->createEntity();
+        $form = $this->createForm(UserType::class, $entity);
         $form->handleRequest($request);
-
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->entityManager->persist($user);
+            $this->entityManager->persist($entity);
             $this->entityManager->flush();
-            return $this->redirectToRoute('index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin_'.$this->getEntityShortname(true).'_index', [], Response::HTTP_SEE_OTHER);
         }
-
-        return $this->render('@AequationWire/admin/user/new.html.twig', [
-            'user' => $user,
+        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/new.html.twig', [
+            $this->getEntityShortname(true) => $entity,
             'form' => $form,
+            'trans_domain' => $entity->getShortname(),
         ]);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(
-        WireUserInterface $user
+        #[ValueResolver('app_entity_value_resolver')]
+        ?WireUserInterface $entity
     ): Response
     {
-        $this->denyAccessUnlessGranted('show', $user, $this->translator->trans('access_denied'));
-        return $this->render('@AequationWire/admin/user/show.html.twig', [
-            'user' => $user,
+        if($entity) $this->denyAccessUnlessGranted('show', $entity, $this->translator->trans('access_denied'));
+        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/show.html.twig', [
+            $this->getEntityShortname(true) => $entity,
+            'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
         ]);
     }
 
     #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
         Request $request,
-        WireUserInterface $user
+        #[ValueResolver('app_entity_value_resolver')]
+        ?WireUserInterface $entity
     ): Response
     {
-        $this->denyAccessUnlessGranted('edit', $user, $this->translator->trans('access_denied'));
-        $form = $this->createForm(UserType::class, $user);
+        $this->denyAccessUnlessGranted('edit', $entity, $this->translator->trans('access_denied'));
+        $form = $this->createForm(UserType::class, $entity);
         $form->handleRequest($request);
-
         if ($form->isSubmitted() && $form->isValid()) {
             $this->entityManager->flush();
-            return $this->redirectToRoute('index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin_'.$this->getEntityShortname(true).'_index', [], Response::HTTP_SEE_OTHER);
         }
-
-        return $this->render('@AequationWire/admin/user/edit.html.twig', [
-            'user' => $user,
+        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/edit.html.twig', [
+            $this->getEntityShortname(true) => $entity,
             'form' => $form,
+            'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
         ]);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['POST'])]
     public function delete(
         Request $request,
-        WireUserInterface $user
+        #[ValueResolver('app_entity_value_resolver')]
+        ?WireUserInterface $entity
     ): Response
     {
-        $this->denyAccessUnlessGranted('delete', $user, $this->translator->trans('access_denied'));
-        if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->getPayload()->getString('_token'))) {
-            $this->entityManager->remove($user);
+        $this->denyAccessUnlessGranted('delete', $entity, $this->translator->trans('access_denied'));
+        if ($this->isCsrfTokenValid('delete'.$entity->getId(), $request->getPayload()->getString('_token'))) {
+            $this->entityManager->remove($entity);
             $this->entityManager->flush();
+        } else {
+            $this->addFlash('error', $this->translator->trans('csrf_token_invalid'));
         }
-
-        return $this->redirectToRoute('index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('admin_'.$this->getEntityShortname(true).'_index', [], Response::HTTP_SEE_OTHER);
     }
 }

@@ -68,9 +68,9 @@ class WireWebpage extends WireItem implements WireWebpageInterface
         $this->sections = new ArrayCollection();
     }
 
-    public function getMainmenu(): WireMenuInterface
+    public function getMainmenu(): ?WireMenuInterface
     {
-        return $this->mainmenu;
+        return $this->mainmenu ?? null;
     }
 
     public function setMainmenu(WireMenuInterface $mainmenu): static

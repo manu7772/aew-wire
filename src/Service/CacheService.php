@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Attribute\CacheManaged;
+use Aequation\WireBundle\Attribute\DebugToOptimize;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\CacheServiceInterface;
 use Aequation\WireBundle\Service\interface\WireServiceInterface;
@@ -35,6 +36,7 @@ class CacheService implements CacheServiceInterface
     public const SHORTCUT_CACHE = true;
     public const DEV_REFRESH_ALL = false;
 
+    #[DebugToOptimize(type: 'urgent', description: 'CacheService est désactivé. Résoudre cela pour améliorer les performances. Puis rétablir la ligne de contrôle du contructeur.')]
     public function __construct(
         public readonly KernelInterface $kernel,
         protected readonly LoggerInterface $logger,
@@ -44,7 +46,7 @@ class CacheService implements CacheServiceInterface
     )
     {
         if(static::SHORTCUT_CACHE && $this->kernel->getEnvironment() === 'prod') {
-            $this->logger->warning(vsprintf('CacheService SHORTCUT_CACHE is active in %s environment!', [$this->kernel->getEnvironment()]));
+            // $this->logger->warning(vsprintf('CacheService SHORTCUT_CACHE is active in %s environment!', [$this->kernel->getEnvironment()]));
         }
     }
 

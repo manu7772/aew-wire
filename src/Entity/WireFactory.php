@@ -78,6 +78,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     public function __construct()
     {
         parent::__construct();
+        $this->relinks = new ArrayCollection();
         $this->associates = new ArrayCollection();        
     }
 

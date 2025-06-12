@@ -83,12 +83,12 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onRequest(RequestEvent $event): void
     {
-        if($this->appWire->isTurboFrameRequest()) {
-            throw new \LogicException('Turbo Frame requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
-        }
-        if($this->appWire->isTurboStreamRequest()) {
-            throw new \LogicException('Turbo Stream requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
-        }
+        // if($this->appWire->isTurboFrameRequest()) {
+        //     throw new \LogicException('Turbo Frame requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
+        // }
+        // if($this->appWire->isTurboStreamRequest()) {
+        //     throw new \LogicException('Turbo Stream requests are not supported in this context.'); // TODO: Handle Turbo Frame requests properly
+        // }
         if(!$this->isAvailableActions($event)) return;
         // LOGOUT INVALID USER IMMEDIATLY!!!
         $user = $this->userService->getUser();
@@ -320,7 +320,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     // {
     //     if ($event->getException() instanceof AccountNotVerifiedAuthenticationException) {
     //         $response = new RedirectResponse(
-    //             $this->router->generate('app_home' --> appWire->getPublicHomeRoute())
+    //             $this->router->generate($this->appWire->getRouteHome())
     //         );
     //         $event->setResponse($response);
     //     }

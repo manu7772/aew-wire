@@ -42,10 +42,10 @@ abstract class WireUserVoter extends BaseEntityVoter
                         return $userService->isUserGranted($user, 'ROLE_USER');
                         break;
                     case 'edit':
-                        return $attribute === $user || ($userService->compareUsers($attribute, $user) && $userService->isUserGranted($user, 'ROLE_COLLABORATOR'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isUserGranted($user, 'ROLE_COLLABORATOR'));
                         break;
                     case 'delete':
-                        return $attribute === $user || ($userService->compareUsers($attribute, $user) && $userService->isUserGranted($user, 'ROLE_ADMIN'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isUserGranted($user, 'ROLE_ADMIN'));
                         break;
                     default:
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
