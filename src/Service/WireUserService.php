@@ -443,6 +443,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         $repo = $this->getRepository();
         return [
             'entities' => $entities,
+            'trans_domain' => $model->getShortname(),
             'fields' => $fields,
             'options' => [
                 'alias' => $repo->getDefaultAlias(),

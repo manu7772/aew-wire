@@ -1,5 +1,9 @@
+{% macro alert_warning(text) %}
+    <div class="w-full px-12 py-8 bg-orange-600 text-white border-2 border-orange-300 text-xl font-bold text-center rounded-xl">{{ text|raw }}</div>
+{% endmacro %}
+
 {% macro alert_danger(text) %}
-    <div class="alert alert-danger text-xl font-bold text-center">{{ text|raw }}</div>
+    <div class="w-full px-12 py-8 bg-red-600 text-white border-2 border-red-300 text-xl font-bold text-center rounded-xl">{{ text|raw }}</div>
 {% endmacro %}
 
 {% macro button(action, entity, options) %}
@@ -17,8 +21,8 @@
     {% set shortname = entity.shortname|default(entity) %}
     {% set trans_domain = options.trans_domain|default(shortname) %}
     {% set class = options.class is defined ? options.class : 'px-2 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-blue-50' %}
-    {% set has_text = options.text|default(null) is not empty %}
     {% set has_icon = options.icon is not defined or options.icon != false %}
+    {% set has_text = (options.text|default(null) is not empty) or not has_icon %}
     {% set icon_class = 'w-6 h-6 inline' %}
     {% if action in ['index'] %}
         {% set action_path = action_path(entity, 'index') %}

@@ -249,7 +249,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         if(!isset($this->php)) {
             // PHP INFO / in MB : memory_get_usage() / 1048576
             $this->php = [
-                'version' => phpversion(),
+                'VERSION' => phpversion(),
                 'PHP_VERSION_ID' => PHP_VERSION_ID,
                 'PHP_EXTRA_VERSION' => PHP_EXTRA_VERSION,
                 'PHP_MAJOR_VERSION' => PHP_MAJOR_VERSION,
@@ -1568,7 +1568,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     ): bool
     {
         $exists = $this->getRoutes()->get($route) !== null;
-        if($exists && ($control_generation || $this->isDev())) {
+        if($exists && true === $control_generation) {
             try {
                 $this->get('router')->generate($route, is_array($control_generation) ? $control_generation : []);
             } catch (\Throwable $th) {
@@ -1684,6 +1684,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $url ?? null;
     }
 
+    #[DebugToOptimize(type: 'info', description: 'Voir pour passer le(s) paramètre(s) de route à la méthode finale routeExists()')]
     public function getActionRoute(
         string|object $subject,
         string $action,
@@ -1706,16 +1707,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         if($this->isUserGranted($user, $action, $subject, $firewall)) {
             $prefix = $is_public ? 'app_' : 'admin_';
             $route = $prefix.$name.'_'.$action;
-            if($this->routeExists($route)) return $route;
+            if($this->routeExists($route, false)) return $route;
         // } else {
-        //     throw new Exception(vsprintf('Error %s line %d: user %s (%s) is not granted for action "%s" on subject "%s" (context: %s / firewall: %s)!', [
+        //     throw new Exception(vsprintf('Error %s line %d: user %s (%s) is not granted for action "%s" on subject "%s" (public: %s / firewall: %s)!', [
         //         __METHOD__,
         //         __LINE__,
         //         $user?->getEmail() ?: 'anonymous',
         //         $user?->getHigherRole() ?: 'anon.',
         //         $action,
         //         $name,
-        //         $is_public ? 'public' : 'admin',
+        //         json_encode($is_public),
         //         $firewall ?: $this->getFirewallName()
         //     ]));
         }
@@ -1739,6 +1740,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $url = $this->get('router')->generate($route, $route_params, $referenceType);
             return empty($url) ? false : $url;
         }
+        // dump('getActionPath not found for: '.(is_string($subject) ? $subject : $subject->getEmail()).' to do '.$action.' (fw: '.$firewall.') / User: '.$user?->getEmail() ?? 'anonymous');
         return false;
     }
 

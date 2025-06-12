@@ -263,6 +263,7 @@ class WireLanguageService implements WireLanguageServiceInterface
         $repo = $this->getRepository();
         return [
             'entities' => $entities,
+            'trans_domain' => $model->getShortname(),
             'fields' => $fields,
             'options' => [
                 'alias' => $repo->getDefaultAlias(),

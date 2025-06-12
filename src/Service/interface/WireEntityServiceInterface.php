@@ -37,6 +37,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Querys
     public static function getEntityClassname(): string;
+    public function getEntityShortname(): string;
     public function getRepository(?string $classname = null): ?EntityRepository;
     // Find
     /**

@@ -2,7 +2,6 @@
 {% import '@AequationWire/admin/partials/_print.html.twig' as print %}
 
 {% set paginated = entities|shortname in ['SlidingPagination'] %}
-{% set trans_domain = options.trans_domain|default(options.shortname) %}
 {% block title %}
 	{{ options.title|default(null) is not empty ? options.title|trans|striptags : 'actions.count'|trans({'%count%': paginated ? entities.getTotalItemCount : entities|length}, trans_domain) }}
 {% endblock %}
@@ -12,9 +11,9 @@
 	{{ print.table(entities, fields, options) }}
 
 	{% if app.dev %}
-		<div class="my-2 w-full">
+		{# <div class="my-2 w-full">
 			{{ dump(app.jsonSerialize()) }}
-		</div>
+		</div> #}
 		{# <div class="my-2 w-full">
 			{{ dump(entities, fields, options) }}
 		</div> #}

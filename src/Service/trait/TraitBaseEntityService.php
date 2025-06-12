@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Encoders;
+use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -97,6 +98,15 @@ trait TraitBaseEntityService
     {
         $rconstant = new ReflectionClassConstant(static::class, 'ENTITY_CLASS');
         return $rconstant->getValue();
+    }
+
+    public function getEntityShortname(): string
+    {
+        $classname = static::getEntityClassname();
+        if (empty($classname)) {
+            throw new Exception(vsprintf('Error %s line %d: entity shortname not defined for class %s!', [__METHOD__, __LINE__, static::class]));
+        }
+        return Objects::getShortname($classname);
     }
 
     /**
