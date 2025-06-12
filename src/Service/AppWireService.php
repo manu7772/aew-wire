@@ -14,6 +14,7 @@ use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\ServerInfoInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
@@ -74,8 +75,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public readonly SessionInterface $session;
     private bool $context_initialized = false;
     private bool $context_locked = false;
-    private readonly array $symfony;
-    private readonly array $php;
     private readonly Stopwatch $stopwatch;
     public int $survey = 0;
     public readonly array $retrieved_session_data;
@@ -212,56 +211,29 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     /**
      * get Symfony info
-     * @return array
+     * @return mixed
      */
-    public function getSymfonyInfo(): array
+    public function getSymfonyInfo(?string $name = null): mixed
     {
-        if(!isset($this->symfony)) {
-            /** @var App/Kernel $kernel */
-            $kernel = $this->kernel;
-            $eom = explode('/', $kernel::END_OF_MAINTENANCE);
-            $END_OF_MAINTENANCE = new DateTimeImmutable($eom[1].'-'.$eom[0].'-01');
-            $eol = explode('/', $kernel::END_OF_LIFE);
-            $END_OF_LIFE = new DateTimeImmutable($eol[1].'-'.$eol[0].'-01');
-            $this->symfony = [
-                'VERSION' => $kernel::VERSION,
-                'SHORT_VERSION' => $kernel::MAJOR_VERSION.'.'.$kernel::MINOR_VERSION,
-                'VERSION_ID' => $kernel::VERSION_ID,
-                'MAJOR_VERSION' => $kernel::MAJOR_VERSION,
-                'MINOR_VERSION' => $kernel::MINOR_VERSION,
-                'RELEASE_VERSION' => $kernel::RELEASE_VERSION,
-                'EXTRA_VERSION' => $kernel::EXTRA_VERSION,
-                'END_OF_MAINTENANCE' => $END_OF_MAINTENANCE,
-                'END_OF_MAINTENANCE_TEXT' => $END_OF_MAINTENANCE->format('d/m/Y'),
-                'END_OF_LIFE' => $END_OF_LIFE,
-                'END_OF_LIFE_TEXT' => $END_OF_LIFE->format('d/m/Y'),
-            ];
-        }
-        return $this->symfony;
+        return $this->get(ServerInfoInterface::class)->getSymfonyInfo($name);
     }
 
     /**
      * get PHP info
-     * @return array
+     * @return mixed
      */
-    public function getPhpInfo(): array
+    public function getPhpInfo(?string $name = null): mixed
     {
-        if(!isset($this->php)) {
-            // PHP INFO / in MB : memory_get_usage() / 1048576
-            $this->php = [
-                'VERSION' => phpversion(),
-                'PHP_VERSION_ID' => PHP_VERSION_ID,
-                'PHP_EXTRA_VERSION' => PHP_EXTRA_VERSION,
-                'PHP_MAJOR_VERSION' => PHP_MAJOR_VERSION,
-                'PHP_MINOR_VERSION' => PHP_MINOR_VERSION,
-                'PHP_RELEASE_VERSION' => PHP_RELEASE_VERSION,
-                'memory_limit' => ini_get('memory_limit'),
-                'post_max_size' => ini_get('post_max_size'),
-                'upload_max_filesize' => ini_get('upload_max_filesize'),
-                'date.timezone' => ini_get('date.timezone'),
-            ];
-        }
-        return $this->php;
+        return $this->get(ServerInfoInterface::class)->getPhpInfo($name);
+    }
+
+    /**
+     * get DATABASE info
+     * @return mixed
+     */
+    public function getDatabaseInfo(?string $name = null): mixed
+    {
+        return $this->get(ServerInfoInterface::class)->getDatabaseInfo($name);
     }
 
 
@@ -822,6 +794,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->darkmode ??= $this->getParameter('darkmode', false);
     }
 
+    #[DebugToOptimize(type: 'warning', description: 'Does not work perfectly. Please optimize!')]
     public function setDarkmode(bool $darkmode): bool
     {
         if($this->isDev() && $this->survey++ > 5) {
@@ -1585,7 +1558,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * @param mixed $param
      * @return bool
      */
-    #[DebugToOptimize(type: 'warning', description: 'Cette méthode utilise beaucoup de ressources, il faut optimiser les appels multiples')]
+    #[DebugToOptimize(type: 'urgent', description: 'Cette méthode utilise beaucoup de ressources, il faut optimiser les appels multiples')]
     public function isCurrentRoute(
         string $route,
         mixed $param = null

@@ -11,7 +11,7 @@ class DebugToOptimize extends BaseMethodAttribute
     public const TYPES = [
         'info' => 'Notification',
         'warning' => 'Important',
-        'error' => 'Danger',
+        'urgent' => 'Urgent',
     ];
 
     public function __construct(
@@ -39,17 +39,22 @@ class DebugToOptimize extends BaseMethodAttribute
         return match ($this->type) {
             'info' => [
                 'name' => 'tabler:info-circle',
-                'class' => 'w-6 h-6 text-emarald-500 inline-block',
+                'class' => 'w-6 h-6 text-emerald-500 inline-block',
             ],
             'warning' => [
                 'name' => 'tabler:exclamation-circle',
-                'class' => 'w-6 h-6 text-orange-500 inline-block',
+                'class' => 'w-6 h-6 text-orange-400 inline-block',
             ],
-            'error' => [
-                'name' => 'tabler:exclamation-circle',
+            'urgent' => [
+                'name' => 'tabler:exclamation-circle-filled',
                 'class' => 'w-6 h-6 text-red-500 inline-block',
             ],
         };
+    }
+
+    public function getTypeLabel(): string
+    {
+        return static::TYPES[$this->type];
     }
 
     #[CssClasses(target: 'value')]

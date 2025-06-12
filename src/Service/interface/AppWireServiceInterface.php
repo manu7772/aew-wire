@@ -74,6 +74,11 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getCurrent_route_parameters(): array;
     public function getCurrentRouteParameters(): array;
 
+    // Environment info
+    public function getSymfonyInfo(?string $name = null): mixed;
+    public function getPhpInfo(?string $name = null): mixed;
+    public function getDatabaseInfo(?string $name = null): mixed;
+
     public function getContainer(): ContainerInterface;
     public function has(string $id): bool;
     public function get(string $id, int $invalidBehavior = ContainerInterface::NULL_ON_INVALID_REFERENCE): ?object;

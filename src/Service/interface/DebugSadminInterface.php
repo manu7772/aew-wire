@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Service\interface;
 
 
-interface DebugSadminInterface
+interface DebugSadminInterface extends WireServiceInterface
 {
     /**
      * Returns an array of methods to optimize.

@@ -36,7 +36,7 @@ class CacheService implements CacheServiceInterface
     public const SHORTCUT_CACHE = true;
     public const DEV_REFRESH_ALL = false;
 
-    #[DebugToOptimize(type: 'warning', description: 'CacheService est désactivé. Résoudre cela pour améliorer les performances. Puis rétablir la ligne de contrôle du contructeur.')]
+    #[DebugToOptimize(type: 'urgent', description: 'CacheService est désactivé. Résoudre cela pour améliorer les performances. Puis rétablir la ligne de contrôle du contructeur.')]
     public function __construct(
         public readonly KernelInterface $kernel,
         protected readonly LoggerInterface $logger,

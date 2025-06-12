@@ -4,7 +4,8 @@
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
-<div>PHP version <span class="font-bold">{{ app.phpInfo.VERSION }}</span></div>
-<div>Symfony version <span class="font-bold">{{ app.symfonyInfo.VERSION }}</span></div>
+<div>PHP version <span class="font-bold">{{ app.getPhpInfo('VERSION') }}</span></div>
+<div>Symfony version <span class="font-bold">{{ app.getSymfonyInfo('VERSION') }}</span></div>
+<div>Database version <span class="font-bold">{{ app.getDatabaseInfo('serverVersion') }}</span></div>
 {# {{ parent() }} #}
 {% endblock %}
