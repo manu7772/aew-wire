@@ -164,6 +164,11 @@ trait WireEntity
             : $this->shortname;
     }
 
+    public function getTrans_domain(): string
+    {
+        return $this->getShortname(false);
+    }
+
     /**
      * get serialization data
      *

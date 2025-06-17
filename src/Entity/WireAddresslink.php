@@ -31,7 +31,7 @@ abstract class WireAddresslink extends WireRelink implements WireAddresslinkInte
     #[Assert\NotBlank(message: 'L\'adresse ne peut être vide', groups: ['persist','update'])]
     protected ?string $mainlink = null;
 
-    #[ORM\Column(name: '`lines`', type: ArrayTextType::NAME, nullable: false)]
+    #[ORM\Column(name: '`lines`', type: ArrayTextType::NAME)]
     protected ArrayTextUtilInterface $lines;
 
     #[ORM\Column(type: Types::STRING, nullable: true)]

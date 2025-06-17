@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
@@ -13,17 +14,25 @@ use Symfony\Component\Validator\Constraints\PasswordStrength;
 
 class ChangePasswordFormType extends AbstractType
 {
+
+    public function __construct(
+        private WireUserServiceInterface $entityService
+    )
+    {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
+                'label' => 'fields.password',
                 'options' => [
                     'attr' => [
                         'autocomplete' => 'new-password',
                     ],
                 ],
                 'first_options' => [
+                    'label' => 'fields.new_password',
                     'constraints' => [
                         new NotBlank([
                             'message' => 'Please enter a password',
@@ -40,7 +49,7 @@ class ChangePasswordFormType extends AbstractType
                     'label' => 'New password',
                 ],
                 'second_options' => [
-                    'label' => 'Repeat Password',
+                    'label' => 'fields.repeat_password',
                 ],
                 'invalid_message' => 'The password fields must match.',
                 // Instead of being set onto the object directly,
@@ -52,6 +61,8 @@ class ChangePasswordFormType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([]);
+        $resolver->setDefaults([
+            'translation_domain' => $this->entityService->getEntityShortname(),
+        ]);
     }
 }

@@ -5,8 +5,10 @@ use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
@@ -31,6 +33,7 @@ class WireExtension extends AbstractExtension
 
     public function __construct(
         private AppWireServiceInterface $appWire,
+        private WireEntityManagerInterface $wireEm,
         // private WireUserServiceInterface $userService,
         private TranslatorInterface $translator,
         private Environment $twig
@@ -42,6 +45,7 @@ class WireExtension extends AbstractExtension
         $functions = [
             new TwigFunction('current_year', [$this->appWire, 'getCurrentYear']),
             new TwigFunction('user_granted', [$this->appWire, 'isUserGranted']),
+            new TwigFunction('getIcon', [$this, 'getIcon'], ['is_safe' => ['html']]),
             new TwigFunction('list_roles', [$this, 'listRoles'], ['is_safe' => ['html']]),
             new TwigFunction('field_value', [$this, 'fieldValue'], ['is_safe' => ['html']]),
             new TwigFunction('print_attributes', [$this, 'printAttributes'], ['is_safe' => ['html']]),
@@ -66,6 +70,7 @@ class WireExtension extends AbstractExtension
             new TwigFilter('filter_active', [$this, 'filterActive']),
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
+            new TwigFilter('trans_domain', [$this, 'getTransDomain']),
             new TwigFilter('tailwind_merge', [$this, 'tailwindMerge']),
         ];
     }
@@ -107,6 +112,14 @@ class WireExtension extends AbstractExtension
             : $items;
     }
 
+    public function getTransDomain(string|ClassDescriptionInterface $entity): string
+    {
+        if($entity instanceof ClassDescriptionInterface) {
+            return $entity->getTrans_domain();
+        }
+        return class_exists($entity) ? Objects::getShortname($entity, false) : $entity;
+    }
+
     public function tailwindMerge(string $classes1, string $classes2 = ''): string
     {
         $classes1 = preg_split('/\s+/', $classes1);
@@ -118,7 +131,18 @@ class WireExtension extends AbstractExtension
      * FUNCTIONS
      *************************************************************************************/
 
-     public function listRoles(
+    public function getIcon(
+        string|BaseEntityInterface $entity
+    ): string
+    {
+        if($entity instanceof BaseEntityInterface || is_a($entity, BaseEntityInterface::class, true)) {
+            return $entity::getIcon();
+        }
+        // dump($this->wireEm->getEntitiesDescriptor()->findFinals($entity));
+        return ($class = $this->wireEm->resolveFinalEntity($entity)) ? $class::getIcon() : 'tabler:question-mark';
+    }
+
+    public function listRoles(
         UserInterface|array $roles,
         bool $asString = true
     ): string|array

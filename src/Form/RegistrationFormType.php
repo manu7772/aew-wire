@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Form;
 
 use Aequation\WireBundle\Entity\WireUser;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -15,17 +16,23 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 
 class RegistrationFormType extends AbstractType
 {
+
+    public function __construct(
+        private WireUserServiceInterface $entityService
+    )
+    {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('email')
             ->add('name', null, [
                 'required' => true,
-                'label' => 'Nom',
+                'label' => 'fields.name',
             ])
             ->add('firstname', null, [
                 'required' => false,
-                'label' => 'Prénom',
+                'label' => 'fields.firstname',
             ])
             ->add('agreeTerms', CheckboxType::class, [
                 'mapped' => false,
@@ -38,7 +45,7 @@ class RegistrationFormType extends AbstractType
             ->add('plainPassword', PasswordType::class, [
                 // instead of being set onto the object directly,
                 // this is read and encoded in the controller
-                'label' => 'Mot de passe',
+                'label' => 'fields.password',
                 // 'mapped' => false,
                 // 'by_reference' => false,
                 'attr' => ['autocomplete' => 'new-password'],
@@ -55,7 +62,7 @@ class RegistrationFormType extends AbstractType
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Enregistrer',
+                'label' => 'actions.register',
                 'priority' => -1
             ])
         ;
@@ -65,6 +72,7 @@ class RegistrationFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => WireUser::class,
+            'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
     }
 }

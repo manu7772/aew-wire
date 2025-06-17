@@ -27,7 +27,7 @@ class WireWebpage extends WireItem implements WireWebpageInterface
     use Prefered;
 
     public const ICON = [
-        'ux' => 'tabler:brand-webflow',
+        'ux' => 'tabler:letter-w',
         'fa' => 'fa-w'
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;

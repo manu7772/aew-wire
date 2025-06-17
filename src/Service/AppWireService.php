@@ -184,6 +184,16 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
 
     /************************************************************************************************************/
+    /** TRANSLATABLE WEBSITE                                                                                    */
+    /************************************************************************************************************/
+
+    public function isTranslate(): bool
+    {
+        return $this->getParameter('translation_enabled', false);
+    }
+
+
+    /************************************************************************************************************/
     /** FLASHES                                                                                                 */
     /************************************************************************************************************/
 
@@ -673,7 +683,13 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $this->jsonUnserialize($this->retrieved_session_data, $this->getUser());
             // Add defaults
             if(!isset($this->darkmode)) {
-                $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
+                if($user = $this->getUser()) {
+                    /** @var WireUserInterface $user */
+                    $darkmode = $user->isDarkmode();
+                } else {
+                    $darkmode = $this->getParameter('darkmode', false);
+                }
+                $this->setDarkmode($darkmode);
             }
             $this->context_initialized = true;
             // dump(vsprintf('Info %s line %d: firewall %s (path: %s) is available for initialization.', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));

@@ -13,6 +13,7 @@ use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 // Symfony
 use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 abstract class WireItemService implements WireItemServiceInterface
 {
@@ -42,5 +43,45 @@ abstract class WireItemService implements WireItemServiceInterface
         return $opresult;
     }
 
+    /****************************************************************************************************/
+    /** PAGINABLE                                                                                       */
+    /****************************************************************************************************/
+
+    /**
+     * Get paginated context data.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getPaginatedContextData(
+        ?Request $request = null
+    ): array
+    {
+        $request ??= $this->appWire->getRequest();
+        $fields =  [
+            'id' => [
+                'classes' => ['text-center','w-0'],
+                'sortable' => true,
+            ],
+            'name' => [
+                'sortable' => true,
+            ],
+        ];
+        $model = $this->createModel();
+        $entities = $this->getPaginated();
+        /** @var BaseWireRepository */
+        $repo = $this->getRepository();
+        return [
+            'entities' => $entities,
+            'fields' => $fields,
+            'options' => [
+                'alias' => $repo->getDefaultAlias(),
+                'classname' => $model->getClassname(),
+                'shortname' => $model->getShortname(),
+                'trans_domain' => $model->getTrans_domain(),
+                'actions' => true,
+            ],
+        ];
+    }
 
 }

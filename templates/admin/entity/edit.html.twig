@@ -1,0 +1,23 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
+{% trans_default_domain entity.trans_domain %}
+
+{% block title %}{{ 'actions.edit'|trans }} {{ entity }}{% endblock %}
+
+{% block main_content %}
+
+    {% block headtitle %}
+    <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+        <h1><span class="text-lg font-light">{{ 'actions.edit'|trans }}</span> {{ entity }}</h1>
+        <div class="h-full flex flex-row gap-1 items-center">
+            {{ elements.button('show', entity) }}
+            {{ elements.button('index', entity.shortname) }}
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block entitydata %}
+    {% include ['@AequationWire/admin/entity/' ~ entity.shortname|lower ~ '/_form.html.twig', '@AequationWire/admin/entity/_form.html.twig'] %}
+    {% endblock %}
+
+{% endblock %}

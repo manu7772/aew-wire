@@ -1,0 +1,5 @@
+{# {% trans_default_domain form.data.trans_domain %} #}
+<form method="post" action="{{ path('admin_' ~ entity.shortname|lower ~ '_delete', {'id': entity.id}) }}" onsubmit="return confirm('Are you sure you want to delete this item?');">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
+    <button class="btn">{{ 'Confirm'|trans([], 'messages') }}</button>
+</form>

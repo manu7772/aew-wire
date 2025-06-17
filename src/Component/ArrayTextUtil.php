@@ -77,7 +77,7 @@ class ArrayTextUtil implements ArrayTextUtilInterface
     }
 
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): string
     {
         return json_encode($this->toArray(), JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION);
     }

@@ -154,6 +154,8 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // Flashes
     public function getFlashBag(): ?FlashBagInterface;
     public function addFlash(string $type, string $message): void;
+    // Translatable website
+    public function isTranslate(): bool;
     // Environment / Security
     public function isGranted(mixed $attributes, mixed $subject = null): bool;
     public function isUserGranted(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;
