@@ -1,0 +1,69 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
+{% trans_default_domain entity.trans_domain %}
+
+{% block title %}{{ 'name'|trans }} {{ entity }}{% endblock %}
+
+{% block main_content %}
+    {% if entity is empty %}
+
+    {% block empty_data %}
+    {{ elements.alert_warning('not_found'|trans) }}
+    {% endblock %}
+
+    {% else %}
+
+    {% block headtitle %}
+    <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+        <h1><twig:ux:icon name="{{ entity.icon('ux') }}" class="w-8 inline pr-1" />{{ entity }}</h1>
+        <div class="h-full flex flex-row gap-1 items-center">
+            {{ elements.button('index', entity.shortname) }}
+            {{ elements.button('delete', entity) }}
+            {{ elements.button('edit', entity) }}
+        </div>
+    </div>
+    {% endblock %}
+    {% block entitydata %}
+    <table class="table-show">
+        <tbody>
+            <tr>
+                <th class="w-1">{{ 'fields.id'|trans }}</th>
+                <td>{{ entity.id }}</td>
+            </tr>
+            {% if entity.email|default(false) %}
+            <tr>
+                <th class="w-1">{{ 'fields.email'|trans }}</th>
+                <td>{{ entity.email }}</td>
+            </tr>
+            {% endif %}
+            {% if entity.name|default(false) %}
+            <tr>
+                <th class="w-1">{{ 'fields.name'|trans }}</th>
+                <td>{{ entity.name }}</td>
+            </tr>
+            {% endif %}
+            {% if entity.slug|default(false) %}
+            <tr>
+                <th class="w-1">{{ 'fields.slug'|trans }}</th>
+                <td>{{ entity.slug }}</td>
+            </tr>
+            {% endif %}
+            {% if entity.createdAt|default(false) %}
+            <tr>
+                <th class="w-1">{{ 'fields.createdAt'|trans }}</th>
+                <td>
+                    {# @see https://twig.symfony.com/doc/3.x/filters/format_datetime.html #}
+                    <div>{{ 'field.createdAt'|trans }} : {{ entity.createdAt|format_datetime('medium', 'short') }}</div>
+                    {% if entity.updatedAt %}
+                    <div>{{ 'field.updatedAt'|trans }} : {{ entity.updatedAt|format_datetime('medium', 'short') }}</div>
+                    {% else %}
+                    <div>{{ 'field.not_updated' }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% endblock %}
+    {% endif %}
+{% endblock %}

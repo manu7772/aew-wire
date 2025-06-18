@@ -12,15 +12,14 @@
             - class (string)
             - icon (string|false)
             - icon_class (string)
-            - text (string)
+            - text (string|true)
             - title (string)
             - confirm (string)
             - trans_domain (string)
             - path (string) - for custom action
     #}
-    {% set shortname = entity.shortname|default(entity) %}
-    {% set trans_domain = options.trans_domain|default(shortname) %}
-    {% set class = options.class is defined ? options.class : 'px-2 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-blue-50' %}
+    {% set trans_domain = options.trans_domain|default(entity|trans_domain) %}
+    {% set class = options.class is defined ? options.class : 'flex flex-row items-center px-2 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-blue-50' %}
     {% set has_icon = options.icon is not defined or options.icon != false %}
     {% set has_text = (options.text|default(null) is not empty) or not has_icon %}
     {% set icon_class = 'w-6 h-6 inline' %}
@@ -55,10 +54,10 @@
         {% if action_path %}
         <a href="{{ action_path }}" class="{{ class }}" title="{{ (options.title|default('actions.new'|trans({}, trans_domain)))|striptags }}">
             {% if has_icon %}
-            <twig:ux:icon name="{{ options.icon|default('tabler:plus') }}" class="{{ options.icon_class|default(icon_class) }}" /> {{ options.title|default('actions.new'|trans({}, trans_domain)) }}
+            <twig:ux:icon name="{{ options.icon|default('tabler:plus') }}" class="{{ options.icon_class|default(icon_class) }}" />
             {% endif %}
             {% if has_text -%}
-            {% set text = options.text is same as true ? 'actions.edit'|trans({}, trans_domain) : options.text %}
+            {% set text = options.text is same as true ? 'actions.new'|trans({}, trans_domain) : options.text %}
             <span{% if has_icon %} class="ml-2"{% endif %}>{{ text|raw }}</span>
             {%- endif %}
         </a>
@@ -89,7 +88,7 @@
     {% elseif action in ['delete'] %}
         {% set action_path = action_path(entity, 'delete') %}
         {% if action_path %}
-        {% set modal_id = 'confirm-modal-' ~ entity.shortname|lower ~ '-' ~ entity.id %}
+        {% set modal_id = 'confirm-modal-' ~ entity.getShortname(true) ~ '-' ~ entity.id %}
         <form method="post" action="{{ action_path }}" data-modal-confirm="{{ modal_id }}" title="{{ (options.title|default('actions.delete'|trans({}, trans_domain)))|striptags }}">
             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
             <button data-modal-target="{{ modal_id }}" class="h-full w-full {{ class }}">

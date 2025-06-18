@@ -14,7 +14,6 @@ abstract class WirePdfVoter extends WireItemVoter
 
     public const ENTITY_CLASS = WirePdf::class;
 
-
     public function voteOnAttribute(
         string $subject,
         mixed $attribute,

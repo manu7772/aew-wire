@@ -27,5 +27,6 @@ interface BaseEntityInterface extends Stringable, ClassDescriptionInterface
     // public function setEuid(string $euid): static;
     public function getUnameThenEuid(): string;
     public function defineUname(string $uname): static;
+    public static function getIcon(string $type = 'ux'): string;
 
 }

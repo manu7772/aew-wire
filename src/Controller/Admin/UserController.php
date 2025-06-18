@@ -7,7 +7,6 @@ use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
@@ -19,36 +18,12 @@ use RuntimeException;
 
 #[Route('/admin/user', name: 'admin_user_')]
 #[IsGranted("ROLE_COLLABORATOR")]
-class UserController extends AbstractController
+class UserController extends EntityController
 {
     public const ENTITY_CLASS = WireUserInterface::class;
 
     public readonly WireEntityServiceInterface $service;
 
-    public function __construct(
-        protected WireEntityManagerInterface $wireEm,
-        protected EntityManagerInterface $entityManager,
-        protected TranslatorInterface $translator
-    )
-    {
-        $this->service = $this->wireEm->getEntityService(static::ENTITY_CLASS);
-        if (!is_a($this->service->getEntityClassname(), static::ENTITY_CLASS, true)) {
-            throw new RuntimeException(vsprintf('Error %s line %d: Service found does not manage an instance of "%s".', [__METHOD__, __LINE__, static::ENTITY_CLASS]));
-        }
-    }
-
-    public function getEntityClassname(): string
-    {
-        return $this->service->getEntityClassname();
-    }
-
-    public function getEntityShortname(
-        bool $lowercase = false
-    ): string
-    {
-        $shortname = $this->service->getEntityShortname();
-        return $lowercase ? strtolower($shortname) : $shortname;
-    }
 
     #[Route(name: 'index', methods: ['GET'])]
     public function index(
@@ -57,7 +32,7 @@ class UserController extends AbstractController
     {
         $this->denyAccessUnlessGranted('index', $this->getEntityShortname(), $this->translator->trans('access_denied'));
         return $this->render(
-            '@AequationWire/admin/'.$this->getEntityShortname(true).'/index.html.twig',
+            $this->getTemplatePath('index'),
             $this->service->getPaginatedContextData($request)
         );
     }
@@ -69,34 +44,34 @@ class UserController extends AbstractController
     {
         $this->denyAccessUnlessGranted('new', $this->getEntityShortname(), $this->translator->trans('access_denied'));
         $entity = $this->service->createEntity();
-        $form = $this->createForm(UserType::class, $entity);
+        $form = $this->createForm(UserType::class, $entity, ['validation_groups' => ['update']]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $this->entityManager->persist($entity);
             $this->entityManager->flush();
             return $this->redirectToRoute('admin_'.$this->getEntityShortname(true).'_index', [], Response::HTTP_SEE_OTHER);
         }
-        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/new.html.twig', [
-            $this->getEntityShortname(true) => $entity,
+        return $this->render($this->getTemplatePath('new'), [
+            'entity' => $entity,
             'form' => $form,
             'trans_domain' => $entity->getShortname(),
         ]);
     }
 
-    #[Route('/{id}', name: 'show', methods: ['GET'])]
+    #[Route('/{id:entity}', name: 'show', methods: ['GET'])]
     public function show(
         #[ValueResolver('app_entity_value_resolver')]
         ?WireUserInterface $entity
     ): Response
     {
         if($entity) $this->denyAccessUnlessGranted('show', $entity, $this->translator->trans('access_denied'));
-        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/show.html.twig', [
-            $this->getEntityShortname(true) => $entity,
+        return $this->render($this->getTemplatePath('show'), [
+            'entity' => $entity,
             'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
+    #[Route('/{id:entity}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
         Request $request,
         #[ValueResolver('app_entity_value_resolver')]
@@ -104,20 +79,20 @@ class UserController extends AbstractController
     ): Response
     {
         $this->denyAccessUnlessGranted('edit', $entity, $this->translator->trans('access_denied'));
-        $form = $this->createForm(UserType::class, $entity);
+        $form = $this->createForm(UserType::class, $entity, ['validation_groups' => ['update']]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $this->entityManager->flush();
             return $this->redirectToRoute('admin_'.$this->getEntityShortname(true).'_index', [], Response::HTTP_SEE_OTHER);
         }
-        return $this->render('@AequationWire/admin/'.$this->getEntityShortname(true).'/edit.html.twig', [
-            $this->getEntityShortname(true) => $entity,
+        return $this->render($this->getTemplatePath('edit'), [
+            'entity' => $entity,
             'form' => $form,
             'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
         ]);
     }
 
-    #[Route('/{id}', name: 'delete', methods: ['POST'])]
+    #[Route('/{id:entity}', name: 'delete', methods: ['POST'])]
     public function delete(
         Request $request,
         #[ValueResolver('app_entity_value_resolver')]

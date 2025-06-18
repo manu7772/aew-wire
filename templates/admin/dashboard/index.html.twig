@@ -4,8 +4,24 @@
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
+
+<h2 class="text-lg font-semibold mt-3 mb-1 text-blue-800 dark:text-blue-400">{{ 'env_versions'|trans|capitalize }}</h2>
+<div>Charset <span class="font-bold">{{ app.param('kernel.charset') }}</span></div>
 <div>PHP version <span class="font-bold">{{ app.getPhpInfo('VERSION') }}</span></div>
 <div>Symfony version <span class="font-bold">{{ app.getSymfonyInfo('VERSION') }}</span></div>
 <div>Database version <span class="font-bold">{{ app.getDatabaseInfo('serverVersion') }}</span></div>
+<div>CSRF enabled <span class="font-bold">{{ app.param('form.type_extension.csrf.enabled') ? 'YES' : 'NO' }}</span></div>
+
+{% if app.isTranslate() or app.devOrSadmin %}
+<h2 class="text-lg font-semibold mt-3 mb-1 text-blue-800 dark:text-blue-400">{{ 'timezone_data'|trans|capitalize }}</h2>
+<div>Translation enabled <span class="font-bold">{{ app.isTranslate() ? 'YES' : 'NO' }}</span></div>
+<div>Locale <span class="font-bold">{{ app.param('locale') }}</span></div>
+<div>Default <span class="font-bold">{{ app.param('kernel.default_locale') }}</span></div>
+<div>Locales <span class="font-bold">{{ app.param('locales')|join(' / ') }}</span></div>
+<div>Monnaie <span class="font-bold">{{ app.param('currency') }}</span></div>
+<div>Fuseau <span class="font-bold">{{ app.param('timezone') }}</span></div>
+{% endif %}
+
 {# {{ parent() }} #}
+{# {{ dump(app.parameterBag.all()) }} #}
 {% endblock %}

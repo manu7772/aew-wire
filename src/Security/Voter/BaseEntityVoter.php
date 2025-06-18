@@ -43,11 +43,8 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
     public function getSupportedSubjectValues(): array
     {
         $classname = static::getEntityClassname();
-        return [
-            $classname,
-            Objects::getShortname($classname, false),
-            Objects::getShortname($classname, true),
-        ];
+        $shortname = Objects::getShortname($classname, false);
+        return [$classname, $shortname, strtolower($shortname)];
     }
 
     public function voteOnAttribute(

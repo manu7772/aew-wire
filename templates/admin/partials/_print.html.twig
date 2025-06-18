@@ -6,10 +6,12 @@
 
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
         <h2>{{ options.title|default(null) is not empty ? options.title|trans|raw : 'actions.count'|trans({'%count%': paginated ? entities.getTotalItemCount : entities|length}, trans_domain) }}</h2>
-        <div class="flex flex-row gap-1">
+        {% if options.actions|default(false) or options.top_buttons is defined %}
+        <div class="h-full flex flex-row gap-1 items-center">
             {{ options.top_buttons is defined ? self.include_template(options.top_buttons, {entities: entities, trans_domain: trans_domain, options: options}, 'top_buttons_' ~ options.shortname|lower ~ '_index') }}
-            {{ elements.button('new', options.shortname) }}
+            {{ options.actions|default(false) ? elements.button('new', options.shortname) }}
         </div>
+        {% endif %}
     </div>
 
     {% if paginated %}
@@ -17,35 +19,42 @@
         {{ knp_pagination_rel_links(entities) }}
     </div>
     {% endif %}
-    <table class="w-full border-collapse border border-teal-700 dark:border-blue-100 text-teal-800 dark:text-blue-400">
+    <table class="w-full border-collapse border border-blue-700 dark:border-blue-100 text-blue-800 dark:text-blue-400">
         <thead>
             <tr>
                 {% for field_name,field in fields %}
-                {% set name = ('fields.' ~ field_name)|trans({}, trans_domain) %}
-                <th class="px-3 py-1 border border-teal-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">
-                    {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
+                {% set name = field.label|default('fields.' ~ field_name)|trans({}, trans_domain) %}
+                <th class="px-3 py-1 border border-blue-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">
+                    <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                        {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
+                    </div>
                 </th>
                 {% if loop.first and options.actions|default(false) -%}
-                <th class="px-3 py-1 border border-teal-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
+                <th class="px-3 py-1 border border-blue-600 dark:border-blue-100 text-white dark:text-blue-200 bg-blue-500 dark:bg-blue-800 whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
                 {%- endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
         {% for entity in entities %}
-            <tr class="group-tr cursor-default">
+            <tr class="group-tr cursor-default{{ entity.active is defined and entity.active ? '' : ' opacity-50 italic' }}">
                 {% for field_name,field in fields %}
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 text-teal-950 dark:text-blue-100 align-top group-tr:hover:text-teal-800 group-tr:hover:dark:text-white">
-                    {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
-                    {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
-                    {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
+                <td class="px-3 py-1 border border-blue-700 dark:border-blue-100 text-blue-950 dark:text-blue-100 align-top group-tr:hover:text-blue-800 group-tr:hover:dark:text-white">
+                    <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                        {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
+                        {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
+                        {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
+                        {% if loop.first and entity.prefered is defined and entity.prefered %}
+                        <span title="{{ 'fields.prefered'|trans({}, trans_domain) }}"><twig:ux:icon name="tabler:star-filled" class="w-4 h-4 inline-block ml-1" /></span>
+                        {% endif %}
+                    </div>
                 </td>
                 {% if loop.first and options.actions|default(false) %}
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 text-teal-950 dark:text-blue-100 align-top">
+                <td class="w-1 px-3 py-1 border border-blue-700 dark:border-blue-100 text-blue-950 dark:text-blue-100 align-top">
                     <div class="flex flex-row justify-center gap-2">
-                        {{ elements.button('show', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
-                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
-                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-6 h-6 inline-block'}) }}
+                        {{ elements.button('show', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
+                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
+                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-red-600'}) }}
                     </div>
                 </td>
                 {% endif %}
@@ -53,13 +62,14 @@
             </tr>
         {% else %}
             <tr>
-                <td class="px-3 py-1 border border-teal-700 dark:border-blue-100 align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
+                <td class="px-3 py-1 border border-blue-700 dark:border-blue-100 align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
     {% if paginated %}
-    <div class="mt-2 w-full text-right">
+    <div class="mt-2 w-full justify-end">
+        {# {{ knp_pagination_rel_links(entities) }} #}
         {{ knp_pagination_render(entities) }}
     </div>
     {% endif %}

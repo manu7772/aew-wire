@@ -31,5 +31,5 @@ interface ArrayTextUtilInterface extends Stringable, Countable, ArrayAccess, Ite
     public function getIterator(): Traversable;
 
     // JsonSerializable
-    public function jsonSerialize(): mixed;
+    public function jsonSerialize(): string;
 }

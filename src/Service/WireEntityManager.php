@@ -3,7 +3,9 @@ namespace Aequation\WireBundle\Service;
 
 // Aequation
 use Aequation\WireBundle\Attribute\CacheManaged;
+use Aequation\WireBundle\Component\EntitiesDescriptor;
 use Aequation\WireBundle\Component\EntityContainer;
+use Aequation\WireBundle\Component\interface\EntitiesDescriptorInterface;
 use Aequation\WireBundle\Component\interface\EntityContainerInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
@@ -71,6 +73,7 @@ class WireEntityManager implements WireEntityManagerInterface
     public int $debug_mode = 0;
     protected array $postFlushInfos = [];
     protected array $relatedDependencies = [];
+    protected readonly EntitiesDescriptorInterface $entitiesDescriptor;
 
     /**
      * constructor.
@@ -169,7 +172,8 @@ class WireEntityManager implements WireEntityManagerInterface
      */
     public function getEntityService(
         string|BaseEntityInterface $entity
-    ): ?WireEntityServiceInterface {
+    ): ?WireEntityServiceInterface
+    {
         if(is_string($entity) && !class_exists($entity)) {
             $classnames = $this->resolveFinalEntitiesByNames($entity, false);
             foreach ($classnames as $classname) {
@@ -816,6 +820,17 @@ class WireEntityManager implements WireEntityManagerInterface
     }
 
     /**
+     * get entities descriptor
+     * 
+     * @return EntitiesDescriptorInterface
+     */
+    public function getEntitiesDescriptor(): EntitiesDescriptorInterface
+    {
+        return $this->entitiesDescriptor ??= new EntitiesDescriptor($this);
+    }
+
+
+    /**
      * get entity names
      * 
      * @param bool $asShortnames
@@ -823,54 +838,16 @@ class WireEntityManager implements WireEntityManagerInterface
      * @param bool $onlyInstantiables
      * @return array
      */
-    #[CacheManaged(name: 'entities_names', params: ['asShortnames' => false, 'allnamespaces' => false, 'onlyInstantiables' => false, ])]
-    #[CacheManaged(name: 'entities_shortnames', params: ['asShortnames' => true, 'allnamespaces' => false, 'onlyInstantiables' => false, ])]
-    #[CacheManaged(name: 'entities_names_instantiables', params: ['asShortnames' => false, 'allnamespaces' => false, 'onlyInstantiables' => true, ])]
-    #[CacheManaged(name: 'entities_shortnames_instantiables', params: ['asShortnames' => true, 'allnamespaces' => false, 'onlyInstantiables' => true, ])]
-    #[CacheManaged(name: 'entities_all_names', params: ['asShortnames' => false, 'allnamespaces' => false, 'onlyInstantiables' => false, ])]
-    #[CacheManaged(name: 'entities_all_shortnames', params: ['asShortnames' => true, 'allnamespaces' => true, 'onlyInstantiables' => false, ])]
-    #[CacheManaged(name: 'entities_all_names_instantiables', params: ['asShortnames' => false, 'allnamespaces' => true, 'onlyInstantiables' => true, ])]
-    #[CacheManaged(name: 'entities_all_shortnames_instantiables', params: ['asShortnames' => true, 'allnamespaces' => true, 'onlyInstantiables' => true, ])]
     public function getEntityNames(
         bool $asShortnames = false,
         bool $allnamespaces = false,
         bool $onlyInstantiables = false,
     ): array
     {
-        $callback = function() use ($asShortnames, $allnamespaces, $onlyInstantiables): array
-        {
-            $names = [];
-            // $this->em->getConfiguration()->getEntityNamespaces() as $classname --> or
-            foreach ($this->em->getMetadataFactory()->getAllMetadata() as $cmd) {
-                /** @var ClassMetadata $cmd */
-                if (!$onlyInstantiables || ($cmd->reflClass->isInstantiable() && !$cmd->isMappedSuperclass && count($cmd->subClasses) === 0)) {
-                    if ($allnamespaces || static::isAppWireEntity($cmd->name)) {
-                        $names[$cmd->name] = $asShortnames
-                            ? $cmd->reflClass->getShortname()
-                            : $cmd->name;
-                    }
-                }
-            }
-            return $names;
-        };
-        // Use CacheService
-        $test = implode('|', [$asShortnames, $allnamespaces, $onlyInstantiables]);
-        switch ($test) {
-            case '||': return $this->cacheService->get('entities_names', $callback); break;
-            case '1||': return $this->cacheService->get('entities_shortnames', $callback); break;
-            case '||1': return $this->cacheService->get('entities_names_instantiables', $callback); break;
-            case '1||1': return $this->cacheService->get('entities_shortnames_instantiables', $callback); break;
-            case '|1|': return $this->cacheService->get('entities_all_names', $callback); break;
-            case '1|1|': return $this->cacheService->get('entities_all_shortnames', $callback); break;
-            case '|1|1': return $this->cacheService->get('entities_all_names_instantiables', $callback); break;
-            case '1|1|1': return $this->cacheService->get('entities_all_shortnames_instantiables', $callback); break;
-            default:
-                if($this->appWire->isDev()) {
-                    throw new Exception(vsprintf('Error %s line %d: invalid cache name "%s" for getAppEntityNames', [__METHOD__, __LINE__, $test]));
-                }
-                return $callback();
-                break;
-        }
+        return $onlyInstantiables
+            ? $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findInstantiables(null)
+            : $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findAll(null)
+            ;
     }
 
     /**
@@ -880,122 +857,34 @@ class WireEntityManager implements WireEntityManagerInterface
      * @param bool $onlyInstantiables
      * @return array
      */
-    #[CacheManaged(name: 'app_entities_names', params: ['asShortnames' => false, 'onlyInstantiables' => false, 'commentaire' => 'Get entity names'])]
-    #[CacheManaged(name: 'app_entities_shortnames', params: ['asShortnames' => true, 'onlyInstantiables' => false, 'commentaire' => 'Get entity shortnames'])]
-    #[CacheManaged(name: 'app_entities_names_instantiables', params: ['asShortnames' => false, 'onlyInstantiables' => true, 'commentaire' => 'Get instantiable entity names'])]
-    #[CacheManaged(name: 'app_entities_shortnames_instantiables', params: ['asShortnames' => true, 'onlyInstantiables' => true, 'commentaire' => 'Get instantiable entity shortnames'])]
     public function getAppEntityNames(
         bool $asShortnames = false,
         bool $onlyInstantiables = false
     ): array
     {
-        $callback = function() use ($asShortnames, $onlyInstantiables): array
-        {
-            $names = $this->getEntityNames($asShortnames, true, $onlyInstantiables);
-            return array_filter(
-                $names,
-                fn($name) => static::isAppWireEntity($name),
-                ARRAY_FILTER_USE_KEY
-            );
-        };
-        // Use CacheService
-        $test = implode('|', [$asShortnames, $onlyInstantiables]);
-        switch ($test) {
-            case '|': return $this->cacheService->get('app_entities_names', $callback); break;
-            case '1|': return $this->cacheService->get('app_entities_shortnames', $callback); break;
-            case '|1': return $this->cacheService->get('app_entities_names_instantiables', $callback); break;
-            case '1|1': return $this->cacheService->get('app_entities_shortnames_instantiables', $callback); break;
-            default:
-                if($this->appWire->isDev()) {
-                    throw new Exception(vsprintf('Error %s line %d: invalid cache name "%s" for getAppEntityNames', [__METHOD__, __LINE__, $test]));
-                }
-                return $callback();
-                break;
-        }
+        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(true)->findFinals(null);
     }
 
-    #[CacheManaged(name: 'between_entities_names', params: ['asShortnames' => false])]
-    #[CacheManaged(name: 'between_entities_shortnames', params: ['asShortnames' => true])]
     public function getBetweenEntityNames(
         bool $asShortnames = false
     ): array
     {
-        $callback = function() use ($asShortnames): array
-        {
-            $names = [];
-            foreach ($this->em->getMetadataFactory()->getAllMetadata() as $cmd) {
-                if(static::isBetweenEntity($cmd->name) && $cmd->reflClass->isInstantiable() && !$cmd->isMappedSuperclass && count($cmd->subClasses) === 0) {
-                    $names[$cmd->name] = $asShortnames
-                        ? $cmd->reflClass->getShortname()
-                        : $cmd->name;
-                }
-            }
-            return $names;
-        };
-        // Use CacheService
-        return $asShortnames
-            ? $this->cacheService->get('between_entities_shortnames', $callback)
-            : $this->cacheService->get('between_entities_names', $callback);
+        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(BetweenManyInterface::class);
     }
 
-    #[CacheManaged(name: 'translation_entities_names', params: ['asShortnames' => false])]
-    #[CacheManaged(name: 'translation_entities_shortnames', params: ['asShortnames' => true])]
     public function getTranslationEntityNames(
         bool $asShortnames = false
     ): array
     {
-        $callback = function() use ($asShortnames): array
-        {
-            $names = [];
-            foreach ($this->em->getMetadataFactory()->getAllMetadata() as $cmd) {
-                if(static::isTranslationEntity($cmd->name) && $cmd->reflClass->isInstantiable() && !$cmd->isMappedSuperclass && count($cmd->subClasses) === 0) {
-                    $names[$cmd->name] = $asShortnames
-                    ? $cmd->reflClass->getShortname()
-                    : $cmd->name;
-                }
-            }
-            return $names;
-        };
-        // Use CacheService
-        return $asShortnames
-            ? $this->cacheService->get('translation_entities_shortnames', $callback)
-            : $this->cacheService->get('translation_entities_names', $callback);
+        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(WireTranslationInterface::class);
     }
 
-    #[CacheManaged(name: 'final_entities_names', params: ['asShortnames' => false, 'allnamespaces' => false, 'commentaire' => 'Get entity names'])]
-    #[CacheManaged(name: 'final_entities_shortnames', params: ['asShortnames' => true, 'allnamespaces' => false, 'commentaire' => 'Get entity shortnames'])]
-    #[CacheManaged(name: 'final_all_entities_names', params: ['asShortnames' => false, 'allnamespaces' => true, 'commentaire' => 'Get instantiable entity names'])]
-    #[CacheManaged(name: 'final_all_entities_shortnames', params: ['asShortnames' => true, 'allnamespaces' => true, 'commentaire' => 'Get instantiable entity shortnames'])]
     public function getFinalEntities(
         bool $asShortnames = false,
         bool $allnamespaces = false,
     ): array
     {
-        $callback = function() use ($asShortnames, $allnamespaces): array
-        {
-            $names = [];
-            foreach ($this->getEntityNames($asShortnames, $allnamespaces, false) as $name => $shortname) {
-                $cmd = $this->getClassMetadata($name);
-                if (count($cmd->subClasses) === 0 && !$cmd->isMappedSuperclass) {
-                    $names[$name] = $shortname;
-                }
-            }
-            return $names;
-        };
-        // Use CacheService
-        $test = implode('|', [$asShortnames, $allnamespaces]);
-        switch ($test) {
-            case '|': return $this->cacheService->get('final_entities_names', $callback); break;
-            case '1|': return $this->cacheService->get('final_entities_shortnames', $callback); break;
-            case '|1': return $this->cacheService->get('final_all_entities_names', $callback); break;
-            case '1|1': return $this->cacheService->get('final_all_entities_shortnames', $callback); break;
-            default:
-                if($this->appWire->isDev()) {
-                    throw new Exception(vsprintf('Error %s line %d: invalid cache name "%s" for getAppEntityNames', [__METHOD__, __LINE__, $test]));
-                }
-                return $callback();
-                break;
-        }
+        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findFinals(null);
     }
 
     public function resolveFinalEntitiesByNames(
@@ -1003,9 +892,19 @@ class WireEntityManager implements WireEntityManagerInterface
         bool $allnamespaces = false
     ): array
     {
-        $classes = $this->getFinalEntities(false, $allnamespaces);
-        return Objects::filterByInterface($interfaces, $classes, true);
+        return $this->getEntitiesDescriptor()->enableFilterAppWire(!$allnamespaces)->findFinals($interfaces);
+        // $classes = $this->getFinalEntities(false, $allnamespaces);
+        // return Objects::filterByInterface($interfaces, $classes, true);
     }
+
+    public function resolveFinalEntity(
+        string|array $interfaces,
+        bool $allnamespaces = false
+    ): ?string
+    {
+        return $this->getEntitiesDescriptor()->enableFilterAppWire(!$allnamespaces)->findOneFinalOrNull($interfaces);
+    }
+
 
     /**
      * entity exists

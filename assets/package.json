@@ -19,9 +19,14 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "sortable": {
+                "main": "dist/sortable_controller.js",
+                "fetch": "lazy",
+                "enabled": true
+            },
             "toastr": {
                 "main": "dist/toastr_controller.js",
-                "fetch": "eager",
+                "fetch": "lazy",
                 "enabled": true,
                 "autoimport": {
                     "toastr/build/toastr.min.css": true
@@ -31,22 +36,25 @@
         "importmap": {
             "@hotwired/stimulus": "^3.2.2",
             "flowbite": "^3.1.2",
+            "sortablejs": "^1.15.6",
             "toastr": "^2.1.4",
             "browser": "^0.2.6"
-    },
-    "entrypoints": {
-        "@aequation/wire": "./vendor/aequation/wire/assets/wireadmin.js"
+        },
+        "entrypoints": {
+            "@aequation/wire": "./vendor/aequation/wire/assets/wireadmin.js"
         }
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
+        "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
         "browser": "^0.2.6"
     },
     "DevDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
+        "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
         "browser": "^0.2.6"
     }

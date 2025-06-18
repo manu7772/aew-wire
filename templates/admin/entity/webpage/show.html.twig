@@ -1,0 +1,83 @@
+{% extends '@AequationWire/admin/entity/show.html.twig' %}
+{% trans_default_domain entity.trans_domain %}
+
+{% block title %}{{ 'name'|trans }} {{ entity }}{% endblock %}
+
+{% block entitydata %}
+<div class="bg-white border rounded-lg shadow-lg px-6 py-8 max-w-3xl mx-auto mt-8">
+    <div class="text-sm italic font-thin text-center text-gray-700">{{ 'name'|trans }}</div>
+    <h1 class="font-bold text-2xl mb-4 text-center">{{ entity.name }}</h1>
+    <hr class="mb-2">
+    <div class="flex justify-between items-start mb-6">
+        <div class="flex gap-1 flex-wrap">
+            {% if entity.active %}
+            <div class="badge badge-success">{{ 'fields.active'|trans }}</div>
+            {% else %}
+            <div class=" badge-warning">{{ 'fields.inactive'|trans }}</div>
+            {% endif %}
+            {% if entity.prefered %}
+            <div class=" badge-success"><twig:ux:icon name="tabler:star-filled" class="w-3 h-3 inline-block mr-1" />{{ 'fields.prefered'|trans }}</div>
+            {% endif %}
+        </div>
+        <div class="text-gray-700">
+            {# @see https://twig.symfony.com/doc/3.x/filters/format_datetime.html #}
+            <div>{{ 'fields.createdAt'|trans }} : <span class="font-bold">{{ entity.createdAt|format_datetime('medium', 'medium') }}</span></div>
+            {% if entity.updatedAt %}
+            <div>{{ 'fields.updatedAt'|trans }} : <span class="font-bold">{{ entity.updatedAt|format_datetime('medium', 'medium') }}</span></div>
+            {% else %}
+            <div>{{ 'not_updated' }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="mb-8">
+        <h2 class="text-lg font-bold mb-2 text-sky-800">{{ 'fields.websections'|trans }}</h2>
+        <div class="flex flex-row gap-1 flex-wrap">
+            {% if entity.websections.empty %}
+            <twig:ux:icon name="tabler:x" class="w-6 h-6 text-gray-400 inline-block" />
+            {% else %}
+            {% for section in entity.websections %}
+            <span class="badge badge-primary">{{ section.name }}</span>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {% if app.dev %}
+    <div class="mb-8">
+        <h2 class="text-lg font-bold mb-2 text-sky-800">Dump entity</h2>
+        <div class="flex flex-row gap-2 flex-wrap">
+            {{ dump(entity) }}
+        </div>
+    </div>
+    {% endif %}
+    <table class="w-full mb-8">
+        <thead>
+            <tr>
+                <th class="text-left font-bold text-gray-700">Description</th>
+                <th class="text-right font-bold text-gray-700">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-left text-gray-700">Product 1</td>
+                <td class="text-right text-gray-700">$100.00</td>
+            </tr>
+            <tr>
+                <td class="text-left text-gray-700">Product 2</td>
+                <td class="text-right text-gray-700">$50.00</td>
+            </tr>
+            <tr>
+                <td class="text-left text-gray-700">Product 3</td>
+                <td class="text-right text-gray-700">$75.00</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td class="text-left font-bold text-gray-700">Total</td>
+                <td class="text-right font-bold text-gray-700">$225.00</td>
+            </tr>
+        </tfoot>
+    </table>
+    {# <div class="text-gray-700 mb-2">Thank you for your business!</div> #}
+    {# <div class="text-gray-700 text-sm">Please remit payment within 30 days.</div> #}
+</div>
+{% endblock %}

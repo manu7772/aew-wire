@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Form;
 
 // Symfony
+
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -13,11 +15,17 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 
 class UserDeleteType extends AbstractType
 {
+
+    public function __construct(
+        private WireUserServiceInterface $entityService
+    )
+    {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('password', PasswordType::class, [
-                'label' => 'Mot de passe',
+                'label' => 'fields.password',
                 'mapped' => false,
                 'constraints' => [
                     new NotBlank([
@@ -32,7 +40,7 @@ class UserDeleteType extends AbstractType
                 'data' => $options['user_id'],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Supprimer mon compte',
+                'label' => 'actions.delete_my_account',
                 'attr' => [
                     'class' => 'submit-danger',
                 ],
@@ -49,6 +57,7 @@ class UserDeleteType extends AbstractType
             'csrf_protection' => true,
             'csrf_field_name' => '_csrf_token',
             'csrf_token_id'   => 'delete_profile_token',
+            'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
         $resolver->setRequired('user_id');
         $resolver->setRequired('csrf_token_id');

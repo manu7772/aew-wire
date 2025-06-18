@@ -63,6 +63,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
+    // #[Assert\NotBlank(message: 'La fonctionnalité est obligatoire', groups: ['persist','update'])]
     protected ?string $functionality = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

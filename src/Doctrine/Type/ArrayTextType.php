@@ -2,8 +2,10 @@
 namespace Aequation\WireBundle\Doctrine\Type;
 
 use Aequation\WireBundle\Component\ArrayTextUtil;
+// Symfony
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\JsonType;
 
 /**
  * ArrayTextType Type
@@ -13,15 +15,15 @@ use Doctrine\DBAL\Types\Type;
  * @see https://symfony.com/doc/current/doctrine/dbal.html#registering-custom-mapping-types
  * 
  */
-class ArrayTextType extends Type
+class ArrayTextType extends JsonType
 {
     public const NAME = 'arraytext';
 
-    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
-    {
-        // return $platform->getClobTypeDeclarationSQL($column);
-        return $platform->getJsonTypeDeclarationSQL($column);
-    }
+    // public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
+    // {
+    //     // return $platform->getClobTypeDeclarationSQL($column);
+    //     return $platform->getJsonTypeDeclarationSQL($column);
+    // }
 
     /**
      * Converts a value from its PHP representation to its database representation
@@ -34,9 +36,9 @@ class ArrayTextType extends Type
      *
      * @throws ConversionException
      */
-    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): mixed
+    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
     {
-        return $value->jsonSerialize();
+        return $value instanceof ArrayTextUtil ? $value->jsonSerialize() : null;
     }
 
     /**
@@ -53,6 +55,7 @@ class ArrayTextType extends Type
     public function convertToPHPValue(mixed $value, AbstractPlatform $platform): mixed
     {
         // if(is_resource($value)) $value = stream_get_contents($value);
+        // if(empty($value)) return new ArrayTextUtil();
         return new ArrayTextUtil(is_resource($value) ? stream_get_contents($value) : $value);
     }
 

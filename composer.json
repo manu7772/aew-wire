@@ -68,7 +68,8 @@
         "nucleos/dompdf-bundle": "^4.3",
         "symfonycasts/reset-password-bundle": "^1.23",
         "symfony/mailer": "^7.2",
-        "twig/string-extra": "^3.21"
+        "twig/string-extra": "^3.21",
+        "twig/intl-extra": "^3.21"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.2.*",

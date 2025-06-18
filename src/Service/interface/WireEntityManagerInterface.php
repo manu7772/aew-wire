@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
 
+use Aequation\WireBundle\Component\interface\EntitiesDescriptorInterface;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
@@ -72,7 +73,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getBetweenEntityNames(bool $asShortnames = false): array;
     public function getTranslationEntityNames(bool $asShortnames = false): array;
     public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
-
+    
     /**
      * Get all final entities classnames of interfaces
      * - if $allnamespaces is true, all namespaces are searched
@@ -83,6 +84,8 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @return array
      */
     public function resolveFinalEntitiesByNames(string|array $interfaces, bool $allnamespaces = false): array;
+    public function resolveFinalEntity(string|array $interfaces, bool $allnamespaces = false): ?string;
+    public function getEntitiesDescriptor(): EntitiesDescriptorInterface;
     public function getClassnameByShortname(string $shortname, bool $allnamespaces = false, bool $onlyInstantiables = false): ?string;
     public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
     public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;

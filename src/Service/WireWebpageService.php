@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Tools\Files;
@@ -13,6 +14,7 @@ use Aequation\WireBundle\Tools\Objects;
 use Doctrine\ORM\EntityRepository;
 // PHP
 use Exception;
+use Symfony\Component\HttpFoundation\Request;
 
 abstract class WireWebpageService extends WireItemService implements WireWebpageServiceInterface
 {
@@ -225,5 +227,71 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
     //         if(!empty($default)) $entity->setMainmenu($default);
     //     }
     // }
+
+    public function getWebsectionsChoices(
+        bool $filterActive = true
+    ): array
+    {
+        /** @var WireWebsectionServiceInterface */
+        $websectionService = $this->appWire->get(WireWebsectionServiceInterface::class);
+        $choices = $websectionService->findAll();
+        if($filterActive) {
+            $choices = array_filter($choices, function(WireWebsectionInterface $websection) {
+                return $websection->isActive();
+            });
+        }
+        return $choices;
+    }
+
+
+    /****************************************************************************************************/
+    /** PAGINABLE                                                                                       */
+    /****************************************************************************************************/
+
+    /**
+     * Get paginated context data.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getPaginatedContextData(
+        ?Request $request = null
+    ): array
+    {
+        $request ??= $this->appWire->getRequest();
+        $fields =  [
+            'id' => [
+                'classes' => ['text-center','w-0'],
+                'sortable' => true,
+            ],
+            'name' => [
+                'classes' => ['text-left'],
+                'sortable' => true,
+            ],
+            'websections' => [
+                'classes' => ['text-center','w-0'],
+                'label' => 'Nb sections',
+                'view_options' => [
+                    'template' => ['from_string' => '{{ entity.websections|length }}'],
+                ],
+                'sortable' => false,
+            ],
+        ];
+        $model = $this->createModel();
+        $entities = $this->getPaginated();
+        /** @var BaseWireRepository */
+        $repo = $this->getRepository();
+        return [
+            'entities' => $entities,
+            'fields' => $fields,
+            'options' => [
+                'alias' => $repo->getDefaultAlias(),
+                'classname' => $model->getClassname(),
+                'shortname' => $model->getShortname(),
+                'trans_domain' => $model->getTrans_domain(),
+                'actions' => true,
+            ],
+        ];
+    }
 
 }

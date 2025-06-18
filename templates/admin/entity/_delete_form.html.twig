@@ -1,0 +1,6 @@
+{# {% trans_default_domain form.data.trans_domain %} #}
+{% set delete_confirm = 'actions.confirm_delete_named'|trans({name: entity._toString}, trans_domain) %}
+<form method="post" action="{{ path('admin_' ~ entity.shortname|lower ~ '_delete', {'id': entity.id}) }}" onsubmit="return confirm('{{ delete_confirm }}');">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
+    <button class="btn">{{ 'delete'|trans([], trans_domain) }}</button>
+</form>

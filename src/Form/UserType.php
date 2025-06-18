@@ -18,48 +18,47 @@ class UserType extends AbstractType
 
     public function __construct(
         private TranslatorInterface $translator,
-        private WireUserServiceInterface $userService
+        private WireUserServiceInterface $entityService
     )
-    {
-        
-    }
+    {}
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /** @var User */
+        /** @var WireUser */
         $user = $builder->getData();
         $builder
             ->add('email', EmailType::class, [
-                'label' => 'Adresse email',
+                'label' => 'fields.email',
                 'required' => true,
                 'priority' => 10
             ])
             ->add('name', null, [
-                'label' => 'Nom',
+                'label' => 'fields.name',
                 'required' => true,
                 'priority' => 9
             ])
             ->add('firstname', null, [
-                'label' => 'Prénom',
+                'label' => 'fields.firstname',
                 'required' => false,
                 'priority' => 8
             ])
             ->add('plainPassword', PasswordType::class, [
-                'label' => 'Mot de passe',
+                'label' => 'fields.password',
                 'required' => !$user || null === $user->getId(),
                 'priority' => 6
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Enregistrer',
+                'label' => 'actions.save',
+                'attr' => ['data-submit-actions' => 'save_index'],
                 'priority' => -1
             ])
         ;
 
-        $current_user = $this->userService->getUser();
+        $current_user = $this->entityService->getUser();
 
-        if($user && $this->userService->isUserGranted($current_user, 'ROLE_ADMIN')) {
+        if($user && $this->entityService->isUserGranted($current_user, 'ROLE_ADMIN')) {
             $choices = [];
-            foreach ($this->userService->getAvailableRoles($current_user) as $role) {
+            foreach ($this->entityService->getAvailableRoles($current_user) as $role) {
                 $choices[$this->translator->trans($role)] = $role;
             }
             // if(array_intersect($user->getRoles(), ['ROLE_SUPER_ADMIN'])) {
@@ -67,7 +66,7 @@ class UserType extends AbstractType
             // }
             $builder
                 ->add('roles', ChoiceType::class, [
-                    'label' => 'Autorisations',
+                    'label' => 'fields.roles',
                     'choices' => $choices,
                     'required' => false,
                     'multiple' => true,
@@ -82,6 +81,7 @@ class UserType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => WireUser::class,
+            'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
     }
 }

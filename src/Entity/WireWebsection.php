@@ -7,6 +7,7 @@ use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
+use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Tools\Files;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -25,10 +26,10 @@ use InvalidArgumentException;
 #[Gedmo\TranslationEntity(class: WireWebsectionTranslationInterface::class)]
 abstract class WireWebsection extends MappSuperClassEntity implements WireWebsectionInterface
 {
-    use Unamed;
+    use Unamed, Enabled;
 
     public const ICON = [
-        'ux' => 'tabler:section',
+        'ux' => 'tabler:letter-s',
         'fa' => 'fa-s'
     ];
 

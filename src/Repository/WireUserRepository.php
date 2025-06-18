@@ -46,12 +46,6 @@ abstract class WireUserRepository extends WireItemRepository implements WireUser
         return $qb->getQuery()->getResult();
     }
 
-    public function findPaginated(): Query
-    {
-        $qb = $this->createQueryBuilder(static::ALIAS);
-        return $qb->getQuery();
-    }
-
     /**
      * Used to upgrade (rehash) the user's password automatically over time.
      */

@@ -23,5 +23,6 @@ interface WireWebpageServiceInterface extends WireEntityServiceInterface
         ): array;
     public function getWebpageModels(): array;
     public function getDefaultWebpageModel(): ?string;
+    public function getWebsectionsChoices(bool $filterActive = true): array;
 
 }

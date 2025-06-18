@@ -6,6 +6,7 @@ use Aequation\WireBundle\Repository\interface\GedmoOvrSortableRepositoryInterfac
 use Aequation\WireBundle\Repository\interface\WireItemRepositoryInterface;
 use Aequation\WireBundle\Repository\trait\BaseGedmoOvrSortableRepository;
 use Aequation\WireBundle\Repository\trait\BaseTraitWireRepository;
+use Doctrine\ORM\Query;
 // Symfony
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Gedmo\Sortable\Entity\Repository\GedmoOvrSortableRepository;
@@ -33,6 +34,12 @@ class WireItemRepository extends BaseWireRepository implements WireItemRepositor
     public static function getDefaultAlias(): string
     {
         return static::ALIAS;
+    }
+
+    public function findPaginated(): Query
+    {
+        $qb = $this->createQueryBuilder(static::getDefaultAlias());
+        return $qb->getQuery();
     }
 
 }

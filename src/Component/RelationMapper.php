@@ -368,7 +368,7 @@ class RelationMapper implements RelationMapperInterface
             $this->relations[$field]['require_instantiable'] = array_values($this->wireEm->resolveFinalEntitiesByNames($this->relations[$field]['require_all'], true));
             foreach ($this->relations[$field]['require_instantiable'] as $requ) {
                 if(!is_a($requ, $this->relations[$field]['require_metadata'], true)) {
-                    $this->addError(vsprintf('Error %s line %d: for %s property %s, class "%s" should be instance of %s!%sPlease check %s data!', [__METHOD__, __LINE__, $this->classMetadata->name, $field, $requ, $mapp->targetEntity, PHP_EOL, BetweenManyInterface::class]));
+                    $this->addError(vsprintf('Error %s line %d: for %s property %s, class "%s" should be instance of %s!%sPlease check %s data!', [__METHOD__, __LINE__, $this->classMetadata->name, $field, $requ, $this->relations[$field]['require_metadata'], PHP_EOL, BetweenManyInterface::class]));
                     unset($this->relations[$field]);
                     return;
                 }

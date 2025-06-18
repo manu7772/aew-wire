@@ -153,6 +153,27 @@
     @apply dark:text-blue-50 block text-teal-700;
 }
 
+@utility badge {
+    @apply text-sm bg-gray-600 text-white rounded-full px-4 py-1;
+}
+
+@utility badge-primary {
+    @apply badge bg-blue-600!;
+}
+
+@utility badge-success {
+    @apply badge bg-lime-600!;
+}
+
+@utility badge-warning {
+    @apply badge bg-amber-600!;
+}
+
+@utility badge-danger {
+    @apply badge bg-red-600!;
+}
+
+
 @utility no-form-widget {
         @apply mt-0;
     }

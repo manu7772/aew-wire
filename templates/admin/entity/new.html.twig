@@ -1,0 +1,26 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
+{% trans_default_domain entity.trans_domain %}
+
+{% block title %}{{ 'actions.new'|trans }}{% endblock %}
+
+{% block main_content %}
+
+    {% block headtitle %}
+    <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+        <h1>{{ 'actions.new'|trans }}</h1>
+        <div class="h-full flex flex-row gap-1 items-center">
+            {{ elements.button('custom', entity.shortname, {
+                path: path('admin_' ~ entity.getShortname(true) ~ '_index'),
+                text: 'Cancel'|trans([], 'messages'),
+                icon: 'tabler:x',
+            }) }}
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block entitydata %}
+    {% include ['@AequationWire/admin/entity/' ~ entity.getShortname(true) ~ '/_form.html.twig', '@AequationWire/admin/entity/_form.html.twig'] %}
+    {% endblock %}
+
+{% endblock %}

@@ -80,7 +80,7 @@ export default class extends Controller {
         const the_modal = FlowbiteInstances.getInstance('Modal', modal_id);
         if(the_modal) {
             if(the_modal.isHidden()) {
-                the_modal.show()
+                the_modal.show() 
             }
             console.debug('Modal confirm instance found:', the_modal)
             switch (true) {
