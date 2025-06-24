@@ -38,7 +38,8 @@
             "flowbite": "^3.1.2",
             "sortablejs": "^1.15.6",
             "toastr": "^2.1.4",
-            "browser": "^0.2.6"
+            "browser": "^0.2.6",
+            "daisyui": "^5.0.43"
         },
         "entrypoints": {
             "@aequation/wire": "./vendor/aequation/wire/assets/wireadmin.js"
@@ -49,13 +50,15 @@
         "flowbite": "^3.1.2",
         "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
-        "browser": "^0.2.6"
+        "browser": "^0.2.6",
+        "daisyui": "^5.0.43"
     },
     "DevDependencies": {
         "@hotwired/stimulus": "^3.2.2",
         "flowbite": "^3.1.2",
         "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
-        "browser": "^0.2.6"
+        "browser": "^0.2.6",
+        "daisyui": "^5.0.43"
     }
 }

@@ -5,6 +5,11 @@
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
 
+<div role="alert" class="alert alert-success my-3">
+    <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
+    <span>Your purchase has been confirmed!</span>
+</div>
+
 <div class="flex flex-col lg:flex-row gap-4">
     <div class="flex-1">
         <h2 class="text-lg font-semibold mt-0 mb-1 text-blue-800 dark:text-blue-400">Liens utiles</h2>
