@@ -212,7 +212,9 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): bool
     {
         $user ??= $this->getUser();
+        // dump($attributes, $object, $firewallName, $this->appWire->getFirewallName());
         if(empty($user)) {
+            // dd(vsprintf('Error %s line %d: user is empty! Please login first!', [__METHOD__ , __LINE__]));
             return $this->isGranted($attributes, $object);
         }
         $firewallName ??= $this->appWire->getFirewallName();
@@ -353,11 +355,11 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): bool
     {
         // throw new Exception(vsprintf('Error %s line %d: method %s not implemented!', [__METHOD__, __LINE__, __METHOD__]));
-        if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
+        // if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
             foreach ($subordinate->getRoles() as $role) {
                 if(!$this->isUserGranted($manager, $role)) return false;
             }
-        }
+        // }
         return true;
     }
 

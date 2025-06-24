@@ -4,10 +4,23 @@
 /* @see https://github.com/tailwindlabs/tailwindcss/issues/15730#issuecomment-2612075475 */
 /* @plugin "@tailwindcss/typography"; */
 
+/**
+ * @see https://tailwindcss.com/blog/tailwindcss-v4#automatic-content-detection
+ * 
+    If you ever need to explicitly add a source that's excluded by default, you can always add it with the @source directive, right in your CSS file:
+    CSS
+    @import "tailwindcss";
+    @source "../node_modules/@my-company/ui-lib";
+    The @source directive uses the same heuristics under the hood, so it will exclude binary file types for example as well, without you having to specify all of the extensions to scan explicitly.
+ * 
+ */
+@source "./vendor/aequation/wire/templates/**/*.html.twig";
+
 @theme {
     --font-display: "Ubuntu Sans", sans-serif;
     --font-condensed: "Ubuntu Condensed", sans-serif;
 }
+
 
 @custom-variant dark (&:where(.dark, .dark *));
 

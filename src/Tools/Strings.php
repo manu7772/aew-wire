@@ -236,11 +236,6 @@ class Strings implements ToolInterface
 		mixed $element
 	): bool
 	{
-		if(is_object($element)) {
-			$element = $element instanceof Stringable
-				? $element->__toString()
-				: null;
-		}
 		$element = (string)$element;
 		return is_string($element)
 			? strlen(strip_tags($element)) > 0

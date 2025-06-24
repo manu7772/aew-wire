@@ -20,7 +20,7 @@ use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
 
 #[AsCommand(
-    name: 'app:basics',
+    name: 'aew:basics',
     description: 'Génère des entités d\'après des fichiers de description',
 )]
 class BasicsCommand extends BaseCommand

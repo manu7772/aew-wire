@@ -2,12 +2,10 @@
 namespace Aequation\WireBundle\DependencyInjection;
 
 // Symfony
-use Doctrine\DBAL\DriverManager;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 // PHP
 use Exception;
-use Throwable;
 
 Class WireConfigurators
 {
@@ -135,18 +133,26 @@ Class WireConfigurators
             case 'Tailwind':
                 // trigger_error(vsprintf('OPTION "%s" (mode %s) NOT SUPPORTED YET %s line %d: this option is not available for now.', [$name, $asPrepend ? "PREPEND" : "NORMAL", __METHOD__, __LINE__]), E_USER_ERROR);
                 if($asPrepend) {
-                    $container->prependExtensionConfig('symfonycasts_tailwind', [
-                        'input_css' => ['%kernel.project_dir%/vendor/aequation/wire/assets/styles/wire.css'],
-                        // 'output_css' => 'assets/aequation/wire/styles/wire.css',
-                        // 'output_dir' => 'assets/aequation/wire/styles',
-                        // 'purge_css' => [
-                        //     'paths' => [
-                        //         '%kernel.project_dir%/templates',
-                        //         '%kernel.project_dir%/vendor/aequation/wire/templates',
-                        //     ],
-                        //     'whitelist' => [],
-                        // ],
-                    ]);
+                    $tw_confs = $container->getExtensionConfig('symfonycasts_tailwind');
+                    $input_css = [
+                        '%kernel.project_dir%/assets/styles/app.css',
+                        '%kernel.project_dir%/vendor/aequation/wire/assets/styles/wire.css',
+                    ];
+                    foreach ($tw_confs as $tw_conf) {
+                        if(isset($tw_conf['input_css']) && is_array($tw_conf['input_css'])) {
+                            $input_css = array_diff($input_css, $tw_conf['input_css']);
+                        }
+                        if(empty($input_css)) {
+                            break;
+                        }
+                    }
+                    $twd_prepend = [
+                        'binary_version' => 'v4.1.10',
+                    ];
+                    if(!empty($input_css)) {
+                        $twd_prepend['input_css'] = array_values($input_css);
+                    }
+                    $container->prependExtensionConfig('symfonycasts_tailwind', $twd_prepend);
                     // dd($container->getExtensionConfig('symfonycasts_tailwind'));
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);

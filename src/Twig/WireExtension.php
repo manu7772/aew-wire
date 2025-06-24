@@ -68,6 +68,7 @@ class WireExtension extends AbstractExtension
     {
         return [
             new TwigFilter('filter_active', [$this, 'filterActive']),
+            new TwigFilter('has_text', [Strings::class, 'hasText']),
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
             new TwigFilter('trans_domain', [$this, 'getTransDomain']),

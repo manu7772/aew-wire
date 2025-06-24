@@ -20,6 +20,7 @@ use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\CacheServiceInterface;
@@ -74,6 +75,7 @@ class WireEntityManager implements WireEntityManagerInterface
     protected array $postFlushInfos = [];
     protected array $relatedDependencies = [];
     protected readonly EntitiesDescriptorInterface $entitiesDescriptor;
+    protected bool $tryService = true;
 
     /**
      * constructor.
@@ -174,15 +176,18 @@ class WireEntityManager implements WireEntityManagerInterface
         string|BaseEntityInterface $entity
     ): ?WireEntityServiceInterface
     {
-        if(is_string($entity) && !class_exists($entity)) {
-            $classnames = $this->resolveFinalEntitiesByNames($entity, false);
-            foreach ($classnames as $classname) {
-                if($service = $this->appWire->getClassService($classname)) {
-                    // dd($entity.' => '.implode(' / ', $classnames).' => Class: '.$classname.' => Service: '.$service);
-                    return $service;
-                }
+        if(is_string($entity)) {
+            if($classname = $this->resolveFinalEntity($entity, false)) {
+                return $this->appWire->getClassService($classname);
             }
-            throw new Exception(vsprintf('Error %s line %d: no final entity found for interface %s!', [__METHOD__, __LINE__, $entity]));
+            // $classnames = $this->resolveFinalEntitiesByNames($entity, false);
+            // foreach ($classnames as $classname) {
+            //     if($service = $this->appWire->getClassService($classname)) {
+            //         // dd($entity.' => '.implode(' / ', $classnames).' => Class: '.$classname.' => Service: '.$service);
+            //         return $service;
+            //     }
+            // }
+            throw new Exception(vsprintf('Error %s line %d: no final entity found for class or interface %s!', [__METHOD__, __LINE__, $entity]));
         }
         return $this->appWire->getClassService($entity);
     }
@@ -231,6 +236,12 @@ class WireEntityManager implements WireEntityManagerInterface
     //     }
     // }
 
+    public function disableTryService(): static
+    {
+        $this->tryService = false;
+        return $this;
+    }
+
     /**
      * create entity
      * 
@@ -241,16 +252,17 @@ class WireEntityManager implements WireEntityManagerInterface
     public function createEntity(
         string $classname,
         array|false $data = false, // ---> do not forget uname if wanted!
-        array $context = [],
-        bool $tryService = true
+        array $context = []
     ): BaseEntityInterface {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        if($tryService && $service = $this->getEntityService($classname)) {
-            return $service->createEntity($data, $context);
-        }
+        $classname = $this->resolveFinalEntity($classname, false);
         if(!class_exists($classname)) {
             throw new Exception(vsprintf('Error %s line %d: class %s not found!', [__METHOD__, __LINE__, $classname]));
         }
+        if($this->tryService && $service = $this->getEntityService($classname)) {
+            return $service->createEntity($data, $context);
+        }
+        $this->tryService = true; // Reset tryService for next calls
         if(!$data || empty($data)) {
             $entity = new $classname();
             $this->postCreated($entity);
@@ -275,13 +287,13 @@ class WireEntityManager implements WireEntityManagerInterface
     public function createModel(
         string $classname,
         array|false $data = false, // ---> do not forget uname if wanted!
-        array $context = [],
-        bool $tryService = true
+        array $context = []
     ): BaseEntityInterface {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        if($tryService && $service = $this->getEntityService($classname)) {
+        if($this->tryService && $service = $this->getEntityService($classname)) {
             return $service->createModel($data, $context);
         }
+        $this->tryService = true; // Reset tryService for next calls
         if(!$data || empty($data)) {
             $model = new $classname();
             $model->getSelfState()->setModel();
@@ -305,12 +317,13 @@ class WireEntityManager implements WireEntityManagerInterface
     public function createClone(
         BaseEntityInterface $entity,
         ?array $changes = [], // ---> do not forget uname if wanted!
-        ?array $context = [],
-        bool $tryService = true
+        ?array $context = []
     ): BaseEntityInterface|false {
         throw new Exception('Not implemented yet!');
 
         $this->surveyRecursion->survey(__METHOD__.'::'.$entity->getClassname());
+
+        $this->tryService = true; // Reset tryService for next calls
         // ...
     }
 
@@ -486,12 +499,17 @@ class WireEntityManager implements WireEntityManagerInterface
     /** REPOSITORY / QUERYS                                                                             */
     /****************************************************************************************************/
 
-    public function getRepository(string|BaseEntityInterface $objectOrClass): ?EntityRepository
+    public function getRepository(string|object $objectOrClass): ?EntityRepository
     {
-        $classname = $objectOrClass instanceof BaseEntityInterface ? $objectOrClass->getClassname() : $objectOrClass;
-        return $classname
-            ? $this->em->getRepository($classname)
-            : null;
+        $classname = $objectOrClass instanceof ClassDescriptionInterface ? $objectOrClass->getClassname() : $this->resolveFinalEntity($objectOrClass, true);
+        try {
+            return $this->em->getRepository($classname);
+        } catch (\Throwable $th) {
+            if($this->appWire->isDev()) {
+                throw new Exception(vsprintf('Error %s line %d: class %s not found!%s- %s', [__METHOD__, __LINE__, $objectOrClass, PHP_EOL, $th->getMessage()]));
+            }
+        }
+        return null;
     }
 
     // /**

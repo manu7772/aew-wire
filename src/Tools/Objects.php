@@ -17,6 +17,7 @@ use Exception;
 use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
+use stdClass;
 use Stringable;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
@@ -106,6 +107,27 @@ class Objects implements ToolInterface
             return false;
         }
         return true;
+    }
+
+
+    /*************************************************************************************
+     * CONVERT
+     *************************************************************************************/
+
+    /**
+     * Convert array or Json string to stdClass
+     * 
+     * @param array|string $array
+     * @return stdClass
+     */
+    public static function toStdClass(
+        array|string $array
+    ): stdClass
+    {
+        if(is_array($array)) {
+            $array = json_encode($array, JSON_THROW_ON_ERROR);
+        }
+        return json_decode($array, false, 512, JSON_THROW_ON_ERROR);
     }
 
 

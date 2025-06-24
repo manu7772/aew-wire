@@ -61,7 +61,7 @@
         "liip/imagine-bundle": "^2.13",
         "vich/uploader-bundle": "^2.7",
         "symfonycasts/tailwind-bundle": "^0.10",
-        "symfony/uid": "7.3.*",
+        "symfony/uid": "^7.3",
         "symfony/rate-limiter": "^7.3",
         "stof/doctrine-extensions-bundle": "^1.14",
         "knplabs/knp-paginator-bundle": "^6.8",
@@ -69,7 +69,8 @@
         "symfonycasts/reset-password-bundle": "^1.23",
         "symfony/mailer": "^7.3",
         "twig/string-extra": "^3.21",
-        "twig/intl-extra": "^3.21"
+        "twig/intl-extra": "^3.21",
+        "symfony/object-mapper": "^7.3"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.3.*",

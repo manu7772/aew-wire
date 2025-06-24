@@ -13,8 +13,8 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'app:dbcheck',
-    description: 'Génère des entités d\'après des fichiers de description',
+    name: 'aew:dbcheck',
+    description: 'Contrôle la base de données pour vérifier la cohérence des entités',
 )]
 class checkDatabase extends BaseCommand
 {

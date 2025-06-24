@@ -64,7 +64,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getEntityService(string|BaseEntityInterface $entity): ?WireEntityServiceInterface;
     public function addPostFlushInfos(PostFlushEventArgs $args): void;
     public function getPostFlushInfos(bool $getLastOnly = false): array;
-    public function getRepository(string|BaseEntityInterface $objectOrClass): ?EntityRepository;
+    public function getRepository(string|object $objectOrClass): ?EntityRepository;
     public static function isAppWireEntity(string|object $objectOrClass): bool;
     public static function isBetweenEntity(string|object $objectOrClass): bool;
     public static function isTranslationEntity(string|object $objectOrClass): bool;
@@ -112,9 +112,9 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getUow(): UnitOfWork;
 
     // Create
-    public function createEntity(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
-    public function createModel(string $classname, array|false $data = false, array $context = [], bool $tryService = true): BaseEntityInterface;
-    public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = [], bool $tryService = true): BaseEntityInterface|false;
+    public function createEntity(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
+    public function createModel(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
+    public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;
     // Entity Events
     public function postLoaded(BaseEntityInterface $entity): void;
     public function postCreated(BaseEntityInterface $entity): void;

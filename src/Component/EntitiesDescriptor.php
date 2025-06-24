@@ -68,6 +68,13 @@ class EntitiesDescriptor implements EntitiesDescriptorInterface
     }
 
 
+    public function resetFilters(): static
+    {
+        $this->enableFilterAppWire(false);
+        $this->enableShortnames(false);
+        return $this;
+    }
+
     /************************************************************************************************************/
     /** FILTER APPWIRE                                                                                          */
     /************************************************************************************************************/
@@ -157,6 +164,8 @@ class EntitiesDescriptor implements EntitiesDescriptorInterface
         if($this->shortnames) {
             $this->transformShortnames($classnames);
         }
+        // Reset filters
+        $this->resetFilters();
         return $classnames;
     }
 

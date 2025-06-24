@@ -266,7 +266,7 @@ class RelationMapper implements RelationMapperInterface
         if(!isset($this->relations)) return [];
         return is_callable($filter)
             ? array_filter(
-                $this->relations, 
+                $this->relations,
                 fn(array $mapping, string $field) => $filter($mapping['mapping'], $field, $this->classMetadata),
                 ARRAY_FILTER_USE_BOTH
             ) : $this->relations;
@@ -387,7 +387,7 @@ class RelationMapper implements RelationMapperInterface
     /**
      * Get relative relation mappings
      * Returns properties of relations not defined in the class metadata
-     * 
+     *
      * @return array
      */
     private function getRelativeAssociationMappings(): array

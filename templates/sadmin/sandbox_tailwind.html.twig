@@ -1,0 +1,22 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}SAdmin | Tailwind sandbox{% endblock %}
+
+{% block main_content %}
+<h1 class="text-3xl font-semibold mb-4">Tailwind sandbox</h1>
+<div class="mt-12 flex flex-wrap gap-x-3 gap-y-1">
+    <a href="https://tailwindcss.com/docs/detecting-classes-in-source-files" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-tailwind" class="w-6 h-6 inline-block" /> Tailwind detecting classes</a>
+    <a href="https://tailwindcss.com/blog/tailwindcss-v4#automatic-content-detection" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-tailwind" class="w-6 h-6 inline-block" /> Tailwind v4 content detection</a>
+    <a href="https://www.youtube.com/watch?v=ky95s6eoNr4" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-youtube-filled" class="w-6 h-6 inline-block" /> Tailwind & DaisyUI</a>
+    <a href="https://grafikart.fr/tutoriels/daisyui-tailwindcss-2285" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:world-heart" class="w-6 h-6 inline-block" /> Grafikart DaisyUI</a>
+    <a href="https://daisyui.com/?lang=fr" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:world-heart" class="w-6 h-6 inline-block" /> DaisyUI</a>
+</div>
+<hr class="my-4 text-gray-700">
+<div>
+    
+    <div class="my-4">
+        {# {{ dump(tailwindBuilder|default(null)) }} #}
+    </div>
+
+</div>
+{% endblock %}

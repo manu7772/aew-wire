@@ -61,7 +61,7 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
     ): WireMenuInterface
     {
         /** @var WireMenuInterface */
-        $entity = $this->wireEm->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->wireEm->disableTryService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // 1. Add Wepage (Uname: "wp_page_menu") to the menu
         /** @var WireWebpageServiceInterface */
         $webpageService = $this->wireEm->getEntityService(WireWebpageInterface::class);
