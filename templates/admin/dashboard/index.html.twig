@@ -1,39 +1,40 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import "@AequationWire/admin/partials/_elements.html.twig" as elements %}
 
 {% block title %}Admin | Tableau de bord{% endblock %}
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
 
-<div role="alert" class="alert alert-success my-3">
+{# <div role="alert" class="alert alert-success my-3">
     <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
     <span>Your purchase has been confirmed!</span>
-</div>
+</div> #}
 
 <div class="flex flex-col lg:flex-row gap-4">
     <div class="flex-1">
         <h2 class="text-lg font-semibold mt-0 mb-1 text-blue-800 dark:text-blue-400">Liens utiles</h2>
         <div class="mt-12 flex flex-wrap gap-x-3 gap-y-1">
-            <a href="https://www.youtube.com/watch?v=oqJCTWDvsek" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-symfony" class="w-6 h-6 inline-block" /> Symfony 7.3</a>
+            {{ elements.ext_button("Symfony 7.3", "https://www.youtube.com/watch?v=oqJCTWDvsek", "btn-outline btn-primary", "tabler:brand-symfony") }}
         </div>
         <hr class="lg:hidden my-4 text-gray-700">
     </div>
-    <div class="flex-1">
+    <div class="flex-1 select-none">
         <h2 class="text-lg font-semibold mt-0 mb-1 text-blue-800 dark:text-blue-400">{{ 'env_versions'|trans|capitalize }}</h2>
-        <div>Charset <span class="font-bold">{{ app.param('kernel.charset') }}</span></div>
-        <div>PHP version <span class="font-bold">{{ app.getPhpInfo('VERSION') }}</span></div>
-        <div>Symfony version <span class="font-bold">{{ app.getSymfonyInfo('VERSION') }}</span></div>
-        <div>Database version <span class="font-bold">{{ app.getDatabaseInfo('serverVersion') }}</span></div>
-        <div>CSRF enabled <span class="font-bold">{{ app.param('form.type_extension.csrf.enabled') ? 'YES' : 'NO' }}</span></div>
+        <div>Charset <span class="font-bold select-text">{{ app.param('kernel.charset') }}</span></div>
+        <div>PHP version <span class="font-bold select-text">{{ app.getPhpInfo('VERSION') }}</span></div>
+        <div>Symfony version <span class="font-bold select-text">{{ app.getSymfonyInfo('VERSION') }}</span></div>
+        <div>Database version <span class="font-bold select-text">{{ app.getDatabaseInfo('serverVersion') }}</span></div>
+        <div>CSRF enabled <span class="font-bold select-text">{{ app.param('form.type_extension.csrf.enabled') ? 'YES' : 'NO' }}</span></div>
         
         {% if tailwindBuilder|default(null) is not null %}
         <h2 class="text-lg font-semibold mt-3 mb-1 text-blue-800 dark:text-blue-400">TailwindCSS bundle</h2>
-        {# <div>Tailwind CSS Binary version <span class="font-bold">{{ tailwindBuilder.binary|default('???') }}</span></div> #}
-        <div>Tailwind CSS Config file <span class="font-bold">{{ tailwindBuilder.getConfigFilePath()|default('---') }}</span></div>
+        {# <div>Tailwind CSS Binary version <span class="font-bold select-text">{{ tailwindBuilder.binary|default('???') }}</span></div> #}
+        <div>Tailwind CSS Config file <span class="font-bold select-text">{{ tailwindBuilder.getConfigFilePath()|default('---') }}</span></div>
         <div>Input paths:
             <ul class="list-disc pl-5">
                 {% for path in tailwindBuilder.getInputCssPaths() %}
-                <li>{{ path }}</li>
+                <li class="select-text">{{ path }}</li>
                 {% endfor %}
             </ul>
         </div>
@@ -41,12 +42,12 @@
         
         {% if app.isTranslate() or app.devOrSadmin %}
         <h2 class="text-lg font-semibold mt-3 mb-1 text-blue-800 dark:text-blue-400">{{ 'timezone_data'|trans|capitalize }}</h2>
-        <div>Translation enabled <span class="font-bold">{{ app.isTranslate() ? 'YES' : 'NO' }}</span></div>
-        <div>Locale <span class="font-bold">{{ app.param('locale') }}</span></div>
-        <div>Default <span class="font-bold">{{ app.param('kernel.default_locale') }}</span></div>
-        <div>Locales <span class="font-bold">{{ app.param('locales')|join(' / ') }}</span></div>
-        <div>Monnaie <span class="font-bold">{{ app.param('currency') }}</span></div>
-        <div>Fuseau <span class="font-bold">{{ app.param('timezone') }}</span></div>
+        <div>Translation enabled <span class="font-bold select-text">{{ app.isTranslate() ? 'YES' : 'NO' }}</span></div>
+        <div>Locale <span class="font-bold select-text">{{ app.param('locale') }}</span></div>
+        <div>Default <span class="font-bold select-text">{{ app.param('kernel.default_locale') }}</span></div>
+        <div>Locales <span class="font-bold select-text">{{ app.param('locales')|join(' / ') }}</span></div>
+        <div>Monnaie <span class="font-bold select-text">{{ app.param('currency') }}</span></div>
+        <div>Fuseau <span class="font-bold select-text">{{ app.param('timezone') }}</span></div>
         {% endif %}
     </div>
 </div>

@@ -120,3 +120,12 @@
         {% endif %}
     {% endif %}
 {% endmacro %}
+
+{% macro ext_button(label = null, url, classes = '', icon = null) %}
+<a href="{{ url }}" target="_blank" class="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg 2xl:btn-xl {{ classes }}" rel="noopener noreferrer">
+    {% if icon is not null %}
+    <twig:ux:icon name="{{ icon }}" class="w-6 h-6 inline-block mr-2" />
+    {% endif %}
+    {{ label|has_text ? label|raw }}
+</a>
+{% endmacro %}

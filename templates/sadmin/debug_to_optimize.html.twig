@@ -1,40 +1,38 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import "@AequationWire/admin/partials/_elements.html.twig" as elements %}
 
 {% block title %}SAdmin | Plans d'optimisation du site{% endblock %}
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">Plans d'optimisation du site</h1>
 {# <div class="mt-12 flex flex-wrap gap-x-3 gap-y-1">
-    <a href="https://symfony.com/doc/current/components/uid.html" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-symfony" class="w-6 h-6 inline-block" /> Symfony UUID Component</a>
+    <a href="https://symfony.com/doc/current/components/uid.html" class="btn btn-outline btn-accent" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-symfony" class="w-6 h-6 inline-block" /> Symfony UUID Component</a>
 </div> #}
 <hr class="my-4 text-gray-700">
-<div>
-    <table class="border-collapse w-full text-sm text-left text-gray-800 dark:text-gray-200 cursor-default">
+<div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+    <table class="table table-zebra select-none">
         <thead>
-            <tr class="border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700">
-                <th class="p-2 text-center">Type</th>
-                <th class="p-2">Classe</th>
-                <th class="p-2">Methode</th>
-                <th class="p-2">Ligne</th>
-                <th class="p-2">Optimisation à développer</th>
+            <tr>
+                <th class="text-center">Type</th>
+                <th class="text-right">Classe::</th>
+                <th>Methode</th>
+                <th>Ligne</th>
+                <th>Optimisation à développer</th>
             </tr>
         </thead>
         <tbody>
             {% for attrs in toOptimize %}
             {% for attr in attrs %}
-            <tr class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
-                <td class="p-2 align-top text-center font-light" title="{{ attr.typeLabel }}"><twig:ux:icon name="{{ attr.typeIcon.name }}" class="{{ attr.typeIcon.class }}" /></td>
-                <td class="p-2 align-top font-light" title="{{ attr.classname }}">{{ attr.classname|shortname }}</td>
-                <td class="p-2 align-top font-light">{{ attr.methodName }}()</td>
-                <td class="p-2 align-top font-light italic">L.{{ attr.startLine|default("?") }}</td>
-                <td class="p-2 align-top font-bold">{{ attr.description }}</td>
+            <tr class="hover:bg-base-300">
+                <td class="align-top text-center font-light" title="{{ attr.typeLabel }}"><twig:ux:icon name="{{ attr.typeIcon.name }}" class="{{ attr.typeIcon.class }}" /></td>
+                <td class="select-text align-top font-light text-right" title="{{ attr.classname }}">{{ attr.classname|shortname }}::</td>
+                <td class="select-text align-top font-light">{{ attr.methodName }}()</td>
+                <td class="align-top font-light italic">L.{{ attr.startLine|default("?") }}</td>
+                <td class="align-top font-bold">{{ attr.description }}</td>
             </tr>
             {% endfor %}
             {% endfor %}
         </tbody>
     </table>
-    {# <pre>
-        {{ dump(toOptimize) }}
-    </pre> #}
 </div>
 {% endblock %}

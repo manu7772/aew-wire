@@ -1,11 +1,12 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% import "@AequationWire/admin/partials/_elements.html.twig" as elements %}
 
 {% block title %}SAdmin | UUID sandbox{% endblock %}
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">UUID sandbox</h1>
 <div class="mt-12 flex flex-wrap gap-x-3 gap-y-1">
-    <a href="https://symfony.com/doc/current/components/uid.html" class="btn btn-primary m-0" target="_blank" rel="noopener noreferrer"><twig:ux:icon name="tabler:brand-symfony" class="w-6 h-6 inline-block" /> Symfony UUID Component</a>
+    {{ elements.ext_button("Symfony UUID Component", "https://symfony.com/doc/current/components/uid.html", "btn-outline btn-accent", "tabler:brand-symfony") }}
 </div>
 <hr class="my-4 text-gray-700">
 <div>

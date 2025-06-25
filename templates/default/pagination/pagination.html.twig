@@ -1,60 +1,31 @@
 {# Sliding pagination control implementation #}
 {% if pageCount > 1 %}
-    <nav aria-label="Page navigation">
-        <ul class="inline-flex -space-x-px text-base h-10 mt-2 select-none">
-            {% set round_s = true %}
-			{% if first is defined and current != first %}
-            <li>
-                <a href="{{ path(route, knp_pagination_query(query, first)) }}" class="{{ round_s ? 'rounded-l-lg ' }}flex items-center justify-center px-4 h-10 ms-0 leading-tight text-blue-500 bg-white border border-e-0 border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-800 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white">
-                    <twig:ux:icon name="tabler:player-track-prev-filled" class="w-5 h-5 inline-block" />
-                </a>
-            </li>
-            {% set round_s = false %}
-			{% endif %}
+<nav aria-label="Page navigation" class="grid grid-flow-col justify-items-end">
+    <div class="join select-none">
+        {% if first is defined and current != first %}
+        <a href="{{ path(route, knp_pagination_query(query, first)) }}" class="join-item btn">
+            <twig:ux:icon name="tabler:player-track-prev-filled" class="w-5 h-5 inline-block" />
+        </a>
+        {% endif %}
+        {% if previous is defined %}
+        <a href="{{ path(route, knp_pagination_query(query, previous)) }}" class="join-item btn">
+            <twig:ux:icon name="tabler:caret-left-filled" class="w-5 h-5 inline-block" />
+        </a>        
+        {% endif %}
+        {% for page in pagesInRange %}
+        <a href="{{ path(route, knp_pagination_query(query, page)) }}" class="join-item btn {{ page == current ? 'btn-disabled' }}">{{ page }}</a>
+        {% endfor %}
+        {% if next is defined %}
+        <a href="{{ path(route, knp_pagination_query(query, next)) }}" class="join-item btn">
+            <twig:ux:icon name="tabler:caret-right-filled" class="w-5 h-5 inline-block" />
+        </a>
+        {% endif %}
+        {% if last is defined and current != last %}
+        <a href="{{ path(route, knp_pagination_query(query, last)) }}" class="join-item btn">
+            <twig:ux:icon name="tabler:player-track-next-filled" class="w-5 h-5 inline-block" />
+        </a>
+        {% endif %}
+    </div>
+</nav>
 
-			{% if previous is defined %}
-            <li>
-                <a href="{{ path(route, knp_pagination_query(query, previous)) }}" class="{{ round_s ? 'rounded-l-lg ' }}flex items-center justify-center px-4 h-10 ms-0 leading-tight text-blue-500 bg-white border border-e-0 border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-800 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white">
-                    <twig:ux:icon name="tabler:caret-left-filled" class="w-5 h-5 inline-block" />
-                </a>
-            </li>
-            {% set round_s = false %}
-			{% endif %}
-
-			{% for page in pagesInRange %}
-                {% set round_e = page == last and page == current %}
-				{% if page != current %}
-                <li>
-                    <a href="{{ path(route, knp_pagination_query(query, page)) }}" class="{{ round_s ? 'rounded-l-lg ' }}{{ round_e ? 'rounded-r-lg ' }}flex items-center justify-center px-4 h-10 leading-tight text-blue-500 bg-white border border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-800 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white">
-                        {{ page }}
-                    </a>
-                </li>
-				{% else %}
-                <li>
-                    <span aria-current="page" class="{{ round_s ? 'rounded-l-lg ' }}{{ round_e ? 'rounded-r-lg ' }}select-none flex items-center justify-center px-4 h-10 text-lime-600 border border-blue-300 bg-lime-50 hover:bg-lime-100 hover:text-lime-700 dark:border-blue-700 dark:bg-blue-600 dark:text-white font-black">
-                        {{ page }}
-                    </span>
-                </li>
-				{% endif %}
-                {% set round_s = false %}
-			{% endfor %}
-
-			{% if next is defined %}
-            {% set round_e = not (last is defined and current != last) %}
-            <li>
-                <a href="{{ path(route, knp_pagination_query(query, next)) }}" class="{{ round_e ? 'rounded-r-lg ' }}flex items-center justify-center px-4 h-10 ms-0 leading-tight text-blue-500 bg-white border border-e-0 border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-800 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white">
-                    <twig:ux:icon name="tabler:caret-right-filled" class="w-5 h-5 inline-block" />
-                </a>
-            </li>
-			{% endif %}
-
-			{% if last is defined and current != last %}
-            <li>
-                <a href="{{ path(route, knp_pagination_query(query, last)) }}" class="rounded-r-lg flex items-center justify-center px-4 h-10 ms-0 leading-tight text-blue-500 bg-white border border-e-0 border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-800 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white">
-                    <twig:ux:icon name="tabler:player-track-next-filled" class="w-5 h-5 inline-block" />
-                </a>
-            </li>
-			{% endif %}
-        </ul>
-    </nav>
 {% endif %}
