@@ -56,7 +56,7 @@ class UserType extends AbstractType
 
         $current_user = $this->entityService->getUser();
 
-        if($user && $this->entityService->isUserGranted($current_user, 'ROLE_ADMIN')) {
+        if($user && $this->entityService->isGrantedForUser($current_user, 'ROLE_ADMIN')) {
             $choices = [];
             foreach ($this->entityService->getAvailableRoles($current_user) as $role) {
                 $choices[$this->translator->trans($role)] = $role;

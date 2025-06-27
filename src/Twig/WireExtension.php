@@ -44,7 +44,7 @@ class WireExtension extends AbstractExtension
     {
         $functions = [
             new TwigFunction('current_year', [$this->appWire, 'getCurrentYear']),
-            new TwigFunction('user_granted', [$this->appWire, 'isUserGranted']),
+            new TwigFunction('user_granted', [$this->appWire, 'isGrantedForUser']),
             new TwigFunction('getIcon', [$this, 'getIcon'], ['is_safe' => ['html']]),
             new TwigFunction('list_roles', [$this, 'listRoles'], ['is_safe' => ['html']]),
             new TwigFunction('field_value', [$this, 'fieldValue'], ['is_safe' => ['html']]),
@@ -54,8 +54,8 @@ class WireExtension extends AbstractExtension
             // new TwigFunction('printr', [Objects::class, 'toDebugString'], ['is_safe' => ['html']]),
             new TwigFunction('toDump', [$this, 'toDump'], ['is_safe' => ['html']]),
             // TURBO-UX
-            new TwigFunction('turbo_memory', [$this, 'turboMemory']),
-            new TwigFunction('turbo_preload', [$this, 'turboPreload']),
+            new TwigFunction('data_turbo_temporary', [$this, 'dataTurboTemporary']),
+            new TwigFunction('data_turbo', [$this, 'dataTurbo']),
         ];
         if(!$this->appWire->isDev()) {
             // Prevent dump function call if not in dev evnironment
@@ -263,7 +263,7 @@ class WireExtension extends AbstractExtension
      * @param boolean $enable
      * @return Markup
      */
-    public function turboMemory(bool $enable) : Markup
+    public function dataTurboTemporary(bool $enable) : Markup
     {
         return Strings::markup(' data-turbo-temporary="'.($enable ? 'true' : 'false').'"');
     }
@@ -273,7 +273,7 @@ class WireExtension extends AbstractExtension
      * @param boolean $enable
      * @return Markup
      */
-    public function turboPreload(bool $enable) : Markup
+    public function dataTurbo(bool $enable) : Markup
     {
         return Strings::markup(' data-turbo="'.($enable ? 'true' : 'false').'"');
     }

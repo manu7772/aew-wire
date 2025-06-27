@@ -18,7 +18,7 @@
                     <span class="font-black">{{ unames|length }}</span><br>
                 </div>
                 {% if unames|length %}
-                    <a{{turbo_preload(false)}} href="{{ path('app_orphanunames_cleanup') }}" class="px-6 py-2 min-w-[120px] text-center text-white bg-sky-600 border border-sky-600 rounded active:text-sky-500 hover:bg-transparent hover:text-sky-600 focus:outline-none focus:ring">Remove all orphans</a>
+                    <a{{data_turbo(false)}} href="{{ path('app_orphanunames_cleanup') }}" class="px-6 py-2 min-w-[120px] text-center text-white bg-sky-600 border border-sky-600 rounded active:text-sky-500 hover:bg-transparent hover:text-sky-600 focus:outline-none focus:ring">Remove all orphans</a>
                 {% endif %}
             </div>
 
@@ -51,7 +51,7 @@
                                     <th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-left">{{ uname.entityEuid }}</th>
                                     <th class="border-t-0 px-4 align-middle text-sm font-normal whitespace-nowrap p-4 text-center">
                                         <div class="flex gap-2">
-                                            <a{{turbo_preload(false)}} href="{{ path('app_orphanunames_cleanup', {'euid': uname.euid}) }}" class="inline px-6 py-2 min-w-[120px] text-center text-white bg-sky-600 border border-sky-600 rounded active:text-sky-500 hover:bg-transparent hover:text-sky-600 focus:outline-none focus:ring">Remove</a>
+                                            <a{{data_turbo(false)}} href="{{ path('app_orphanunames_cleanup', {'euid': uname.euid}) }}" class="inline px-6 py-2 min-w-[120px] text-center text-white bg-sky-600 border border-sky-600 rounded active:text-sky-500 hover:bg-transparent hover:text-sky-600 focus:outline-none focus:ring">Remove</a>
                                         </div>
                                     </th>
                                 </tr>

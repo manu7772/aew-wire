@@ -8,6 +8,7 @@ use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 // PHP
 use Exception;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 abstract class WireUserVoter extends BaseEntityVoter
 {
@@ -17,10 +18,11 @@ abstract class WireUserVoter extends BaseEntityVoter
     public function voteOnAttribute(
         string $subject,
         mixed $attribute,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool
     {
-        if(!parent::voteOnAttribute($subject, $attribute, $token)) {
+        if(!parent::voteOnAttribute($subject, $attribute, $token, $vote)) {
             return false;
         }
 
@@ -33,19 +35,19 @@ abstract class WireUserVoter extends BaseEntityVoter
                 // dump($subject.' ==> '.$this->appContext->getFirewallName());
                 switch ($subject) {
                     case 'index':
-                        return $userService->isUserGranted($user, 'ROLE_USER');
+                        return $userService->isGrantedForUser($user, 'ROLE_USER');
                         break;
                     case 'new':
-                        return $userService->isUserGranted($user, 'ROLE_ADMIN');
+                        return $userService->isGrantedForUser($user, 'ROLE_ADMIN');
                         break;
                     case 'show':
-                        return $userService->isUserGranted($user, 'ROLE_USER');
+                        return $userService->isGrantedForUser($user, 'ROLE_USER');
                         break;
                     case 'edit':
-                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isUserGranted($user, 'ROLE_COLLABORATOR'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGrantedForUser($user, 'ROLE_COLLABORATOR'));
                         break;
                     case 'delete':
-                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isUserGranted($user, 'ROLE_ADMIN'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGrantedForUser($user, 'ROLE_ADMIN'));
                         break;
                     default:
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));

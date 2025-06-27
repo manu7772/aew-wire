@@ -19,7 +19,7 @@ interface WireUserServiceInterface extends WireItemServiceInterface, RoleHierarc
     public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response;
     public function updateUserLastLogin(WireUserInterface $user): static;
     public function isGranted($attribute,  $subject = null): bool;
-    public function isUserGranted(?UserInterface $user, $attributes, $object = null, ?string $firewallName = 'main'): bool;
+    public function isGrantedForUser(?UserInterface $user, $attributes, $object = null, ?string $firewallName = 'main'): bool;
     public function isRolesGranted(string|array $roles, $attributes, $object = null, ?string $firewallName = 'main'): bool;
     public function getRolesMap(): array;
     public function getAppRoles(bool $filter_main_roles = true): array;

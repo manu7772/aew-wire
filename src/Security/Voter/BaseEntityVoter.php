@@ -11,6 +11,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 // PHP
 use Exception;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 abstract class BaseEntityVoter extends Voter implements VoterInterface
 {
@@ -50,7 +51,8 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
     public function voteOnAttribute(
         string $subject,
         mixed $attribute,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool
     {
         switch ($this->appWire->getFirewallName()) {

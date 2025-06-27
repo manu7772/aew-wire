@@ -12,7 +12,7 @@
 			<div>{{ form(form) }}</div>
 		</div>
 
-		<div{{ turbo_memory(false) }}>
+		<div{{ data_turbo_temporary(false) }}>
 
 			<div class="max-w-2xl mx-auto my-2">
 				{% for name,opresult in hydrateds|default([]) %}

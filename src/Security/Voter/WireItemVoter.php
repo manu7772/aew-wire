@@ -8,6 +8,7 @@ use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 // PHP
 use Exception;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 abstract class WireItemVoter extends BaseEntityVoter
 {
@@ -18,10 +19,11 @@ abstract class WireItemVoter extends BaseEntityVoter
     public function voteOnAttribute(
         string $subject,
         mixed $attribute,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool
     {
-        if(!parent::voteOnAttribute($subject, $attribute, $token)) {
+        if(!parent::voteOnAttribute($subject, $attribute, $token, $vote)) {
             return false;
         }
 

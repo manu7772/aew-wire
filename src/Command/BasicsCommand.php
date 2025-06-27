@@ -26,7 +26,7 @@ use Symfony\Component\Console\Question\Question;
 class BasicsCommand extends BaseCommand
 {
     public const DEFAULT_DATA_PATH = '/src/DataBasics/data/';
-    protected const ALL_CLASSES = 'Toute les classes';
+    protected const ALL_CLASSES = 'Toutes les classes';
 
     // public readonly string $path;
 
@@ -157,8 +157,8 @@ class BasicsCommand extends BaseCommand
                 $io->warning('Process aborted.');
                 return Command::FAILURE;
             } else {
-                $io->warning(vsprintf('Aucune entité générée pour %s', [$class]));
-                // $this->printMessages($opresult, $io);
+                $io->warning(vsprintf('Certaines entités n\'ont pas été entièrement générées pour %s', [$class]));
+                $this->printMessages($opresult, $io, ['undone', 'warning']);
             }
             try {
                 // $this->wireEm->getEm()->flush();

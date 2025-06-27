@@ -13,9 +13,9 @@
                 {{ dump(entities) }}
             </pre>
             {% else %}
-                <a{{ turbo_preload(false) }} href="{{ path('admin_user_index') }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> Users</a>
+                <a{{ data_turbo(false) }} href="{{ path('admin_user_index') }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> Users</a>
                 {% for class,shortname in classnames %}
-                <a{{ turbo_preload(false) }} href="{{ path('app_entities', {class: shortname}) }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> {{ class }}</a>
+                <a{{ data_turbo(false) }} href="{{ path('app_entities', {class: shortname}) }}"><twig:ux:icon name="tabler:eye" class="h-6 w-6 inline-block" /> {{ class }}</a>
                 {% endfor %}
             {% endif %}
         </div>

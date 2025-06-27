@@ -195,7 +195,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     }
 
     /**
-     * Is user granted for attributes
+     * Is user granted for attributes, and optionally for object and firewall.
      * @see https://www.remipoignon.fr/symfony-comment-verifier-le-role-dun-utilisateur-en-respectant-la-hierarchie-des-roles/
      *
      * @param ?UserInterface $user
@@ -204,7 +204,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
      * @param ?string $firewallName = null
      * @return boolean
      */
-    public function isUserGranted(
+    public function isGrantedForUser(
         ?UserInterface $user,
         $attributes,
         $object = null,
@@ -212,22 +212,17 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): bool
     {
         $user ??= $this->getUser();
-        // dump($attributes, $object, $firewallName, $this->appWire->getFirewallName());
-        if(empty($user)) {
-            // dd(vsprintf('Error %s line %d: user is empty! Please login first!', [__METHOD__ , __LINE__]));
-            return $this->isGranted($attributes, $object);
+        if(empty($firewallName)) {
+            return empty($user)
+                ? $this->security->isGranted($attributes, $object)
+                : $this->security->isGrantedForUser($user, $attributes, $object);
         }
-        $firewallName ??= $this->appWire->getFirewallName();
-        // $publics = $this->appWire->getPublicFirewalls();
-        // if(!in_array($firewallName, $publics)) {
-        //     if($this->appWire->isDev()) {
-        //         throw new Exception(vsprintf('Error %s line %d: could not determine user for firewall %s!', [__METHOD__, __LINE__, $firewallName]));
-        //     }
-        //     $firewallName = $this->appWire->getFirewallName();
-        // }
-        $attributes = (array)$attributes;
-        $token = new UsernamePasswordToken($user, $firewallName, $user->getRoles());
-        return $this->accessDecisionManager->decide($token, $attributes, $object);
+        $token = new UsernamePasswordToken(
+            $user,
+            $firewallName ?? $this->appWire->getFirewallName(),
+            $user->getRoles()
+        );
+        return $this->accessDecisionManager->decide($token, (array) $attributes, $object);
     }
 
     public function isRolesGranted(
@@ -239,7 +234,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     {
         /** @var UserInterface */
         $user = $this->createModel(['roles' => (array)$roles]);
-        $result = $this->isUserGranted($user, $attributes, $object, $firewallName);
+        $result = $this->isGrantedForUser($user, $attributes, $object, $firewallName);
         unset($user);
         return $result;
     }
@@ -357,7 +352,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         // throw new Exception(vsprintf('Error %s line %d: method %s not implemented!', [__METHOD__, __LINE__, __METHOD__]));
         // if(!in_array('ROLE_SUPER_ADMIN', $manager->getRoles())) {
             foreach ($subordinate->getRoles() as $role) {
-                if(!$this->isUserGranted($manager, $role)) return false;
+                if(!$this->isGrantedForUser($manager, $role)) return false;
             }
         // }
         return true;

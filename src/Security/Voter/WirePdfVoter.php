@@ -8,6 +8,7 @@ use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 // PHP
 use Exception;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 abstract class WirePdfVoter extends WireItemVoter
 {
@@ -17,10 +18,11 @@ abstract class WirePdfVoter extends WireItemVoter
     public function voteOnAttribute(
         string $subject,
         mixed $attribute,
-        TokenInterface $token
+        TokenInterface $token,
+        ?Vote $vote = null
     ): bool
     {
-        if(!parent::voteOnAttribute($subject, $attribute, $token)) {
+        if(!parent::voteOnAttribute($subject, $attribute, $token, $vote)) {
             return false;
         }
 

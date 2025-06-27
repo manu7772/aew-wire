@@ -1296,14 +1296,14 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * @param string $firewallName = 'main'
      * @return boolean
      */
-    public function isUserGranted(
+    public function isGrantedForUser(
         ?UserInterface $user,
         $attributes,
         $object = null,
         ?string $firewallName = null
     ): bool
     {
-        return $this->getUserService()->isUserGranted($user, $attributes, $object, $firewallName);
+        return $this->getUserService()->isGrantedForUser($user, $attributes, $object, $firewallName);
     }
 
     /**
@@ -1693,7 +1693,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $is_public = $firewall
             ? in_array($firewall, static::PUBLIC_FIREWALLS)
             : $this->isPublic();
-        if($this->isUserGranted($user, $action, $subject, $firewall)) {
+        if($this->isGrantedForUser($user, $action, $subject, $firewall)) {
             $prefix = $is_public ? 'app_' : 'admin_';
             $route = $prefix.$name.'_'.$action;
             if($this->routeExists($route, false)) return $route;

@@ -158,7 +158,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isTranslate(): bool;
     // Environment / Security
     public function isGranted(mixed $attributes, mixed $subject = null): bool;
-    public function isUserGranted(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;
+    public function isGrantedForUser(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;
     public function isPublic(): bool;
     public function isPrivate(): bool;
     public function isDev(): bool;

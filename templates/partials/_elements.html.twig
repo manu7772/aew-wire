@@ -1,5 +1,5 @@
 {% macro alert_danger(text, turbo_memo = false) %}
-    <div{{ turbo_memory(turbo_memo) }} class="px-6 py-4 bg-red-800 dark:bg-red-900 text-white border border-red-400 dark:border-red-500 rounded-xl shadow-xl dark:shadow-black w-full">
+    <div{{ data_turbo_temporary(turbo_memo) }} class="px-6 py-4 bg-red-800 dark:bg-red-900 text-white border border-red-400 dark:border-red-500 rounded-xl shadow-xl dark:shadow-black w-full">
         {{ text|raw }}
     </div>
 {% endmacro %}
@@ -121,7 +121,7 @@
 {% endmacro %}
 
 {% macro opresult_messages(opresult) %}
-    <div{{ turbo_memory(false) }} class="my-8">
+    <div{{ data_turbo_temporary(false) }} class="my-8">
 
         {% if opresult.messages('success')|length %}
         {% for message in opresult.messages('success') %}                                
