@@ -220,7 +220,7 @@ trait TraitBaseEntityService
     }
 
     public function find(
-        int|string $identifier,
+        null|int|string $identifier = null,
         bool|array $criteria = [],
         ?array $orderBy = null
     ): ?object
@@ -238,7 +238,7 @@ trait TraitBaseEntityService
                 throw new Exception(vsprintf('Error %s line %d: could not resolve euid with uname %s for class %s!', [__METHOD__, __LINE__, $identifier, static::getEntityClassname()]));
             }
             $criteria['euid'] = $euid;
-        } else {
+        } else if($identifier !== null) {
             throw new Exception(vsprintf('Error %s line %d: identifier "%s" is not valid!', [__METHOD__, __LINE__, $identifier]));
         }
         $entity = $this->getRepository()->findOneBy($criteria, $orderBy);

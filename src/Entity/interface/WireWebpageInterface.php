@@ -8,7 +8,7 @@ interface WireWebpageInterface extends WireItemInterface, TraitPreferedInterface
 {
 
     public function getMainmenu(): ?WireMenuInterface;
-    public function setMainmenu(WireMenuInterface $mainmenu): static;
+    public function setMainmenu(?WireMenuInterface $mainmenu): static;
     public function getSections(): Collection;
     public function getWebsections(?string $type = null): Collection;
     public function getWebsection(string $type): ?WireWebsectionInterface;

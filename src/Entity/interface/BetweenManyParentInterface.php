@@ -5,6 +5,11 @@ use Doctrine\Common\Collections\Collection;
 
 interface BetweenManyParentInterface
 {
+    // Childs status
+    public function isEmpty(): bool;
+    public function hasChilds(): bool;
+    public function getCount(): int;
+    // Items
     public function getItemPosition(WireItemInterface $item): int|false;
     public function setItemPosition(WireItemInterface $item, int $position): static;
     public function getSortgroup(?BetweenManyChildInterface $child = null): string;

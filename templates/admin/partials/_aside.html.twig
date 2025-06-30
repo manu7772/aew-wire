@@ -15,6 +15,7 @@
                 {% endif %}
             </li>
 
+            {% set admin_menu = getAdminMenu() %}
             {% if app.isGrantedForUser(app.user, 'index', 'User') %}
             <li>
                 {% set open = app.current_route matches '/^admin_user_/' %}

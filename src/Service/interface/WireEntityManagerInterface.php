@@ -112,6 +112,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getUow(): UnitOfWork;
 
     // Create
+    public function disableTryService(): static;
     public function createEntity(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;

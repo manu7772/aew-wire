@@ -90,7 +90,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
      * @return object|null
      */
     public function find(
-        int|string $identifier,
+        null|int|string $identifier = null,
         bool|array $criteria = [],
         ?array $orderBy = null
     ): ?object;

@@ -43,7 +43,7 @@ class WireWebpage extends WireItem implements WireWebpageInterface
     protected Collection $sections;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
-    protected WireMenuInterface $mainmenu;
+    protected ?WireMenuInterface $mainmenu;
 
     #[ORM\Column()]
     #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
@@ -73,7 +73,7 @@ class WireWebpage extends WireItem implements WireWebpageInterface
         return $this->mainmenu ?? null;
     }
 
-    public function setMainmenu(WireMenuInterface $mainmenu): static
+    public function setMainmenu(?WireMenuInterface $mainmenu): static
     {
         $this->mainmenu = $mainmenu;
         return $this;

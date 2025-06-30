@@ -4,12 +4,13 @@ namespace Aequation\WireBundle\Service;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
+use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Aequation\WireBundle\Tools\Files;
-use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 // PHP
@@ -66,6 +67,22 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         /** @var EntityRepository */
         $repository = $this->getRepository();
         return $repository->findOneBy(['prefered' => true, 'enabled' => true]);
+    }
+
+    public function setMainMenuIfMissing(
+        WireWebpageInterface $webpage
+    ): bool
+    {
+        if(!$webpage->getMainmenu() || !$webpage->getMainmenu()->isActive()) {
+            return false;
+        }
+        /** @var WireMenuServiceInterface */
+        $menuService = $this->wireEm->getEntityService(WireMenuInterface::class);
+        if($mainmenu = $menuService->getMainMenu()) {
+            $webpage->setMainmenu($mainmenu);
+            return true;
+        }
+        return false;
     }
 
     public function getWebpageFor(

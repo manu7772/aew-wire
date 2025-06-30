@@ -72,4 +72,9 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
         return $entity;
     }
 
+    public function getMainMenu(): ?WireMenuInterface
+    {
+        return $this->find(null, ['prefered' => true]);
+    }
+
 }

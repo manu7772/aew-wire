@@ -10,6 +10,7 @@ interface WireWebpageServiceInterface extends WireEntityServiceInterface
 {
 
     public function getPreferedWebpage(): ?WireWebpageInterface;
+    public function setMainMenuIfMissing(WireWebpageInterface $webpage): bool;
     public function getWebpageFor(string|BaseEntityInterface $entity, bool $attributeToEntity = false, bool $onlyActiveWebpage = true): ?WireWebpageInterface;
     public function getWebpagesCount(
             bool $onlyActives = false,

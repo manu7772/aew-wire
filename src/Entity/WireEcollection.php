@@ -60,6 +60,22 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
 
+    // Has childs
+    public function isEmpty(): bool
+    {
+        return $this->childs->isEmpty();
+    }
+
+    public function hasChilds(): bool
+    {
+        return !$this->isEmpty();
+    }
+
+    public function getCount(): int
+    {
+        return $this->childs->count();
+    }
+
     // Position
     public function getItemPosition(WireItemInterface $item): int|false
     {
