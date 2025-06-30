@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<twig:HtmlElementAttributes />
+    <head>
+        <meta charset="{{ app.charset }}">
+        <title>{% block title %}{{ (webpage.title|default(app.factory.name|default('Bonjour')))|striptags }}{% endblock %}</title>
+        <link rel="icon" href="{{ asset('images/logo/favicon_114.png') }}" type="image/x-icon">
+        {% block stylesheets %}
+        {% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+        {{ app.getTurboMetas() }}
+    </head>
+    <body {{ stimulus_controller('aequation/wire/globalapp') }}>
+        {% block body %}
+        {% endblock %}
+    </body>
+</html>

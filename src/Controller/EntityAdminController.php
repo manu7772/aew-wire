@@ -104,7 +104,7 @@ class EntityAdminController extends AbstractController
         return $this->entityService;
     }
 
-    #[Route('/admin/{entity}', name: 'admin_entity_index', requirements: ['entity' => '\w+'], methods: ['GET'])]
+    // #[Route('/admin/{entity}', name: 'admin_entity_index', requirements: ['entity' => '\w+'], methods: ['GET'])]
     public function index(
         string $entity,
         Request $request

@@ -46,7 +46,9 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         protected WireUserServiceInterface $userService,
         protected RouterInterface $router
     )
-    {}
+    {
+        // dump('WireAppGlobalSubscriber::__construct()');
+    }
 
     /**
      * Get subscribed Events
@@ -54,7 +56,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents(): array
     {
-        return [
+        $subsc = [
             KernelEvents::REQUEST => 'onRequest',
             // KernelEvents::EXCEPTION => 'onException',
             KernelEvents::CONTROLLER => 'onController',
@@ -65,6 +67,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
             // LoginSuccessEvent::class => 'onLoginSuccess',
             // LoginFailureEvent::class => 'onLoginFailure',
         ];
+        return $subsc;
     }
 
     public static function isWdtRequest(
@@ -143,7 +146,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         //         break;
         // }
         // $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
-        // $response ??= $this->appWire->getTwig()->render(name: $twigpage_name, context: $context);
+        // $response ??= $this->appWire->getTwig()->render($twigpage_name, context: $context);
         // // if($statusCode <= 0) dd($exception, $response);
         // $event->setResponse(new Response($response, $statusCode));
     }
@@ -174,12 +177,16 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
 
     public function onController(ControllerEvent $event): void
     {
-        if(!$this->isAvailableActions($event)) return;
+        if(!$this->isAvailableActions($event)) {
+            // dump('WireAppGlobalSubscriber::onController - Not available actions');
+            return;
+        }
         if($this->appWire->isRequiredInitialization($event)) {
+            // dump('WireAppGlobalSubscriber::onController - Required initialization');
             $this->appWire->initialize($event);
         }
         // dump($this->appWire->jsonSerialize());
-        return;
+        // return;
 
         // $this->initAppContext($event);
         // $event->getRequest()->getSession()->set(static::TEST_PASSED_NAME, false);
@@ -191,30 +198,40 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
             $controller = $this->getControllerObjectFromEvent($event);
             if($controller instanceof AbstractController) {
                 $host = $event->getRequest()->getHost();
+                // dump($host, $this->appWire->getParameter('host_security_passwd', static::TEST_PASSED_NAME));
                 $website_host = preg_replace('/^(www\.)/', '', $this->appWire->getParameter('router.request_context.host', []));
 
                 // **********************************
                 // TEST/DEMO WEBSITES RESTRICTED AREA
                 // **********************************
                 $grantedHosts = [
-                    '127.0.0.1',
-                    'localhost',
+                    // '127.0.0.1',
+                    // 'localhost',
                     $website_host,
                     'www.'.$website_host,
                 ];
+                $grantedIps = [
+                    '127.0.0.1',
+                    '37.67.74.173', // IP maison Cerdon
+                ];
                 if(!in_array($host, $grantedHosts) && $this->isAvailableRouteFor('demotest')) {
                     // Test or Demo Website / Restricted AREA
-                    $post_pwd = $event->getRequest()->request->get('demo_password', null);
-                    $passwd = $this->appWire->getParameter('host_security_passwd', null);
+                    $post_passwd = $event->getRequest()->request->getString('demo_password', '');
+                    $req_passwd = $this->appWire->getParameter('host_security_passwd', static::TEST_PASSED_NAME);
                     $passed = $event->getRequest()->getSession()->get(static::TEST_PASSED_NAME, false);
-                    if(empty($passwd) || $passed) return;
-                    if($post_pwd === $passwd) {
+                    // dump('WireAppGlobalSubscriber::onController - Test Website', $event->getRequest()->request->all(), $req_passwd, $post_passwd === $req_passwd, $post_passwd);
+                    if(empty($req_passwd) || $passed) {
+                        return;
+                    }
+                    if($post_passwd === $req_passwd) {
+                        // dump('WireAppGlobalSubscriber::onController - Test Website - Password memorized');
                         $event->getRequest()->getSession()->set(static::TEST_PASSED_NAME, true);
-                    } else if(!$passed) {
-                        $event->setController(function () {
-                            $response = $this->appWire->twig->render(name: '@AequationWire/security/test_website.html.twig');
-                            return new Response($response, 403);
-                        });
+                        return;
+                    }
+                    if(!$passed) {
+                        // dump('WireAppGlobalSubscriber::onController - Test Website - Password not passed');
+                        $response = $this->appWire->getTwig()->render('@AequationWire/security/test_website.html.twig', ['password' => $req_passwd, 'grantedIps' => $grantedIps]);
+                        $event->setController(fn () => new Response($response, 403));
                     }
                 }
 
@@ -234,7 +251,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
                     if(new DateTime($context['date']) > new DateTime()) {
                         $context['datetime'] = new DateTime($context['date']);
                         $event->setController(function () use ($context) {
-                            $response = $this->appWire->twig->render('@AequationWire/security/countdown.html.twig', $context);
+                            $response = $this->appWire->getTwig()->render('@AequationWire/security/countdown.html.twig', $context);
                             return new Response($response, 200);
                         });
                     }
@@ -248,7 +265,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         ?string $route = null
     ): bool
     {
-        $route ??= $this->appWire->route;
+        $route ??= $this->appWire->getCurrentRoute();
         switch ($action) {
             case 'countdown':
                 // return !in_array($route, ['app_login','app_logout']) && !$this->appWire->getUser();

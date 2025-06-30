@@ -14,7 +14,7 @@ use Symfonycasts\TailwindBundle\TailwindBuilder;
 class DashboardController extends AbstractController
 {
 
-    #[Route(name: 'dashboard', alias: ['index','home'])]
+    #[Route(name: 'index')]
     public function index(
         #[Autowire(service: 'tailwind.builder')]
         TailwindBuilder $tailwindBuilder,

@@ -1535,7 +1535,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $route = $this->getParam('admin_route', static::DEFAULT_ADMIN_ROUTE);
         if($this->isDev()) {
             if(!$this->routeExists($route)) {
-                throw new Exception(vsprintf('Error %s line %d: public home route %s does not exist!', [__METHOD__, __LINE__, $route]));
+                dump($this->getRoutes());
+                throw new Exception(vsprintf('Error %s line %d: admin route %s does not exist!', [__METHOD__, __LINE__, $route]));
             }
         }
         return $route;

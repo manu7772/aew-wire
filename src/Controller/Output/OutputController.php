@@ -33,7 +33,7 @@ class OutputController extends AbstractController
         $response->headers->set('Content-Disposition', $action.'; filename="' . $pdf->getFilename() . '"');
         if($pdf instanceof WirePdfInterface && $pdf->getSourcetype() === 2) {
             if($path = $pdf->getFilepathname()) {
-                dd($path, file_exists($path));
+                // dd($path, file_exists($path));
                 return $this->redirect($path, Response::HTTP_FOUND);
             }
         }

@@ -275,6 +275,7 @@ class WireExtension extends AbstractExtension
      */
     public function dataTurbo(bool $enable) : Markup
     {
+        // return Strings::markup('');
         return Strings::markup(' data-turbo="'.($enable ? 'true' : 'false').'"');
     }
 

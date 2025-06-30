@@ -1,1 +1,1 @@
-<html lang="{{ locale }}" {% if darkmodeClass is not null or app.user %}class="{{ app.user ? 'userlogged' }}{{ darkmodeClass is not null ? ' ' ~ darkmodeClass }}"{% endif %} data-darkmode-switcher-url="{{ switcherUrl }}">
+<html lang="{{ locale }}" data-theme="{{ app.darkmode ? 'dark' : 'light' }}"{% if darkmodeClass is not null or app.user %}class="{{ app.user ? 'userlogged' }}{{ darkmodeClass is not null ? ' ' ~ darkmodeClass }}"{% endif %} data-darkmode-switcher-url="{{ switcherUrl }}">
