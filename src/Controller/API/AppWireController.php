@@ -2,11 +2,11 @@
 namespace Aequation\WireBundle\Controller\API;
 
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 // PHP
 use Exception;
 
@@ -25,31 +25,35 @@ class AppWireController extends AbstractController
     //     );
     // }
 
-    #[Route(path: '/darkmode/get', name: 'darkmode_get', methods: ['GET'])]
-    public function getDarkmode(
+    #[Route(path: '/csstheme/get', name: 'csstheme_get', methods: ['GET'])]
+    public function getCsstheme(
         AppWireServiceInterface $appWire
     ): JsonResponse
     {
+        /** @var WireUserInterface */
+        $user = $this->getUser();
         return $this->json(
-            data: $appWire->getDarkmode(),
+            data: $user ? $user->getCsstheme() : $appWire->getCsstheme(),
             status: JsonResponse::HTTP_OK,
         );
     }
 
-    #[Route('/darkmode/{darkmode<^(on|off|toggle)$>}', name: 'darkmode_switcher', defaults: ['darkmode' => 'toggle'], methods: ['GET','POST'])]
-    public function darkmodeSwitcher(
+    #[Route('/csstheme/{csstheme}', name: 'csstheme_define', defaults: ['csstheme' => '__toggle__'], methods: ['GET','POST'])]
+    public function cssthemeSwitcher(
         AppWireServiceInterface $appWire,
-        string $darkmode = 'toggle'
+        string $csstheme = '__toggle__'
     ): JsonResponse
     {
-        $darkmode = match ($darkmode) {
-            'on' => true,
-            'off' => false,
-            default => !$appWire->getDarkmode(), // toggle
-        };
-        $appWire->setDarkmode($darkmode);
+        switch ($csstheme) {
+            case '__toggle__':
+                $appWire->toggleCsstheme();
+                break;
+            default:
+                $appWire->setCsstheme($csstheme);
+                break;
+        }
         return $this->json(
-            data: ['darkmode' => $appWire->getDarkmode()],
+            data: ['csstheme' => $appWire->getCsstheme()],
             status: JsonResponse::HTTP_OK,
             // context: $appWire->jsonSerialize(),
         );

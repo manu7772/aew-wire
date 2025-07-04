@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
 use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\InheritanceType('JOINED')]
 #[ClassCustomService(WireEcollectionServiceInterface::class)]
 #[ORM\HasLifecycleCallbacks]
-#[SerializationMapping(WireEcollection::ITEMS_ACCEPT)]
+#[WireRelationMapping(WireEcollection::ITEMS_ACCEPT)]
 abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
 
@@ -90,7 +90,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         foreach ($this->childs as $ic) {
             if($ic->getChild() === $item) {
                 $ic->setPosition($position);
-                return $this;
+                break;
             }
         }
         return $this;
@@ -122,8 +122,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function addItem(WireItemInterface $item): static
     {
         if($item !== $this && !$this->hasItem($item)) {
-            $ic = new ItemCollection($this, $item);
-            $this->childs->add($ic);
+            $this->childs->add(new ItemCollection($this, $item));
         } else {
             $this->removeItem($item);
         }

@@ -143,22 +143,21 @@ trait WireEntity
         return $this;
     }
 
+    public static function getReflectionClass(): ReflectionClass
+    {
+        return new ReflectionClass(static::class);
+    }
+
     public function getClassname(): string
     {
-        if(!isset($this->classname)) {
-            $rc = new ReflectionClass(static::class);
-            $this->classname = $rc->getName();
-        }
+        $this->classname ??= $this->getReflectionClass()->getName();
         return $this->classname;
     }
 
     public function getShortname(
         bool $lowercase = false
     ): string {
-        if(!isset($this->shortname)) {
-            $rc = new ReflectionClass(static::class);
-            $this->shortname = $rc->getShortName();
-        }
+        $this->shortname ??= $this->getReflectionClass()->getShortName();
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;

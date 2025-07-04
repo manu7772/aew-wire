@@ -71,10 +71,10 @@ class SecuritySubscriber implements EventSubscriberInterface
         if($user) {
             $this->appWire->getFlashBag()->add('appwire', [
                 'timezone' => $user->getTimezone(),
-                'darkmode' => $user->isDarkmode(),
+                'csstheme' => $user->getCsstheme(),
             ]);
-            // $this->appWire->integrateUserContext($user); // --> keep user context in logged out session (darkmode, language, etc.)
-            if($this->appWire->isDevOrSadmin()) $this->appWire->addFlash('info', vsprintf('<div>Mode %s - %s</div>', [$this->appWire->getDarkmode() ? 'sombre' : 'clair', $this->appWire->getTimezoneName()]));
+            // $this->appWire->integrateUserContext($user); // --> keep user context in logged out session (csstheme, language, etc.)
+            if($this->appWire->isDevOrSadmin()) $this->appWire->addFlash('info', vsprintf('<div>Mode %s - %s</div>', [$this->appWire->getCsstheme() ? 'sombre' : 'clair', $this->appWire->getTimezoneName()]));
         }
     }
 

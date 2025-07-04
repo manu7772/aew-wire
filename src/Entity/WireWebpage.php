@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
@@ -21,7 +21,7 @@ use Twig\Markup;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-#[SerializationMapping(WireWebpage::ITEMS_ACCEPT)]
+#[WireRelationMapping(WireWebpage::ITEMS_ACCEPT)]
 class WireWebpage extends WireItem implements WireWebpageInterface
 {
     use Prefered;

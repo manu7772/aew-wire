@@ -53,7 +53,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
      * @param bool|array $criteria
      * @return int
      */
-    public function getCount(
+    public function count(
         bool|array $criteria = []
     ): int;
     /**
@@ -89,7 +89,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
      * @param bool|array $criteria
      * @return object|null
      */
-    public function find(
+    public function findOneBy(
         null|int|string $identifier = null,
         bool|array $criteria = [],
         ?array $orderBy = null

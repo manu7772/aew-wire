@@ -26,7 +26,7 @@ use Symfony\Component\Console\Question\Question;
 class BasicsCommand extends BaseCommand
 {
     public const DEFAULT_DATA_PATH = '/src/DataBasics/data/';
-    protected const ALL_CLASSES = 'Toutes les classes';
+    protected const ALL_CLASSES = 'Toutes les classes (défaut)';
 
     // public readonly string $path;
 
@@ -57,16 +57,17 @@ class BasicsCommand extends BaseCommand
 
         $io->title('Génération d\'entités à partir de fichiers de données YAML');
 
-        /** @var QuestionHelper $helper */
-        $helper = $this->getHelper('question');
-        $paths = [static::DEFAULT_DATA_PATH];
-        $question = new Question(vsprintf('Indiquez le chemin vers les données (default: %s) :', [static::DEFAULT_DATA_PATH]), static::DEFAULT_DATA_PATH);
-        $question->setAutocompleterValues($paths);
-        $path = $helper->ask($input, $output, $question);
+        // /** @var QuestionHelper $helper */
+        // $helper = $this->getHelper('question');
+        // $paths = [static::DEFAULT_DATA_PATH];
+        // $question = new Question(vsprintf('Indiquez le chemin vers les données (default: %s) :', [static::DEFAULT_DATA_PATH]), static::DEFAULT_DATA_PATH);
+        // $question->setAutocompleterValues($paths);
+        // $path = $helper->ask($input, $output, $question);
+        $path = static::DEFAULT_DATA_PATH;
         $this->hydrator->setCurrentPath($path);
         $io->writeln(vsprintf('- Chemin vers les données de génération : %s', [$this->hydrator->getCurrentPath()]));
         /** Get YAML files data */
-        $data = $this->hydrator->getYamlData();
+        $data = $this->hydrator->getYamlData(mode_report: 0);
         // echo Objects::toDump($data, false, 3, $this->hydrator->getSerializer(), $this->hydrator::getNormalizeGroups(null, 'debug'));
         // dd($data);
 
@@ -77,11 +78,12 @@ class BasicsCommand extends BaseCommand
         $io->writeln(vsprintf('<info>- Fichiers de données trouvés : %d</info>', [count($data)]));
 
         // Print results
-        $classnames = $this->wireEm->getEntityNames(false, false, true);
+        $classnames = $this->wireEm->getEntitiesDescriptor()->findHydratableFinals(false);
         $entities_data = [];
         $lines = [];
         $counter = 1;
         foreach ($data as $classname => $d) {
+            /** @var iterable $d */
             $count = count($d);
             $available = $count > 0 && in_array($classname, $classnames);
             if ($available) $entities_data[$classname] = $d;
@@ -108,14 +110,14 @@ class BasicsCommand extends BaseCommand
         // );
         $question = new ChoiceQuestion(
             question: 'Choisissez une ou plusieurs classes d\'entités à générer :',
-            choices: array_merge([0 => static::ALL_CLASSES], array_keys($entities_data)),
+            choices: array_merge([static::ALL_CLASSES], array_keys($entities_data)),
             default: 0
         );
         $question->setMultiselect(true);
         $classnames = $helper->ask($input, $output, $question);
         if (in_array(static::ALL_CLASSES, $classnames)) $classnames = array_keys($entities_data);
         // Filter data
-        $entities_data = array_filter($entities_data, fn($classname) => in_array($classname, $classnames), ARRAY_FILTER_USE_KEY);
+        $entities_data = array_filter($entities_data, fn (string $classname): bool => in_array($classname, $classnames), ARRAY_FILTER_USE_KEY);
         $lines = [];
         $counter = 1;
         foreach ($entities_data as $classname => $values) {
@@ -129,15 +131,17 @@ class BasicsCommand extends BaseCommand
         $io->writeln('<info>Entités à générer :</info>');
         $io->table(['Ord', 'Classname', 'Shortname', 'Count'], $lines);
 
-        /** @var QuestionHelper $helper */
-        $helper = $this->getHelper('question');
-        $question = new ConfirmationQuestion('Remplace si existante (oui/non) (défaut: oui) ? ', true, '/^(o|oui|y|yes)/i');
-        $replace = $helper->ask($input, $output, $question);
-        $io->writeln(vsprintf('- Remplace : %s', [$replace ? 'Oui' : 'Non']));
-        if ($replace) {
-            $io->note('Remplace si existant.');
-            // sleep(1);
-        }
+        // /** @var QuestionHelper $helper */
+        // $helper = $this->getHelper('question');
+        // $question = new ConfirmationQuestion('Remplace si existante (oui/non) (défaut: oui) ? ', true, '/^(o|oui|y|yes)/i');
+        // $replace = $helper->ask($input, $output, $question);
+        // $io->writeln(vsprintf('- Remplace : %s', [$replace ? 'Oui' : 'Non']));
+        // if ($replace) {
+        //     $io->note('Remplace si existant.');
+        //     // sleep(1);
+        // }
+        $replace = true;
+        // dd(__METHOD__.'/L.'.__LINE__, array_keys($entities_data));
 
         foreach ($entities_data as $class => $data) {
             $opresult = $this->hydrator->generateEntitiesFromClass($class, $replace, $io, true);

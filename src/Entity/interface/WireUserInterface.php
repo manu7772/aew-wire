@@ -39,9 +39,9 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function isValidSuperadmin(): bool;
     public function eraseCredentials(): void;
     public function autoGeneratePassword(int $length = 32, ?string $chars = null, bool $replace = true): static;
-    // Darkmode
-    public function isDarkmode(): bool;
-    public function setDarkmode(bool $darkmode): static;
+    // Csstheme
+    public function getCsstheme(): string;
+    public function setCsstheme(string $csstheme): static;
     // Factorys
     public function getFactorys(): Collection;
     public function addFactory(WireFactoryInterface $factory): static;

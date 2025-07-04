@@ -85,7 +85,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private string $datenow;
     private string $firewallname;
     private array $tinyvalues = [];
-    private bool $darkmode;
+    private string $csstheme;
+    private array $cssthemes;
     private int|WireFactoryInterface $currentFactory;
 
     /**
@@ -118,7 +119,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->setDebug($this->kernel->isDebug());
         $this->setLocaleSwitcher($myLocaleSwitcher);
         $this->setEnabledLocales($this->container->getParameter('locales'));
-        // $this->setDarkmode($this->container->hasParameter('darkmode') ? $this->container->getParameter('darkmode') : false);
+        // $this->setCsstheme($this->container->hasParameter('cssthemes') ? $this->container->getParameter('cssthemes') : static::DEFAULT_CSS_THEME);
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
         // dump($this->getCurrentRoute(), $this->getRouteHome(), $this->isRouteHome(), $this->getRouteAdmin(), $this->isRouteAdmin());
@@ -682,28 +683,21 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             $this->retrieved_session_data = $this->retrieveAppWire();
             $this->jsonUnserialize($this->retrieved_session_data, $this->getUser());
             // Add defaults
-            if(!isset($this->darkmode)) {
+            if(!isset($this->csstheme)) {
+                $csstheme = $this->getCsstheme($this->getFirewallName());
                 if($user = $this->getUser()) {
                     /** @var WireUserInterface $user */
-                    $darkmode = $user->isDarkmode();
+                    $csstheme = $user->getCsstheme();
                 } else {
-                    $darkmode = $this->getParameter('darkmode', false);
+                    $this->getCsstheme($this->getFirewallName());
                 }
-                $this->setDarkmode($darkmode);
+                $this->setCsstheme($csstheme);
             }
             $this->context_initialized = true;
             // dump(vsprintf('Info %s line %d: firewall %s (path: %s) is available for initialization.', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
         }
         return $this->isInitialized();
     }
-
-    // public function integrateUserContext(
-    //     WireUserInterface $user
-    // ): void
-    // {
-    //     $this->setTimezone($user->getTimezone());
-    //     $this->setDarkmode($user->isDarkmode());
-    // }
 
     /**
      * retrieve session data for AppWire regarding firewall
@@ -799,46 +793,88 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $this->context_locked;
     }
 
-    /** DARKMODE */
+    /** CSSTHEME */
 
-    public function getDarkmode(): bool
+    public function getCssthemes(?string $firewall = null): array
     {
+        if(!isset($this->cssthemes)) {
+            $cssthemes = array_merge(
+                static::DEFAULT_CSS_THEMES,
+                $this->getParameter('cssthemes', static::DEFAULT_CSS_THEMES),
+            );
+            foreach ($cssthemes as $fw => $themes) {
+                $this->setCssthemes($themes, $fw);
+            }
+        }
+        return $firewall
+            ? $this->cssthemes[$firewall] ?? $this->cssthemes['_default']
+            : $this->cssthemes;
+    }
+
+    public function setCssthemes(array $cssthemes, ?string $firewall = null): static
+    {
+        if($firewall) {
+            $this->cssthemes[$firewall] = $cssthemes;
+        } else {
+            $this->cssthemes = $cssthemes;
+        }
+        // Control if changed every firewall cssthemes
+        foreach ($this->cssthemes as $fw => $themes) {
+            $current = $this->getCsstheme($fw);
+            if(!in_array($current, $themes, true)) {
+                $this->setCsstheme(reset($themes), $fw);
+            }
+        }
+        return $this;
+    }
+
+    public function getCurrentCssthemes(): array
+    {
+        return $this->getCssthemes($this->getFirewallName());
+    }
+
+    public function getCsstheme(?string $firewall = null): string
+    {
+        $firewall = $this->getFirewallName() ?? '_default';
         $user = $this->getUser();
         if($user instanceof WireUserInterface) {
-            return  $this->darkmode = $user->isDarkmode();
+            return $this->csstheme = $user->getCsstheme($firewall);
         }
-        return $this->darkmode ??= $this->getParameter('darkmode', false);
+        if(isset($this->csstheme)) {
+            return $this->csstheme;
+        }
+        // If not set, try to get from parameters
+        $cssthemes = $this->getCssthemes($firewall);
+        return $this->csstheme = count($cssthemes) > 0
+            ? reset($cssthemes)
+            : static::DEFAULT_CSS_THEME;
     }
 
     #[DebugToOptimize(type: 'warning', description: 'Does not work perfectly. Please optimize!')]
-    public function setDarkmode(bool $darkmode): bool
+    public function setCsstheme(string $csstheme, ?string $firewall = null): string
     {
         if($this->isDev() && $this->survey++ > 5) {
-            throw new Exception(vsprintf('Error %s line %d: can not set darkmode, too many attempts!', [__METHOD__, __LINE__]));
+            throw new Exception(vsprintf('Error %s line %d: can not set csstheme, too many attempts!', [__METHOD__, __LINE__]));
         }
+        $firewall = $this->getFirewallName() ?? '_default';
         $user = $this->getUser();
         if($user instanceof WireUserInterface) {
-            if($user->isDarkmode() !== $darkmode) {
-                $user->setDarkmode($darkmode);
+            if($user->getCsstheme() !== $csstheme) {
+                $user->setCsstheme($csstheme);
                 $this->getUserService()->saveUser($user);
             }
-            return $this->darkmode = $user->isDarkmode();
+            $csstheme = $user->getCsstheme();
         }
-        return $this->darkmode = $darkmode;
+        return $this->csstheme = $csstheme;
     }
 
-    public function toggleDarkmode(): bool
+    public function toggleCsstheme(?string $firewall = null): string
     {
-        if(!isset($this->darkmode)) {
-            throw new Exception(vsprintf('Error %s line %d: can not toggle darkmode because it is not set!', [__METHOD__, __LINE__]));
-            
-        }
-        return $this->setDarkmode(!$this->getDarkmode());
-    }
-
-    public function getDarkmodeClass(): string
-    {
-        return $this->getDarkmode() ? 'dark' : '';
+        $firewall = $this->getFirewallName() ?? '_default';
+        $choices = $this->getCssthemes($firewall);
+        $current = array_search($this->getCsstheme($firewall), $choices) + 1;
+        $new_theme = $choices[$current % count($choices)];
+        return $this->setCsstheme($new_theme);
     }
 
 
@@ -863,7 +899,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             case is_int($this->currentFactory) && $this->currentFactory > 0:
                 /** @var WireFactoryServiceInterface $serviceFactory */
                 $serviceFactory = $this->get(WireFactoryServiceInterface::class);
-                $currentFactory = $serviceFactory->find($this->currentFactory);
+                $currentFactory = $serviceFactory->findOneBy($this->currentFactory);
                 if($currentFactory instanceof WireFactoryInterface) {
                     $this->currentFactory = $currentFactory;
                 }
@@ -897,7 +933,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             case is_int($factory) && $factory > 0:
                 /** @var WireFactoryServiceInterface $serviceFactory */
                 $serviceFactory = $this->get(WireFactoryServiceInterface::class);
-                $factory = $serviceFactory->find($factory);
+                $factory = $serviceFactory->findOneBy($factory);
                 if($factory instanceof WireFactoryInterface) {
                     $this->currentFactory = $factory;
                 }
@@ -908,9 +944,9 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                 }
                 break;
         }
-        if($this->isDev() && empty($this->currentFactory)) {
-            throw new Exception(vsprintf('Error %s line %d: can not set current factory with data %s!', [__METHOD__, __LINE__, json_encode($factory)]));
-        }
+        // if($this->isDev() && empty($this->currentFactory)) {
+        //     throw new Exception(vsprintf('Error %s line %d: can not set current factory with data %s!', [__METHOD__, __LINE__, json_encode($factory)]));
+        // }
         return $this;
     }
 
@@ -1221,8 +1257,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
                         case 'timezone':
                             $this->setTimezone($user?->getTimezone() ?: $data[$property]);
                             break;
-                        case 'darkmode':
-                            $this->setDarkmode($user?->isDarkmode() ?: $data[$property]);
+                        case 'csstheme':
+                            $this->setCsstheme($user?->getCsstheme() ?: $data[$property]);
                             break;
                         default:
                             if($this->isDev()) {

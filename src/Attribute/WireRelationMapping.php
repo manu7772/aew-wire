@@ -11,7 +11,7 @@ use Attribute;
  * @author emmanuel:dujardin Aequation
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-class SerializationMapping extends BaseClassAttribute implements AppAttributeClassInterface
+class WireRelationMapping extends BaseClassAttribute implements AppAttributeClassInterface
 {
 
     public function __construct(

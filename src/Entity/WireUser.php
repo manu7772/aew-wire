@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
@@ -13,6 +13,8 @@ use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
+use Aequation\WireBundle\Service\AppWireService;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
@@ -32,7 +34,7 @@ use Exception;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
 #[ORM\HasLifecycleCallbacks]
-#[SerializationMapping(WireUser::ITEMS_ACCEPT)]
+#[WireRelationMapping(WireUser::ITEMS_ACCEPT)]
 abstract class WireUser extends WireItem implements WireUserInterface
 {
     use Webpageable, Relinkable, Categorized;
@@ -103,7 +105,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     protected ?string $description = null;
 
     #[ORM\Column]
-    protected bool $darkmode = false;
+    protected array $cssthemes;
 
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $expiresAt = null;
@@ -344,20 +346,47 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return $this;
     }
 
-    public function isDarkmode(): bool
+    // CSS THEME
+
+    public function getCssthemes(): array
     {
-        return $this->darkmode;
+        if(!isset($this->cssthemes)) {
+            $cssthemes = [];
+            foreach($this->getEmbededStatus()->appWire->getCssthemes() as $firewall => $css) {
+                $cssthemes[$firewall] = reset($css);
+            }
+            $this->setCssthemes($cssthemes);
+        }
+        return $this->cssthemes;
     }
 
-    public function setDarkmode(bool $darkmode): static
+    public function setCssthemes(array $cssthemes): static
     {
-        $this->darkmode = $darkmode;
-        // Update in AppWireService if necessary
-        if($this->getSelfState()->appWire->getDarkmode() !== $this->isDarkmode()) {
-            $this->getSelfState()->appWire->setDarkmode($this->isDarkmode());
+        foreach ($cssthemes as $firewall => $csstheme) {
+            $this->setCsstheme($csstheme, $firewall);
+        }
+        if(!isset($this->cssthemes['_default'])) {
+            $this->cssthemes['_default'] = AppWireService::DEFAULT_CSS_THEME;
         }
         return $this;
     }
+
+    public function getCsstheme(?string $firewall = null): string
+    {
+        return $this->cssthemes[$firewall ?? '_default'];
+    }
+
+    public function setCsstheme(string $csstheme, ?string $firewall = null): static
+    {
+        $this->cssthemes[$firewall ?? '_default'] = $csstheme;
+        return $this;
+    }
+
+    public function getCssthemeChoices(?string $firewall = null): array
+    {
+        return $this->getEmbededStatus()->appWire->getCssthemes($firewall);
+    }
+
 
     public function isExpired(): bool
     {

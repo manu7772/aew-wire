@@ -6,12 +6,13 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Aequation\WireBundle\Component\EntitySelfState;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
+use Aequation\WireBundle\Interface\WireHydratable;
 // Symfony
 // use Symfony\Component\Uid\UuidV7 as Uuid;
 // PHP
 use Stringable;
 
-interface WireEntityInterface extends BaseEntityInterface, TraitSerializableInterface
+interface WireEntityInterface extends BaseEntityInterface, TraitSerializableInterface, WireHydratable
 {
     // public const ICON = [
     //     'ux' => 'tabler:file',

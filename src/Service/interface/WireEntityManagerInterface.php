@@ -6,6 +6,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\EntitiesDescriptorInterface;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
@@ -52,10 +53,10 @@ interface WireEntityManagerInterface extends WireServiceInterface
     );
 
     // Debug mode
-    public function isDebugMode(): bool;
-    public function incDebugMode(): bool;
-    public function decDebugMode(): bool;
-    public function resetDebugMode(): bool;
+    public function isHydrateMode(): bool;
+    public function incHydrateMode(): bool;
+    public function decHydrateMode(): bool;
+    public function resetHydrateMode(): bool;
     public function isDev(): bool;
     public function isProd(): bool;
 
@@ -65,14 +66,15 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function addPostFlushInfos(PostFlushEventArgs $args): void;
     public function getPostFlushInfos(bool $getLastOnly = false): array;
     public function getRepository(string|object $objectOrClass): ?EntityRepository;
-    public static function isAppWireEntity(string|object $objectOrClass): bool;
-    public static function isBetweenEntity(string|object $objectOrClass): bool;
-    public static function isTranslationEntity(string|object $objectOrClass): bool;
-    public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
-    public function getAppEntityNames(bool $asShortnames = false, bool $onlyInstantiables = false): array;
-    public function getBetweenEntityNames(bool $asShortnames = false): array;
-    public function getTranslationEntityNames(bool $asShortnames = false): array;
-    public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
+    // public static function isAppWireEntity(string|object $objectOrClass): bool;
+    // public static function isBetweenEntity(string|object $objectOrClass): bool;
+    // public static function isTranslationEntity(string|object $objectOrClass): bool;
+    public function getEntitiesMetadata(): WireClassMetadataManagerInterface;
+    // public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
+    // public function getAppEntityNames(bool $asShortnames = false, bool $onlyInstantiables = false): array;
+    // public function getBetweenEntityNames(bool $asShortnames = false): array;
+    // public function getTranslationEntityNames(bool $asShortnames = false): array;
+    // public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
     
     /**
      * Get all final entities classnames of interfaces
@@ -83,12 +85,12 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @param bool $allnamespaces
      * @return array
      */
-    public function resolveFinalEntitiesByNames(string|array $interfaces, bool $allnamespaces = false): array;
-    public function resolveFinalEntity(string|array $interfaces, bool $allnamespaces = false): ?string;
-    public function getEntitiesDescriptor(): EntitiesDescriptorInterface;
-    public function getClassnameByShortname(string $shortname, bool $allnamespaces = false, bool $onlyInstantiables = false): ?string;
-    public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
-    public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
+    // public function resolveFinalEntitiesByNames(string|array $interfaces, bool $allnamespaces = false): array;
+    // public function resolveFinalEntity(string|array $interfaces, bool $allnamespaces = false): ?string;
+    // public function getEntitiesDescriptor(): EntitiesDescriptorInterface;
+    // public function getClassnameByShortname(string $shortname, bool $allnamespaces = false, bool $onlyInstantiables = false): ?string;
+    // public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
+    // public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
     // public function getRelatedClassnames(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null): array;
     /**
      * Get all related properties of entity
@@ -105,14 +107,14 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @return array
      */
     // public function getAllRelatedDependencies(string|BaseEntityInterface $objectOrClass, array $filterFields = [], ?Closure $filter = null): array|false;
-    public function getRelateds(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null, bool $excludeSelf = false): array;
+    // public function getRelateds(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null, bool $excludeSelf = false): array;
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
 
     // Create
-    public function disableTryService(): static;
+    public function disableUseService(): static;
     public function createEntity(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
     public function createModel(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;
@@ -122,22 +124,22 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function validateEntity(BaseEntityInterface $entity, array $addGroups = [], Constraint|array|null $constraints = null): ConstraintViolationListInterface;
 
     // Find
-    public function findEntityById(string $classname, string $id): ?BaseEntityInterface;
+    public function findById(string $classname, string $id): ?BaseEntityInterface;
     /**
      * find entity by `euid`
      * 
      * @param string $euid
      * @return BaseEntityInterface|null
      */
-    public function findEntityByEuid(string $euid): ?BaseEntityInterface;
-    public function entityWithEuidExists(string $euid, bool $getData = false): bool|null|array;
+    public function findByEuid(string $euid): ?BaseEntityInterface;
+    public function euidExists(string $euid, bool $getData = false): bool|null|array;
     /**
      * find entity by `uname`
      * 
      * @param string $uname
      * @return BaseEntityInterface|null
      */
-    public function findEntityByUname(string $uname): ?BaseEntityInterface;
+    public function findByUname(string $uname): ?BaseEntityInterface;
     /**
      * Get `euid` of `uname`
      * 
@@ -160,7 +162,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @param string $value
      * @return BaseEntityInterface|null
      */
-    public function findEntityByUniqueValue(string $value): ?BaseEntityInterface;
+    public function findByUniqueValue(string $value): ?BaseEntityInterface;
     public function getClassnameByUname(string $uname): ?string;
     public function getClassnameByEuidOrUname(string $euidOrUname): ?string;
     /**
@@ -172,7 +174,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @param bool|array $criteria
      * @return int
      */
-    public function getEntitiesCount(
+    public function count(
         string $classname,
         bool|array $criteria = []
     ): int;
@@ -185,7 +187,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @param bool|array $criteria
      * @return array
      */
-    public function findAllEntities(
+    public function findAll(
         string $classname,
         bool|array $criteria = [],
         ?array $orderBy = null,
@@ -202,7 +204,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
      * @param bool|array $criteria
      * @return object|null
      */
-    public function findEntity(
+    public function findOneBy(
         string $classname,
         int|string $identifier,
         bool|array $criteria = [],
@@ -213,16 +215,16 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public static function getCriteriaEnabled(string $classname): array;
     public static function getCriteriaDisabled(string $classname): array;
 
-    /**
-     * get class metadata
-     * 
-     * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
-     * @param string|object|null $objectOrClass
-     * @return ClassMetadata|null
-     */
-    public function getClassMetadata(
-        null|string|object $objectOrClass = null,
-    ): ?ClassMetadata;
+    // /**
+    //  * get class metadata
+    //  * 
+    //  * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
+    //  * @param string|object|null $objectOrClass
+    //  * @return ClassMetadata|null
+    //  */
+    // public function getClassMetadata(
+    //     null|string|object $objectOrClass = null,
+    // ): ?ClassMetadata;
 
     // Liip
     public function getBrowserPath(

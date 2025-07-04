@@ -1,15 +1,10 @@
-{% extends '@AequationWire/admin/base_admin.html.twig' %}
+{% extends '@AequationWire/sadmin/base_sadmin.html.twig' %}
 {% import "@AequationWire/admin/partials/_elements.html.twig" as elements %}
 
-{% block title %}Admin | Tableau de bord{% endblock %}
+{% block title %}Sadmin | Tableau de bord{% endblock %}
 
 {% block main_content %}
-<h1 class="text-3xl font-semibold mb-4">{{ 'dashboard'|trans|capitalize }}</h1>
-
-{# <div role="alert" class="alert alert-success my-3">
-    <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
-    <span>Your purchase has been confirmed!</span>
-</div> #}
+<h1 class="text-3xl font-semibold mb-4">Sadmin {{ 'dashboard'|trans|capitalize }}</h1>
 
 <div class="flex flex-col lg:flex-row gap-4">
     <div class="flex-1">
@@ -19,7 +14,7 @@
         </div>
         <hr class="lg:hidden my-4 text-gray-700">
     </div>
-    <div class="flex-1 select-none">
+    <div class="flex-1 select-none sm:order-1">
         <h2 class="text-lg font-semibold mt-0 mb-1 text-blue-800 dark:text-blue-400">{{ 'env_versions'|trans|capitalize }}</h2>
         <div>Charset <span class="font-bold select-text">{{ app.param('kernel.charset') }}</span></div>
         <div>PHP version <span class="font-bold select-text">{{ app.getPhpInfo('VERSION') }}</span></div>
@@ -40,7 +35,6 @@
         </div>
         {% endif %}
         
-        {% if app.isTranslate() %}
         <h2 class="text-lg font-semibold mt-3 mb-1 text-blue-800 dark:text-blue-400">{{ 'timezone_data'|trans|capitalize }}</h2>
         <div>Translation enabled <span class="font-bold select-text">{{ app.isTranslate() ? 'YES' : 'NO' }}</span></div>
         <div>Locale <span class="font-bold select-text">{{ app.param('locale') }}</span></div>
@@ -48,7 +42,6 @@
         <div>Locales <span class="font-bold select-text">{{ app.param('locales')|join(' / ') }}</span></div>
         <div>Monnaie <span class="font-bold select-text">{{ app.param('currency') }}</span></div>
         <div>Fuseau <span class="font-bold select-text">{{ app.param('timezone') }}</span></div>
-        {% endif %}
     </div>
 </div>
 

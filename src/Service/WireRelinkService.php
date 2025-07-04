@@ -36,10 +36,10 @@ class WireRelinkService implements WireRelinkServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult = new Opresult();
         // Check all WireRelinkInterface entities
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

@@ -8,6 +8,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
+use ReflectionClass;
 // Symfony
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -26,8 +27,6 @@ use Symfony\Component\Console\Question\Question;
 )]
 class EntitiesCommand extends BaseCommand
 {
-    // public readonly string $path;
-
     public function __construct(
         protected WireEntityManagerInterface $wireEm,
     ) {
@@ -56,15 +55,15 @@ class EntitiesCommand extends BaseCommand
         /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
         $listes = [
-            0 => 'All lists (classname => '.($shortname ? 'shortname' : 'classname').')',
-            1 => 'All (classname => '.($shortname ? 'shortname' : 'classname').')',
-            2 => 'All instantiables (classname => '.($shortname ? 'shortname' : 'classname').')',
-            3 => 'App Wire (classname => '.($shortname ? 'shortname' : 'classname').')',
-            4 => 'App Wire instantiables (classname => '.($shortname ? 'shortname' : 'classname').')',
-            5 => 'Between (classname => '.($shortname ? 'shortname' : 'classname').')',
-            6 => 'Translation (classname => '.($shortname ? 'shortname' : 'classname').')',
-            7 => 'All final (classname => '.($shortname ? 'shortname' : 'classname').')',
-            8 => 'App Wire final (classname => '.($shortname ? 'shortname' : 'classname').')',
+            0 => 'All lists below (classname => '.($shortname ? 'shortname' : 'classname').')',
+            1 => 'All entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            2 => 'All instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            3 => 'App Wire entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            4 => 'App Wire instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            5 => 'Between entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            6 => 'Translation entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            7 => 'All final entities (classname => '.($shortname ? 'shortname' : 'classname').')',
+            8 => 'App Wire final entities (classname => '.($shortname ? 'shortname' : 'classname').')',
         ];
         $question = new ChoiceQuestion(
             question: 'Choisissez un type de liste :',
@@ -73,59 +72,60 @@ class EntitiesCommand extends BaseCommand
         );
         $question->setMultiselect(true);
         $types = $helper->ask($input, $output, $question);
-        if(in_array($listes[0], $types)) {
-            $types = $listes;
+        if(in_array(reset($listes), $types)) {
+            $types = array_slice($listes, 1);
         }
         // RESULTS
         foreach ($types as $type) {
             $lines = [];
             switch ($type) {
-                case 'All (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'All entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getEntityNames($shortname, true, false);
-                    $io->writeln('<info>All entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>All entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'All instantiables (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'All instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getEntityNames($shortname, true, true);
-                    $io->writeln('<info>All instantiables entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>All instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'App Wire (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'App Wire entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getAppEntityNames($shortname, false);
-                    $io->writeln('<info>App Wire entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>App Wire entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'App Wire instantiables (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'App Wire instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getAppEntityNames($shortname, true);
-                    $io->writeln('<info>App Wire instantiables entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>App Wire instantiable entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'Between (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'Between entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getBetweenEntityNames($shortname);
-                    $io->writeln('<info>Between entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>Between entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'Translation (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'Translation entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getTranslationEntityNames($shortname);
-                    $io->writeln('<info>Translation entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>Translation entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'All final (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'All final entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getFinalEntities($shortname, true);
-                    $io->writeln('<info>All final entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>All final entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
-                case 'App Wire final (classname => '.($shortname ? 'shortname' : 'classname').')':
+                case 'App Wire final entities (classname => '.($shortname ? 'shortname' : 'classname').')':
                     $entities_list = $this->wireEm->getFinalEntities($shortname, false);
-                    $io->writeln('<info>App Wire final entities '.($shortname ? 'shortnames' : 'classnames').' (found '.count($entities_list).') :</info>');
+                    $io->writeln('<info>App Wire final entities (classname => '.($shortname ? 'shortname' : 'classname').' (found '.count($entities_list).') :</info>');
                     break;
                 default:
                     $io->error(vsprintf('Option "%s" not recognized.', [$type]));
                     break;
             }
             if(isset($entities_list)) {
+                $eDescriptor = $this->wireEm->getEntitiesDescriptor();
                 $lines = [];
                 foreach ($entities_list as $classname => $value) {
-                    $rc = new \ReflectionClass($classname);
+                    $rc = new ReflectionClass($classname);
                     $lines[] = [
                         $classname,
                         $value,
-                        $this->wireEm->isAppWireEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
-                        $this->wireEm->isBetweenEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
-                        $this->wireEm->isTranslationEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
+                        $eDescriptor->isAppWireEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
+                        $eDescriptor->isBetweenEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
+                        $eDescriptor->isTranslationEntity($classname) ? '<fg=green>Oui</>' : '<fg=red>Non</>',
                         $rc->isInstantiable() ? '<fg=green>Oui</>' : '<fg=red>Non</>',
                     ];
                 }

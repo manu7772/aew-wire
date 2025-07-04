@@ -33,10 +33,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireWebpageInterface entities
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -54,7 +54,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
     ): WireWebpageInterface
     {
         /** @var WireWebpageInterface */
-        $entity = $this->wireEm->disableTryService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->wireEm->disableUseService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // 1. Add default/prefered Websections
         foreach ($this->appWire->get(WireWebsectionServiceInterface::class)->getPreferedWebsections() as $websection) {
             $entity->addWebsection($websection);

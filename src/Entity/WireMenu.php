@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
@@ -14,7 +14,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-#[SerializationMapping(WireMenu::ITEMS_ACCEPT)]
+#[WireRelationMapping(WireMenu::ITEMS_ACCEPT)]
 abstract class WireMenu extends WireEcollection implements WireMenuInterface
 {
 
@@ -32,25 +32,24 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
     ];
 
 
-    public function __construct()
-    {
-        parent::__construct();
-        // $this->categorys = new ArrayCollection();
-    }
+    // public function __construct()
+    // {
+    //     parent::__construct();
+    // }
 
     public function getWebpages(
         bool $filterActives = false
     ): ArrayCollection
     {
-        return $this->getItems($filterActives);
-        // return $this->items->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WebpageInterface; });
+        // return $this->getItems($filterActives);
+        return $this->getItems()->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireWebpageInterface; });
     }
 
     public function getSubmenus(
         bool $filterActives = false
     ): ArrayCollection
     {
-        return $this->childs->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireMenuInterface; });
+        return $this->getItems()->filter(function ($item) use ($filterActives) { return (!$filterActives || $item->isActive()) && $item instanceof WireMenuInterface; });
     }
 
 }

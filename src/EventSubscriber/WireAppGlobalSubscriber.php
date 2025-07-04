@@ -327,7 +327,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
     //             //     $event->setResponse(new RedirectResponse($this->router->generate('admin_home')));
     //             // }
     //             $this->userService->updateUserLastLogin($user);
-    //             $this->appWire->setTinyvalue('darkmode', $user->isDarkmode());
+    //             $this->appWire->setTinyvalue('csstheme', $user->getCsstheme());
     //         }
     //     }
     //     return;

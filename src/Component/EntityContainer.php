@@ -6,17 +6,13 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\RelationMapperInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
-use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
-use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Entity\WireLanguage;
-use Aequation\WireBundle\Entity\WirePhonelink;
 use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\NormalizerService;
 use Aequation\WireBundle\Tools\Objects;
-use Doctrine\Common\Collections\ArrayCollection;
 // Symfony
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 // PHP
@@ -270,7 +266,7 @@ class EntityContainer implements EntityContainerInterface
     private function tryFindEntity(): bool
     {
         if(!$this->hasEntity()) {
-            $this->wireEm->incDebugMode();
+            $this->wireEm->incHydrateMode();
             $entity = null;
             // 1. Try find entity by euid or uname in database
             if(isset($this->rawdata['euid'])) {
@@ -321,7 +317,7 @@ class EntityContainer implements EntityContainerInterface
             } else {
                 $this->getInfo();
             }
-            $this->wireEm->decDebugMode();
+            $this->wireEm->decHydrateMode();
         }
         return $this->hasEntity();
     }
@@ -411,7 +407,7 @@ class EntityContainer implements EntityContainerInterface
         $this->mergeContext($context, false);
         $context = $this->getDenormalizationContext();
         if(!isset($context[AbstractNormalizer::OBJECT_TO_POPULATE]) || ($context[AbstractNormalizer::OBJECT_TO_POPULATE] ?? null) !== $this->entity) {
-            dump($this->entity->getSelfState()->getReport(), isset($context[AbstractNormalizer::OBJECT_TO_POPULATE]) ? $context[AbstractNormalizer::OBJECT_TO_POPULATE]->getSelfState()->getReport() : 'null');
+            // dump($this->entity->getSelfState()->getReport(), isset($context[AbstractNormalizer::OBJECT_TO_POPULATE]) ? $context[AbstractNormalizer::OBJECT_TO_POPULATE]->getSelfState()->getReport() : 'null');
             throw new InvalidArgumentException(vsprintf('Error %s line %d: OBJECT_TO_POPULATE should be the same as entity!', [__METHOD__, __LINE__]));
         }
         if($this->entity->getSelfState()->isNew() && !$this->entity->getSelfState()->isModel() && !$this->willPersist()) {
@@ -797,8 +793,8 @@ class EntityContainer implements EntityContainerInterface
                 'classname' => $this->classname,
                 'shortname' => Objects::getShortname($this->classname),
             ];
-            $this->wireEm->incDebugMode();
-            $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.spl_object_hash($this), 3, vsprintf('Error %s line %d: recursion limit reached!', [__METHOD__, __LINE__]));
+            $this->wireEm->incHydrateMode();
+            $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.spl_object_hash($this), ($limit = 10), vsprintf('Error %s line %d: recursion limit %d reached!', [__METHOD__, __LINE__, $limit]));
             $dependencies = $this->getRelationMapper();
             // if(!$this->isValid()) dd($this->controls->getMessages());
             foreach ($this->data as $property => $value) {
@@ -841,14 +837,14 @@ class EntityContainer implements EntityContainerInterface
                 $this->tryFindEntity();
             }
             $this->globalControl();
-            $this->wireEm->decDebugMode();
+            $this->wireEm->decHydrateMode();
         }
     }
 
     private function compileFinalData(): void
     {
         if(!$this->compiled) {
-            $this->wireEm->incDebugMode();
+            $this->wireEm->incHydrateMode();
             $this->wireEm->surveyRecursion->survey(__METHOD__.'@'.spl_object_hash($this), 3, vsprintf('Error %s line %d: recursion limit reached!', [__METHOD__, __LINE__]));
             $this->compileRawData();
             $this->data = [];
@@ -915,7 +911,7 @@ class EntityContainer implements EntityContainerInterface
                 $this->compiled = true;
             }
             $this->globalControl();
-            $this->wireEm->decDebugMode();
+            $this->wireEm->decHydrateMode();
         }
     }
 
@@ -926,6 +922,13 @@ class EntityContainer implements EntityContainerInterface
     ): ?string
     {
         $availableClasses = $dependencies->getRelationTargetClasses($property, true);
+        if(empty($availableClasses)) {
+            // No available classes for this relation
+            // dump($dependencies->getReport());
+            $message = vsprintf('Error %s line %d: no available classe found for %s relation property "%s".%s- Please define at least one class!', [__METHOD__, __LINE__, $this->classname, $property, PHP_EOL]);
+            $this->addError($message, false);
+            throw new Exception($message);
+        }
         // $entity = isset($data['uname']) ? $this->normalizer->findEntityByUname($data['uname']['uname'] ?? $data['uname']) : null;
         if(isset($data['uname']['uname'])) {
             $classname = $this->normalizer->getClassnameByEuidOrUname($data['uname']['uname']);
@@ -934,7 +937,8 @@ class EntityContainer implements EntityContainerInterface
         if($classname) {
             if(!in_array($classname, $availableClasses)) {
                 // dump($property, $data, $availableClasses);
-                $message = vsprintf('Error %s line %d: relation entity classname %s is not valid for property %s of %s.%s- Please choose one of %s!', [__METHOD__, __LINE__, $classname, $property, $this->classname, PHP_EOL, implode(', ', $availableClasses)]);
+                // dump($dependencies->getReport());
+                $message = vsprintf('Error %s line %d: relation entity classname %s is not valid for property "%s" of %s.%s- Please choose one of %s!', [__METHOD__, __LINE__, $classname, $property, $this->classname, PHP_EOL, implode(', ', $availableClasses)]);
                 $this->addError($message, false);
             }
         } else {
@@ -942,6 +946,7 @@ class EntityContainer implements EntityContainerInterface
                 $classname = reset($availableClasses);
             } else if(count($availableClasses) > 1) {
                 // dump($property, $data, $availableClasses);
+                // dump($dependencies->getReport());
                 $message = vsprintf('Error %s line %d: relation entity classname is not defined for property %s of %s.%s- Please choose one of %s!', [__METHOD__, __LINE__, $property, $this->classname, PHP_EOL, implode(', ', $availableClasses)]);
                 $this->addError($message, false);
             }

@@ -2,25 +2,21 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-use Aequation\WireBundle\Attribute\CacheManaged;
-use Aequation\WireBundle\Component\EntitiesDescriptor;
 use Aequation\WireBundle\Component\EntityContainer;
-use Aequation\WireBundle\Component\interface\EntitiesDescriptorInterface;
+use Aequation\WireBundle\Component\WireClassMetadataManager;
 use Aequation\WireBundle\Component\interface\EntityContainerInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
+use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
-use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
-use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\CacheServiceInterface;
@@ -33,9 +29,7 @@ use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\HttpRequest;
-use Aequation\WireBundle\Tools\Objects;
 // Symfony
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\UnitOfWork;
@@ -51,8 +45,6 @@ use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Psr\Log\LoggerInterface;
 // PHP
 use Exception;
-use Closure;
-use Throwable;
 
 /**
  * Class WireEntityManager
@@ -69,13 +61,12 @@ class WireEntityManager implements WireEntityManagerInterface
     public const CRITERIA_ENABLED = ['enabled' => true];
     public const CRITERIA_DISABLED = ['enabled' => false];
 
-    protected NormalizerServiceInterface $normalizer;
     protected readonly UnitOfWork $uow;
-    public int $debug_mode = 0;
+    public int $hydrate_mode = 0;
     protected array $postFlushInfos = [];
     protected array $relatedDependencies = [];
-    protected readonly EntitiesDescriptorInterface $entitiesDescriptor;
-    protected bool $tryService = true;
+    protected readonly WireClassMetadataManagerInterface $entitiesMetadata;
+    protected bool $useService = true;
 
     /**
      * constructor.
@@ -103,42 +94,35 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function getNormaliserService(): NormalizerServiceInterface
     {
-        return $this->normalizer ??= $this->appWire->get(NormalizerServiceInterface::class);
+        return $this->appWire->get(NormalizerServiceInterface::class);
     }
 
 
     /****************************************************************************************************/
-    /** DEBUG MODE                                                                                      */
+    /** HYDRATE MODE                                                                                    */
     /****************************************************************************************************/
 
-    public function isDebugMode(): bool
+    public function isHydrateMode(): bool
     {
-        $is = $this->debug_mode > 0 || HttpRequest::isCli();
-        // if($is) {
-        //     // Is debug mode, so
-        //     foreach ($this->getUnitOfWork()->getIdentityMap() as $oid => $value) {
-        //         # code...
-        //     }
-        // }
-        return $is;
+        return $this->hydrate_mode > 0 || HttpRequest::isCli();
     }
     
-    public function incDebugMode(): bool
+    public function incHydrateMode(): bool
     {
-        $this->debug_mode++;
-        return $this->isDebugMode();
+        $this->hydrate_mode++;
+        return $this->isHydrateMode();
     }
 
-    public function decDebugMode(): bool
+    public function decHydrateMode(): bool
     {
-        $this->debug_mode--;
-        return $this->isDebugMode();
+        $this->hydrate_mode--;
+        return $this->isHydrateMode();
     }
 
-    public function resetDebugMode(): bool
+    public function resetHydrateMode(): bool
     {
-        $this->debug_mode = 0;
-        return $this->isDebugMode();
+        $this->hydrate_mode = 0;
+        return $this->isHydrateMode();
     }
 
     public function isDev(): bool
@@ -217,28 +201,9 @@ class WireEntityManager implements WireEntityManagerInterface
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
-    // public function insertEmbededStatus(
-    //     BaseEntityInterface $entity
-    // ): void {
-    //     if (!$entity->hasEmbededStatus()) {
-    //         new EntityEmbededStatus($entity, $this->appWire);
-    //         // Apply PostEmbeded events
-    //         $isNew = $entity->getSelfState()->isNew();
-    //         $attributes = Objects::getMethodAttributes($entity, PostEmbeded::class, ReflectionMethod::IS_PUBLIC);
-    //         foreach ($attributes as $instances) {
-    //             $instance = reset($instances);
-    //             if ($isNew && $instance->isOnCreate()) {
-    //                 $entity->{$instance->getMethodName()}();
-    //             } else if($instance->isOnLoad()) {
-    //                 $entity->{$instance->getMethodName()}();
-    //             }
-    //         }
-    //     }
-    // }
-
-    public function disableTryService(): static
+    public function disableUseService(): static
     {
-        $this->tryService = false;
+        $this->useService = false;
         return $this;
     }
 
@@ -259,10 +224,10 @@ class WireEntityManager implements WireEntityManagerInterface
         if(!class_exists($classname)) {
             throw new Exception(vsprintf('Error %s line %d: class %s not found!', [__METHOD__, __LINE__, $classname]));
         }
-        if($this->tryService && $service = $this->getEntityService($classname)) {
+        if($this->useService && $service = $this->getEntityService($classname)) {
             return $service->createEntity($data, $context);
         }
-        $this->tryService = true; // Reset tryService for next calls
+        $this->useService = true; // Reset useService for next calls
         if(!$data || empty($data)) {
             $entity = new $classname();
             $this->postCreated($entity);
@@ -277,8 +242,6 @@ class WireEntityManager implements WireEntityManagerInterface
         return $entity;
     }
 
-    // if($entity instanceof WireMenuInterface) dump($index.' => '.$entity->getName().' => U:'.$entity->getUnameName().' / Model: '.($entity->getSelfState()->isModel() ? 'true' : 'false'));
-
     /**
      * create model
      * 
@@ -290,10 +253,10 @@ class WireEntityManager implements WireEntityManagerInterface
         array $context = []
     ): BaseEntityInterface {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        if($this->tryService && $service = $this->getEntityService($classname)) {
+        if($this->useService && $service = $this->getEntityService($classname)) {
             return $service->createModel($data, $context);
         }
-        $this->tryService = true; // Reset tryService for next calls
+        $this->useService = true; // Reset useService for next calls
         if(!$data || empty($data)) {
             $model = new $classname();
             $model->getSelfState()->setModel();
@@ -323,7 +286,7 @@ class WireEntityManager implements WireEntityManagerInterface
 
         $this->surveyRecursion->survey(__METHOD__.'::'.$entity->getClassname());
 
-        $this->tryService = true; // Reset tryService for next calls
+        $this->useService = true; // Reset useService for next calls
         // ...
     }
 
@@ -350,7 +313,7 @@ class WireEntityManager implements WireEntityManagerInterface
         if($entity->getSelfState()->isPostLoaded() ?? false) {
             // Entity loaded events already done
             $message = vsprintf('%s line %d: %s (id: %s) already %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->getId() ?? 'NULL', __FUNCTION__]);
-            if($this->appWire->isDev()) {
+            if($this->isDev()) {
                 throw new Exception('Error '.$message);
             }
             $this->logger->warning('Debug '.$message);
@@ -382,7 +345,7 @@ class WireEntityManager implements WireEntityManagerInterface
         if($entity->getSelfState()->isPostCreated() ?? false) {
             // Entity created events already done
             $message = vsprintf('%s line %d: %s (id: %s) already %s!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->getId() ?? 'NULL', __FUNCTION__]);
-            if($this->appWire->isDev()) {
+            if($this->isDev()) {
                 throw new Exception('Error '.$message);
             }
             $this->logger->warning('Debug '.$message);
@@ -434,7 +397,7 @@ class WireEntityManager implements WireEntityManagerInterface
                                 $admin = $userService->getMainAdmin();
                                 if ($admin) {
                                     $entity->setOwner($admin);
-                                } else if ($this->appWire->isDev()) {
+                                } else if ($this->isDev()) {
                                     throw new Exception(vsprintf('Error %s line %d: entity %s %s has no owner!', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString()]));
                                 }
                             }
@@ -446,7 +409,7 @@ class WireEntityManager implements WireEntityManagerInterface
                             'User' => 'wp_user_presentation',
                         ];
                         $uname = $unames[$entity->getShortname()] ?? null;
-                        if($uname && empty($entity->getWebpage()) && ($webpage = $this->findEntityByUname($uname))) {
+                        if($uname && empty($entity->getWebpage()) && ($webpage = $this->findByUname($uname))) {
                             if($webpage->getEmbededStatus()->isContained()) $entity->setWebpage($webpage);
                         }
                         break;
@@ -470,7 +433,7 @@ class WireEntityManager implements WireEntityManagerInterface
                                 }
                             }
                         }
-                        // if($this->appWire->isDev() && (empty($entity->getTimezone()) || empty($entity->getLanguage()))) {
+                        // if($this->isDev() && (empty($entity->getTimezone()) || empty($entity->getLanguage()))) {
                         //     throw new Exception(vsprintf('Error %s line %d: entity %s has no timezone or language!', [__METHOD__, __LINE__, Objects::toDebugString($entity)]));
                         // }
                         break;
@@ -496,20 +459,12 @@ class WireEntityManager implements WireEntityManagerInterface
     }
 
     /****************************************************************************************************/
-    /** REPOSITORY / QUERYS                                                                             */
+    /** REPOSITORY / QUERYS WITH IDENTITY (EUID, UNAME, ...)                                            */
     /****************************************************************************************************/
 
     public function getRepository(string|object $objectOrClass): ?EntityRepository
     {
-        $classname = $objectOrClass instanceof ClassDescriptionInterface ? $objectOrClass->getClassname() : $this->resolveFinalEntity($objectOrClass, true);
-        try {
-            return $this->em->getRepository($classname);
-        } catch (\Throwable $th) {
-            if($this->appWire->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: class %s not found!%s- %s', [__METHOD__, __LINE__, $objectOrClass, PHP_EOL, $th->getMessage()]));
-            }
-        }
-        return null;
+        return $this->getEntitiesMetadata()->getRepository($objectOrClass);
     }
 
     // /**
@@ -543,7 +498,7 @@ class WireEntityManager implements WireEntityManagerInterface
     //     /** @var BaseWireRepositoryInterface */
     //     $repo = $this->em->getRepository($classname);
     //     // if(!empty($field)) dump($classname, $field, get_class($repo));
-    //     if($this->appWire->isDev() && !($repo instanceof BaseWireRepositoryInterface)) {
+    //     if($this->isDev() && !($repo instanceof BaseWireRepositoryInterface)) {
     //         dd($this->__toString(), $classname, $cmd, $cmd->name, $repo);
     //     }
     //     return $repo;
@@ -555,7 +510,7 @@ class WireEntityManager implements WireEntityManagerInterface
      * @param int|string $id
      * @return BaseEntityInterface|null
      */
-    public function findEntityById(
+    public function findById(
         string $classname,
         string $id
     ): ?BaseEntityInterface
@@ -564,11 +519,11 @@ class WireEntityManager implements WireEntityManagerInterface
         return $repo->find($id);
     }
 
-    public function findEntityByEuid(
+    public function findByEuid(
         string $euid
     ): ?BaseEntityInterface
     {
-        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
+        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
             return $entity;
         }
         $class = Encoders::getClassOfEuid($euid);
@@ -577,12 +532,12 @@ class WireEntityManager implements WireEntityManagerInterface
         return $entity instanceof BaseEntityInterface ? $entity : null;
     }
 
-    public function entityWithEuidExists(
+    public function euidExists(
         string $euid,
         bool $getData = false
     ): bool|null|array
     {
-        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
+        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
             return true;
         }
         $class = Encoders::getClassOfEuid($euid);
@@ -599,16 +554,16 @@ class WireEntityManager implements WireEntityManagerInterface
         return $getData ? $entity : !empty($entity);
     }
 
-    public function findEntityByUname(
+    public function findByUname(
         string $uname
     ): ?BaseEntityInterface
     {
-        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findCreated($uname))) {
+        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($uname))) {
             return $entity;
         }
         $unameOjb = $this->getRepository(Uname::class)->find($uname);
         $entity = $unameOjb instanceof UnameInterface
-            ? $this->findEntityByEuid($unameOjb->getEntityEuid())
+            ? $this->findByEuid($unameOjb->getEntityEuid())
             : null;
         return $entity instanceof BaseEntityInterface ? $entity : null;
     }
@@ -617,10 +572,10 @@ class WireEntityManager implements WireEntityManagerInterface
         string $uname
     ): ?UnameInterface
     {
-        if($this->isDebugMode() && ($entity = $this->getNormaliserService()->findUnameCreated($uname))) {
+        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findUnameCreated($uname))) {
             return $entity;
         }
-        return $this->findEntityById(Uname::class, $uname);
+        return $this->findById(Uname::class, $uname);
     }
 
     public function getEuidOfUname(
@@ -628,7 +583,7 @@ class WireEntityManager implements WireEntityManagerInterface
     ): ?string
     {
         if(Encoders::isUnameFormatValid($uname) || Encoders::isEuidFormatValid($uname)) {
-            if($this->isDebugMode()) {
+            if($this->isHydrateMode()) {
                 $unameOjb = $this->getNormaliserService()->findCreated($uname);
             }
             $unameOjb ??= $this->getRepository(Uname::class)->findOneById($uname);
@@ -640,19 +595,19 @@ class WireEntityManager implements WireEntityManagerInterface
         return null;
     }
 
-    public function findEntityByUniqueValue(
+    public function findByUniqueValue(
         string $value
     ): ?BaseEntityInterface {
         return Encoders::isEuidFormatValid($value)
-            ? $this->findEntityByEuid($value)
-            : $this->findEntityByUname($value);
+            ? $this->findByEuid($value)
+            : $this->findByUname($value);
     }
 
     public function getClassnameByUname(
         string $uname
     ): ?string
     {
-        if($this->isDebugMode()) {
+        if($this->isHydrateMode()) {
             $entity = $this->getNormaliserService()->findCreated($uname);
             $result = $entity ? $entity->getClassname() : $this->getNormaliserService()->tryFindCatalogueClassname($uname);
             if($result) return $result;
@@ -669,12 +624,17 @@ class WireEntityManager implements WireEntityManagerInterface
             : $this->getClassnameByUname($euidOrUname);
     }
 
-    public function getEntitiesCount(
+
+    /************************************************************************************************************/
+    /** DATABASE REQUESTS                                                                                       */
+    /************************************************************************************************************/
+
+    public function count(
         string $classname,
         bool|array $criteria = []
     ): int {
         if($service = $this->getEntityService($classname)) {
-            return $service->getCount($criteria);
+            return $service->count($criteria);
         }
         if(is_bool($criteria)) {
             $criteria = true === $criteria ? static::getCriteriaEnabled($classname) : static::getCriteriaDisabled($classname);
@@ -684,7 +644,7 @@ class WireEntityManager implements WireEntityManagerInterface
         return $repo->count($criteria);
     }
 
-    public function findAllEntities(
+    public function findAll(
         string $classname,
         bool|array $criteria = [],
         ?array $orderBy = null,
@@ -708,7 +668,7 @@ class WireEntityManager implements WireEntityManagerInterface
         });
     }
 
-    public function findEntity(
+    public function findOneBy(
         string $classname,
         int|string $identifier,
         bool|array $criteria = [],
@@ -716,7 +676,7 @@ class WireEntityManager implements WireEntityManagerInterface
     ): ?object
     {
         if($service = $this->getEntityService($classname)) {
-            return $service->find($identifier, $criteria, $orderBy);
+            return $service->findOneBy($identifier, $criteria, $orderBy);
         }
         if(is_bool($criteria)) {
             $criteria = $criteria ? static::getCriteriaEnabled($classname) : static::getCriteriaDisabled($classname);
@@ -771,28 +731,28 @@ class WireEntityManager implements WireEntityManagerInterface
     /** ENTITY INFO                                                                                             */
     /************************************************************************************************************/
 
-    /**
-     * get class metadata
-     * 
-     * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
-     * @param string|object|null $objectOrClass
-     * @return ClassMetadata|null
-     */
-    public function getClassMetadata(
-        null|string|object $objectOrClass = null,
-    ): ?ClassMetadata {
-        if(empty($objectOrClass)) return null;
-        if($objectOrClass instanceof BaseEntityInterface) {
-            $objectOrClass = $objectOrClass->getClassname();
-        }
-        $classname = is_object($objectOrClass) ? $objectOrClass::class : $objectOrClass;
-        try {
-            $cmd = $this->em->getClassMetadata($classname);
-        } catch (Throwable $th) {
-            $cmd = null;
-        }
-        return $cmd;
-    }
+    // /**
+    //  * get class metadata
+    //  * 
+    //  * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
+    //  * @param string|object|null $objectOrClass
+    //  * @return ClassMetadata|null
+    //  */
+    // public function getClassMetadata(
+    //     null|string|object $objectOrClass = null,
+    // ): ?ClassMetadata {
+    //     if(empty($objectOrClass)) return null;
+    //     if($objectOrClass instanceof BaseEntityInterface) {
+    //         $objectOrClass = $objectOrClass->getClassname();
+    //     }
+    //     $classname = is_object($objectOrClass) ? $objectOrClass::class : $objectOrClass;
+    //     try {
+    //         $cmd = $this->em->getClassMetadata($classname);
+    //     } catch (Throwable $th) {
+    //         $cmd = null;
+    //     }
+    //     return $cmd;
+    // }
 
     public function addPostFlushInfos(PostFlushEventArgs $args): void
     {
@@ -804,211 +764,211 @@ class WireEntityManager implements WireEntityManagerInterface
         return $getLastOnly ? end($this->postFlushInfos) : $this->postFlushInfos;
     }
 
-    /**
-     * is AppWire entity
-     * - All entities are instance of BaseEntityInterface
-     * 
-     * @param string|object $objectOrClass
-     * @return bool
-     */
-    public static function isAppWireEntity(
-        string|object $objectOrClass
-    ): bool {
-        return is_string($objectOrClass)
-            ? is_a($objectOrClass, BaseEntityInterface::class, true)
-            : $objectOrClass instanceof BaseEntityInterface;
-    }
+    // /**
+    //  * is AppWire entity
+    //  * - All entities are instance of BaseEntityInterface
+    //  * 
+    //  * @param string|object $objectOrClass
+    //  * @return bool
+    //  */
+    // public static function isAppWireEntity(
+    //     string|object $objectOrClass
+    // ): bool {
+    //     return is_string($objectOrClass)
+    //         ? is_a($objectOrClass, BaseEntityInterface::class, true)
+    //         : $objectOrClass instanceof BaseEntityInterface;
+    // }
 
-    public static function isBetweenEntity(
-        string|object $objectOrClass
-    ): bool
-    {
-        return is_string($objectOrClass)
-            ? is_a($objectOrClass, BetweenManyInterface::class, true)
-            : $objectOrClass instanceof BetweenManyInterface;
-    }
+    // public static function isBetweenEntity(
+    //     string|object $objectOrClass
+    // ): bool
+    // {
+    //     return is_string($objectOrClass)
+    //         ? is_a($objectOrClass, BetweenManyInterface::class, true)
+    //         : $objectOrClass instanceof BetweenManyInterface;
+    // }
 
-    public static function isTranslationEntity(
-        string|object $objectOrClass
-    ): bool
-    {
-        return is_string($objectOrClass)
-            ? is_a($objectOrClass, WireTranslationInterface::class, true)
-            : $objectOrClass instanceof WireTranslationInterface;
-    }
-
-    /**
-     * get entities descriptor
-     * 
-     * @return EntitiesDescriptorInterface
-     */
-    public function getEntitiesDescriptor(): EntitiesDescriptorInterface
-    {
-        return $this->entitiesDescriptor ??= new EntitiesDescriptor($this);
-    }
-
+    // public static function isTranslationEntity(
+    //     string|object $objectOrClass
+    // ): bool
+    // {
+    //     return is_string($objectOrClass)
+    //         ? is_a($objectOrClass, WireTranslationInterface::class, true)
+    //         : $objectOrClass instanceof WireTranslationInterface;
+    // }
 
     /**
-     * get entity names
+     * get entities [Wire]Metadata
      * 
-     * @param bool $asShortnames
-     * @param bool $allnamespaces
-     * @param bool $onlyInstantiables
-     * @return array
+     * @return WireClassMetadataManagerInterface
      */
-    public function getEntityNames(
-        bool $asShortnames = false,
-        bool $allnamespaces = false,
-        bool $onlyInstantiables = false,
-    ): array
+    public function getEntitiesMetadata(): WireClassMetadataManagerInterface
     {
-        return $onlyInstantiables
-            ? $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findInstantiables(null)
-            : $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findAll(null)
-            ;
-    }
-
-    /**
-     * Get App entity names
-     * 
-     * @param bool $asShortnames
-     * @param bool $onlyInstantiables
-     * @return array
-     */
-    public function getAppEntityNames(
-        bool $asShortnames = false,
-        bool $onlyInstantiables = false
-    ): array
-    {
-        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(true)->findFinals(null);
-    }
-
-    public function getBetweenEntityNames(
-        bool $asShortnames = false
-    ): array
-    {
-        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(BetweenManyInterface::class);
-    }
-
-    public function getTranslationEntityNames(
-        bool $asShortnames = false
-    ): array
-    {
-        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(WireTranslationInterface::class);
-    }
-
-    public function getFinalEntities(
-        bool $asShortnames = false,
-        bool $allnamespaces = false,
-    ): array
-    {
-        return $this->getEntitiesDescriptor()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findFinals(null);
-    }
-
-    public function resolveFinalEntitiesByNames(
-        string|array $interfaces,
-        bool $allnamespaces = false
-    ): array
-    {
-        return $this->getEntitiesDescriptor()->enableFilterAppWire(!$allnamespaces)->findFinals($interfaces);
-        // $classes = $this->getFinalEntities(false, $allnamespaces);
-        // return Objects::filterByInterface($interfaces, $classes, true);
-    }
-
-    public function resolveFinalEntity(
-        string|array $interfaces,
-        bool $allnamespaces = false
-    ): ?string
-    {
-        return $this->getEntitiesDescriptor()->enableFilterAppWire(!$allnamespaces)->findOneFinalOrNull($interfaces);
+        return $this->entitiesMetadata ??= new WireClassMetadataManager($this);
     }
 
 
-    /**
-     * entity exists
-     * 
-     * @param string $classname
-     * @param bool $allnamespaces
-     * @param bool $onlyInstantiables
-     * @return bool
-     */
-    public function entityExists(
-        string $classname, // --> or shortname
-        bool $allnamespaces = true,
-        bool $onlyInstantiables = false,
-    ): bool {
-        $list = $this->getEntityNames(true, $allnamespaces, $onlyInstantiables);
-        return in_array($classname, $list) || array_key_exists($classname, $list);
-    }
+    // /**
+    //  * get entity names
+    //  * 
+    //  * @param bool $asShortnames
+    //  * @param bool $allnamespaces
+    //  * @param bool $onlyInstantiables
+    //  * @return array
+    //  */
+    // public function getEntityNames(
+    //     bool $asShortnames = false,
+    //     bool $allnamespaces = false,
+    //     bool $onlyInstantiables = false,
+    // ): array
+    // {
+    //     return $onlyInstantiables
+    //         ? $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findFinals(null)
+    //         : $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findAll(null)
+    //         ;
+    // }
 
-    public function getClassnameByShortname(
-        string $shortname,
-        bool $allnamespaces = false,
-        bool $onlyInstantiables = false
-    ): ?string {
-        $list = $this->getEntityNames(true, $allnamespaces, $onlyInstantiables);
-        return array_search($shortname, $list) ?: null;
-    }
+    // /**
+    //  * Get App entity names
+    //  * 
+    //  * @param bool $asShortnames
+    //  * @param bool $onlyInstantiables
+    //  * @return array
+    //  */
+    // public function getAppEntityNames(
+    //     bool $asShortnames = false,
+    //     bool $onlyInstantiables = false
+    // ): array
+    // {
+    //     return $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(true)->findFinals(null);
+    // }
 
-    /**
-     * get fieds names of entity with unique constraint
-     * 
-     * @param string $classname
-     * @param bool|null $flatlisted
-     * @return string
-     */
-    public static function getConstraintUniqueFields(
-        string $classname,
-        bool|null $flatlisted = false
-    ): array {
-        $uniqueFields = [
-            'hierar' => [],
-            'flatlist' => [],
-        ];
-        throw new Exception('Not implemented yet! Please rewrite with use of ClassMetadata!');
-        // foreach (Objects::getClassAttributes($classname, UniqueEntity::class, true) as $attr) {
-        //     /** @var UniqueEntity $attr */
-        //     $ufields = (array)$attr->fields;
-        //     if (isset($ufields)) {
-        //         $uniqueFields['hierar'][] = $ufields;
-        //         $uniqueFields['flatlist'] = array_unique(array_merge($uniqueFields['flatlist'], $ufields));
-        //     }
-        // }
-        // if (is_null($flatlisted)) return $uniqueFields;
-        // return $flatlisted
-        //     ? $uniqueFields['flatlist']
-        //     : $uniqueFields['hierar'];
-    }
+    // public function getBetweenEntityNames(
+    //     bool $asShortnames = false
+    // ): array
+    // {
+    //     return $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(BetweenManyInterface::class);
+    // }
 
-    /**
-     * Get Doctrine relations of entity
-     * 
-     * @param string|BaseEntityInterface $objectOrClass
-     * @param null|Closure $filter
-     * @param boolean $excludeSelf
-     * @return array
-     */
-    public function getRelateds(
-        string|BaseEntityInterface $objectOrClass,
-        ?Closure $filter = null,
-        bool $excludeSelf = false
-    ): array
-    {
-        $classname = $objectOrClass instanceof BaseEntityInterface ? $objectOrClass->getClassname() : $objectOrClass;
-        $classnames = [];
-        foreach ($this->getEntityNames(false, false, true) as $class) {
-            if (!($excludeSelf && is_a($class, $classname, true))) {
-                $cmd = $this->getClassMetadata($class);
-                foreach ($cmd->associationMappings as $mapping) {
-                    if(is_a($mapping->targetEntity, $classname, true) && (is_callable($filter) ? $filter($mapping, $cmd) : true)) {
-                        $classnames[$class] ??= [];
-                        $classnames[$class][] = $mapping;
-                    }
-                }
-            }
-        }
-        return $classnames;
-    }
+    // public function getTranslationEntityNames(
+    //     bool $asShortnames = false
+    // ): array
+    // {
+    //     return $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(false)->findAll(WireTranslationInterface::class);
+    // }
+
+    // public function getFinalEntities(
+    //     bool $asShortnames = false,
+    //     bool $allnamespaces = false,
+    // ): array
+    // {
+    //     return $this->getEntitiesMetadata()->enableShortnames($asShortnames)->enableFilterAppWire(!$allnamespaces)->findFinals(null);
+    // }
+
+    // public function resolveFinalEntitiesByNames(
+    //     string|array $interfaces,
+    //     bool $allnamespaces = false
+    // ): array
+    // {
+    //     return $this->getEntitiesMetadata()->enableFilterAppWire(!$allnamespaces)->findFinals($interfaces);
+    //     // $classes = $this->getFinalEntities(false, $allnamespaces);
+    //     // return Objects::filterByInterface($interfaces, $classes, true);
+    // }
+
+    // public function resolveFinalEntity(
+    //     string|array $interfaces,
+    //     bool $allnamespaces = false
+    // ): ?string
+    // {
+    //     return $this->getEntitiesMetadata()->enableFilterAppWire(!$allnamespaces)->findOneFinalOrNull($interfaces);
+    // }
+
+
+    // /**
+    //  * entity exists
+    //  * 
+    //  * @param string $classname
+    //  * @param bool $allnamespaces
+    //  * @param bool $onlyInstantiables
+    //  * @return bool
+    //  */
+    // public function entityExists(
+    //     string $classname, // --> or shortname
+    //     bool $allnamespaces = true,
+    //     bool $onlyInstantiables = false,
+    // ): bool {
+    //     $list = $this->getEntityNames(true, $allnamespaces, $onlyInstantiables);
+    //     return in_array($classname, $list) || array_key_exists($classname, $list);
+    // }
+
+    // public function getClassnameByShortname(
+    //     string $shortname,
+    //     bool $allnamespaces = false,
+    //     bool $onlyInstantiables = false
+    // ): ?string {
+    //     $list = $this->getEntityNames(true, $allnamespaces, $onlyInstantiables);
+    //     return array_search($shortname, $list) ?: null;
+    // }
+
+    // /**
+    //  * get fieds names of entity with unique constraint
+    //  * 
+    //  * @param string $classname
+    //  * @param bool|null $flatlisted
+    //  * @return string
+    //  */
+    // public static function getConstraintUniqueFields(
+    //     string $classname,
+    //     bool|null $flatlisted = false
+    // ): array {
+    //     $uniqueFields = [
+    //         'hierar' => [],
+    //         'flatlist' => [],
+    //     ];
+    //     throw new Exception('Not implemented yet! Please rewrite with use of ClassMetadata!');
+    //     // foreach (Objects::getClassAttributes($classname, UniqueEntity::class, true) as $attr) {
+    //     //     /** @var UniqueEntity $attr */
+    //     //     $ufields = (array)$attr->fields;
+    //     //     if (isset($ufields)) {
+    //     //         $uniqueFields['hierar'][] = $ufields;
+    //     //         $uniqueFields['flatlist'] = array_unique(array_merge($uniqueFields['flatlist'], $ufields));
+    //     //     }
+    //     // }
+    //     // if (is_null($flatlisted)) return $uniqueFields;
+    //     // return $flatlisted
+    //     //     ? $uniqueFields['flatlist']
+    //     //     : $uniqueFields['hierar'];
+    // }
+
+    // /**
+    //  * Get Doctrine relations of entity
+    //  * 
+    //  * @param string|BaseEntityInterface $objectOrClass
+    //  * @param null|Closure $filter
+    //  * @param boolean $excludeSelf
+    //  * @return array
+    //  */
+    // public function getRelateds(
+    //     string|BaseEntityInterface $objectOrClass,
+    //     ?Closure $filter = null,
+    //     bool $excludeSelf = false
+    // ): array
+    // {
+    //     $classname = $objectOrClass instanceof ClassDescriptionInterface ? $objectOrClass->getClassname() : $objectOrClass;
+    //     $classnames = [];
+    //     foreach ($this->getEntityNames(false, false, true) as $class) {
+    //         if (!($excludeSelf && is_a($class, $classname, true))) {
+    //             $cmd = $this->getClassMetadata($class);
+    //             foreach ($cmd->associationMappings as $mapping) {
+    //                 if(is_a($mapping->targetEntity, $classname, true) && (is_callable($filter) ? $filter($mapping, $cmd) : true)) {
+    //                     $classnames[$class] ??= [];
+    //                     $classnames[$class][] = $mapping;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return $classnames;
+    // }
 
 
     /************************************************************************************************************/

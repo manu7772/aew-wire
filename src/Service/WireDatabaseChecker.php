@@ -69,7 +69,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check prefered
         if(is_a($classname, TraitPreferedInterface::class, true)) {
@@ -86,7 +86,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
             /** @var WireEntityServiceInterface $service */
             $service->checkDatabase($opresult, $repair);
         }
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -99,7 +99,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         if(is_a($classname, TraitPreferedInterface::class, true)) {
             $repo = $this->wireEm->getRepository($classname);
@@ -128,7 +128,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
                 }
             }
         }
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -141,7 +141,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         if(is_a($classname, TraitOwnerInterface::class, true)) {
             $repo = $this->wireEm->getRepository($classname);
@@ -174,7 +174,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
                 }
             }
         }
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

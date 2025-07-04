@@ -3,22 +3,24 @@ import { initFlowbite } from 'flowbite'
 /* stimulusFetch: 'lazy' */
 export default class extends Controller {
 
-    // Darkmode
-    darkmodeSwitchers = document.querySelectorAll('[data-darkmode-switcher]')
-    classHolder = document.querySelector('[data-darkmode-switcher-url]')
-    darkModeUrl = this.classHolder ? this.classHolder.getAttribute('data-darkmode-switcher-url') : null
+    // Csstheme
+    cssthemeSwitchers = document.querySelectorAll('[data-csstheme-switcher]')
+    classHolder = document.querySelector('[data-csstheme-switcher-url]')
+    cssthemeUrl = this.classHolder ? this.classHolder.getAttribute('data-csstheme-switcher-url') : null
+    themes_choices = this.classHolder ? (this.classHolder.dataset.cssthemes ? JSON.parse(this.classHolder.dataset.cssthemes) : null) : null
+    hasDataTheme = this.classHolder ? this.classHolder.hasAttribute('data-theme') : false
     // Modal confirm
     modalConfirms = document.querySelectorAll('[data-modal-confirm]')
 
     connect() {
         initFlowbite();
         const apddata = JSON.parse(this.element.getAttribute('data-app'))
-        for (const switcher of this.darkmodeSwitchers) {
-            if(!this.darkModeUrl) {
+        for (const switcher of this.cssthemeSwitchers) {
+            if(!this.cssthemeUrl) {
                 // No URL so hide the switcher
                 switcher.classList.add('hidden')
             } else {
-                switcher.addEventListener('click', this.darkSwitcher)
+                switcher.addEventListener('click', this.cssthemeSwitcher)
             }
         }
         for (const modalConf of this.modalConfirms) {
@@ -28,11 +30,11 @@ export default class extends Controller {
     }
 
     disconnect() {
-        for (const switcher of this.darkmodeSwitchers) {
-            if(!this.darkModeUrl) {
+        for (const switcher of this.cssthemeSwitchers) {
+            if(!this.cssthemeUrl) {
                 // nothing
             } else {
-                switcher.removeEventListener('click', this.darkSwitcher)
+                switcher.removeEventListener('click', this.cssthemeSwitcher)
             }
         }
         for (const modalConf of this.modalConfirms) {
@@ -41,31 +43,46 @@ export default class extends Controller {
         }
     }
 
-    setDarkmode = (dm) => {
-        if(!this.classHolder) return
-        if (dm && !this.classHolder.classList.contains('dark')) this.classHolder.classList.add('dark')
-        if (!dm && this.classHolder.classList.contains('dark')) this.classHolder.classList.remove('dark')
-        console.debug('Darkmode set to:', dm, this.classHolder.classList.contains('dark') ? 'dark' : '(light)')
+    toggleCsstheme = () => {
+        if(!this.classHolder || !this.themes_choices) return
+        const id = this.themes_choices.indexOf(this.classHolder.dataset.theme)
+        const next_id = id >= 0 ? (id + 1) % this.themes_choices.length : 0
+        const newTheme = this.themes_choices[next_id]
+        this.defineCsstheme(newTheme)
     }
 
-    toggleDarkmode = () => {
+    defineCsstheme = (csstheme) => {
         if(!this.classHolder) return
-        this.classHolder.classList.toggle('dark')
+        if(this.themes_choices) {
+            for (const theme of this.themes_choices) {
+                this.classHolder.classList.remove(theme)
+            }
+        }
+        this.classHolder.classList.add(csstheme)
+        this.classHolder.dataset.theme = csstheme
     }
 
-    darkSwitcher = (event) => {
-        this.toggleDarkmode()
-        if(!this.darkModeUrl) {
+    cssthemeSwitcher = (event) => {
+        event.preventDefault()
+        const elem = event.target.closest('[data-csstheme-switcher]')
+        if(elem.dataset.cssthemeDefine) {
+            // Define a specific csstheme
+            this.defineCsstheme(elem.dataset.cssthemeDefine)
+        } else {
+            // Toggle the csstheme
+            this.toggleCsstheme()
+        }
+        if(!this.cssthemeUrl) {
             // No URL but we can still toggle the class
             return
         }
         const headers = new Headers()
         headers.append('Content-Type', 'application/json')
-        fetch(this.darkModeUrl, { headers: headers })
+        fetch(this.cssthemeUrl, { headers: headers })
             .then((response) => response.json())
             .then((response) => {
-                console.debug('Darkmode response:', response.darkmode)
-                this.setDarkmode(response.darkmode)
+                // console.debug('Csstheme response:', response.csstheme)
+                this.defineCsstheme(response.csstheme)
             })
             .catch((error) => {
                 console.error(error)

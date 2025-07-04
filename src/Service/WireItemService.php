@@ -36,10 +36,10 @@ abstract class WireItemService implements WireItemServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireItemInterface entities
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

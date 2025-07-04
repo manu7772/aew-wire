@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\SerializationMapping;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
@@ -27,7 +27,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-#[SerializationMapping(WireFactory::ITEMS_ACCEPT)]
+#[WireRelationMapping(WireFactory::ITEMS_ACCEPT)]
 abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 

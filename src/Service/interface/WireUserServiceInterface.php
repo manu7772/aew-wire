@@ -12,8 +12,8 @@ interface WireUserServiceInterface extends WireItemServiceInterface, RoleHierarc
 
     public function getSecurity(): Security;
     public function getUser(): ?WireUserInterface;
-    public function getMainAdminUser(): ?WireUserInterface;
-    public function getMainSAdminUser(): ?WireUserInterface;
+    public function getMainAdminUser(bool $findSadminIfNotFound = false): ?WireUserInterface;
+    public function getMainSAdminUser(bool $createIfNotFound = false): ?WireUserInterface;
     public function checkMainSuperadmin(): ?WireUserInterface;
     public function loginUser(WireUserInterface|string $user): ?Response;
     public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response;

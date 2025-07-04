@@ -40,9 +40,9 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         // Check all WireWebsectionInterface entities
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

@@ -10,6 +10,7 @@ use Aequation\WireBundle\Component\RelationMapper;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -190,7 +191,7 @@ class NormalizerService implements NormalizerServiceInterface
             }
         }
         // dump('NOT FOUND Created Index: '.$euidOrUname);
-        // dump($this->createds, $this->wireEm->isDebugMode());
+        // dump($this->createds, $this->wireEm->isHydrateMode());
         // throw new Exception("Error Processing Request", 1);
         return null;
     }
@@ -346,9 +347,9 @@ class NormalizerService implements NormalizerServiceInterface
             // throw new Exception(vsprintf('Error %s line %d: please, use method denormalizeEntity() to denormalize entities!', [__METHOD__, __LINE__]));
             return $this->denormalizeEntity($data, $classname, $format, $context);
         }
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $data = $this->getSerializer()->denormalize($data, $classname, $format, $context);
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $data;
     }
 
@@ -375,9 +376,9 @@ class NormalizerService implements NormalizerServiceInterface
         if(!($data instanceof EntityContainerInterface)) {
             $data = new EntityContainer($this, $classname, $data, $context);
         }
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $entity = $this->getSerializer()->denormalize($data, $classname);
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         // $this->addCreated($entity);
         return $entity;
     }
@@ -410,9 +411,9 @@ class NormalizerService implements NormalizerServiceInterface
     ): mixed {
         $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] ??= true;
         $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] ??= static::DEEP_POPULATE_MODE;
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $data = $this->getSerializer()->deserialize($data, $type, $format, $context);
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $data;
     }
 
@@ -682,10 +683,10 @@ class NormalizerService implements NormalizerServiceInterface
                     if($new_entityContainer->isValid()) {
                         $data[$rawData['order']] ??= [];
                         $data[$rawData['order']][] = $new_entityContainer;
-                    } else {
-                        // $message = vsprintf('Error %s line %d: entity %s is not valid!%s%s', [__METHOD__, __LINE__, $rawData['entity'], PHP_EOL, $new_entityContainer->getMessagesAsString(false)]);
+                    } else if(is_a($rawData['entity'], WireMenuInterface::class, true)) {
+                        $message = vsprintf('Error %s line %d: entity %s is not valid!%s%s', [__METHOD__, __LINE__, $rawData['entity'], PHP_EOL, $new_entityContainer->getMessagesAsString(false)]);
                         // $this->logger->error($message);
-                        // throw new Exception($message);
+                        throw new Exception($message);
                     }
                 }
             }
@@ -694,16 +695,17 @@ class NormalizerService implements NormalizerServiceInterface
         ksort($data);
         // $data = array_values($data);
         $list = [];
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         foreach ($data as $index => $byclasses) {
             if(count($byclasses) > 0) {
                 $index = $byclasses[0]->getClassname();
+                // dump('getYamlData: '.$index.' ('.count($byclasses).')');
                 $list[$index] = [];
                 foreach ($byclasses as $values) {
                     switch ($mode_report) {
                         case 0:
                             // Raw data
-                            $list[$index][] = $values->getRawdata();
+                            $list[$index][] = $values->getRawdata(false);
                             break;
                         case 1:
                             // Raw data with extra data (actions)
@@ -720,7 +722,7 @@ class NormalizerService implements NormalizerServiceInterface
                 }
             }
         }
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $list;
     }
 
@@ -819,9 +821,9 @@ class NormalizerService implements NormalizerServiceInterface
             foreach (reset($all_data) as $data) {
                 $context[AbstractObjectNormalizer::ENABLE_MAX_DEPTH] = true;
                 $context[AbstractObjectNormalizer::DEEP_OBJECT_TO_POPULATE] = static::DEEP_POPULATE_MODE;
-                $this->wireEm->incDebugMode();
+                $this->wireEm->incHydrateMode();
                 $entity = $this->getSerializer()->denormalize($data, $classname, null, $context);
-                $this->wireEm->decDebugMode();
+                $this->wireEm->decHydrateMode();
                 // Check if entity is valid
                 $errors = $this->wireEm->validateEntity($entity);
                 if($errors->count() > 0) {

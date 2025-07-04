@@ -36,12 +36,14 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public const DEFAULT_ADMIN_ROUTE = 'admin_index';
     public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
     public const UNSERIALIZE_PROPERTIES = [
-        'darkmode' => false, // --> false: custom action
+        'csstheme' => false, // --> false: custom action
         'timezone' => false, // --> false: custom action
         'datenow' => true,
         'tinyvalues' => 'mergeTinyvalues', // --> USE method
         'factory' => true,
     ];
+    public const DEFAULT_CSS_THEME = 'light';
+    public const DEFAULT_CSS_THEMES = ['_default' => ['light', 'dark']];
     public const SECONDARY_PATHS_PATTERN = '#^\\/(_(profiler|wdt)|css|images|js|assets)\\/#';
     public const APP_WIRE_SESSION_PREFIX = 'appwire_';
     public const STOPWATCH_MAIN_NAME = "stw_main";
@@ -136,11 +138,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     // Twig
     public function getTwig(): Environment;
     public function getTwigLoader(): LoaderInterface;
-    // Darkmode
-    public function getDarkmode(): bool;
-    public function setDarkmode(bool $darkmode): bool;
-    public function toggleDarkmode(): bool;
-    public function getDarkmodeClass(): string;
+    // Csstheme
+    public function getCsstheme(): string;
+    public function setCsstheme(string $csstheme): string;
+    public function toggleCsstheme(): string;
     // Timestamp / Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
     public function getDefaultTimezone(): DateTimeZone;

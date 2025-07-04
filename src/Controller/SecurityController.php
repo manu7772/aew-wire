@@ -132,17 +132,25 @@ class SecurityController extends AbstractController
      * SECURITY SPECIAL ACTIONS
      */
 
-    #[Route('/commands/help', name: 'security_commands.help')]
-    public function commands(): JsonResponse
+    #[Route('/check', name: 'security.check', methods: ['GET'])]
+    public function check(
+        WireUserServiceInterface $userService
+    ): Response
     {
-        return new JsonResponse([
-            'commands' => [
-                '/security/check-sadmin' => 'Check if main superadmin exists, and restore it if not',
-            ]
+        $sadmin = $userService->getMainSAdminUser(false);
+        return $this->render('@AequationWire/security/check.html.twig', [
+            'sadmin' => $sadmin,
+            'commands' => $this->getCommands(),
         ]);
     }
 
-    #[Route('/commands/check-sadmin', name: 'security_commands.check_sadmin')]
+    #[Route('/help', name: 'security.help')]
+    public function commands(): JsonResponse
+    {
+        return new JsonResponse($this->getCommands());
+    }
+
+    #[Route('/commands/check-sadmin', name: 'security_commands.check_sadmin', methods: ['GET'])]
     public function checkSadmin(
         WireUserServiceInterface $userService
     ): Response
@@ -151,6 +159,26 @@ class SecurityController extends AbstractController
         $userService->checkMainSuperadmin();
         $this->addFlash('success', 'Superadmin checked');
         return $this->redirectToRoute('app_login');
+    }
+
+    protected function getCommands(): array
+    {
+        $commands = [
+            'app_security.check' => [
+                'label' => 'Check security commands',
+                'title' => 'Get check about security commands'
+            ],
+            'app_security.help' => [
+                'label' => 'Help security commands',
+                'title' => 'Get help about security commands'
+            ],
+            'app_security_commands.check_sadmin' => [
+                'label' => 'Check Superadmin User',
+                'title' => 'Check if main superadmin exists, and restore it if not'
+            ],
+        ];
+
+        return $commands;
     }
 
 }

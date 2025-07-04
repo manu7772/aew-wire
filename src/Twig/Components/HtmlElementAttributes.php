@@ -11,15 +11,15 @@ class HtmlElementAttributes
 {
 
     public string $locale;
-    public string $darkmodeClass;
+    public string $csstheme;
     public string $switcherUrl;
 
     public function __construct(
         AppWireServiceInterface $appWire
     ) {
         $this->locale = $appWire->getLocale();
-        $this->darkmodeClass = $appWire->getDarkmodeClass();
-        $this->switcherUrl = $appWire->get('router')->generate('aequation_wire_api.darkmode_switcher');
+        $this->csstheme = $appWire->getCsstheme();
+        $this->switcherUrl = $appWire->get('router')->generate('aequation_wire_api.csstheme_define');
     }
 
 

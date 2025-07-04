@@ -1,8 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Interface;
 
+use ReflectionClass;
+
 interface ClassDescriptionInterface
 {
+    // Reflection class
+    public static function getReflectionClass(): ReflectionClass;
     // Classname
     public function getClassname(): string;
     // Shortname

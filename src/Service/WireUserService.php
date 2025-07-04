@@ -41,7 +41,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     public const ENTITY_CLASS = WireUser::class;
     public const EXCEPT_CHOICE_ROLES_EXPR = '/^((?!ROLE_)|ROLE_USER|ROLE_ALLOWED_TO_SWITCH)/';
 
-    protected ?bool $darkmode = null;
+    protected ?bool $csstheme = null;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
@@ -63,10 +63,10 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireUserInterface entities
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -93,7 +93,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
                 'name' => 'Dujardin',
                 'firstname' => 'Emmanuel',
                 'plainPassword' => 'sadmin',
-                'darkmode' => true,
+                'csstheme' => true,
                 'roles' => ['ROLE_SUPER_ADMIN'],
                 'uname' => 'super_admin_manu',
             ];
@@ -101,6 +101,10 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
             $sadmin = $this->createEntity($data);
             $sadmin->setSuperadmin();
             $this->saveUser($sadmin);
+            $this->appWire->addFlash(
+                'success',
+                vsprintf('Super Admin user "%s" created with password "%s".<br>You can connect now.', [$admin_email, $data['plainPassword']])
+            );
         }
         return $sadmin;
     }
@@ -109,17 +113,22 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         bool $findSadminIfNotFound = false
     ): ?WireUserInterface {
         $admin_email = $this->appWire->getParam('main_admin');
-        $user = $this->getRepository()->findOneBy(['email' => $admin_email]);
-        return empty($user) && $findSadminIfNotFound
-            ? $this->getMainSAdminUser()
-            : $user;
+        $admin = $this->getRepository()->findOneBy(['email' => $admin_email]);
+        if($findSadminIfNotFound) {
+            $admin ??= $this->getMainSAdminUser(true);
+        }
+        return $admin;
     }
 
-    public function getMainSAdminUser(): ?WireUserInterface
+    public function getMainSAdminUser(
+        bool $createIfNotFound = false
+    ): ?WireUserInterface
     {
         $sadmin_email = $this->appWire->getParam('main_sadmin');
         $sadmin = $this->getRepository()->findOneBy(['email' => $sadmin_email]);
-        $sadmin ??= $this->createDefaultSuperAdmin();
+        if($createIfNotFound) {
+            $sadmin ??= $this->createDefaultSuperAdmin();
+        }
         return $sadmin;
     }
 
@@ -133,8 +142,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     public function checkMainSuperadmin(): ?WireUserInterface
     {
         /** @var WireUserInterface&TraitEnabledInterface */
-        $sadmin = $this->getMainSAdminUser();
-        $sadmin ??= $this->createDefaultSuperAdmin();
+        $sadmin = $this->getMainSAdminUser(true);
         if($sadmin && !$sadmin->isValidSuperadmin()) {
             $sadmin->setSuperadmin();
             $this->saveUser($sadmin);

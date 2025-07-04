@@ -58,7 +58,7 @@ trait TraitBaseEntityService
         array|false $data = false, // ---> do not forget uname if wanted!
         array $context = []
     ): BaseEntityInterface {
-        $entity = $this->wireEm->disableTryService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->wireEm->disableUseService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $entity;
     }
@@ -73,7 +73,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface
     {
-        $model = $this->wireEm->disableTryService()->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $model = $this->wireEm->disableUseService()->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $model;
     }
@@ -84,7 +84,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface|false
     {
-        $clone = $this->wireEm->disableTryService()->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
+        $clone = $this->wireEm->disableUseService()->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
         // Add some stuff here...
         return $clone;
     }
@@ -190,7 +190,7 @@ trait TraitBaseEntityService
     /** QUERYS                                                                                                  */
     /************************************************************************************************************/
 
-    public function getCount(
+    public function count(
         bool|array $criteria = []
     ): int
     {
@@ -219,7 +219,7 @@ trait TraitBaseEntityService
         });
     }
 
-    public function find(
+    public function findOneBy(
         null|int|string $identifier = null,
         bool|array $criteria = [],
         ?array $orderBy = null

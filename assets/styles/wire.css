@@ -62,7 +62,7 @@
 
 @plugin "../vendor/daisyui/daisyui.index.js" {
   name: "night";
-  default: false;
+  default: true;
   prefersdark: true;
   color-scheme: "dark";
   --color-base-100: oklch(20.768% 0.039 265.754);

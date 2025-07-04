@@ -8,9 +8,15 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/sadmin', name: 'sadmin_')]
-#[IsGranted("ROLE_COLLABORATOR")]
+#[IsGranted("ROLE_SUPER_ADMIN")]
 class SadminController extends AbstractController
 {
+
+    #[Route(path: '', name: 'dashboard')]
+    public function dashboard(): Response
+    {
+        return $this->render('@AequationWire/sadmin/dashboard.html.twig');
+    }
 
     #[Route(path: '/debug-to-optimize', name: 'debug_to_optimize')]
     public function debugToOptimize(

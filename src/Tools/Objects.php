@@ -8,6 +8,7 @@ use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 // Symfony
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -37,11 +38,11 @@ class Objects implements ToolInterface
      *************************************************************************************/
 
     public static function getShortname(
-        object|string $objectOrClass,
+        null|object|string $objectOrClass,
         bool $lowercase = false
     ): ?string
     {
-        if(is_string($objectOrClass) && !class_exists($objectOrClass)) {
+        if(empty($objectOrClass) || (is_string($objectOrClass) && !class_exists($objectOrClass))) {
             return null;
         }
         $RC = new ReflectionClass($objectOrClass);
@@ -54,7 +55,7 @@ class Objects implements ToolInterface
         object $objectOrClass
     ): ?string
     {
-        if($objectOrClass instanceof BaseEntityInterface) {
+        if($objectOrClass instanceof ClassDescriptionInterface) {
             return $objectOrClass->getClassname();
         }
         $RC = new ReflectionClass($objectOrClass);
@@ -475,6 +476,27 @@ class Objects implements ToolInterface
         // dd($classChoices, $classesAndInterfaces, array_values($classes));
         return array_values($classes);
     }
+
+    /* Loops through all loaded classes (get_declared_classes()) and
+    returns an array of subclasses of the provided $parent */
+    public static function getSubclasses(
+        string $parent
+    ): array
+    {
+        return class_exists($parent)
+            ? array_reduce(
+                get_declared_classes(),
+                function($subclasses, $class) use ($parent) {
+                    if (is_subclass_of($class, $parent)) {
+                        $subclasses[] = $class;
+                    }
+                    return $subclasses;
+                },
+                []
+            )
+            : [];
+    }
+
 
     /*************************************************************************************
      * ATTRIBUTES

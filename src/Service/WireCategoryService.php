@@ -1,8 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -37,7 +37,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incDebugMode();
+        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireCategoryInterface entities
         $all = $this->getRepository()->findAll();
@@ -58,7 +58,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         } else {
             $opresult->addSuccess("All category types are valid");
         }
-        $this->wireEm->decDebugMode();
+        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -72,7 +72,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     ): array
     {
         if(!isset($this->availableTypes)) {
-            $relateds = $this->wireEm->getRelateds(
+            $relateds = $this->wireEm->getEntitiesMetadata()->getRelateds(
                 static::ENTITY_CLASS,
                 fn(AssociationMapping $mapping, ClassMetadata $cmd) => count($cmd->subClasses) === 0 && !$cmd->isMappedSuperclass,
                 true
