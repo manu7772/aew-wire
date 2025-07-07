@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -23,6 +24,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
 {
     public readonly WireEntityManagerInterface $wireEm;
     public readonly WireEntityServiceInterface $service;
+    public readonly WireClassMetadataInterface $wCmd;
     public readonly EntityManagerInterface $em;
     public readonly UnitOfWork $uow;
     public readonly BaseEntityInterface $entity;
@@ -39,6 +41,7 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     ) {
         $this->entity = $this->selfstate->entity;
         $this->wireEm = $this->appWire->get(WireEntityManagerInterface::class);
+        $this->wCmd = $this->wireEm->getEntityMetadata($this->entity);
         $this->em = $this->wireEm->getEm();
         $this->uow = $this->wireEm->getUow();
         $this->service = $this->wireEm->getEntityService($this->entity);
@@ -51,17 +54,8 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
 
 
     /*******************************************************************************************
-     * MAGIC METHODS on EntitySelfState
+     * ENVIRONMENT
      */
-
-    // public function __call(string $name, array $arguments): mixed
-    // {
-    //     if (method_exists($this->selfstate, $name)) {
-    //         return $this->selfstate->$name(...$arguments);
-    //     }
-    //     throw new BadMethodCallException(vsprintf('Error %s line %d: method %s not found!', [__METHOD__, __LINE__, $name]));
-    // }
-
 
     /**
      * Is dev environment
@@ -114,7 +108,20 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
     }
 
 
-    /** UniOfWork functionalities */
+    /*******************************************************************************************
+     * INFORMATIONS
+     */
+
+    public function getOrphanRelations(): array
+    {
+        return $this->wCmd->getOrphanRelations();
+    }
+
+
+
+    /*******************************************************************************************
+     * ENTITYMANAGER STATUS
+     */
 
     /**
      * Is managed by EntityManager

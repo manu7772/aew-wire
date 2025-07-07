@@ -30,6 +30,17 @@
                     </button>
                 </div>
                 <div class="flex items-center ms-3">
+                    {% if not is_granted('IS_AUTHENTICATED_FULLY') %}
+                    <button type="button" class="btn btn-sm btn-danger" aria-expanded="false" data-dropdown-toggle="dropdown-notifications">
+                        <span class="sr-only">Not authenticated fully</span>
+                        <twig:ux:icon name="tabler:bell" class="w-8 h-8 text-white" />
+                    </button>
+                    {% elseif app.user %}
+                    <button type="button" class="btn btn-sm btn-info" aria-expanded="false" data-dropdown-toggle="dropdown-notifications">
+                        <span class="sr-only">{{ app.user.email }}</span>
+                        <twig:ux:icon name="tabler:bell" class="w-8 h-8 text-white" />
+                    </button>
+                    {% endif %}
                     <div>
                         <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
                             <span class="sr-only">Open user menu</span>

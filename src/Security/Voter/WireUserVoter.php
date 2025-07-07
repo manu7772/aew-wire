@@ -22,10 +22,11 @@ abstract class WireUserVoter extends BaseEntityVoter
         ?Vote $vote = null
     ): bool
     {
-        if(!parent::voteOnAttribute($subject, $attribute, $token, $vote)) {
-            return false;
-        }
+        // if(!parent::voteOnAttribute($subject, $attribute, $token, $vote)) {
+        //     return false;
+        // }
 
+        /** @var WireUserServiceInterface */
         $userService = $this->appWire->get(WireUserServiceInterface::class);
         // Context User
         $user = $userService->getUser();
@@ -35,19 +36,19 @@ abstract class WireUserVoter extends BaseEntityVoter
                 // dump($subject.' ==> '.$this->appContext->getFirewallName());
                 switch ($subject) {
                     case 'index':
-                        return $userService->isGrantedForUser($user, 'ROLE_USER');
+                        return $userService->isGranted('ROLE_USER');
                         break;
                     case 'new':
-                        return $userService->isGrantedForUser($user, 'ROLE_ADMIN');
+                        return $userService->isGranted('ROLE_ADMIN');
                         break;
                     case 'show':
-                        return $userService->isGrantedForUser($user, 'ROLE_USER');
+                        return $userService->isGranted('ROLE_USER');
                         break;
                     case 'edit':
-                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGrantedForUser($user, 'ROLE_COLLABORATOR'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGranted('ROLE_COLLABORATOR'));
                         break;
                     case 'delete':
-                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGrantedForUser($user, 'ROLE_ADMIN'));
+                        return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGranted('ROLE_ADMIN'));
                         break;
                     default:
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));

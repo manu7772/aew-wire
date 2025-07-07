@@ -33,18 +33,13 @@ interface EntitySelfStateInterface extends EntityEmbededStatusContainerInterface
     public const POST_PERSISTED = 0b00000100;
     public const POST_UPDATED   = 0b00001000;
 
-    /**
-     * Contains service, but not necessarily started yet
-     */
     public function isReady(): bool;
-    /**
-     * Contains service and is started
-     */
     public function isStarted(): bool;
-    public function startEmbed(AppWireServiceInterface $appWire, bool $startNow = false): bool;
+    public function initiateEmbed(AppWireServiceInterface $appWire, bool $startNow = false): bool;
     public function getEmbededStatus(): ?EntityEmbededStatusInterface;
     public function __call(string $name, array $arguments): mixed;
-    // status
+    public function __isset(string $name);
+    public function __get(string $name);
     public function isExactBinState(int $state): bool;
     public function isExactState(string $state): bool;
     public function isNew(): bool;
@@ -60,14 +55,16 @@ interface EntitySelfStateInterface extends EntityEmbededStatusContainerInterface
     public function isEntity(): bool;
     public function setModel(): static;
     public function isModel(): bool;
-    // Events
     public function applyEvents(): void;
-    public function eventDone(string $bin): bool;
+    public function eventDone(string|int $bin): bool;
     public function setPostCreated(): static;
     public function isPostCreated(): bool;
     public function setPostLoaded(): static;
     public function isPostLoaded(): bool;
-    // Report
+    public function setPostPersisted(): static;
+    public function isPostPersisted(): bool;
+    public function setPostUpdated(): static;
+    public function isPostUpdated(): bool;
     public function getReport(bool $asString = false): array|string;
 
 }

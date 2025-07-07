@@ -11,6 +11,7 @@ use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Aequation\WireBundle\Tools\Files;
+use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 // PHP
@@ -33,10 +34,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
+        $this->getWireEm()->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireWebpageInterface entities
-        $this->wireEm->decHydrateMode();
+        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
@@ -49,12 +50,12 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
      * @return WireWebpageInterface
      */
     public function createEntity(
-        array|false $data = false, // ---> do not forget uname if wanted!
+        array $data = [], // ---> do not forget uname if wanted!
         array $context = []
     ): WireWebpageInterface
     {
         /** @var WireWebpageInterface */
-        $entity = $this->wireEm->disableUseService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->getWireEm()->createEntity($this->getEntityClassname(), $data, $context);
         // 1. Add default/prefered Websections
         foreach ($this->appWire->get(WireWebsectionServiceInterface::class)->getPreferedWebsections() as $websection) {
             $entity->addWebsection($websection);
@@ -77,7 +78,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
             return false;
         }
         /** @var WireMenuServiceInterface */
-        $menuService = $this->wireEm->getEntityService(WireMenuInterface::class);
+        $menuService = $this->getWireEm()->getEntityService(WireMenuInterface::class);
         if($mainmenu = $menuService->getMainMenu()) {
             $webpage->setMainmenu($mainmenu);
             return true;
@@ -98,13 +99,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                     return $webpage;
                 }
             }
-            $classname = is_object($entity) ? $entity::class : $entity;
-            if(!$this->wireEm->entityExists($classname, true, true)) {
-                throw new Exception(vsprintf('Error %s line %d: entity "%s" does not exist in the database!', [__METHOD__, __LINE__, $classname]));
-            }
+            $classname = Objects::getClassname($entity);
             if(!isset($this->defaultWebpages[$classname])) {
                 $this->defaultWebpages[$classname] = null;
-                if(($uname = $entity::getDefaultWebpageUname()) && ($webpage = $this->wireEm->findEntityByUname($uname))) {
+                if(($uname = $entity::getDefaultWebpageUname()) && ($webpage = $this->getWireEm()->findEntityByUname($uname))) {
                     /** @var WireWebpageInterface $webpage */
                     $this->defaultWebpages[$classname] = $webpage->isActive() || !$onlyActiveWebpage ? $webpage : null;
                     if($this->defaultWebpages[$classname] && $attributeToEntity && $entity instanceof TraitWebpageableInterface) {
@@ -125,7 +123,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         if($onlyActives) {
             $criteria['enabled'] = true;
         }
-        return $this->getCount($criteria);
+        return $this->count($criteria);
     }
 
     /**

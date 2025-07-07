@@ -20,7 +20,7 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
+        $this->getWireEm()->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireMenuInterface entities
         // 1. Check if each menu has a Webpage assigned
@@ -28,11 +28,11 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
             if(!$menu->getWebpage()) {
                 if($repair) {
                     /** @var WireWebpageServiceInterface */
-                    $webpageService = $this->wireEm->getEntityService(WireWebpageInterface::class);
+                    $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
                     $menu_webpage ??= $webpageService->getWebpageFor($menu);
                     if($menu_webpage) {
                         $menu->setWebpage($menu_webpage);
-                        $this->wireEm->getEntityManager()->flush();
+                        $this->getWireEm()->getEntityManager()->flush();
                         $opresult->addSuccess(vsprintf('Webpage "%s" assigned to menu "%s".', [
                             Objects::toDump($menu_webpage),
                             Objects::toDump($menu)
@@ -43,7 +43,7 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
                 }
             }
         }
-        $this->wireEm->decHydrateMode();
+        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
@@ -56,15 +56,15 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
      * @return WireMenuInterface
      */
     public function createEntity(
-        array|false $data = false, // ---> do not forget uname if wanted!
+        array $data = [], // ---> do not forget uname if wanted!
         array $context = []
     ): WireMenuInterface
     {
         /** @var WireMenuInterface */
-        $entity = $this->wireEm->disableUseService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->getWireEm()->createEntity($this->getEntityClassname(), $data, $context); // false = do not try service IMPORTANT!!!
         // 1. Add Wepage (Uname: "wp_page_menu") to the menu
         /** @var WireWebpageServiceInterface */
-        $webpageService = $this->wireEm->getEntityService(WireWebpageInterface::class);
+        $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
         $menu_webpage = $webpageService->getWebpageFor($entity);
         if($menu_webpage) {
             $entity->setWebpage($menu_webpage);
@@ -74,7 +74,8 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
 
     public function getMainMenu(): ?WireMenuInterface
     {
-        return $this->find(null, ['prefered' => true]);
+        $menu = $this->findOneBy(null, ['prefered' => true]);
+        return $menu instanceof WireMenuInterface ? $menu : null;
     }
 
 }

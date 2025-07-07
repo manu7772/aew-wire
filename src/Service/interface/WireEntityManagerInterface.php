@@ -3,29 +3,28 @@
 namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
-
-use Aequation\WireBundle\Component\interface\EntitiesDescriptorInterface;
-use Aequation\WireBundle\Component\interface\OpresultInterface;
-use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Entity\interface\WireImageInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
+use Aequation\WireBundle\Entity\interface\WireImageInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
 // Symfony
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\GroupSequence;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Psr\Log\LoggerInterface;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 // PHP
 use Closure;
-use Doctrine\ORM\Event\PostFlushEventArgs;
-use Liip\ImagineBundle\Imagine\Cache\CacheManager;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
 interface WireEntityManagerInterface extends WireServiceInterface
 {
@@ -52,186 +51,40 @@ interface WireEntityManagerInterface extends WireServiceInterface
         SurveyRecursionInterface $surveyRecursion,
     );
 
-    // Debug mode
+    public function getNormaliserService(): NormalizerServiceInterface;
     public function isHydrateMode(): bool;
     public function incHydrateMode(): bool;
     public function decHydrateMode(): bool;
     public function resetHydrateMode(): bool;
     public function isDev(): bool;
     public function isProd(): bool;
-
-    public function getNormaliserService(): NormalizerServiceInterface;
     public function getAppWireService(): AppWireServiceInterface;
     public function getEntityService(string|BaseEntityInterface $entity): ?WireEntityServiceInterface;
-    public function addPostFlushInfos(PostFlushEventArgs $args): void;
-    public function getPostFlushInfos(bool $getLastOnly = false): array;
-    public function getRepository(string|object $objectOrClass): ?EntityRepository;
-    // public static function isAppWireEntity(string|object $objectOrClass): bool;
-    // public static function isBetweenEntity(string|object $objectOrClass): bool;
-    // public static function isTranslationEntity(string|object $objectOrClass): bool;
-    public function getEntitiesMetadata(): WireClassMetadataManagerInterface;
-    // public function getEntityNames(bool $asShortnames = false, bool $allnamespaces = false, bool $onlyInstantiables = false): array;
-    // public function getAppEntityNames(bool $asShortnames = false, bool $onlyInstantiables = false): array;
-    // public function getBetweenEntityNames(bool $asShortnames = false): array;
-    // public function getTranslationEntityNames(bool $asShortnames = false): array;
-    // public function getFinalEntities(bool $asShortnames = false, bool $allnamespaces = false): array;
-    
-    /**
-     * Get all final entities classnames of interfaces
-     * - if $allnamespaces is true, all namespaces are searched
-     * - if $allnamespaces is false, only instances of BaseEntityInterface are searched
-     * 
-     * @param string|array $interfaces
-     * @param bool $allnamespaces
-     * @return array
-     */
-    // public function resolveFinalEntitiesByNames(string|array $interfaces, bool $allnamespaces = false): array;
-    // public function resolveFinalEntity(string|array $interfaces, bool $allnamespaces = false): ?string;
-    // public function getEntitiesDescriptor(): EntitiesDescriptorInterface;
-    // public function getClassnameByShortname(string $shortname, bool $allnamespaces = false, bool $onlyInstantiables = false): ?string;
-    // public function entityExists(string $classname, bool $allnamespaces = false, bool $onlyInstantiables = false): bool;
-    // public static function getConstraintUniqueFields(string $classname, bool|null $flatlisted = false): array;
-    // public function getRelatedClassnames(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null): array;
-    /**
-     * Get all related properties of entity
-     * - add properties of relations not defined in the class metadata
-     * 
-     * Results:
-     * - require_all: all required classes for this relation
-     * - require_instantiable: all required classes for this relation that are instantiable
-     * - require_metadata: the class metadata of the relation (defined by Doctrine)
-     * 
-     * @param string|BaseEntityInterface $objectOrClass
-     * @param null|Closure $filter
-     * @param bool $excludeSelf
-     * @return array
-     */
-    // public function getAllRelatedDependencies(string|BaseEntityInterface $objectOrClass, array $filterFields = [], ?Closure $filter = null): array|false;
-    // public function getRelateds(string|BaseEntityInterface $objectOrClass, ?Closure $filter = null, bool $excludeSelf = false): array;
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
-
-    // Create
-    public function disableUseService(): static;
-    public function createEntity(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
-    public function createModel(string $classname, array|false $data = false, array $context = []): BaseEntityInterface;
+    public function createEntity(string $classname, array $data = [], array $context = []): object;
+    public function createModel(string $classname, array $data = [], array $context = []): BaseEntityInterface;
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;
-    // Entity Events
-    public function postLoaded(BaseEntityInterface $entity): void;
-    public function postCreated(BaseEntityInterface $entity): void;
-    public function validateEntity(BaseEntityInterface $entity, array $addGroups = [], Constraint|array|null $constraints = null): ConstraintViolationListInterface;
-
-    // Find
+    public function validateEntity(object $entity, string|GroupSequence|array|null $addGroups = null, Constraint|array|null $constraints = null, bool $throws = false): ConstraintViolationListInterface;
+    public function getRepository(string|object $objectOrClass): ?EntityRepository;
     public function findById(string $classname, string $id): ?BaseEntityInterface;
-    /**
-     * find entity by `euid`
-     * 
-     * @param string $euid
-     * @return BaseEntityInterface|null
-     */
     public function findByEuid(string $euid): ?BaseEntityInterface;
     public function euidExists(string $euid, bool $getData = false): bool|null|array;
-    /**
-     * find entity by `uname`
-     * 
-     * @param string $uname
-     * @return BaseEntityInterface|null
-     */
     public function findByUname(string $uname): ?BaseEntityInterface;
-    /**
-     * Get `euid` of `uname`
-     * 
-     * @param string $uname
-     * @return string|null
-     */
-    public function getEuidOfUname(string $uname): ?string;
-    /**
-     * find Uname by `uname`
-     * 
-     * @param string $uname
-     * @return UnameInterface|null
-     */
     public function findUnameByUname(string $uname): ?UnameInterface;
-    /**
-     * find entity by unique value:
-     * - `uname`
-     * - `euid`
-     * 
-     * @param string $value
-     * @return BaseEntityInterface|null
-     */
+    public function getEuidOfUname(string $uname): ?string;
     public function findByUniqueValue(string $value): ?BaseEntityInterface;
     public function getClassnameByUname(string $uname): ?string;
     public function getClassnameByEuidOrUname(string $euidOrUname): ?string;
-    /**
-     * get count of entities
-     * - uses criteria
-     * - search *ONLY IN DATABASE*  
-     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
-     * 
-     * @param bool|array $criteria
-     * @return int
-     */
-    public function count(
-        string $classname,
-        bool|array $criteria = []
-    ): int;
-    /**
-     * get all entities
-     * - uses criteria
-     * - search *ONLY IN DATABASE*
-     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
-     * 
-     * @param bool|array $criteria
-     * @return array
-     */
-    public function findAll(
-        string $classname,
-        bool|array $criteria = [],
-        ?array $orderBy = null,
-        ?int $limit = null,
-        ?int $offset = null
-    ): array;
-    /**
-     * get one entity by id or euid or uname
-     * - uses criteria
-     * - search *ONLY IN DATABASE*
-     * - if `$criteria` is boolean, it will be converted to criteria: true = active, false = inactive
-     * 
-     * @param int|string $identifier
-     * @param bool|array $criteria
-     * @return object|null
-     */
-    public function findOneBy(
-        string $classname,
-        int|string $identifier,
-        bool|array $criteria = [],
-        ?array $orderBy = null,
-    ): ?object;
-
-    // Criteria
-    public static function getCriteriaEnabled(string $classname): array;
-    public static function getCriteriaDisabled(string $classname): array;
-
-    // /**
-    //  * get class metadata
-    //  * 
-    //  * @see https://phpdox.net/demo/Symfony2/classes/Doctrine_ORM_Mapping_ClassMetadata.xhtml
-    //  * @param string|object|null $objectOrClass
-    //  * @return ClassMetadata|null
-    //  */
-    // public function getClassMetadata(
-    //     null|string|object $objectOrClass = null,
-    // ): ?ClassMetadata;
-
-    // Liip
-    public function getBrowserPath(
-        WireImageInterface|WirePdfInterface $media,
-        ?string $filter = null,
-        array $runtimeConfig = [],
-        $resolver = null,
-        $referenceType = UrlGeneratorInterface::ABSOLUTE_URL
-    ): ?string;
+    public function findEntityByUname(string $uname): ?TraitUnamedInterface;
+    public function count(string $classname, bool|array $criteria = []): int;
+    public function findAll(string $classname, bool|array $criteria = [], ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array;
+    public function findOneBy(string $classname, int|string $identifier, bool|array $criteria = [], ?array $orderBy = null): ?object;
+    public function addPostFlushInfos(PostFlushEventArgs $args): void;
+    public function getPostFlushInfos(bool $getLastOnly = false): array;
+    public function getEntitiesMetadata(): WireClassMetadataManagerInterface;
+    public function getEntityMetadata(string|object $objectOrClass): WireClassMetadataInterface;
+    public function getBrowserPath(WireImageInterface|WirePdfInterface $media, ?string $filter = null, array $runtimeConfig = [], $resolver = null, $referenceType = UrlGeneratorInterface::ABSOLUTE_URL): ?string;
 }

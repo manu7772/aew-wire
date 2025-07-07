@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Controller;
 
 use Aequation\WireBundle\Form\UserDeleteType;
 use Aequation\WireBundle\Form\UserType;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +24,11 @@ class SecurityController extends AbstractController
 {
 
     public const ROUTE_LOGGED_OUT = 'app_logged_out';
+
+    public function __construct(
+        private readonly AppWireServiceInterface $appWire
+    ) {
+    }
 
     #[Route(path: '/login', name: 'login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
@@ -152,12 +158,18 @@ class SecurityController extends AbstractController
 
     #[Route('/commands/check-sadmin', name: 'security_commands.check_sadmin', methods: ['GET'])]
     public function checkSadmin(
-        WireUserServiceInterface $userService
+        WireUserServiceInterface $userService,
+        Request $request
     ): Response
     {
         // Check if main superadmin exists
         $userService->checkMainSuperadmin();
         $this->addFlash('success', 'Superadmin checked');
+        // Try redirect to the previous page
+        if($referer = $request->headers->get('referer')) {
+            return $this->redirect($referer);
+        }
+        // Redirect to the security check page
         return $this->redirectToRoute('app_login');
     }
 
@@ -166,18 +178,28 @@ class SecurityController extends AbstractController
         $commands = [
             'app_security.check' => [
                 'label' => 'Check security commands',
-                'title' => 'Get check about security commands'
+                'title' => 'Get check about security commands',
             ],
             'app_security.help' => [
                 'label' => 'Help security commands',
-                'title' => 'Get help about security commands'
+                'title' => 'Get API json data help about security commands',
+                'target' => '_blank',
             ],
             'app_security_commands.check_sadmin' => [
                 'label' => 'Check Superadmin User',
-                'title' => 'Check if main superadmin exists, and restore it if not'
+                'title' => 'Check if main superadmin exists and is really superadmin, restore it if not',
             ],
         ];
-
+        array_walk(
+            $commands,
+            function (&$command, $route) {
+                $command = [
+                    'label' => $command['label'],
+                    'title' => $command['title'].($this->appWire->getCurrentRoute() === $route ? ' <i class="italic">(this page)</i>' : ''),
+                    'target' => $command['target'] ?? '_self',
+                ];
+            }
+        );
         return $commands;
     }
 

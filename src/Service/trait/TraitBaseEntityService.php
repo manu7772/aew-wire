@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Service\trait;
 
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
@@ -29,14 +30,19 @@ trait TraitBaseEntityService
     /** SERVICES                                                                                        */
     /****************************************************************************************************/
 
+    public function getWireEm(): WireEntityManagerInterface
+    {
+        return $this->wireEm;
+    }
+
     public function getEntityManager(): EntityManagerInterface
     {
-        return $this->em ??= $this->wireEm->em;
+        return $this->em ??= $this->getWireEm()->getEm();
     }
 
     public function getEm(): EntityManagerInterface
     {
-        return $this->em ??= $this->wireEm->em;
+        return $this->em ??= $this->getWireEm()->getEm();
     }
 
     public function getUnitOfWork(): UnitOfWork
@@ -55,10 +61,13 @@ trait TraitBaseEntityService
     /****************************************************************************************************/
 
     public function createEntity(
-        array|false $data = false, // ---> do not forget uname if wanted!
+        array $data = [], // ---> do not forget uname if wanted!
         array $context = []
     ): BaseEntityInterface {
-        $entity = $this->wireEm->disableUseService()->createEntity($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
+        if(!$this->appWire->isGranted('new', $entity->getClassname())) {
+            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+        }
         // Add some stuff here...
         return $entity;
     }
@@ -69,11 +78,11 @@ trait TraitBaseEntityService
      * @return BaseEntityInterface
      */
     public function createModel(
-        array|false $data = false,
+        array $data = [],
         array $context = []
     ): BaseEntityInterface
     {
-        $model = $this->wireEm->disableUseService()->createModel($this->getEntityClassname(), $data, $context, false); // false = do not try service IMPORTANT!!!
+        $model = $this->getWireEm()->getEntitiesMetadata()->newModel($this->getEntityClassname(), $data, $context);
         // Add some stuff here...
         return $model;
     }
@@ -84,9 +93,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface|false
     {
-        $clone = $this->wireEm->disableUseService()->createClone($entity, $changes, $context, false); // false = do not try service IMPORTANT!!!
-        // Add some stuff here...
-        return $clone;
+        throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet.', [__METHOD__, __LINE__, __FUNCTION__]));
     }
 
     /**
@@ -233,7 +240,7 @@ trait TraitBaseEntityService
         } else if(Encoders::isEuidFormatValid($identifier)) {
             $criteria['euid'] = $identifier;
         } elseif(Encoders::isUnameFormatValid($identifier)) {
-            $euid = $this->wireEm->getEuidOfUname($identifier);
+            $euid = $this->getWireEm()->getEuidOfUname($identifier);
             if(empty($euid)) {
                 throw new Exception(vsprintf('Error %s line %d: could not resolve euid with uname %s for class %s!', [__METHOD__, __LINE__, $identifier, static::getEntityClassname()]));
             }

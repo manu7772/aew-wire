@@ -19,8 +19,7 @@ trait BaseRelinkCollection
     // #[ORM\ManyToOne(targetEntity: XxxxxxxxInterface::class, inversedBy: 'relinks')]
     protected $parent;
 
-    #[ORM\Id]
-    #[ORM\OneToOne(targetEntity: WireRelinkInterface::class, cascade: ['persist'])]
+    #[ORM\OneToOne(targetEntity: WireRelinkInterface::class, cascade: ['persist'], orphanRemoval: true)]
     #[Assert\NotNull(groups: ['persist','update'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected WireRelinkInterface $relink;

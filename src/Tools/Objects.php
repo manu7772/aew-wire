@@ -1,28 +1,27 @@
 <?php
 namespace Aequation\WireBundle\Tools;
 
-use Aequation\WireBundle\Tools\interface\ToolInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributeConstantInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributePropertyInterface;
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Aequation\WireBundle\Interface\ClassDescriptionInterface;
-// Symfony
-use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-// PHP
+use stdClass;
 use Attribute;
 use Exception;
+use Throwable;
+use Stringable;
+use Twig\Markup;
+// Symfony
 use ReflectionClass;
 use ReflectionAttribute;
 use ReflectionClassConstant;
-use stdClass;
-use Stringable;
+// PHP
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Aequation\WireBundle\Tools\interface\ToolInterface;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Interface\ClassDescriptionInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Throwable;
-use Twig\Markup;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
+use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
 
 class Objects implements ToolInterface
 {
@@ -52,14 +51,17 @@ class Objects implements ToolInterface
     }
 
     public static function getClassname(
-        object $objectOrClass
+        object|string $objectOrClass
     ): ?string
     {
         if($objectOrClass instanceof ClassDescriptionInterface) {
             return $objectOrClass->getClassname();
         }
+        if(is_string($objectOrClass) && !class_exists($objectOrClass)) {
+            return null;
+        }
         $RC = new ReflectionClass($objectOrClass);
-        return $RC->getName();
+        return $RC->name;
     }
 
 
@@ -129,6 +131,22 @@ class Objects implements ToolInterface
             $array = json_encode($array, JSON_THROW_ON_ERROR);
         }
         return json_decode($array, false, 512, JSON_THROW_ON_ERROR);
+    }
+
+    public static function violationListToArray(ConstraintViolationListInterface $errors): array
+    {
+        $array = [];
+        foreach ($errors as $error) {
+            $array[] = vsprintf(
+                '%s: %s (valeur: %s)',
+                [
+                    $error->getPropertyPath(),
+                    $error->getMessage(),
+                    $error->getInvalidValue() instanceof Stringable ? $error->getInvalidValue()->__toString() : json_encode($error->getInvalidValue())
+                ]
+            );
+        }
+        return $array;
     }
 
 

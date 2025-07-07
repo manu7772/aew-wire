@@ -1,6 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
+// Symfony
+use Doctrine\ORM\EntityRepository;
+// PHP
 use ReflectionClass;
 
 interface WireClassMetadataInterface
@@ -9,6 +15,7 @@ interface WireClassMetadataInterface
     public function getShortName(): string;
     public function getReflectionClass(): ReflectionClass;
     public function isFinal(): bool;
+    public function isInstantiable(): bool;
     public function isManaged(): bool;
     public function isAbstract(): bool;
     public function getInfo(): array;
@@ -27,13 +34,19 @@ interface WireClassMetadataInterface
     public function getInterfacesNames(): array;
     public function getTraits(): array;
     public function getTraitsNames(): array;
+    public function newInstance(array $data = [], array $context = []): object;
+    public function newModel(array $data = [], array $context = []): WireEntityInterface;
+    public function newDto(array $data = [], array $context = []): WireEntityDtoInterface;
     public function isType(string $type): bool;
     public function isAppwire(): bool;
     public function isBetween(): bool;
     public function isTranslation(): bool;
     public function isHydratable(): bool;
-    // Association mapping
+    public function getService(): ?WireEntityServiceInterface;
+    public function getRepository(): EntityRepository;
+    public function getProperty(string $name): ?WirePropertyMetadataInterface;
     public function getTarget(string $relation): WireClassMetadataInterface;
     public function getTargetName(string $relation): string;
-    public function getTargetFinalNames(string $relation): array;
+    public function getTargetNames(string $relation, string $type = 'final'): array;
+    public function getOrphanRelations(): array;
 }

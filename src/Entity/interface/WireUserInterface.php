@@ -23,6 +23,8 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function getEmail(): ?string;
     public function setEmail(string $email): static;
     public function getUserIdentifier(): string;
+    public function getFirstname(): ?string;
+    public function setFirstname(string $firstname): static;
     // Roles
     public function getRoles(): array;
     public function getHigherRole(): ?string;
@@ -33,6 +35,7 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function checkRoles(): static;
     // Password / Security
     public function getPlainPassword(): ?string;
+    public function setPlainPassword(string $plainPassword): static;
     public function getPassword(): ?string;
     public function setPassword(string $password): static;
     public function setSuperadmin(): static;

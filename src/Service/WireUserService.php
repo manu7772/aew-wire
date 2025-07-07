@@ -8,12 +8,12 @@ use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Repository\BaseWireRepository;
-use Aequation\WireBundle\Repository\WireUserRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
+use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Role\RoleHierarchy;
@@ -23,12 +23,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Knp\Component\Pager\PaginatorInterface;
 // PHP
 use Exception;
-use Symfony\Component\DependencyInjection\Attribute\AsAlias;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Traversable;
 
 #[AsAlias(WireUserServiceInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: false)]
@@ -47,7 +48,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
-        public readonly ValidatorInterface $validator,
+        // public readonly ValidatorInterface $validator,
         // // public readonly NormalizerServiceInterface $normalizer,
         public readonly Security $security,
         public readonly AccessDecisionManagerInterface $accessDecisionManager,
@@ -63,10 +64,10 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
+        $this->getWireEm()->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireUserInterface entities
-        $this->wireEm->decHydrateMode();
+        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
@@ -93,18 +94,18 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
                 'name' => 'Dujardin',
                 'firstname' => 'Emmanuel',
                 'plainPassword' => 'sadmin',
-                'csstheme' => true,
-                'roles' => ['ROLE_SUPER_ADMIN'],
                 'uname' => 'super_admin_manu',
             ];
             /** @var WireUserInterface */
-            $sadmin = $this->createEntity($data);
+            $sadmin = $this->createEntity();
+            $sadmin->setEmail($data['email']);
+            $sadmin->setName($data['name']);
+            $sadmin->setFirstname($data['firstname']);
+            $sadmin->setPlainPassword($data['plainPassword']);
+            $sadmin->setUname($data['uname']);
             $sadmin->setSuperadmin();
             $this->saveUser($sadmin);
-            $this->appWire->addFlash(
-                'success',
-                vsprintf('Super Admin user "%s" created with password "%s".<br>You can connect now.', [$admin_email, $data['plainPassword']])
-            );
+            $this->appWire->addFlash('success', vsprintf('Super Admin user "%s" created.<br>Super Admin can connect now.', [$admin_email]));
         }
         return $sadmin;
     }
@@ -375,13 +376,9 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         WireUserInterface $user
     ): static
     {
-
-        if(empty($user->getSelfState()->isNew())) {
+        $this->wireEm->validateEntity($user, throws: true);
+        if($user->getSelfState()->isNew()) {
             $this->getEm()->persist($user);
-        }
-        $errors = $this->validator->validate($user);
-        if(count($errors) > 0) {
-            throw new Exception(vsprintf('Error %s line %d: %s', [__METHOD__, __LINE__, $errors]));
         }
         $this->getEm()->flush();
         return $this;

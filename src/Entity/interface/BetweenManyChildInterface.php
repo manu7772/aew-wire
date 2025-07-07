@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface BetweenManyChildInterface
+interface BetweenManyChildInterface extends BetweenManyInterface
 {
 
 }

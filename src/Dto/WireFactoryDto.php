@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
@@ -9,7 +10,7 @@ use Symfony\Component\ObjectMapper\Attribute\Map;
 use stdClass;
 
 #[Map(target: WireFactory::class)]
-class WireFactoryDto
+class WireFactoryDto implements WireEntityDtoInterface
 {
 
     // public ?int $id = null;
@@ -20,7 +21,8 @@ class WireFactoryDto
     public ?bool $annuaire = null;
 
     public function __construct(
-        array|string|stdClass $data
+        array|string|stdClass $data,
+        array $context = []
     ) {
         if(!($data instanceof stdClass)) {
             $data = Objects::toStdClass($data); // Convert array or Json string to stdClass

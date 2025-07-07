@@ -14,6 +14,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public const ENTITY_CLASS = BaseEntityInterface::class;
 
     // Services
+    public function getWireEm(): WireEntityManagerInterface;
     public function getEntityManager(): EntityManagerInterface;
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
@@ -21,11 +22,11 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     // public function checkEntity(BaseEntityInterface $entity): void;
     // New
     public function createEntity(
-        array|false $data = false, // ---> do not forget uname if wanted!
+        array $data = [], // ---> do not forget uname if wanted!
         array $context = []
     ): BaseEntityInterface;
     public function createModel(
-        array|false $data = false, // ---> do not forget uname if wanted!
+        array $data = [], // ---> do not forget uname if wanted!
         array $context = []
     ): BaseEntityInterface;
     public function createClone(

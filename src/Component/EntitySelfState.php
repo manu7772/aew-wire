@@ -6,12 +6,14 @@ use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\Events;
 // PHP
 use BadMethodCallException;
+use Doctrine\Common\Collections\Collection;
 use Exception;
 use ReflectionMethod;
 
@@ -51,34 +53,27 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function isStarted(): bool
     {
-        return isset($this->embededStatus);
+        return $this->isReady() && isset($this->embededStatus);
     }
     
     /**
-     * Start embeded status
+     * Initiate embeded status
      * 
      * @param AppWireServiceInterface|null $appWire
+     * @param bool $startNow
      * @throws BadMethodCallException
      */
-    public function startEmbed(
-        AppWireServiceInterface $appWire,
-        bool $startNow = false
-    ): bool
+    public function initiateEmbed(AppWireServiceInterface $appWire, bool $startNow = false): bool
     {
-        $this->appWire ??= $appWire;
-        return $startNow && !($this->embededStatus instanceof EntityEmbededStatusInterface)
+        $this->appWire = $appWire;
+        return $startNow && $this->isReady()
             ? $this->internalStartEmbed()
             : $this->isStarted();
     }
 
     private function internalStartEmbed(): bool
     {
-        if(!$this->isStarted()) {
-            if(!isset($this->appWire)) {
-                throw new BadMethodCallException(vsprintf('Error %s line %d: cant not start EmbededStatus, because appWire service is not set!', [__METHOD__, __LINE__]));
-            }
-            $this->embededStatus = new EntityEmbededStatus($this, $this->appWire);
-        }
+        $this->embededStatus ??= new EntityEmbededStatus($this, $this->appWire);
         return $this->isStarted();
     }
 
@@ -105,7 +100,7 @@ class EntitySelfState implements EntitySelfStateInterface
         if (($this->isStarted() || $this->internalStartEmbed()) && method_exists($this->embededStatus, $name)) {
             return $this->embededStatus->$name(...$arguments);
         }
-        throw new BadMethodCallException(vsprintf('Error %s line %d: method %s not found! Maybe startEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
+        throw new BadMethodCallException(vsprintf('Error %s line %d: method %s not found! Maybe initiateEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
     }
 
     public function __isset(string $name)
@@ -118,7 +113,7 @@ class EntitySelfState implements EntitySelfStateInterface
         if ($this->__isset($name)) {
             return $this->embededStatus->$name;
         }
-        throw new BadMethodCallException(vsprintf('Error %s line %d: property %s not found! Maybe startEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
+        throw new BadMethodCallException(vsprintf('Error %s line %d: property %s not found! Maybe initiateEmbed() method needs to be used before?', [__METHOD__, __LINE__, $name]));
     }
     
     
@@ -225,11 +220,13 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function applyEvents(): void
     {
+        if(!$this->isReady()) {
+            throw new BadMethodCallException(vsprintf('Error %s line %d: the EntitySelfState is not ready, please call initiateEmbed() method first!', [__METHOD__, __LINE__]));
+        }
         $attributes = Objects::getMethodAttributes($this->entity, PostEmbeded::class, ReflectionMethod::IS_PUBLIC);
         switch (true) {
             case $this->isNew():
                 // Starter start
-                // $this->startEmbed();
                 if(!$this->isPostCreated()) {
                     foreach ($attributes as $instances) {
                         /** @var PostEmbeded $instance */
@@ -238,12 +235,13 @@ class EntitySelfState implements EntitySelfStateInterface
                             $this->entity->{$instance->getMethodName()}(...$instance->getMethodArguments());
                         }
                     }
+                    // Initiate embeded status for Orphan relations
+                    $this->initiateEmbedForRelateds();
                     $this->setPostCreated();
                 }
                 break;
             case $this->isLoaded():
                 // Starter start
-                // $this->startEmbed();
                 if(!$this->isPostLoaded()) {
                     foreach ($attributes as $instances) {
                         /** @var PostEmbeded $instance */
@@ -260,14 +258,42 @@ class EntitySelfState implements EntitySelfStateInterface
                 break;
         }
     }
+
+    protected function initiateEmbedForRelateds(): void
+    {
+        // Initiate embeded status for Orphan relations
+        $relateds = $this->getEmbededStatus()->getOrphanRelations();
+        foreach ($relateds as $wPmd) {
+            /** @var WirePropertyMetadataInterface $wPmd */
+            $value = $wPmd->getValue($this->entity);
+            switch (true) {
+                case $value instanceof BaseEntityInterface:
+                    if(!$value->getSelfState()->isReady()) {
+                        // If the related entity is not ready, we initiate it
+                        $value->getSelfState()->initiateEmbed($this->appWire, $value->getSelfState()->isNew());
+                    }
+                    break;
+                case $value instanceof Collection:
+                    // If the related value is a Collection, we iterate over it
+                    foreach ($value as $relatedEntity) {
+                        if($relatedEntity instanceof BaseEntityInterface && !$relatedEntity->getSelfState()->isReady()) {
+                            // If the related entity is not ready, we initiate it
+                            $relatedEntity->getSelfState()->initiateEmbed($this->appWire, $relatedEntity->getSelfState()->isNew());
+                        }
+                    }
+                    break;
+                default:
+                    throw new Exception(vsprintf('Error %s line %d: the related property %s value %s is not supported.', [__METHOD__, __LINE__, $wPmd->name, Objects::toDebugString($value)]));
+                    break;
+            }
+        }
+    }
  
     /**
      * Is event done
      * $bin is a binary value (eg. 0b00000001) or integer (eg. 1)
      */
-    public function eventDone(
-        string|int $bin
-    ): bool
+    public function eventDone(string|int $bin): bool
     {
         return $this->event & $bin > 0;
     }
