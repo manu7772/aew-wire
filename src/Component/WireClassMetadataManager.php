@@ -21,7 +21,6 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -36,6 +35,7 @@ use Psr\Log\LoggerInterface;
 // PHP
 use Exception;
 use InvalidArgumentException;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireClassMetadataManager implements WireClassMetadataManagerInterface
 {
@@ -84,7 +84,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         $this->initialize();
         if($this->isDevOrSadmin) {
             $event = $this->stopwatch->stop(static::STOPWATCH_NAME);
-            if($event->getDuration() >= 40) {
+            if($event->getDuration() >= 45) {
                 // If the initialization took more than 40ms, we log a warning
                 $message = vsprintf('%s line %d: [DEV] WireClassMetadataManager initialized in %d ms', [__METHOD__, __LINE__, $event->getDuration()]);
                 $this->logger->warning($message);
@@ -94,6 +94,47 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
                 throw new InvalidArgumentException(vsprintf('Error %s line %d: class metadata collection is not valid! Please check your class metadata registration.', [__METHOD__, __LINE__]));
             }
         }
+    }
+
+
+    /************************************************************************************************************/
+    /** VARIABLES                                                                                               */
+    /************************************************************************************************************/
+
+    public static function getTypeChoices(): array
+    {
+        $types = array_keys(static::ENTITY_TYPES);
+        return array_combine($types, $types);
+    }
+
+   public static function getModeChoices(): array
+    {
+        $modes = static::SEARCH_MODES;
+        return array_combine($modes, $modes);
+    }
+
+    public function getClassnameChoices(): array
+    {
+        $choices = [];
+        foreach ($this->allClassMetadatas as $wcmd) {
+            /** @var WireClassMetadataInterface $wcmd */
+            $choices[$wcmd->getShortname()] = $wcmd->name;
+        }
+        ksort($choices);
+        return $choices;
+    }
+
+    public function getInterfaceChoices(): array
+    {
+        $choices = [];
+        foreach ($this->allClassMetadatas as $wcmd) {
+            /** @var WireClassMetadataInterface $wcmd */
+            foreach ($wcmd->getInterfaces() as $rc) {
+                $choices[$rc->getShortname()] ??= $rc->name;
+            }
+        }
+        ksort($choices);
+        return $choices;
     }
 
 
@@ -116,6 +157,9 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
             }
             // 2. Register non-managed entities
             foreach ($this->allClassMetadatas as $classMetadata) {
+                if(count($classMetadata->getSubclasses())) {
+                    continue;
+                }
                 /** @var WireClassMetadataInterface $classMetadata */
                 foreach ($classMetadata->getParentsNames() as $name => $shortname) {
                     if(!$this->allClassMetadatas->containsKey($name)) {
@@ -154,16 +198,43 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      */
     public function findEntityClassname(string|object $entity): ?string
     {
-        if($classname = Objects::getClassname($entity)) {
-            return $this->allClassMetadatas->containsKey($classname) ? $classname : null;
+        $classname = is_object($entity) ? Objects::getClassname($entity) : $entity;
+        $classnames = $this->filterClasses()->mapSingleValue('shortname');
+        $found = array_key_exists($classname, $classnames) ? $classname : array_search($classname, $classnames, true);
+        return $found ?: null;
+    }
+
+    /**
+     * Transform shortnames or objects to classnames in list of classnames/interfaces
+     * 
+     * @param string|array|object $list
+     * @return null|string|array
+     */
+    public function transformToClassnames(string|array|object $list): null|string|array
+    {
+        if(!is_array($list)) {
+            return $this->findEntityClassname($list);
         }
-        foreach ($this->allClassMetadatas as $wcmd) {
-            /** @var WireClassMetadataInterface $wcmd */
-            if($wcmd->getShortname() === $classname) {
-                return $wcmd->name;
+        $classnames = [];
+        foreach ($list as $item) {
+            switch (true) {
+                case is_string($item) && (class_exists($item) || interface_exists($item)):
+                    $classnames[] = $item;
+                    break;
+                case is_array($item):
+                    foreach ($item as $val) {
+                        $classnames[] = $this->findEntityClassname($val) ?: $val;
+                    }
+                    break;
+                case is_object($item) || is_string($item):
+                    $classnames[] = $this->findEntityClassname($item) ?: $item;
+                    break;
+                default:
+                    throw new InvalidArgumentException(vsprintf('Error %s line %d: item %s is not a valid data!', [__METHOD__, __LINE__, Objects::toDebugString($item)]));
+                    break;
             }
         }
-        return null;
+        return array_unique($classnames);
     }
 
 
@@ -259,8 +330,14 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
     /** MAP/FILTER RESULTS                                                                                      */
     /************************************************************************************************************/
 
+    public function getAll(): WireClassMetadataCollectionInterface
+    {
+        return $this->allClassMetadatas;
+    }
+
     public function filterClasses(array $interfaces = [], ?WireClassMetadataCollectionInterface $results = null): WireClassMetadataCollectionInterface
     {
+        $interfaces = $this->transformToClassnames($interfaces);
         $results ??= $this->allClassMetadatas;
         $filtered = $results->filter(
             function (WireClassMetadataInterface $wcmd) use ($interfaces) {
@@ -359,7 +436,13 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         if($finals->count() === 1) {
             return $finals->first();
         }
-        throw new InvalidArgumentException(vsprintf('Error %s line %d: found more or less than one "%s" class for search %s: %s', [__METHOD__, __LINE__, $mode, json_encode($interfaces), implode(', ', $finals->getKeys())]));
+        throw new InvalidArgumentException(vsprintf('Error %s line %d: found more or less than one "%s" (exactly %d) classes for search %s: %s', [__METHOD__, __LINE__, $mode, $finals->count(), json_encode($interfaces), implode(', ', $finals->getKeys())]));
+    }
+
+    public function findOneOrNullByType(string $mode = 'all', array $interfaces): ?WireClassMetadataInterface
+    {
+        $finals = $this->findByType($mode, $interfaces);
+        return $finals->count() === 1 ? $finals->first() : null;
     }
 
     /**
@@ -373,6 +456,11 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         return $this->findOneByType('instantiable', $interfaces);
     }
 
+    public function findOneOrNullInstantiable(array $interfaces): ?WireClassMetadataInterface
+    {
+        return $this->findOneOrNullByType('instantiable', $interfaces);
+    }
+
     /**
      * Find one managed class that implements the given interfaces.
      * 
@@ -382,6 +470,11 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
     public function findOneManaged(array $interfaces): WireClassMetadataInterface
     {
         return $this->findOneByType('managed', $interfaces);
+    }
+
+    public function findOneOrNullManaged(array $interfaces): ?WireClassMetadataInterface
+    {
+        return $this->findOneOrNullByType('managed', $interfaces);
     }
 
     /**
@@ -395,9 +488,14 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         return $this->findOneByType('final', $interfaces);
     }
 
+    public function findOneOrNullFinal(array $interfaces): ?WireClassMetadataInterface
+    {
+        return $this->findOneOrNullByType('final', $interfaces);
+    }
+
 
     /************************************************************************************************************/
-    /** ENTITY MANAGER UTILITIES                                                                                */
+    /** ENTITY MANAGER & UTILITIES                                                                              */
     /************************************************************************************************************/
 
     public function getService(string|object $classname): ?WireEntityServiceInterface
@@ -417,10 +515,46 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
 
     public function getRepository(string $classname): EntityRepository
     {
-        $this->wireEm->surveyRecursion->survey(__METHOD__.'::'.$classname, 3);
         $wCmd = $this->getWireClassMetadata($classname);
         return $wCmd->getRepository($classname);
     }
+
+    public function getDtoSourceMaps(string|object $classname): array
+    {
+        $wCmd = $this->findOneFinal([Objects::getClassname($classname)]);
+        if(!$wCmd) {
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not registered in the metadata manager!', [__METHOD__, __LINE__, $classname]));
+        }
+        return $wCmd->getDtoSourceMaps();
+    }
+
+    public function getFirstDtoSourceMap(string|object $classname): ?Map
+    {
+        $wCmd = $this->findOneFinal([Objects::getClassname($classname)]);
+        if(!$wCmd) {
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not registered in the metadata manager!', [__METHOD__, __LINE__, $classname]));
+        }
+        return $wCmd->getFirstDtoSourceMap();
+    }
+
+    public function getDtoTargetMaps(string|object $classname): array
+    {
+        $wCmd = $this->findOneFinal([Objects::getClassname($classname)]);
+        if(!$wCmd) {
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not registered in the metadata manager!', [__METHOD__, __LINE__, $classname]));
+        }
+        return $wCmd->getDtoTargetMaps();
+    }
+
+    public function getFirstDtoTargetMap(string|object $classname): ?Map
+    {
+        $wCmd = $this->findOneFinal([Objects::getClassname($classname)]);
+        if(!$wCmd) {
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not registered in the metadata manager!', [__METHOD__, __LINE__, $classname]));
+        }
+        return $wCmd->getFirstDtoTargetMap();
+    }
+
 
 
     /************************************************************************************************************/
@@ -435,7 +569,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @return object
      * @throws InvalidArgumentException If the class cannot be instantiated
      */
-    public function newInstance(string $classname, mixed $data, array $context = []): object
+    public function newInstance(string $classname, mixed $data = null, array $context = []): object
     {
         if($wCmd = $this->getWireClassMetadata($classname)) {
             if(!$wCmd->isInstantiable()) {
@@ -456,7 +590,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @return WireEntityInterface
      * @throws InvalidArgumentException If the class cannot be instantiated
      */
-    public function newModel(string $classname, $data, array $context = []): WireEntityInterface
+    public function newModel(string $classname, mixed $data = null, array $context = []): object
     {
         if($wCmd = $this->getWireClassMetadata($classname)) {
             if(!$wCmd->isInstantiable()) {
@@ -469,17 +603,17 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new model instance.', [__METHOD__, __LINE__, $classname]));
     }
 
-    public function newDto(string $classname, mixed $data, array $context = []): WireEntityDtoInterface
-    {
-        if($wCmd = $this->getWireClassMetadata($classname)) {
-            if(!$wCmd->isInstantiable()) {
-                $wCmd = $this->findOneInstantiable([$wCmd->name]);
-            }
-            $entity = $wCmd->newDto($data, $context);
-            return $entity;
-        }
-        throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new DTO instance.', [__METHOD__, __LINE__, $classname]));
-    }
+    // public function newDto(string $classname, mixed $data, array $context = []): WireEntityDtoInterface
+    // {
+    //     if($wCmd = $this->getWireClassMetadata($classname)) {
+    //         if(!$wCmd->isInstantiable()) {
+    //             $wCmd = $this->findOneInstantiable([$wCmd->name]);
+    //         }
+    //         $entity = $wCmd->newDto($data, $context);
+    //         return $entity;
+    //     }
+    //     throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new DTO instance.', [__METHOD__, __LINE__, $classname]));
+    // }
 
 
     /************************************************************************************************************/
@@ -492,7 +626,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @param object $entity
      * @return void
      */
-    protected function postCreated(object $entity, array $context): void
+    public function postCreated(object $entity): void
     {
         if($entity instanceof BaseEntityInterface) {
             if(!$entity->getSelfState()->isExactState('new')) {
@@ -525,7 +659,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @param object $entity
      * @return void
      */
-    protected function postLoaded(object $entity): void
+    public function postLoaded(object $entity): void
     {
         if($entity instanceof BaseEntityInterface) {
             $entity->initializeSelfstate();

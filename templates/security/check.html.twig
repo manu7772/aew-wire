@@ -5,134 +5,141 @@
 {% block title %}Security Check{% endblock %}
 
 {% block main_content %}
-<h1 class="text-3xl font-semibold mb-4"><twig:ux:icon name="tabler:user-filled" class="w-8 h-8 inline mr-1" />Security Check</h1>
+{% if not app.devOrSadmin %}
+    {{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
+{% else %}
+    <h1 class="text-3xl font-semibold mb-4"><twig:ux:icon name="tabler:user-filled" class="w-8 h-8 inline mr-2" />Security Check</h1>
 
-<div class="flex flex-col gap-4 mb-8">
+    <div class="flex flex-col gap-4 mb-8">
 
-    <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-300">
-        <table class="table w-full mb-2">
-            <thead>
-                <tr>
-                    <th class="text-center">Command</th>
-                    <th>Description</th>
-                    <th>Route / Url / Path</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for command, info in commands %}
-                <tr>
-                    <td class="content-start">
-                        <a href="{{ url(command) }}" target="{{ info.target }}" class="btn btn-sm btn-outline btn-primary w-full">{{ info.label }}</a>
-                    </td>
-                    <td class="content-start">{{ info.title|raw }}</td>
-                    <td class="content-start">
-                        <div class="font-bold">{{ command }}</div>
-                        <div><a href="{{ url(command) }}" target="{{ info.target }}">{{ url(command) }}</a></div>
-                        <div><a href="{{ path(command) }}" target="{{ info.target }}">{{ path(command) }}</a></div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-</div>
-
-<div class="flex flex-col lg:flex-row gap-2 lg:gap-6">
-    
-    <div class="flex-1">
-        {% if sadmin %}
-        <div role="alert" class="alert alert-success mt-1 mb-3">
-            <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
-            <span>Super admin user exists</span>
-        </div>
         <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-300">
             <table class="table w-full mb-2">
+                <thead>
+                    <tr>
+                        <th class="text-center">Command</th>
+                        <th>Description</th>
+                        <th>Route / Url / Path</th>
+                    </tr>
+                </thead>
                 <tbody>
+                    {% for command, info in commands %}
                     <tr>
-                        <th class="text-right">{{ 'fields.email'|trans({}, trans_domain) }}</th>
-                        <td>{{ sadmin.email }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.name'|trans({}, trans_domain) }}</th>
-                        <td>{{ sadmin.name }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.firstname'|trans({}, trans_domain) }}</th>
-                        <td>{{ sadmin.firstname }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.createdAt'|trans({}, trans_domain) }}</th>
-                        <td>{{ sadmin.createdAt|date('Y-m-d H:i:s') }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.lastLogin'|trans({}, trans_domain) }}</th>
-                        <td>{{ sadmin.lastLogin ? sadmin.lastLogin|date('Y-m-d H:i:s') : '...' }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.csstheme'|trans({}, trans_domain) }}</th>
-                        <td data-csstheme-switcher class="cursor-pointer">
-                            <twig:ux:icon name="tabler:moon" class="w-6 hidden dark:inline" />
-                            <twig:ux:icon name="tabler:sun" class="w-6 dark:hidden" />
+                        <td class="content-start">
+                            <a{{ data_turbo(false) }} href="{{ url(command) }}" target="{{ info.target }}" class="btn btn-sm btn-outline btn-primary w-full">{{ info.label }}</a>
+                        </td>
+                        <td class="content-start flex flex-row gap-2">
+                            <div class="grow-0 max-md:hidden"><twig:ux:icon name="tabler:arrow-big-right-filled" class="h-5 w-5 inline-block" /></div>
+                            <div class="grow">{{ info.title|raw }}</div>
+                        </td>
+                        <td class="content-start">
+                            <div class="font-bold">{{ command }}</div>
+                            <div><a{{ data_turbo(false) }} href="{{ url(command) }}" target="{{ info.target }}">{{ url(command) }}</a></div>
+                            <div><a{{ data_turbo(false) }} href="{{ path(command) }}" target="{{ info.target }}">{{ path(command) }}</a></div>
                         </td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div role="alert" class="alert alert-error my-1">
-            <twig:ux:icon name="tabler:circle-x" class="h-6 w-6 inline-block shrink-0 stroke-current" />
-            <span>Super admin user not found! <a href="{{ url('app_security_commands.check_sadmin') }}" class="font-bold underline">Please check now!</a></span>
-        </div>
-        {% endif %}
+
     </div>
 
-    <div class="flex-1">
-        {% if app.user %}
-        <div role="alert" class="alert alert-success my-1">
-            <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
-            <span>Vous êtes connecté</span>
+    <div class="flex flex-col lg:flex-row gap-2 lg:gap-6">
+        
+        <div class="flex-1">
+            {% if sadmin %}
+            <div role="alert" class="alert alert-success mt-1 mb-3">
+                <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
+                <span>Super admin user exists</span>
+            </div>
+            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-300">
+                <table class="table w-full mb-2">
+                    <tbody>
+                        <tr>
+                            <th class="text-right">{{ 'fields.email'|trans({}, trans_domain) }}</th>
+                            <td>{{ sadmin.email }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.name'|trans({}, trans_domain) }}</th>
+                            <td>{{ sadmin.name }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.firstname'|trans({}, trans_domain) }}</th>
+                            <td>{{ sadmin.firstname }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.createdAt'|trans({}, trans_domain) }}</th>
+                            <td>{{ sadmin.createdAt|date('Y-m-d H:i:s') }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.lastLogin'|trans({}, trans_domain) }}</th>
+                            <td>{{ sadmin.lastLogin ? sadmin.lastLogin|date('Y-m-d H:i:s') : '...' }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.csstheme'|trans({}, trans_domain) }}</th>
+                            <td data-csstheme-switcher class="cursor-pointer">
+                                <twig:ux:icon name="tabler:moon" class="w-6 hidden dark:inline" />
+                                <twig:ux:icon name="tabler:sun" class="w-6 dark:hidden" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div role="alert" class="alert alert-error my-1">
+                <twig:ux:icon name="tabler:circle-x" class="h-6 w-6 inline-block shrink-0 stroke-current" />
+                <span>Super admin user not found! <a{{ data_turbo(false) }} href="{{ url('app_security_commands.check_sadmin') }}" class="font-bold underline"><twig:ux:icon name="tabler:arrow-right" class="h-5 w-5 inline-block mr-2" />Please check now!</a></span>
+            </div>
+            {% endif %}
         </div>
-        <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-300">
-            <table class="table w-full mb-2">
-                <tbody>
-                    <tr>
-                        <th class="text-right">{{ 'fields.email'|trans({}, trans_domain) }}</th>
-                        <td>{{ app.user.email }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.name'|trans({}, trans_domain) }}</th>
-                        <td>{{ app.user.name }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.firstname'|trans({}, trans_domain) }}</th>
-                        <td>{{ app.user.firstname }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.createdAt'|trans({}, trans_domain) }}</th>
-                        <td>{{ app.user.createdAt|date('Y-m-d H:i:s') }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.lastLogin'|trans({}, trans_domain) }}</th>
-                        <td>{{ app.user.lastLogin ? app.user.lastLogin|date('Y-m-d H:i:s') : '...' }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-right">{{ 'fields.csstheme'|trans({}, trans_domain) }}</th>
-                        <td data-csstheme-switcher class="cursor-pointer">
-                            <twig:ux:icon name="tabler:moon" class="w-6 hidden dark:inline" />
-                            <twig:ux:icon name="tabler:sun" class="w-6 dark:hidden" />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div role="alert" class="alert alert-warning my-1">
-            <twig:ux:icon name="tabler:circle-x" class="h-6 w-6 inline-block shrink-0 stroke-current" />
-            <span>Vous n'êtes pas connecté</span>
-        </div>
-        {% endif %}
-    </div>
 
-</div>
+        <div class="flex-1">
+            {% if app.user %}
+            <div role="alert" class="alert alert-success my-1">
+                <twig:ux:icon name="tabler:circle-check" class="h-6 w-6 inline-block shrink-0 stroke-current" />
+                <span>Vous êtes connecté</span>
+            </div>
+            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-300">
+                <table class="table w-full mb-2">
+                    <tbody>
+                        <tr>
+                            <th class="text-right">{{ 'fields.email'|trans({}, trans_domain) }}</th>
+                            <td>{{ app.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.name'|trans({}, trans_domain) }}</th>
+                            <td>{{ app.user.name }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.firstname'|trans({}, trans_domain) }}</th>
+                            <td>{{ app.user.firstname }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.createdAt'|trans({}, trans_domain) }}</th>
+                            <td>{{ app.user.createdAt|date('Y-m-d H:i:s') }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.lastLogin'|trans({}, trans_domain) }}</th>
+                            <td>{{ app.user.lastLogin ? app.user.lastLogin|date('Y-m-d H:i:s') : '...' }}</td>
+                        </tr>
+                        <tr>
+                            <th class="text-right">{{ 'fields.csstheme'|trans({}, trans_domain) }}</th>
+                            <td data-csstheme-switcher class="cursor-pointer">
+                                <twig:ux:icon name="tabler:moon" class="w-6 hidden dark:inline" />
+                                <twig:ux:icon name="tabler:sun" class="w-6 dark:hidden" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div role="alert" class="alert alert-warning my-1">
+                <twig:ux:icon name="tabler:circle-x" class="h-6 w-6 inline-block shrink-0 stroke-current" />
+                <span>Vous n'êtes pas connecté <a{{ data_turbo(false) }} href="{{ path('app_login') }}" class="font-bold underline"><twig:ux:icon name="tabler:arrow-right" class="h-5 w-5 inline-block mr-2" />{{ 'login'|trans }}</a></span>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+{% endif %}
 {% endblock %}

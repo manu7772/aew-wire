@@ -86,7 +86,7 @@ class Strings implements ToolInterface
                 return u($string)->camel();
                 break;
             case 'pascal':
-                return u($string)->camel()->title();
+                return u($string)->camel()->title(true);
                 break;
             case 'folded':
                 return u($string)->folded();
@@ -99,6 +99,9 @@ class Strings implements ToolInterface
                 break;
             case 'upper':
                 return u($string)->upper();
+                break;
+            case 'spaced':
+                return str_replace(['_', '-', '.'], ' ', u($string)->snake()->toString());
                 break;
             default:
                 return $string;

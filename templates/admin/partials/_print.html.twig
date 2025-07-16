@@ -40,7 +40,7 @@
         </thead>
         <tbody>
         {% for entity in entities %}
-            <tr class="hover:bg-base-300 cursor-default{{ entity.active is defined and entity.active ? '' : ' opacity-50 italic' }}">
+            <tr class="hover:bg-base-300 cursor-default{{ entity.active|default(true) ? '' : ' opacity-50 italic' }}">
                 {% for field_name,field in fields %}
                 <td class="align-top">
                     <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
@@ -87,4 +87,13 @@
     {# @see https://twig.symfony.com/doc/3.x/functions/template_from_string.html #}
     {{ template_from_string(template.from_string, name) }}
     {% endif %}
+{% endmacro %}
+
+{% macro classStates(wCmd) %}
+    <div class="inline-block"><twig:ux:icon name="{{ wCmd.instantiable ? 'tabler:database' : 'tabler:ghost-3'}}" class="w-4 h-4 inline {{ wCmd.instantiable ? 'text-lime-500' : 'text-gray-500' }}" /></div>
+    <div class="inline-block"><twig:ux:icon name="{{ wCmd.managed ? 'tabler:database-plus' : 'tabler:database-x'}}" class="w-4 h-4 inline {{ wCmd.managed ? 'text-lime-400' : 'text-gray-500' }}" /></div>
+    <div class="inline-block"><twig:ux:icon name="{{ wCmd.final ? 'tabler:database-star' : 'tabler:database-x'}}" class="w-4 h-4 inline {{ wCmd.final ? 'text-lime-200' : 'text-gray-500' }}" /></div>
+    <div class="inline-block {{ wCmd.abstract ? 'font-light italic text-gray-400' : ''}}">
+        {{ wCmd.shortname }}
+    </div>
 {% endmacro %}

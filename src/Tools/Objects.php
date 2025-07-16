@@ -1,27 +1,27 @@
 <?php
 namespace Aequation\WireBundle\Tools;
 
-use stdClass;
-use Attribute;
-use Exception;
-use Throwable;
-use Stringable;
-use Twig\Markup;
-// Symfony
-use ReflectionClass;
-use ReflectionAttribute;
-use ReflectionClassConstant;
-// PHP
-use Symfony\Component\PropertyAccess\PropertyAccess;
 use Aequation\WireBundle\Tools\interface\ToolInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
+use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
+// Symfony
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
-use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
+// PHP
+use Twig\Markup;
+use stdClass;
+use Exception;
+use Throwable;
+use Stringable;
+use ReflectionClass;
+use ReflectionAttribute;
+use Closure;
 
 class Objects implements ToolInterface
 {
@@ -41,7 +41,7 @@ class Objects implements ToolInterface
         bool $lowercase = false
     ): ?string
     {
-        if(empty($objectOrClass) || (is_string($objectOrClass) && !class_exists($objectOrClass))) {
+        if(empty($objectOrClass) || (is_string($objectOrClass) && !class_exists($objectOrClass) && !interface_exists($objectOrClass))) {
             return null;
         }
         $RC = new ReflectionClass($objectOrClass);
@@ -57,7 +57,7 @@ class Objects implements ToolInterface
         if($objectOrClass instanceof ClassDescriptionInterface) {
             return $objectOrClass->getClassname();
         }
-        if(is_string($objectOrClass) && !class_exists($objectOrClass)) {
+        if(is_string($objectOrClass) && !class_exists($objectOrClass) && !interface_exists($objectOrClass)) {
             return null;
         }
         $RC = new ReflectionClass($objectOrClass);
@@ -73,6 +73,55 @@ class Objects implements ToolInterface
     {
         $RC = new ReflectionClass($classname);
         return $RC->isInstantiable();
+    }
+
+
+    /*************************************************************************************
+     * DTO / OBJECT MAPPER
+     *************************************************************************************/
+
+    public static function getDtoTargetMaps(
+        object|string $classOrObject,
+        ?Closure $filter = null
+    ): array
+    {
+        return array_filter(
+            static::getClassAttributes($classOrObject, Map::class),
+            fn (Map $map) => !empty($map->target) && (is_null($filter) || $filter($map))
+        );
+    }
+
+    public static function getDtoTargetClassnames(
+        object|string $classOrObject,
+        ?Closure $filter = null
+    ): array
+    {
+        return array_map(
+            fn (Map $attr) => $attr->target,
+            static::getDtoTargetMaps($classOrObject, $filter)
+        );
+    }
+
+    public static function getDtoSourceMaps(
+        object|string $classOrObject,
+        ?Closure $filter = null
+    ): array
+    {
+        return array_filter(
+            static::getClassAttributes($classOrObject, Map::class),
+            fn (Map $map) => !empty($map->source) && (is_null($filter) || $filter($map))
+        );
+    }
+
+    public static function getDtoSourceClassnames(
+        object|string $classOrObject,
+        ?Closure $filter = null
+    ): array
+    {
+        return array_map(
+            fn (Map $attr) => $attr->source,
+            static::getDtoSourceMaps($classOrObject, $filter)
+        );
     }
 
 
@@ -127,10 +176,10 @@ class Objects implements ToolInterface
         array|string $array
     ): stdClass
     {
-        if(is_array($array)) {
-            $array = json_encode($array, JSON_THROW_ON_ERROR);
+        if(is_string($array)) {
+            $array = json_decode($array, true, 512, JSON_THROW_ON_ERROR);
         }
-        return json_decode($array, false, 512, JSON_THROW_ON_ERROR);
+        return new stdClass($array);
     }
 
     public static function violationListToArray(ConstraintViolationListInterface $errors): array

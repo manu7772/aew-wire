@@ -1,0 +1,12 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}Database structure Check{% endblock %}
+
+{% block main_content %}
+{% if not app.devOrSadmin %}
+    {{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
+{% else %}
+    <h1 class="text-3xl font-semibold mb-4"><twig:ux:icon name="tabler:database-cog" class="w-8 h-8 inline mr-2" />Database structure</h1>
+    <twig:EntitiesClassMetadata />
+{% endif %}
+{% endblock %}

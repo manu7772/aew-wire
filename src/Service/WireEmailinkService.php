@@ -15,10 +15,8 @@ class WireEmailinkService extends WireRelinkService implements WireEmailinkServi
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireEmailinkInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

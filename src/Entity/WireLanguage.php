@@ -61,7 +61,7 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     protected ?string $description = null;
 
     #[ORM\OneToMany(targetEntity: WireLanguageTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    protected $translations;
+    protected Collection $translations;
 
     #[ORM\Column(type: Types::INTEGER, nullable: false)]
     #[Gedmo\SortablePosition]
@@ -83,6 +83,21 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     ): string
     {
         return preg_replace('/@locale@/', $this->getLocale(), static::ICON[$type]);
+    }
+
+    public static function getIcon(
+        string $type = 'ux'
+    ): string
+    {
+        switch ($type) {
+            case 'ux':
+            case 'ux-square':
+                return 'tabler:flag-filled';
+                break;
+            default:
+                return constant('static::ICON')[$type];
+                break;
+        }
     }
 
     public function getLocale(): ?string
@@ -120,6 +135,7 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     public function setTimezone(string $timezone): static
     {
         $this->timezone = $timezone;
+        new DateTimeZone($this->timezone);
         return $this;
     }
 
@@ -157,6 +173,17 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
             $this->translations[] = $t;
             $t->setObject($this);
         }
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
+        return $this;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
     }
 
 }

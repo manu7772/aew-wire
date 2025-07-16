@@ -39,7 +39,7 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function getPassword(): ?string;
     public function setPassword(string $password): static;
     public function setSuperadmin(): static;
-    public function isValidSuperadmin(): bool;
+    public function isSuperadmin(): bool;
     public function eraseCredentials(): void;
     public function autoGeneratePassword(int $length = 32, ?string $chars = null, bool $replace = true): static;
     // Csstheme

@@ -100,9 +100,9 @@
             </li>
             {% endif %}
 
-            {% if is_granted('ROLE_SUPER_ADMIN') %}
+            {% if app.devOrSadmin %}
             <li>
-                {% set open = app.current_route matches '/^sadmin_/' %}
+                {% set open = app.current_route matches '/^(sadmin|classmetadata|hydration)_/' %}
                 <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-super-admin" data-collapse-toggle="dropdown-super-admin">
                     <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'ROLE_SUPER_ADMIN'|trans }}</span>
                     <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
@@ -119,6 +119,12 @@
                     </li>
                     <li>
                         <a{{ data_turbo(false) }} href="{{ path('sadmin_sandbox_uuid') }}" class="{{ app.isCurrentRoute('sadmin_sandbox_uuid') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><twig:ux:icon name="tabler:key" class="w-5 h-5 inline-block mr-2" />UUID Sandbox</a>
+                    </li>
+                    <li>
+                        <a{{ data_turbo(false) }} href="{{ path('classmetadata_index') }}" class="{{ app.isCurrentRoute('classmetadata_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><twig:ux:icon name="tabler:database-cog" class="w-5 h-5 inline-block mr-2" />Database structure</a>
+                    </li>
+                    <li>
+                        <a{{ data_turbo(false) }} href="{{ path('hydration_index') }}" class="{{ app.isCurrentRoute('hydration_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><twig:ux:icon name="tabler:database-plus" class="w-5 h-5 inline-block mr-2" />Hydration</a>
                     </li>
                     <li>
                         <a{{ data_turbo(false) }} href="{{ path('demo_page') }}" class="{{ app.isCurrentRoute('demo_page') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><twig:ux:icon name="tabler:file-description" class="w-5 h-5 inline-block mr-2" />Demo pages</a>

@@ -13,7 +13,7 @@ use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\EventSubscriber\WireAppGlobalSubscriber;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\ServerInfoInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
@@ -59,6 +59,7 @@ use Twig\Markup;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use UnitEnum;
 
 /**
@@ -108,6 +109,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         public readonly LocaleSwitcher $myLocaleSwitcher, // Override localeSwitcher
         RequestStack $requestStack,
         TokenStorageInterface $tokenStorage,
+        // ObjectMapperInterface $objectMapper,
     ) {
         // $this->startStopwatch();
         $this->container = $this->kernel->getContainer();
@@ -129,6 +131,11 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getUserService(): WireUserServiceInterface
     {
         return $this->get(WireUserServiceInterface::class);
+    }
+
+    public function getObjectMapper(): ObjectMapperInterface
+    {
+        return $this->container->get(ObjectMapperInterface::class);
     }
 
     /************************************************************************************************************/
@@ -1220,8 +1227,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function jsonSerialize(): mixed
     {
-        /** @var NormalizerServiceInterface */
-        $normalizer = $this->get(NormalizerServiceInterface::class);
+        /** @var HydrationServiceInterface */
+        $normalizer = $this->get(HydrationServiceInterface::class);
         // if($this->getUser()) {
         //     $data = $normalizer->normalize(data: $this->getUser(), context: [AbstractNormalizer::GROUPS => 'user.index']);
         //     // dd($data, [AbstractNormalizer::GROUPS => 'user.index']);
@@ -1319,7 +1326,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         mixed $attributes,
         mixed $subject = null
     ): bool {
-        return $this->getUserService()->isGranted($attributes, $subject);
+        return $this->security->isGranted($attributes, $subject);
     }
 
     /**
@@ -1350,7 +1357,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function isPublic(): bool
     {
         $publics = $this->getPublicFirewalls();
-        return in_array(strtolower($this->getFirewallName()), $publics);
+        return in_array($this->getFirewallName(), $publics);
     }
 
     /**

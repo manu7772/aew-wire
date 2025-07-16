@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Doctrine\Common\Collections\Collection;
 
-interface BetweenManyParentInterface extends BetweenManyInterface
+interface BetweenManyParentInterface
 {
     // Childs status
     public function isEmpty(): bool;

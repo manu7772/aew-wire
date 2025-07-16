@@ -22,7 +22,7 @@ use Twig\Markup;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[WireRelationMapping(WireWebpage::ITEMS_ACCEPT)]
-class WireWebpage extends WireItem implements WireWebpageInterface
+abstract class WireWebpage extends WireItem implements WireWebpageInterface
 {
     use Prefered;
 
@@ -79,9 +79,24 @@ class WireWebpage extends WireItem implements WireWebpageInterface
         return $this;
     }
 
+    public function setSection(Collection $sections): static
+    {
+        return $this->setWebsections($sections);
+    }
+
     public function getSections(): Collection
     {
         return $this->sections;
+    }
+
+    public function addSection(WireWebsectionInterface $section): bool
+    {
+        return $this->addWebsection($section);
+    }
+
+    public function removeSection(WireWebsectionInterface $section): bool
+    {
+        return $this->removeWebsection($section);
     }
 
     public function getWebsections(?string $type = null): Collection

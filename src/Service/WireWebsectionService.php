@@ -40,9 +40,7 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         // Check all WireWebsectionInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -61,7 +59,7 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
         if($onlyActives) {
             $criteria['enabled'] = true;
         }
-        return $this->getCount($criteria);
+        return $this->count($criteria);
     }
 
     /**

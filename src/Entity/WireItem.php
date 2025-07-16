@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
-use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireItemTranslationInterface;
@@ -49,7 +49,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     #[Gedmo\Translatable]
     protected ?string $name = null;
 
-    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'child', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: WireItemCollectionInterface::class, mappedBy: 'child', cascade: ['persist'], orphanRemoval: true)]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $parents;
     public WireEcollectionInterface $tempParent;
@@ -59,7 +59,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     protected ?string $mainparent = null;
 
     #[ORM\OneToMany(targetEntity: WireItemTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    protected $translations;
+    protected Collection $translations;
 
     #[Gedmo\Translatable]
     #[Gedmo\Slug(fields: ['name'])]
@@ -106,7 +106,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         $parent ??= $this->getTempParent();
         if($parent) {
             foreach ($this->parents as $ic) {
-                /** @var ItemCollectionInterface $ic */
+                /** @var WireItemCollectionInterface $ic */
                 if($ic->getParent() === $parent) {
                     return $ic->getPosition();
                 }
@@ -164,7 +164,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     public function addParent(WireEcollectionInterface $parent): bool
     {
         if(!$this->hasParent($parent)) {
-            $ic = new ItemCollection($parent, $this);
+            $ic = new WireItemCollection($parent, $this);
             $this->parents->add($ic);
         }
         $this->attributeDefaultMainparent();
@@ -174,7 +174,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     public function getParents(): Collection
     {
         return $this->parents->map(
-            fn(ItemCollectionInterface $ic) => $ic->getParent()
+            fn(WireItemCollectionInterface $ic) => $ic->getParent()
         );
     }
 
@@ -186,7 +186,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     public function removeParent(WireEcollectionInterface $parent): bool
     {
         $this->parents = $this->parents->filter(
-            fn(ItemCollectionInterface $ic) => $ic->getParent() !== $parent
+            fn(WireItemCollectionInterface $ic) => $ic->getParent() !== $parent
         );
         $this->attributeDefaultMainparent();
         return $this->hasParent($parent);

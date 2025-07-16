@@ -30,7 +30,7 @@ use Exception;
 #[AsDoctrineListener(event: Events::preRemove, priority: GlobalDoctrineListener::PRIORITY)]
 #[AsDoctrineListener(event: Events::postRemove, priority: GlobalDoctrineListener::PRIORITY)]
 #[AsDoctrineListener(event: Events::postFlush, priority: GlobalDoctrineListener::PRIORITY)]
-#[AsDoctrineListener(event: Events::onClear, priority: GlobalDoctrineListener::PRIORITY)]
+// #[AsDoctrineListener(event: Events::onClear, priority: GlobalDoctrineListener::PRIORITY)]
 class GlobalDoctrineListener
 {
     public const PRIORITY = 100;
@@ -47,7 +47,7 @@ class GlobalDoctrineListener
     {
         $entity = $event->getObject();
         if (!($entity instanceof BaseEntityInterface)) return;
-        $this->wireEm->postLoaded($entity);
+        $this->wireEm->getEntitiesMetadata()->postLoaded($entity);
     }
 
     public function prePersist(
@@ -127,11 +127,10 @@ class GlobalDoctrineListener
         $this->wireEm->addPostFlushInfos($event);
     }
 
-    public function onClear(
-        OnClearEventArgs $event
-    ): void {
-        $this->wireEm->getNormaliserService()->clearCreateds();
-    }
+    // public function onClear(
+    //     OnClearEventArgs $event
+    // ): void {
+    // }
 
 
     private function checkIntegrity(

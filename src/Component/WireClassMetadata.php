@@ -24,6 +24,7 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
 use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 use Aequation\WireBundle\Dto\WireFactoryDto;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireClassMetadata implements WireClassMetadataInterface
 {
@@ -59,12 +60,18 @@ class WireClassMetadata implements WireClassMetadataInterface
             $this->name = $this->reflectionClass->getName();
             // $this->wCmdm->registerWireClassMetadata($this);
         }
+        $this->getSubclasses();
     }
 
 
     /************************************************************************************************************/
     /** BASE INFOS                                                                                              */
     /************************************************************************************************************/
+
+    public function __toString(): string
+    {
+        return (string) $this->getName();
+    }
 
     public function getName(): string
     {
@@ -138,12 +145,14 @@ class WireClassMetadata implements WireClassMetadataInterface
 
     public function __call($name, $arguments)
     {
-        return $this->classMetadata->$name(...$arguments);
+        if(!method_exists($this, $name)) {
+            return $this->classMetadata->$name(...$arguments);
+        }
     }
 
     public function __get($name)
     {
-        return $this->classMetadata->$name;
+        return $this->$name ?? $this->classMetadata->$name;
     }
 
     public function __isset($name)
@@ -230,25 +239,29 @@ class WireClassMetadata implements WireClassMetadataInterface
         return $names;
     }
 
-    public function getSubclasses(): array
+    public function getSubclasses(bool $onlyManaged = false): array
     {
         if(!isset($this->subClasses)) {
             $subClasses = [];
-            $subs = $this->classMetadata?->subClasses ?: Objects::getSubclasses($this->getName());
+            // $subs = $this->classMetadata?->subClasses ?: Objects::getSubclasses($this->getName());
+            $subs = Objects::getSubclasses($this->getName());
             foreach ($subs as $subClass) {
-                $subclass = $this->wCmdm->getWireClassMetadata($subClass);
-                $subClasses[$subclass->getName()] = $subclass;
+                if($subclass = $this->wCmdm->getWireClassMetadata($subClass)) {
+                    $subClasses[$subclass->getName()] = $subclass;
+                } else {
+                    // throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get subclass metadata.', [__METHOD__, __LINE__, $subClass]));
+                }
             }
             $this->subClasses = $subClasses;
         }
-        return $this->subClasses;
+        return $onlyManaged ? array_filter($this->subClasses, fn ($sub) => $sub->isManaged()) : $this->subClasses;
     }
 
-    public function getSubclassesNames(): array
+    public function getSubclassesNames(bool $onlyManaged = false): array
     {
         return array_map(
             fn(WireClassMetadataInterface $subclass) => $subclass->getShortName(),
-            $this->getSubclasses()
+            $this->getSubclasses($onlyManaged)
         );
     }
 
@@ -331,7 +344,7 @@ class WireClassMetadata implements WireClassMetadataInterface
     /** NEW INSTANCE                                                                                            */
     /************************************************************************************************************/
 
-    public function newInstance(array $data = [], array $context = []): object
+    public function newInstance(?array $data = null, array $context = []): object
     {
         if($this->isInstantiable()) {
             return $this->reflectionClass->newInstance($data);
@@ -339,7 +352,7 @@ class WireClassMetadata implements WireClassMetadataInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not final, cannot create a new instance.', [__METHOD__, __LINE__, $this->name]));
     }
 
-    public function newModel(array $data = [], array $context = []): WireEntityInterface
+    public function newModel(?array $data = null, array $context = []): object
     {
         if($this->isInstantiable()) {
             $entity = $this->reflectionClass->newInstance($data);
@@ -352,11 +365,11 @@ class WireClassMetadata implements WireClassMetadataInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not final, cannot create a new model.', [__METHOD__, __LINE__, $this->name]));
     }
 
-    public function newDto(array $data = [], array $context = []): WireEntityDtoInterface
-    {
-        $dto = new WireFactoryDto($data, $context);
-        return $dto;
-    }
+    // public function newDto(array $data = [], array $context = []): WireEntityDtoInterface
+    // {
+    //     $dto = new WireFactoryDto($data, $context);
+    //     return $dto;
+    // }
 
 
     /************************************************************************************************************/
@@ -425,6 +438,38 @@ class WireClassMetadata implements WireClassMetadataInterface
             return $this->repository;
         }
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get repository.', [__METHOD__, __LINE__, $this->name]));
+    }
+
+    public function getDtoSourceMaps(): array
+    {
+        return Objects::getDtoSourceMaps(
+            $this->name,
+            fn (Map $map): bool => !is_a($this->name, WireEntityInterface::class, true) || is_a($map->source, WireEntityDtoInterface::class, true)
+        );
+    }
+
+    public function getFirstDtoSourceMap(): ?Map
+    {
+        $maps = $this->getDtoSourceMaps();
+        return reset($maps) ?: null;
+    }
+
+    public function getDtoTargetMaps(): array
+    {
+        $maps = [];
+        foreach ($this->getDtoSourceMaps() as $map) {
+            $maps = array_merge($maps, Objects::getDtoTargetMaps(
+                    $map->source,
+                    fn (Map $map): bool => !is_a($map->source, WireEntityInterface::class, true) || is_a($map->target, WireEntityDtoInterface::class, true)
+                ));
+        }
+        return $maps;
+    }
+
+    public function getFirstDtoTargetMap(): ?Map
+    {
+        $maps = $this->getDtoTargetMaps();
+        return reset($maps) ?: null;
     }
 
 
@@ -568,7 +613,6 @@ class WireClassMetadata implements WireClassMetadataInterface
             }
             $this->wireRelationData = $mappings instanceof WireRelationMapping ? $mappings->getMapping() : [];
         }
-        dump($this->wireRelationData);
         return $this->wireRelationData;
     }
 

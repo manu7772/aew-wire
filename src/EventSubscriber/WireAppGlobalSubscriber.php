@@ -6,7 +6,6 @@ use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Security\AccountNotVerifiedAuthenticationException;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 // Symfony
@@ -24,6 +23,7 @@ use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use function Symfony\Component\String\u;
 // PHP
 use DateTime;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -44,7 +44,8 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         // protected ContainerInterface $container,
         protected AppWireServiceInterface $appWire,
         protected WireUserServiceInterface $userService,
-        protected RouterInterface $router
+        protected RouterInterface $router,
+        protected Security $security,
     )
     {
         // dump('WireAppGlobalSubscriber::__construct()');
@@ -107,49 +108,6 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         }
     }
 
-    public function onException(ExceptionEvent $event): void
-    {
-        if($this->appWire->isDev()) {
-            $normalizer = $this->appWire->get(NormalizerServiceInterface::class);
-            dump($normalizer->getCreateds()->toArray());
-        }
-        return;
-        // // Disable control
-        // if(!$this->appWire->isProd()) return;
-        // if($event->getRequest()->query->get('debug', 0) === "1") {
-        //     return;
-        // }
-        // // Redirect to Exception Twig page
-        // /** @var Throwable */
-        // $exception = $event->getThrowable();
-        // $statusCode = 500;
-        // if(method_exists($exception, 'getCode') &&  $exception->getCode() > 0) {
-        //     $statusCode = $exception->getCode();
-        // } else if(method_exists($exception, 'getStatusCode') &&  $exception->getStatusCode() > 0) {
-        //     $statusCode = $exception->getStatusCode();
-        // }
-        // switch (true) {
-        //     case $statusCode >= 100:
-        //         $twigpage_name = $this->getTemplateName($statusCode);
-        //         break;
-        //     // case $exception instanceof HttpExceptionInterface:
-        //     //     $twigpage_name = $this->getTemplateName($statusCode);
-        //     //     break;
-        //     // case $exception instanceof Error:
-        //     //     $twigpage_name = $this->getTemplateName($statusCode);
-        //     //     break;
-        //     // case $exception instanceof LogicException:
-        //     //     $twigpage_name = $this->getTemplateName($statusCode);
-        //     //     break;
-        //     default:
-        //         $twigpage_name = static::DEFAULT_ERROR_TEMPLATE;
-        //         break;
-        // }
-        // $context ??= ['exception' => $exception, 'exception_classname' => $exception::class, 'event' => $event, 'twigpage_name' => u($twigpage_name)->afterLast('/'), 'exceptionEvent' => $event];
-        // $response ??= $this->appWire->getTwig()->render($twigpage_name, context: $context);
-        // // if($statusCode <= 0) dd($exception, $response);
-        // $event->setResponse(new Response($response, $statusCode));
-    }
 
     protected function getTemplateName(
         string|int $statusCode
@@ -194,7 +152,7 @@ class WireAppGlobalSubscriber implements EventSubscriberInterface
         /**
          * @see https://stackoverflow.com/questions/67115605/how-to-redirect-from-a-eventsubscriber-in-symfony-5
          */
-        if($this->appWire->getParameter('host_security_enabled', false) && !$this->appWire->isGranted('ROLE_EDITOR')) {
+        if($this->appWire->getParameter('host_security_enabled', false) && !$this->security->isGranted('ROLE_EDITOR')) {
             $controller = $this->getControllerObjectFromEvent($event);
             if($controller instanceof AbstractController) {
                 $host = $event->getRequest()->getHost();

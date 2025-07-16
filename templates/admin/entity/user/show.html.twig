@@ -2,44 +2,51 @@
 {% trans_default_domain entity.trans_domain %}
 
 {% block entitydata %}
-<table class="table-show">
-    <tbody>
-        <tr>
-            <th class="w-1">{{ 'fields.id'|trans }}</th>
-            <td>{{ entity.id }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.email'|trans }}</th>
-            <td>{{ entity.email }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.name'|trans }}</th>
-            <td>{{ entity.name }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.firstname'|trans }}</th>
-            <td>{{ entity.firstname }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.slug'|trans }}</th>
-            <td>{{ entity.slug }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.roles'|trans }}</th>
-            <td>{{ list_roles(entity) }}</td>
-        </tr>
-        <tr>
-            <th class="w-1">{{ 'fields.createdAt'|trans }}</th>
-            <td>
-                {# @see https://twig.symfony.com/doc/3.x/filters/format_datetime.html #}
-                <div>{{ 'fields.createdAt'|trans }} : {{ entity.createdAt|format_datetime('medium', 'short') }}</div>
-                {% if entity.updatedAt %}
-                <div>{{ 'fields.updatedAt'|trans }} : {{ entity.updatedAt|format_datetime('medium', 'short') }}</div>
-                {% else %}
-                <div>{{ 'not_updated' }}</div>
-                {% endif %}
-            </td>
-        </tr>
-    </tbody>
-</table>
+<div class="flex flex-col gap-8 lg:flex-row my-8">
+    <div>
+        <h2>{{ 'fields.user_details'|trans }}</h2>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th class="w-1">{{ 'fields.id'|trans }}</th>
+                    <td>{{ entity.id }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.email'|trans }}</th>
+                    <td>{{ entity.email }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.name'|trans }}</th>
+                    <td>{{ entity.name }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.firstname'|trans }}</th>
+                    <td>{{ entity.firstname }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.slug'|trans }}</th>
+                    <td>{{ entity.slug }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.roles'|trans }}</th>
+                    <td>{{ list_roles(entity) }}</td>
+                </tr>
+                <tr>
+                    <th class="w-1">{{ 'fields.createdAt'|trans }}</th>
+                    <td>
+                        {# @see https://twig.symfony.com/doc/3.x/filters/format_datetime.html #}
+                        <div>{{ 'fields.createdAt'|trans }} : {{ entity.createdAt|format_datetime('medium', 'short') }}</div>
+                        {% if entity.updatedAt %}
+                        <div>{{ 'fields.updatedAt'|trans }} : {{ entity.updatedAt|format_datetime('medium', 'short') }}</div>
+                        {% else %}
+                        <div>{{ 'not_updated' }}</div>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+    </div>
+</div>
 {% endblock %}

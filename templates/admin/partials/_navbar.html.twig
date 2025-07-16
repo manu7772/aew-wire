@@ -18,52 +18,59 @@
                 </a>
             </div>
             <div class="flex items-center gap-4">
+                <button data-csstheme-switcher title="{{ 'change_csstheme'|trans }}" class="block w-6 h-6 text-slate-900 rounded hover:bg-slate-100 lg:hover:bg-transparent lg:border-0 lg:hover:text-slate-700 lg:p-0 dark:text-white lg:dark:hover:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white lg:dark:hover:bg-transparent">
+                    <label class="sr-only">{{ 'csstheme'|trans }}</label>
+                    <span class="dark:hidden hover:animate-pulse">
+                        <twig:ux:icon name="tabler:sun-filled" class="w-6 h-6 text-slate-800" />
+                    </span>
+                    <span class="hidden dark:block hover:animate-pulse">
+                        <twig:ux:icon name="tabler:moon-stars" class="w-6 h-6 text-slate-200" />
+                    </span>
+                </button>
+                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
                 <div>
-                    <button data-csstheme-switcher title="{{ 'change_csstheme'|trans }}" class="block w-8 h-8 text-slate-900 rounded hover:bg-slate-100 lg:hover:bg-transparent lg:border-0 lg:hover:text-slate-700 lg:p-0 dark:text-white lg:dark:hover:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white lg:dark:hover:bg-transparent">
-                        <label class="sr-only">{{ 'csstheme'|trans }}</label>
-                        <span class="dark:hidden hover:animate-pulse">
-                            <twig:ux:icon name="tabler:sun-filled" class="w-8 h-8 text-slate-800" />
-                        </span>
-                        <span class="hidden dark:block hover:animate-pulse">
-                            <twig:ux:icon name="tabler:moon-stars" class="w-8 h-8 text-slate-200" />
-                        </span>
-                    </button>
+                    <span class="sr-only">Not authenticated fully</span>
+                    <twig:ux:icon name="tabler:lock-check" class="w-6 h-6 text-lime-400" />
                 </div>
-                <div class="flex items-center ms-3">
-                    {% if not is_granted('IS_AUTHENTICATED_FULLY') %}
-                    <button type="button" class="btn btn-sm btn-danger" aria-expanded="false" data-dropdown-toggle="dropdown-notifications">
-                        <span class="sr-only">Not authenticated fully</span>
-                        <twig:ux:icon name="tabler:bell" class="w-8 h-8 text-white" />
-                    </button>
-                    {% elseif app.user %}
-                    <button type="button" class="btn btn-sm btn-info" aria-expanded="false" data-dropdown-toggle="dropdown-notifications">
-                        <span class="sr-only">{{ app.user.email }}</span>
-                        <twig:ux:icon name="tabler:bell" class="w-8 h-8 text-white" />
-                    </button>
-                    {% endif %}
-                    <div>
-                        <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
-                            <span class="sr-only">Open user menu</span>
-                            <img class="w-8 h-8 rounded-full" src="{{ asset('images/divers/missing_media.webp') }}" alt="user photo">
-                        </button>
+                {% elseif app.user %}
+                <div>
+                    <span class="sr-only">{{ app.user.email }}</span>
+                    <twig:ux:icon name="tabler:lock" class="w-6 h-6 text-gray-400" />
+                </div>
+                {% else %}
+                <a{{ data_turbo(false) }} href="{{ path('app_login') }}">
+                    <span class="sr-only">{{ 'login'|trans }}</span>
+                    <twig:ux:icon name="tabler:lock-x" class="w-6 h-6 text-orange-400" />
+                </a>
+                {% endif %}
+                <button class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                    <span class="sr-only">Open user menu</span>
+                    <img class="w-6 h-6 rounded-full" src="{{ asset('images/divers/missing_media.webp') }}" alt="user photo">
+                </button>
+                <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user">
+                    <div class="px-4 py-3" role="none">
+                        <p class="text-sm text-gray-900 dark:text-white" role="none">{{ app.user.name|default('.anon') }}</p>
+                        {% if app.user %}
+                        <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">{{ app.user.email }}</p>
+                        {% endif %}
                     </div>
-                    <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user">
-                        <div class="px-4 py-3" role="none">
-                            <p class="text-sm text-gray-900 dark:text-white" role="none">{{ app.user.name|default('.anon') }}</p>
-                            <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">{{ app.user.email|default('.anon') }}</p>
-                        </div>
-                        <ul class="py-1" role="none">
-                            <li>
-                                <a{{ data_turbo(false) }} href="{{ path(app.routeAdmin) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'dashboard'|trans|capitalize }}</a>
-                            </li>
-                            <li>
-                                <a{{ data_turbo(false) }} href="{{ path(app.routeHome) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'homepage'|trans|capitalize }}</a>
-                            </li>
-                            <li>
-                                <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'logout'|trans }}</a>
-                            </li>
-                        </ul>
-                    </div>
+                    <ul class="py-1" role="none">
+                        <li>
+                            <a{{ data_turbo(false) }} href="{{ path(app.routeAdmin) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'dashboard'|trans|capitalize }}</a>
+                        </li>
+                        <li>
+                            <a{{ data_turbo(false) }} href="{{ path(app.routeHome) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'homepage'|trans|capitalize }}</a>
+                        </li>
+                        {% if app.user %}
+                        <li>
+                            <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'logout'|trans }}</a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a{{ data_turbo(false) }} href="{{ path('app_login') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">{{ 'login'|trans }}</a>
+                        </li>
+                        {% endif %}
+                    </ul>
                 </div>
             </div>
         </div>

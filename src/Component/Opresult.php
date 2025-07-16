@@ -508,6 +508,24 @@ class Opresult implements OpresultInterface
             : $messages[$type];
     }
 
+    public function getMessagesTypedForFlash(
+        ?string $type = null
+    ): array
+    {
+        $messages = [];
+        foreach ($this->getMessages($type) as $msgtype => $msgs) {
+            $msgtype = match ($msgtype) {
+                'danger' => 'error',
+                'undone' => 'info',
+                default => $msgtype,
+            };
+            if(!empty($msgs)) {
+                $messages[$msgtype] = $msgs;
+            }
+        }
+        return $messages;
+    }
+
     public function printMessages(
         SymfonyStyle|bool $asHtmlOrIo = false,
         null|string|array $msgtypes = null

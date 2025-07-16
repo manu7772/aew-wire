@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface ItemCollectionInterface extends BetweenManyInterface
+interface WireItemCollectionInterface extends BetweenManyInterface
 {
     public function getParent(): WireEcollectionInterface;
     public function getChild(): WireItemInterface;

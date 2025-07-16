@@ -6,7 +6,7 @@ use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
@@ -27,7 +27,7 @@ abstract class WireItemService implements WireItemServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
-        protected NormalizerServiceInterface $normalizer
+        protected HydrationServiceInterface $normalizer
     ) {
     }
 
@@ -36,10 +36,8 @@ abstract class WireItemService implements WireItemServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireItemInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

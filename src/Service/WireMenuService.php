@@ -8,6 +8,8 @@ use Aequation\WireBundle\Entity\WireMenu;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
+// PHP
+use Exception;
 
 abstract class WireMenuService extends WireEcollectionService implements WireMenuServiceInterface
 {
@@ -20,7 +22,6 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
         bool $repair = false
     ): OpresultInterface
     {
-        $this->getWireEm()->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireMenuInterface entities
         // 1. Check if each menu has a Webpage assigned
@@ -43,7 +44,6 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
                 }
             }
         }
-        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
@@ -60,9 +60,10 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
         array $context = []
     ): WireMenuInterface
     {
-        /** @var WireMenuInterface */
-        $entity = $this->getWireEm()->createEntity($this->getEntityClassname(), $data, $context); // false = do not try service IMPORTANT!!!
-        // 1. Add Wepage (Uname: "wp_page_menu") to the menu
+        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
+        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
+            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+        }
         /** @var WireWebpageServiceInterface */
         $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
         $menu_webpage = $webpageService->getWebpageFor($entity);

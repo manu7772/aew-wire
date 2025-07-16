@@ -5,7 +5,7 @@ namespace Aequation\WireBundle\Command;
 // Aequation
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
@@ -31,7 +31,6 @@ class BasicsCommand extends BaseCommand
     // public readonly string $path;
 
     public function __construct(
-        protected NormalizerServiceInterface $hydrator,
         protected WireEntityManagerInterface $wireEm,
         // protected AppWireServiceInterface $appWire,
     ) {

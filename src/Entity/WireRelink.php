@@ -64,7 +64,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     protected ?int $id = null;
 
     #[ORM\OneToMany(targetEntity: WireRelinkTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    protected $translations;
+    protected Collection $translations;
 
     #[Gedmo\Translatable]
     #[Gedmo\Slug(fields: ['mainlink'])]

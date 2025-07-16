@@ -266,8 +266,9 @@ Class WireConfigurators
         return [
             'file_name_pattern' => '*.twig',
             'form_themes' => [
-                'tailwind_2_layout.html.twig',
-                '@AequationWire/form/tailwind_wire_layout.html.twig',
+                '@AequationWire/form/daisyui_wire_layout.html.twig',
+                // 'tailwind_2_layout.html.twig',
+                // '@AequationWire/form/tailwind_wire_layout.html.twig',
             ],
             'globals' => [
                 'app' => '@Aequation\WireBundle\Service\interface\AppWireServiceInterface'

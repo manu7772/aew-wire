@@ -2,8 +2,11 @@
 
 namespace Aequation\WireBundle\Service\trait;
 
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Encoders;
@@ -13,6 +16,7 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 // PHP
 use Exception;
@@ -40,6 +44,11 @@ trait TraitBaseEntityService
         return $this->em ??= $this->getWireEm()->getEm();
     }
 
+    public function getWireClassMetadata(): ?WireClassMetadataInterface
+    {
+        return $this->getWireEm()->getEntitiesMetadata()->getWireClassMetadata(static::getEntityClassname());
+    }
+
     public function getEm(): EntityManagerInterface
     {
         return $this->em ??= $this->getWireEm()->getEm();
@@ -65,7 +74,7 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface {
         $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
-        if(!$this->appWire->isGranted('new', $entity->getClassname())) {
+        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
             throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
         }
         // Add some stuff here...
@@ -93,7 +102,21 @@ trait TraitBaseEntityService
         array $context = []
     ): BaseEntityInterface|false
     {
-        throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet.', [__METHOD__, __LINE__, __FUNCTION__]));
+        throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet for %s.', [__METHOD__, __LINE__, __FUNCTION__, $this->getEntityClassname()]));
+    }
+
+    public function createDto(
+        array $data = [],
+        array $context = []
+    ): ?WireEntityDtoInterface
+    {
+        $classes = $this->getDtoClassnames();
+        $class = reset($classes);
+        if(is_a($class, WireEntityDtoInterface::class, true)) {
+            // Needs WireEntityManagerInterface to be passed
+            return new $class($data, $this->getWireEm());
+        }
+        return $class ? new $class($data) : null;
     }
 
     /**
@@ -114,6 +137,18 @@ trait TraitBaseEntityService
             throw new Exception(vsprintf('Error %s line %d: entity shortname not defined for class %s!', [__METHOD__, __LINE__, static::class]));
         }
         return Objects::getShortname($classname);
+    }
+
+    public function getDtoClassnames(): array
+    {
+        $rconstant = new ReflectionClassConstant(static::class, 'ENTITY_CLASS');
+        if(!is_a($rconstant->getValue(), WireHydratable::class, true)) {
+            throw new Exception(vsprintf('Error %s line %d: constant ENTITY_CLASS must be an instance of %s!', [__METHOD__, __LINE__, WireHydratable::class]));
+        }
+        return array_map(
+            fn (Map $map): string => $map->source,
+            $this->getWireEm()->getEntitiesMetadata()->getDtoSourceMaps($rconstant->getValue())
+        );
     }
 
     /**
@@ -165,7 +200,7 @@ trait TraitBaseEntityService
         $request ??= $this->appWire->getRequest();
         $fields =  [
             'id' => [
-                'classes' => ['text-center','w-0'],
+                'classes' => ['w-1'],
                 'sortable' => true,
             ],
             // 'name' => [

@@ -216,10 +216,8 @@ class WireLanguageService implements WireLanguageServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireLanguageInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

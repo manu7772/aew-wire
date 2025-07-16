@@ -52,7 +52,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
     protected ?string $description = null;
 
     #[ORM\OneToMany(targetEntity: WireCategoryTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    protected $translations;
+    protected Collection $translations;
 
     #[Gedmo\Translatable]
     #[Gedmo\Slug(fields: ['name'])]

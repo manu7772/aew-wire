@@ -6,7 +6,7 @@ use Aequation\WireBundle\Component\interface\PdfizableInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\WirePdf;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 // Symfony
@@ -24,7 +24,7 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
-        protected NormalizerServiceInterface $normalizer,
+        protected HydrationServiceInterface $normalizer,
         protected DompdfFactoryInterface $dompdfFactory,
         protected UploaderHelper $vichHelper,
     )
@@ -37,10 +37,8 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WirePdfInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

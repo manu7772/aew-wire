@@ -10,7 +10,7 @@ use Exception;
 trait Prefered
 {
 
-    #[ORM\Column]
+    #[ORM\Column(unique: false, nullable: false)]
     protected bool $prefered = false;
 
     public function __construct_prefered(): void

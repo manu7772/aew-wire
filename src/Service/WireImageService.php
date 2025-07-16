@@ -15,10 +15,8 @@ abstract class WireImageService extends WireItemService implements WireImageServ
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireImageInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

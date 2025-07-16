@@ -37,7 +37,6 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireCategoryInterface entities
         $all = $this->getRepository()->findAll();
@@ -58,7 +57,6 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         } else {
             $opresult->addSuccess("All category types are valid");
         }
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 
@@ -72,16 +70,10 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     ): array
     {
         if(!isset($this->availableTypes)) {
-            $relateds = $this->wireEm->getEntitiesMetadata()->getRelateds(
-                static::ENTITY_CLASS,
-                fn(AssociationMapping $mapping, ClassMetadata $cmd) => count($cmd->subClasses) === 0 && !$cmd->isMappedSuperclass,
-                true
-            );
+            $relateds = $this->wireEm->getEntitiesMetadata()->findFinals([TraitCategorizedInterface::class]);
             $availableTypes = [];
-            foreach (array_keys($relateds) as $class) {
-                if(is_a($class, TraitCategorizedInterface::class, true)) {
-                    $availableTypes[$class] = $asShornames ? Objects::getShortname($class, false) : $class;
-                }
+            foreach ($relateds as $wCmd) {
+                $availableTypes[$wCmd->name] = $asShornames ? $wCmd->getShortname() : $wCmd->name;
             }
             $this->availableTypes = $availableTypes;
         }

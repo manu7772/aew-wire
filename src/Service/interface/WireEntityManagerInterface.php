@@ -3,9 +3,12 @@
 namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
+
+use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
@@ -51,11 +54,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
         SurveyRecursionInterface $surveyRecursion,
     );
 
-    public function getNormaliserService(): NormalizerServiceInterface;
-    public function isHydrateMode(): bool;
-    public function incHydrateMode(): bool;
-    public function decHydrateMode(): bool;
-    public function resetHydrateMode(): bool;
+    public function getNormaliserService(): HydrationServiceInterface;
     public function isDev(): bool;
     public function isProd(): bool;
     public function getAppWireService(): AppWireServiceInterface;
@@ -64,9 +63,11 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
+    public function isGrantsCheckEnabled(): bool;
     public function createEntity(string $classname, array $data = [], array $context = []): object;
     public function createModel(string $classname, array $data = [], array $context = []): BaseEntityInterface;
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;
+    public function createDto(string $classname, array $data = [], array $context = []): ?WireEntityDtoInterface;
     public function validateEntity(object $entity, string|GroupSequence|array|null $addGroups = null, Constraint|array|null $constraints = null, bool $throws = false): ConstraintViolationListInterface;
     public function getRepository(string|object $objectOrClass): ?EntityRepository;
     public function findById(string $classname, string $id): ?BaseEntityInterface;
@@ -79,6 +80,11 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getClassnameByUname(string $uname): ?string;
     public function getClassnameByEuidOrUname(string $euidOrUname): ?string;
     public function findEntityByUname(string $uname): ?TraitUnamedInterface;
+    public function entityExists(string $classname, bool $searchShortname = false): bool;
+    public function findOneFinal(string|object $entity): WireClassMetadataInterface;
+    public function findOneManaged(string|object $entity): WireClassMetadataInterface;
+    public function findOneInstantiable(string|object $entity): WireClassMetadataInterface;
+    public function getSerializableClassMetadatas(): WireClassMetadataCollectionInterface;
     public function count(string $classname, bool|array $criteria = []): int;
     public function findAll(string $classname, bool|array $criteria = [], ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array;
     public function findOneBy(string $classname, int|string $identifier, bool|array $criteria = [], ?array $orderBy = null): ?object;

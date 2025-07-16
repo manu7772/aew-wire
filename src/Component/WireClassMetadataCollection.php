@@ -3,14 +3,10 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
-// Symfony
-use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 // PHP
 use InvalidArgumentException;
 
-class WireClassMetadataCollection extends ArrayCollection implements WireClassMetadataCollectionInterface
+class WireClassMetadataCollection extends TypedCollection implements WireClassMetadataCollectionInterface
 {
     // /**
     //  * An array containing the entries of this collection.
@@ -20,8 +16,6 @@ class WireClassMetadataCollection extends ArrayCollection implements WireClassMe
     //  */
     // private array $elements = [];
 
-    public readonly PropertyAccessorInterface $accessor;
-
     /**
      * Initializes a new ArrayCollection.
      *
@@ -29,7 +23,6 @@ class WireClassMetadataCollection extends ArrayCollection implements WireClassMe
      */
     public function __construct(array $elements = [])
     {
-        $this->accessor = PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
         foreach ($elements as $value) {
             /** @var WireClassMetadataInterface $value */
             $this->add($value);
@@ -47,7 +40,7 @@ class WireClassMetadataCollection extends ArrayCollection implements WireClassMe
     /**
      * {@inheritDoc}
      */
-    public function set(string|int $key, mixed $value)
+    public function set(string|int $key, mixed $value): void
     {
         if($value->getName() !== $key) {
             throw new InvalidArgumentException(vsprintf('Error %s line %d: key "%s" does not match value name "%s".', [__METHOD__, __LINE__, $key, $value->getName()]));
@@ -67,14 +60,9 @@ class WireClassMetadataCollection extends ArrayCollection implements WireClassMe
      * This breaks assumptions about the template type, but it would
      * be a backwards-incompatible change to remove this method
      */
-    public function add(mixed $element)
+    public function add(mixed $element): void
     {
         parent::set($element->getName(), $element);
-    }
-
-    public function mapSingleValue(string $field): array
-    {
-        return array_map(fn (WireClassMetadataInterface $wCmd) => $this->accessor->getValue($wCmd, $field), $this->toArray());
     }
 
     public function getInfo(): array

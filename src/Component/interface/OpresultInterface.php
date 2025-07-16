@@ -59,6 +59,7 @@ interface OpresultInterface
     public function checkMessagesTypes(): static;
     public function getMessageTypes(): array;
     public function getMessages(?string $type = null): array;
+    public function getMessagesTypedForFlash(?string $type = null): array;
     public function printMessages(SymfonyStyle|bool $asHtmlOrIo = false, null|string|array $msgtypes = null): void;
     public function getMessagesAsString(?bool $asHtml = null, bool $byTypes = true, null|string|array $msgtypes = null): string|Markup;
     public function hasMessages(?string $type = null): bool;

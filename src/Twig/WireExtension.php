@@ -9,7 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
@@ -147,14 +147,27 @@ class WireExtension extends AbstractExtension
      *************************************************************************************/
 
     public function getIcon(
-        string|BaseEntityInterface $entity
+        string|BaseEntityInterface $entity,
+        string $type = 'ux'
     ): string
     {
+        $icon = null;
         if($entity instanceof BaseEntityInterface || is_a($entity, BaseEntityInterface::class, true)) {
-            return $entity::getIcon();
+            $icon = $entity::getIcon($type);
         }
-        // dump($this->wireEm->getEntitiesDescriptor()->findFinals($entity));
-        return ($class = $this->wireEm->resolveFinalEntity($entity)) ? $class::getIcon() : 'tabler:question-mark';
+        if(!$icon && $this->wireEm->entityExists($entity) && $class = $this->wireEm->findOneFinal($entity)) {
+            $class = $class->name;
+            $icon = $class::getIcon($type);
+        }
+        if(!$icon) {
+            // Default icon
+            $icon = match ($type) {
+                'ux' => 'tabler:question-mark',
+                'fa' => 'fa-question',
+                default => 'tabler:question-mark',
+            };
+        }
+        return $icon;
     }
 
     public function listRoles(
@@ -269,7 +282,7 @@ class WireExtension extends AbstractExtension
         array $groups = [],
     ): ?Markup
     {
-        return Objects::toDump($something, true, $depth, $this->appWire->get(NormalizerServiceInterface::class)->getSerializer(), $groups);
+        return Objects::toDump($something, true, $depth, $this->appWire->get(HydrationServiceInterface::class)->getSerializer(), $groups);
     }
 
     /**

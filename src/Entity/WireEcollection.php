@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
-use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
@@ -41,7 +41,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = false;
 
-    #[ORM\OneToMany(targetEntity: ItemCollectionInterface::class, mappedBy: 'parent', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: WireItemCollectionInterface::class, mappedBy: 'parent', cascade: ['persist'], orphanRemoval: true)]
     #[Assert\Valid(groups: ['persist','update'])]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $childs;
@@ -99,14 +99,14 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function getItems(): Collection
     {
         return $this->childs->map(
-            fn(ItemCollectionInterface $ic) => $ic->getChild($this)
+            fn(WireItemCollectionInterface $ic) => $ic->getChild($this)
         );
     }
 
     public function getActiveItems(): Collection
     {
         return $this->childs
-            ->map(fn(ItemCollectionInterface $ic) => $ic->getChild())
+            ->map(fn(WireItemCollectionInterface $ic) => $ic->getChild())
             ->filter(fn(WireItemInterface $item) => $item->isActive());
     }
 
@@ -122,7 +122,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function addItem(WireItemInterface $item): static
     {
         if($item !== $this && !$this->hasItem($item)) {
-            $this->childs->add(new ItemCollection($this, $item));
+            $this->childs->add(new WireItemCollection($this, $item));
         } else {
             $this->removeItem($item);
         }
@@ -137,7 +137,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function removeItem(WireItemInterface $item): static
     {
         // $this->childs = $this->childs->filter(
-        //     fn(ItemCollectionInterface $ic) => $ic->getChild() !== $item
+        //     fn(WireItemCollectionInterface $ic) => $ic->getChild() !== $item
         // );
         foreach ($this->childs as $child) {
             if($child->getChild() === $item) {

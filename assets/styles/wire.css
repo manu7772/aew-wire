@@ -97,7 +97,7 @@
 
 
 @layer base {
-    :root {
+    /* :root {
         @apply font-display text-sky-950 bg-slate-100;
         @variant dark {
             @apply text-slate-200 bg-gray-950;
@@ -108,7 +108,7 @@
         @variant dark {
             @apply text-emerald-300;
         }
-    }
+    } */
     /** @see https://tailwindcss.com/docs/upgrade-guide#buttons-use-the-default-cursor */
     button:not(:disabled),
     [role="button"]:not(:disabled) {

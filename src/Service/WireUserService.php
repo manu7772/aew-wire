@@ -4,6 +4,8 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\WireUserDto;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -48,8 +50,6 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
-        // public readonly ValidatorInterface $validator,
-        // // public readonly NormalizerServiceInterface $normalizer,
         public readonly Security $security,
         public readonly AccessDecisionManagerInterface $accessDecisionManager,
         #[Autowire(param: 'security.role_hierarchy.roles')]
@@ -64,21 +64,19 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->getWireEm()->incHydrateMode();
         $opresult ??= new Opresult();
         // Check all WireUserInterface entities
-        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
     public function getSecurity(): Security
     {
-        return $this->appWire->security;
+        return $this->security;
     }
 
     public function getUser(): ?WireUserInterface
     {
-        return $this->getSecurity()->getUser();
+        return $this->security->getUser();
     }
 
     public function createDefaultSuperAdmin(): WireUserInterface
@@ -144,7 +142,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     {
         /** @var WireUserInterface&TraitEnabledInterface */
         $sadmin = $this->getMainSAdminUser(true);
-        if($sadmin && !$sadmin->isValidSuperadmin()) {
+        if($sadmin && !$sadmin->isSuperadmin()) {
             $sadmin->setSuperadmin();
             $this->saveUser($sadmin);
             return $sadmin;
@@ -159,7 +157,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         if(is_string($user)) {
             $user = $this->getRepository()->findOneBy(['email' => $user]);
         }
-        return $user ? $this->getSecurity()->login($user, 'form_login', null) : null;
+        return $user ? $this->security->login($user, 'form_login', null) : null;
     }
 
     /**
@@ -170,7 +168,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
      */
     public function logoutCurrentUser(bool $validateCsrfToken = true): ?Response
     {
-        return $this->getSecurity()->logout($validateCsrfToken);
+        return $this->security->logout($validateCsrfToken);
     }
 
     /**
@@ -221,17 +219,28 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): bool
     {
         $user ??= $this->getUser();
-        if(empty($firewallName)) {
-            return empty($user)
-                ? $this->security->isGranted($attributes, $object)
-                : $this->security->isGrantedForUser($user, $attributes, $object);
+        if(empty($user)) {
+            return $this->isGranted($attributes, $object);
         }
-        $token = new UsernamePasswordToken(
-            $user,
-            $firewallName ?? $this->appWire->getFirewallName(),
-            $user->getRoles()
-        );
-        return $this->accessDecisionManager->decide($token, (array) $attributes, $object);
+        $firewallName ??= $this->appWire->getFirewallName();
+        $attributes = (array)$attributes;
+        $token = new UsernamePasswordToken($user, $firewallName, $user->getRoles());
+        return $this->accessDecisionManager->decide($token, $attributes, $object);
+        // #################################
+        // ---> new version does not work!!!
+        // #################################
+        // $user ??= $this->getUser();
+        // if(empty($firewallName)) {
+        //     return empty($user)
+        //         ? $this->security->isGranted($attributes, $object)
+        //         : $this->security->isGrantedForUser($user, $attributes, $object);
+        // }
+        // $token = new UsernamePasswordToken(
+        //     $user,
+        //     $firewallName ?? $this->appWire->getFirewallName(),
+        //     $user->getRoles()
+        // );
+        // return $this->accessDecisionManager->decide($token, (array) $attributes, $object);
     }
 
     public function isRolesGranted(
@@ -412,7 +421,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         $request ??= $this->appWire->getRequest();
         $fields =  [
             'id' => [
-                'classes' => ['text-center','w-0'],
+                'classes' => ['w-1'],
                 'sortable' => true,
             ],
             'email' => [

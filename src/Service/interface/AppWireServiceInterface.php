@@ -27,6 +27,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use JsonSerializable;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use UnitEnum;
 
 interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface, LocaleAwareInterface
@@ -56,6 +57,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public const TEMP_DIR = 'tmp';
 
     // AppVariable
+    public function getObjectMapper(): ObjectMapperInterface;
     public function setTokenStorage(TokenStorageInterface $tokenStorage): void;
     public function setRequestStack(RequestStack $requestStack): void;
     public function setEnvironment(string $environment): void;

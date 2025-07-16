@@ -2,34 +2,29 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
-use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
 use Aequation\WireBundle\Service\AppWireService;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use DateInterval;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Exception;
 
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
@@ -127,9 +122,18 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         parent::__construct();
         $this->relinks = new ArrayCollection();
-        $this->factorys = new ArrayCollection();        
+        $this->factorys = new ArrayCollection();       
+        $this->setCssthemes([]); 
     }
 
+    public static function transformFromDto(mixed $value, mixed $source): mixed
+    {
+        if($source->superadmin) {
+            $value->setSuperadmin();
+            dump($source, $value);
+        }
+        return $value;
+    }
 
     public function __toString(): string
     {
@@ -293,10 +297,9 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return $this;
     }
 
-    public function isValidSuperadmin(): bool
+    public function isSuperadmin(): bool
     {
-        return $this->HasRole(static::ROLE_SUPER_ADMIN)
-            && $this->isLoggable();
+        return $this->HasRole(static::ROLE_SUPER_ADMIN) && $this->isLoggable();
     }
 
     /**
@@ -340,7 +343,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
         return $this->firstname;
     }
 
-    public function setFirstname(string $firstname): static
+    public function setFirstname(?string $firstname): static
     {
         $this->firstname = $firstname;
         return $this;
@@ -373,7 +376,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function getCsstheme(?string $firewall = null): string
     {
-        return $this->cssthemes[$firewall ?? '_default'];
+        return $this->cssthemes[$firewall] ?? $this->cssthemes['_default'] ?? AppWireService::DEFAULT_CSS_THEME;
     }
 
     public function setCsstheme(string $csstheme, ?string $firewall = null): static

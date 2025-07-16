@@ -2,52 +2,47 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
-use Exception;
-use Doctrine\ORM\UnitOfWork;
-use Psr\Log\LoggerInterface;
-use Doctrine\ORM\EntityRepository;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Tools\Encoders;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Event\PostFlushEventArgs;
-use Aequation\WireBundle\Tools\HttpRequest;
-use Symfony\Component\Validator\Constraint;
-use Liip\ImagineBundle\Imagine\Cache\CacheManager;
-use Aequation\WireBundle\Component\EntityContainer;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
-use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
-use Symfony\Component\Validator\Constraints\GroupSequence;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Component\WireClassMetadataManager;
-use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
-use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
-// Symfony
 use Aequation\WireBundle\Service\interface\CacheServiceInterface;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
-use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
-use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
-use Aequation\WireBundle\Component\interface\EntityContainerInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
-use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
-// PHP
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Interface\WireHydratable;
+use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
+use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Objects;
+// Symfony
+use Doctrine\ORM\UnitOfWork;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\GroupSequence;
+use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Psr\Log\LoggerInterface;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
+// PHP
+use Exception;
 
 /**
  * Class WireEntityManager
@@ -65,7 +60,6 @@ class WireEntityManager implements WireEntityManagerInterface
     public const CRITERIA_DISABLED = ['enabled' => false];
 
     protected readonly UnitOfWork $uow;
-    public int $hydrate_mode = 0;
     protected array $postFlushInfos = [];
     protected array $relatedDependencies = [];
     protected readonly WireClassMetadataManagerInterface $entitiesMetadata;
@@ -94,37 +88,9 @@ class WireEntityManager implements WireEntityManagerInterface
     }
 
 
-    public function getNormaliserService(): NormalizerServiceInterface
+    public function getNormaliserService(): HydrationServiceInterface
     {
-        return $this->appWire->get(NormalizerServiceInterface::class);
-    }
-
-
-    /****************************************************************************************************/
-    /** HYDRATE MODE                                                                                    */
-    /****************************************************************************************************/
-
-    public function isHydrateMode(): bool
-    {
-        return $this->hydrate_mode > 0 || HttpRequest::isCli();
-    }
-    
-    public function incHydrateMode(): bool
-    {
-        $this->hydrate_mode++;
-        return $this->isHydrateMode();
-    }
-
-    public function decHydrateMode(): bool
-    {
-        $this->hydrate_mode--;
-        return $this->isHydrateMode();
-    }
-
-    public function resetHydrateMode(): bool
-    {
-        $this->hydrate_mode = 0;
-        return $this->isHydrateMode();
+        return $this->appWire->get(HydrationServiceInterface::class);
     }
 
     public function isDev(): bool
@@ -188,6 +154,14 @@ class WireEntityManager implements WireEntityManagerInterface
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
+    public function isGrantsCheckEnabled(): bool
+    {
+        if($this->appWire->isProd()) {
+            return true; // Enable grants check by default
+        }
+        return HttpRequest::isCli() || $this->appWire->isDev();
+    }
+
     /**
      * create entity
      * 
@@ -199,7 +173,7 @@ class WireEntityManager implements WireEntityManagerInterface
     {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
         $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
-        if(!$this->appWire->isGranted('new', $wCmd->name)) {
+        if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $wCmd->name)) {
             throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s!', [__METHOD__, __LINE__, $classname]));
         }
         if($service = $this->getEntityService($classname)) {
@@ -230,10 +204,23 @@ class WireEntityManager implements WireEntityManagerInterface
      */
     public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false
     {
-        if(!$this->appWire->isGranted('new', $entity)) {
+        if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity)) {
             throw new Exception(vsprintf('Error %s line %d: you are not allowed to clone %s!', [__METHOD__, __LINE__, $entity]));
         }
         throw new Exception('Not implemented yet!');
+    }
+
+    public function createDto(
+        string $classname,
+        array $data = [],
+        array $context = []
+    ): ?WireEntityDtoInterface
+    {
+        $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
+        if($service = $this->getEntityService($classname)) {
+            return $service->createDto($data, $context);
+        }
+        return null;
     }
 
 
@@ -310,9 +297,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function findByEuid(string $euid): ?BaseEntityInterface
     {
-        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
-            return $entity;
-        }
         $class = Encoders::getClassOfEuid($euid);
         $repo = $this->em->getRepository($class);
         $entity = $repo->findOneBy(['euid' => $euid]);
@@ -321,9 +305,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function euidExists(string $euid, bool $getData = false): bool|null|array
     {
-        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($euid))) {
-            return true;
-        }
         $class = Encoders::getClassOfEuid($euid);
         $repo = $this->em->getRepository($class);
         $entity = $repo
@@ -340,9 +321,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function findByUname(string $uname): ?BaseEntityInterface
     {
-        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($uname))) {
-            return $entity;
-        }
         $unameOjb = $this->getRepository(Uname::class)->find($uname);
         $entity = $unameOjb instanceof UnameInterface
             ? $this->findByEuid($unameOjb->getEntityEuid())
@@ -352,18 +330,12 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function findUnameByUname(string $uname): ?UnameInterface
     {
-        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findUnameCreated($uname))) {
-            return $entity;
-        }
         return $this->findById(Uname::class, $uname);
     }
 
     public function getEuidOfUname(string $uname): ?string
     {
         if(Encoders::isUnameFormatValid($uname) || Encoders::isEuidFormatValid($uname)) {
-            if($this->isHydrateMode()) {
-                $unameOjb = $this->getNormaliserService()->findCreated($uname);
-            }
             $unameOjb ??= $this->getRepository(Uname::class)->findOneById($uname);
             if($unameOjb instanceof UnameInterface) {
                 $euid = $unameOjb->getEntityEuid();
@@ -382,11 +354,6 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function getClassnameByUname(string $uname): ?string
     {
-        if($this->isHydrateMode()) {
-            $entity = $this->getNormaliserService()->findCreated($uname);
-            $result = $entity ? $entity->getClassname() : $this->getNormaliserService()->tryFindCatalogueClassname($uname);
-            if($result) return $result;
-        }
         return $this->getRepository(Uname::class)->getClassnameByUname($uname);
     }
 
@@ -399,14 +366,42 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function findEntityByUname(string $uname): ?TraitUnamedInterface
     {
-        if($this->isHydrateMode() && ($entity = $this->getNormaliserService()->findCreated($uname))) {
-            return $entity;
-        }
         $unameOjb = $this->getRepository(Uname::class)->findOneById($uname);
         if($unameOjb instanceof UnameInterface) {
             return $this->findByEuid($unameOjb->getEntityEuid());
         }
         return null;
+    }
+
+
+    /************************************************************************************************************/
+    /** CLASS METADATA SHORTCUTS                                                                                */
+    /************************************************************************************************************/
+
+    public function entityExists(string $classname, bool $searchShortname = false): bool
+    {
+        $classnames = $this->getEntitiesMetadata()->filterClasses()->mapSingleValue($searchShortname ? 'shortname' : 'name');
+        return in_array($classname, $classnames, true) || array_key_exists($classname, $classnames);
+    }
+
+    public function findOneFinal(string|object $entity): WireClassMetadataInterface
+    {
+        return $this->getEntitiesMetadata()->findOneFinal([$entity]);
+    }
+
+    public function findOneManaged(string|object $entity): WireClassMetadataInterface
+    {
+        return $this->getEntitiesMetadata()->findOneManaged([$entity]);
+    }
+
+    public function findOneInstantiable(string|object $entity): WireClassMetadataInterface
+    {
+        return $this->getEntitiesMetadata()->findOneInstantiable([$entity]);
+    }
+
+    public function getSerializableClassMetadatas(): WireClassMetadataCollectionInterface
+    {
+        return $this->getEntitiesMetadata()->findFinals([WireHydratable::class]);
     }
 
 

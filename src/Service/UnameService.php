@@ -6,7 +6,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
@@ -32,7 +32,7 @@ class UnameService implements UnameServiceInterface
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
         protected PaginatorInterface $paginator,
-        public readonly NormalizerServiceInterface $normalizer,
+        public readonly HydrationServiceInterface $normalizer,
     ) {
     }
 

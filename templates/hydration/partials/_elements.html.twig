@@ -1,0 +1,59 @@
+{% macro renderItem(hydradataItems, icon = true, extended = false) %}
+<li class="list-row">
+    <div>
+        {% if icon %}
+        {% set color = hydradataItems.hydratable ? 'text-success' : 'text-warning' %}
+        <twig:ux:icon name="{{ getIcon(hydradataItems.name|default('')) }}" class="grow-0 w-5 h-5 {{ hydradataItems.valid ? color : 'text-error' }}"/>
+        {% else %}
+        {% set color = hydradataItems.hydratable ? 'status-success' : 'status-warning' %}
+        <div aria-label="{{ hydradataItems.valid ? 'success' : 'error' }}" class="grow-0 status {{ hydradataItems.valid ? color : 'status-error' }} h-3 w-3"></div>
+        {% endif %}
+    </div>
+    <div>
+        <div>{{ hydradataItems.name|default('Entité inconnue') }}{% if hydradataItems.declared_name != hydradataItems.name %} <span class="italic text-gray-400 font-thin text-sm">({{ hydradataItems.declared_name }})</span>{% endif %}</div>
+        {% if extended %}
+        <div>File <span class="font-semibold text-xs text-success">{{ hydradataItems.file.realPath }}</span></div>
+        <div>Index <span class="font-semibold text-success">{{ hydradataItems.index }}</span></div>
+        <div>Order <span class="font-semibold text-success">{{ hydradataItems.order }}</span></div>
+        {% if hydradataItems.valid %}
+        <div>Entities <span class="font-semibold text-success">{{ hydradataItems.count }}</span></div>
+        <div>Persisteds <span class="font-semibold text-success">{{ hydradataItems.persisteds.count }}</span></div>
+        <div>News <span class="font-semibold text-success">{{ hydradataItems.news.count }}</span></div>
+        {% endif %}
+        {% if not hydradataItems.valid %}
+        <div class="alert alert-error mt-2"><twig:ux:icon name="tabler:ban" class="h-6 w-6 shrink-0 stroke-current"/><span>This entity is INVALID not ready for hydratation.</span></div>
+        {% elseif not hydradataItems.hydratable %}
+        <div class="alert alert-warning mt-2"><twig:ux:icon name="tabler:info-triangle" class="h-6 w-6 shrink-0 stroke-current"/><span>This entity is not ready for hydratation. Something is missing.</span></div>
+        {% endif %}
+        {% else %}
+        <div class="text-xs uppercase font-semibold opacity-60">
+            Index : {{ hydradataItems.index }} / Order : {{ hydradataItems.order }}{% if hydradataItems.valid %} / Persisteds/total : {{ hydradataItems.persisteds.count }}/{{ hydradataItems.count }}{% endif %}
+        </div>
+        <div class="text-xs opacity-60">File : {{ hydradataItems.file.realPath }}</div>
+        {% endif %}
+    </div>
+    {% if not hydradataItems.valid %}
+    <div class="list-col-wrap text-xs">
+        <ul class="text-error list-disc pl-4">
+            {% for error in hydradataItems.invalidReasons %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if hydradataItems.hydratable %}
+    <a href="{{ path('hydration_generate', {index: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydratable ? 'btn-success' : 'btn-warning disabled opacity-30' }}" title="Generate">
+        <twig:ux:icon name="tabler:player-play-filled" class="size-[1.2em]"/>
+    </a>
+    {# <a href="{{ path('hydration_test', {index: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydratable ? 'btn-success' : 'btn-warning disabled opacity-30' }}" title="Test">
+        <twig:ux:icon name="tabler:player-play" class="size-[1.2em]"/>
+    </a> #}
+    {% endif %}
+    {% if not extended %}
+    {% set btncolor = hydradataItems.hydratable ? 'btn-success' : 'btn-warning' %}
+    <a href="{{ path('hydration_show', {index: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.valid ? btncolor : 'btn-error' }}" title="View">
+        <twig:ux:icon name="tabler:eye" class="size-[1.2em]"/>
+    </a>
+    {% endif %}
+</li>
+{% endmacro %}

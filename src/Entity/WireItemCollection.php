@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyParentInterface;
-use Aequation\WireBundle\Entity\interface\ItemCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Tools\Encoders;
@@ -28,7 +28,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[ORM\Entity(repositoryClass: SortableRepository::class)]
 #[ORM\Table(name: '`between_many_sorted_item`')]
 #[HasLifecycleCallbacks]
-class ItemCollection implements ItemCollectionInterface
+class WireItemCollection implements WireItemCollectionInterface
 {
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: WireEcollectionInterface::class, inversedBy: 'childs')]

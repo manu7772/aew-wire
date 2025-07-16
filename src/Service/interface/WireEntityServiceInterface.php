@@ -3,6 +3,8 @@
 namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
+use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -16,29 +18,22 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     // Services
     public function getWireEm(): WireEntityManagerInterface;
     public function getEntityManager(): EntityManagerInterface;
+    public function getWireClassMetadata(): ?WireClassMetadataInterface;
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
     // public function checkEntity(BaseEntityInterface $entity): void;
     // New
-    public function createEntity(
-        array $data = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): BaseEntityInterface;
-    public function createModel(
-        array $data = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): BaseEntityInterface;
-    public function createClone(
-        BaseEntityInterface $entity,
-        array $changes = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): BaseEntityInterface|false;
+    public function createEntity(array $data = [], array $context = []): BaseEntityInterface;
+    public function createModel(array $data = [], array $context = []): BaseEntityInterface;
+    public function createClone(BaseEntityInterface $entity,array $changes = [], array $context = []): BaseEntityInterface|false;
+    public function createDto(array $data = [], array $context = []): ?WireEntityDtoInterface;
     // Maintain database
     public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Querys
     public static function getEntityClassname(): string;
     public function getEntityShortname(): string;
+    public function getDtoClassnames(): array;
     public function getRepository(?string $classname = null): ?EntityRepository;
     // Find
     /**

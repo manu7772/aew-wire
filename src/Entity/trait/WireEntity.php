@@ -1,18 +1,14 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
-use Aequation\WireBundle\Component\EntityEmbededStater;
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\EntitySelfState;
-use Aequation\WireBundle\Component\interface\EntityEmbededStaterInterface;
-use Aequation\WireBundle\Component\interface\EntityEmbededStatusContainerInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
-use Doctrine\DBAL\Types\Types;
 // Symfony
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\PropertyAccess\PropertyAccess;
@@ -99,7 +95,7 @@ trait WireEntity
         return $this->getSelfState()->isReady();
     }
 
-    public function getEmbededStatus(bool $load = true): null|EntityEmbededStatusContainerInterface|EntityEmbededStatusInterface|EntitySelfStateInterface
+    public function getEmbededStatus(bool $load = true): null|EntityEmbededStatusInterface|EntitySelfStateInterface
     {
         if($load && !$this->__selfstate->isReady()) {
             $this->__selfstate->getEmbededStatus();

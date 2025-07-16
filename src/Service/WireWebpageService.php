@@ -14,9 +14,9 @@ use Aequation\WireBundle\Tools\Files;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\EntityRepository;
+use Symfony\Component\HttpFoundation\Request;
 // PHP
 use Exception;
-use Symfony\Component\HttpFoundation\Request;
 
 abstract class WireWebpageService extends WireItemService implements WireWebpageServiceInterface
 {
@@ -34,10 +34,8 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         bool $repair = false
     ): OpresultInterface
     {
-        $this->getWireEm()->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WireWebpageInterface entities
-        $this->getWireEm()->decHydrateMode();
         return $opresult;
     }
 
@@ -54,8 +52,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         array $context = []
     ): WireWebpageInterface
     {
-        /** @var WireWebpageInterface */
-        $entity = $this->getWireEm()->createEntity($this->getEntityClassname(), $data, $context);
+        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
+        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
+            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+        }
         // 1. Add default/prefered Websections
         foreach ($this->appWire->get(WireWebsectionServiceInterface::class)->getPreferedWebsections() as $websection) {
             $entity->addWebsection($websection);
@@ -186,7 +186,8 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                             $choice_label = $file->getRealpath();
                             if(!$choice_label) throw new Exception(vsprintf('Error %s line %d: path "%s" is invalid', [__METHOD__, __LINE__, $path]));
                             $choice_label = static::FILES_FOLDER.Files::stripTwigfile($file, false);
-                            $files['choicelist'][ucfirst(Files::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : '')] = $choice_label;
+                            $files['choicelist'][ucfirst(Files::stripTwigfile($file, true)).(count($description) > 2 ? ' - '.$description[2].'' : '')] = $choice_label;
+                            // $files['choicelist'][ucfirst(Files::stripTwigfile($file, true)).(count($description) > 2 ? '<i class="text-muted"> - '.$description[2].'</i>' : '')] = $choice_label;
                             $files['info'][Files::stripTwigfile($file, true)] = [
                                 'description' => $description[2] ?? null,
                                 'status' => $status[2] ?? 'enabled',
@@ -276,7 +277,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         $request ??= $this->appWire->getRequest();
         $fields =  [
             'id' => [
-                'classes' => ['text-center','w-0'],
+                'classes' => ['w-1'],
                 'sortable' => true,
             ],
             'name' => [
@@ -284,10 +285,10 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                 'sortable' => true,
             ],
             'websections' => [
-                'classes' => ['text-center','w-0'],
+                'classes' => ['w-1'],
                 'label' => 'Nb sections',
                 'view_options' => [
-                    'template' => ['from_string' => '{{ entity.websections|length }}'],
+                    'template' => ['from_string' => '{{ entity.websections.count }}'],
                 ],
                 'sortable' => false,
             ],

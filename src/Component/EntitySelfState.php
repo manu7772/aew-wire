@@ -155,7 +155,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function setPersisted(): static
     {
-        $this->state = $this->state | static::STATES['persisted'];
+        $this->state |= static::STATES['persisted'];
         return $this;
     }
 
@@ -166,7 +166,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function setUpdated(): static
     {
-        $this->state = $this->state | static::STATES['updated'];
+        $this->state |= static::STATES['updated'];
         return $this;
     }
 
@@ -177,7 +177,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function setRemoved(): static
     {
-        $this->state = $this->state | static::STATES['removed'];
+        $this->state |= static::STATES['removed'];
         return $this;
     }
 
@@ -188,7 +188,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function setDetached(): static
     {
-        $this->state = $this->state | static::STATES['detached'];
+        $this->state |= static::STATES['detached'];
         return $this;
     }
 
@@ -204,7 +204,7 @@ class EntitySelfState implements EntitySelfStateInterface
 
     public function setModel(): static
     {
-        $this->state = $this->state | static::STATES['model'];
+        $this->state |= static::STATES['model'];
         return $this;
     }
 

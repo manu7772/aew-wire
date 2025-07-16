@@ -64,7 +64,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     protected string $sectiontype;
 
     #[ORM\OneToMany(targetEntity: WireWebsectionTranslationInterface::class, mappedBy: 'object', cascade: ['persist', 'remove'])]
-    protected $translations;
+    protected Collection $translations;
 
     public ?WireWebpageInterface $tempWebpage = null;
     protected readonly TwigfileMetadata $twigfileMetadata;

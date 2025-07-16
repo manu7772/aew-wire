@@ -19,6 +19,7 @@ use Exception;
 trait Datetimed
 {
     #[ORM\ManyToOne(targetEntity: WireLanguageInterface::class, fetch: 'EAGER')]
+    #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(groups: ['persist','update'], message: 'La langue doit être renseignée.')]
     protected WireLanguageInterface $langage;
     // language choices

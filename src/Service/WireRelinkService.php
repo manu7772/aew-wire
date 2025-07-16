@@ -5,7 +5,6 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireRelinkServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
@@ -26,8 +25,7 @@ class WireRelinkService implements WireRelinkServiceInterface
     public function __construct(
         protected AppWireServiceInterface $appWire,
         protected WireEntityManagerInterface $wireEm,
-        protected PaginatorInterface $paginator,
-        protected NormalizerServiceInterface $normalizer
+        protected PaginatorInterface $paginator
     ) {
     }
 
@@ -36,10 +34,8 @@ class WireRelinkService implements WireRelinkServiceInterface
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult = new Opresult();
         // Check all WireRelinkInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

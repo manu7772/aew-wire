@@ -8,6 +8,7 @@ use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 // Symfony
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -32,24 +33,51 @@ class WebpageType extends AbstractType
         $builder->add('name', null, [
             'label' => 'fields.name',
             'required' => true,
-            'priority' => 9
+            'priority' => 100
+        ]);
+        $builder->add('title', null, [
+            'label' => 'fields.title',
+            'required' => true,
+            'priority' => 90
+        ]);
+        $builder->add('linktitle', null, [
+            'label' => 'fields.linktitle',
+            'required' => false,
+            'priority' => 80
+        ]);
+        $builder->add('twigfile', ChoiceType::class, [
+            'label' => 'fields.twigfile',
+            // 'label_attr' => ['class' => 'fieldset-legend'],
+            'attr' => ['class' => 'select'],
+            'choices' => $this->entityService->getWebpageModels(),
+            'multiple' => false,
+            'expanded' => false,
+            'required' => true,
+            'priority' => 70
         ]);
         // $wsClass = $this->wireEm->resolveFinalEntity(WireWebsectionInterface::class);
         // if($wsClass) {
             /** @see https://symfony.com/doc/current/reference/forms/types/choice.html */
-            $builder->add('websections', ChoiceType::class, [
-                'mapped' => false,
-                'by_reference' => false,
-                // 'class' => reset($wsClass),
+            $builder->add('websections', EntityType::class, [
+                'label' => 'fields.websections',
+                // 'mapped' => false,
+                'by_reference' => true,
+                'class' => $this->wireEm->findOneFinal(WireWebsectionInterface::class)->name,
                 'choices' => $this->entityService->getWebsectionsChoices(),
                 'choice_label' => 'name',
                 'multiple' => true,
-                'expanded' => false,
-                'label' => 'fields.websections',
+                'expanded' => true,
                 'required' => true,
-                'priority' => 8
+                'help' => 'Choisissez les sections contenues dans cette page web',
+                'priority' => 50
             ]);
         // }
+        $builder->add('enabled', CheckboxType::class, [
+            'label' => 'fields.enabled',
+            'required' => false,
+            'help' => 'Activer/désactiver la page web',
+            'priority' => 40
+        ]);
         $builder->add('submit', SubmitType::class, [
             'label' => 'actions.save',
             'attr' => ['data-submit-actions' => 'save_index'],

@@ -1,10 +1,10 @@
 <?php
-namespace Aequation\WireBundle\Controller\Generation;
+namespace Aequation\WireBundle\Controller\Hydration;
 
 // Aequation
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Entity\WireFactory;
-use Aequation\WireBundle\Service\interface\NormalizerServiceInterface;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
@@ -30,14 +30,14 @@ class GenerationController extends AbstractController
     #[Route('/report/{mode<\d>}', name: 'generate_report', defaults: ['mode' => GenerationController::GENERATION_MODE])]
     public function report(
         int $mode,
-        NormalizerServiceInterface $normalizer
+        HydrationServiceInterface $normalizer
     ): Response
     {
-        $mode = array_key_exists($mode, NormalizerServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
+        $mode = array_key_exists($mode, HydrationServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
         return $this->render('@AequationWire/generate/report.html.twig', [
             'normalizer' => $normalizer,
             'class_reports' => $normalizer->getReport([], $mode),
-            'available_modes' => NormalizerServiceInterface::AVAILABLE_MODES,
+            'available_modes' => HydrationServiceInterface::AVAILABLE_MODES,
             'mode' => $mode,
         ]);
     }
@@ -47,15 +47,15 @@ class GenerationController extends AbstractController
     public function reportEntity(
         string $entity,
         int $mode,
-        NormalizerServiceInterface $normalizer
+        HydrationServiceInterface $normalizer
     ): Response
     {
-        $mode = array_key_exists($mode, NormalizerServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
+        $mode = array_key_exists($mode, HydrationServiceInterface::AVAILABLE_MODES) ? $mode : static::GENERATION_MODE;
         return $this->render('@AequationWire/generate/report_entity.html.twig', [
             'normalizer' => $normalizer,
             'entity' => $entity,
             'class_reports' => $normalizer->getReport([$entity], $mode),
-            'available_modes' => NormalizerServiceInterface::AVAILABLE_MODES,
+            'available_modes' => HydrationServiceInterface::AVAILABLE_MODES,
             'mode' => $mode,
         ]);
     }
@@ -111,7 +111,7 @@ class GenerationController extends AbstractController
     #[Route('/generate/{redirect}', name: 'generate_generate', methods: ['GET','POST'], defaults: ['redirect' => null])]
     public function generate(
         Request $request,
-        NormalizerServiceInterface $normalizer,
+        HydrationServiceInterface $normalizer,
         ?string $redirect = null
     ): Response
     {

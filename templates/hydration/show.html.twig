@@ -1,0 +1,53 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}Hydration {{ hydradataItems.name }}
+{% endblock %}
+
+{% block main_content %}
+	{% if not app.devOrSadmin %}
+		{{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
+	{% else %}
+		<h1>
+            <a href="{{ path('hydration_index') }}" class="btn btn-square btn-ghost btn-outline mr-2">
+                <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
+            </a>
+            <twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration <span class="{{ hydradataItems.valid ? 'font-light opacity-80' : 'text-error' }}">{{ hydradataItems.name }}</span>
+        </h1>
+        {% if hydradataItems and (others is not null and others.count > 0) %}
+		<div class="divider my-6">
+            {% set indexes = [hydradataItems.index]|merge(others.validIndexes) %}
+            <a href="{{ path('hydration_generate', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all {{ indexes|length }}">
+                Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
+            </a>
+            <a href="{{ path('hydration_test', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all {{ indexes|length }}">
+                Tout tester ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
+            </a>
+        </div>
+        {% endif %}
+
+		{% if hydradataItems is null %}
+            <div role="alert" class="alert alert-warning">
+                <twig:ux:icon name="tabler:database-exclamation" class="h-6 w-6 shrink-0 stroke-current"/>
+                <span>Aucune donnée disponible</span>
+            </div>
+		{% else %}
+            {% import "@AequationWire/hydration/partials/_elements.html.twig" as elements %}
+            <ul class="list bg-base-100 rounded-box shadow-md">
+                {{ elements.renderItem(hydradataItems, extended: true) }}
+            </ul>
+            {% if others is not null and others.count > 0 %}
+            <div class="divider my-4">
+                <h3 class="text-success">Others of same name <span class="font-bold">{{ hydradataItems.name }}</span></h3>
+            </div>
+            <ul class="list bg-base-100 rounded-box shadow-md">
+                {% for other in others %}
+                {{ elements.renderItem(other, extended: true) }}
+                {% endfor %}
+            </ul>
+            {% endif %}
+		{% endif %}
+
+		{# {{ dump(hydradataItems, others) }} #}
+
+	{% endif %}
+{% endblock %}

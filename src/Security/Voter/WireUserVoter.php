@@ -51,6 +51,7 @@ abstract class WireUserVoter extends BaseEntityVoter
                         return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGranted('ROLE_ADMIN'));
                         break;
                     default:
+                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
@@ -76,6 +77,7 @@ abstract class WireUserVoter extends BaseEntityVoter
                         return $attribute === $user;
                         break;
                     default:
+                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;

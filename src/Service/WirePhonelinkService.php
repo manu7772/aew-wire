@@ -15,10 +15,8 @@ class WirePhonelinkService extends WireRelinkService implements WirePhonelinkSer
         bool $repair = false
     ): OpresultInterface
     {
-        $this->wireEm->incHydrateMode();
         $opresult = parent::checkDatabase($opresult, $repair);
         // Check all WirePhonelinkInterface entities
-        $this->wireEm->decHydrateMode();
         return $opresult;
     }
 

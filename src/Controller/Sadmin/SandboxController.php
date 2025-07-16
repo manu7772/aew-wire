@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Controller\Sadmin;
 
 use Aequation\WireBundle\Dto\WireFactoryDto;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Objects;
@@ -40,10 +41,10 @@ class SandboxController extends AbstractController
             'uname' => 'test_factory_001',
             'annuaire' => true
         ];
-        $factory_dto = new WireFactoryDto($factory_data);
-        $factory_classname = $wireEm->resolveFinalEntity(WireFactory::class);
-        $factory = $wireEm->getRepository(WireFactory::class)->findOneBy(['prefered' => true]);
-        $new_factory = $wireEm->createEntity(WireFactory::class);
+        $factory_classname = $wireEm->findOneFinal(WireFactory::class);
+        $factory_dto = $wireEm->createDto($factory_classname, $factory_data);
+        $factory = $wireEm->getRepository($factory_classname)->findOneBy(['prefered' => true]);
+        $new_factory = $wireEm->createEntity($factory_classname);
         // $factory_result = $objectMapper->map($factory_dto, $factory);
         $factory_result = $objectMapper->map($factory_dto, $new_factory);
         return $this->render('@AequationWire/sadmin/sandbox_dto.html.twig', [
