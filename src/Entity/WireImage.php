@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Repository\WireImageRepository;
@@ -21,6 +22,7 @@ use Exception;
 
 #[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
+#[AdminGroup(group: 'Media', order: 8, icon: 'tabler:photo')]
 abstract class WireImage extends WireItem implements WireImageInterface
 {
 
@@ -87,7 +89,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
         $this->file = $file;
         if(HttpRequest::isCli()) {
             $filesystem = new Filesystem();
-            $dest = $filesystem->tempnam(dir: $this->__estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
+            $dest = $filesystem->tempnam(dir: $this->getEmbededStatus()->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
             $filesystem->copy($this->file->getRealPath(), $dest, true);
             try {
                 $this->file = new UploadedFile(path: $dest, originalName: $this->file->getFilename(), test: true);
@@ -120,7 +122,7 @@ abstract class WireImage extends WireItem implements WireImageInterface
     ): ?string
     {
         $filter ??= $this->getLiipDefaultFilter();
-        return $this->__estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
+        return $this->getEmbededStatus()->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
     }
 
     public function getLiipDefaultFilter(): string

@@ -47,11 +47,30 @@ class EntityEmbededStatus implements EntityEmbededStatusInterface
         $this->service = $this->wireEm->getEntityService($this->entity);
 
         // Some controls...
-        if($this->selfstate->isLoaded() && !$this->isContained()) {
-            throw new Exception(vsprintf('Error %s line %d: entity %s looks %s, but not contained in EntityManager!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->selfstate->isNew() ? 'new' : 'loaded']));
-        }
+        // if($this->selfstate->isLoaded() && !$this->isContained()) {
+        //     throw new Exception(vsprintf('Error %s line %d: entity %s looks %s, but not contained in EntityManager!', [__METHOD__, __LINE__, $this->entity->getClassname(), $this->selfstate->isNew() ? 'new' : 'loaded']));
+        // }
     }
 
+    public function getAppWire(): AppWireServiceInterface
+    {
+        return $this->appWire;
+    }
+
+    public function getWireEm(): WireEntityManagerInterface
+    {
+        return $this->wireEm;
+    }
+
+    public function getEm(): EntityManagerInterface
+    {
+        return $this->em;
+    }
+
+    public function getService(): WireEntityServiceInterface
+    {
+        return $this->service;
+    }
 
     /*******************************************************************************************
      * ENVIRONMENT

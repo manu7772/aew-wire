@@ -1,5 +1,4 @@
 {% extends '@AequationWire/base_web.html.twig' %}
-{% import '@AequationWire/partials/_elements.html.twig' as elements %}
 
 {% block title %}{{ 'Login'|trans }}{% endblock %}
 
@@ -7,21 +6,23 @@
     <div class="flex flex-col gap-4 items-center justify-center ">
     {% if error %}
         <div class="max-w-md w-full">
-            {{ elements.alert_danger(error.messageKey|trans(error.messageData, 'security')) }}
+            <twig:wire:alert type="error">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </twig:wire:alert>
         </div>
     {% endif %}
     {% if app.user %}
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-xl shadow-xl dark:shadow-black max-w-md w-full">
+        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
             <h1 class="text-2xl text-center font-semibold mb-4 text-sky-800 dark:text-sky-300"><twig:ux:icon name="tabler:user-check" class="w-8 h-8 inline-block"/> {{ 'Login'|trans }}</h1>
             <div class="alert alert-danger text-xl font-bold text-center">
                 <div class="py-6">{{ 'user_already_logged'|trans({'%user%': app.user.userIdentifier}) }}</div>
                 <div>
-                    <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="w-full bg-sky-600 dark:bg-sky-500 text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-xl">{{ 'Exit'|trans }}</a>
+                    <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="w-full bg-sky-600 dark:bg-sky-500 text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-lg">{{ 'Exit'|trans }}</a>
                 </div>
             </div>
         </div>
     {% else %}
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-xl shadow-xl dark:shadow-black max-w-md w-full">
+        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
             <h1 class="text-2xl text-center font-semibold mb-4 text-sky-800 dark:text-sky-300"><twig:ux:icon name="tabler:user-check" class="w-8 h-8 inline-block"/> {{ 'Login'|trans }}</h1>
             <form method="POST">
                 <!-- User Email -->
@@ -37,21 +38,30 @@
                 </div>
 
                 {# !!! set framework => csrf_protection: true !!! #}
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                {% set csrf_token_auth = csrf_token('authenticate') %}
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token_auth }}">
 
                 <!-- Submit Button -->
                 <div>
-                    <button{{ data_turbo(false) }} type="submit" class="w-full bg-sky-600 dark:bg-sky-500 text-lg font-bold text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-xl">{{ 'login'|trans }}</button>
+                    <button{{ data_turbo(false) }} type="submit" class="w-full bg-sky-600 dark:bg-sky-500 text-lg font-bold text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-lg">{{ 'login'|trans }}</button>
                 </div>
             </form>
         </div>
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-xl shadow-xl dark:shadow-black max-w-md w-full">
+        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
             <div class="text-center text-sky-800 dark:text-sky-300 py-1">
                 <span class="italic inline">{{ 'No_account'|trans }}</span>
                 <twig:ux:icon name="tabler:circle-arrow-right-filled" class="w-6 ml-3 inline-block"/>
                 <a{{ data_turbo(false) }} href="{{ path('app_register') }}" class="underline font-bold">{{ 'Register'|trans }}</a>
             </div>
         </div>
+        {% if csrf_token_auth == 'csrf-token' and app.dev %}
+        <div class="max-w-md w-full">
+            <twig:wire:alert type="warning">
+                <div class="text-center">DEV ALERTE : Jeton CSRF invalide !</div>
+                <div class="text-center font-light">set framework => csrf_protection: true</div>
+            </twig:wire:alert>
+        </div>
+        {% endif %}
     {% endif %}
     </div>
 {% endblock %}

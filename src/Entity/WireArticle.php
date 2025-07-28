@@ -1,10 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
@@ -16,12 +18,18 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 // PHP
 use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\HasLifecycleCallbacks]
+#[AdminGroup(group: 'Media', order: 8, icon: 'tabler:photo')]
 abstract class WireArticle extends WireItem implements WireArticleInterface
 {
 
     use Owner, Webpageable, Relinkable, Categorized;
+
+    #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'articles')]
+    protected Collection $factorys;
 
     public const ICON = [
         'ux' => 'tabler:article',
@@ -46,6 +54,11 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
         ],
     ];
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->factorys = new ArrayCollection();
+    }
 
     public function isActive(): bool
     {
@@ -93,5 +106,29 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
         }
         return $deprecated;
     }
+
+    public function getFactorys(): Collection
+    {
+        return $this->factorys;
+    }
+
+    public function addFactory(WireFactoryInterface $factory): static
+    {
+        if (!$this->factorys->contains($factory)) {
+            $this->factorys->add($factory);
+            $factory->addArticle($this);
+        }
+        return $this;
+    }
+
+    public function removeFactory(WireFactoryInterface $factory): static
+    {
+        if ($this->factorys->removeElement($factory)) {
+            $factory->removeArticle($this);
+        }
+        return $this;
+    }
+
+
 
 }

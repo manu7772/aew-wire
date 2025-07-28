@@ -6,7 +6,7 @@ use Gedmo\Sortable\Sortable;
 
 interface WireItemInterface extends WireEntityInterface, BetweenManyChildInterface, Sortable, SluggableInterface, TranslationEntityInterface, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface
 {
-    public function getName(): ?string;
+    public function getName(): string;
     public function setName(string $name): static;
     public function getTempParent(): ?WireEcollectionInterface;
     public function setTempParent(?WireEcollectionInterface $tempParent = null): static;

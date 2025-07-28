@@ -5,6 +5,8 @@ use Aequation\WireBundle\Tools\interface\ToolInterface;
 // Symfony
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Finder\SplFileInfo as FinderSplFileInfo;
+use Symfony\Component\HttpFoundation\File\File;
 // PHP
 use Closure;
 use SplFileInfo;
@@ -26,6 +28,17 @@ class Files implements ToolInterface
             ->followLinks()
             ;
     }
+
+    public static function getSplFileInfo(string $filepath): SplFileInfo|false
+    {
+        return is_file($filepath) ? new SplFileInfo($filepath) : false;
+    }
+
+    // public static function getFinderSplFileInfo(string $filepath): SplFileInfo|false
+    // {
+    //     $file = new File($filepath, true);
+    //     return is_file($filepath) ? new FinderSplFileInfo($filepath) : false;
+    // }
 
     /**
      * Add $path to $base directory

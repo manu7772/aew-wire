@@ -8,32 +8,30 @@
 		{{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
 	{% else %}
 		<h1>
-            <a href="{{ path('hydration_index') }}" class="btn btn-square btn-ghost btn-outline mr-2">
+            <a href="{{ app.request.headers.get('referer') }}" class="btn btn-square btn-ghost btn-outline mr-2">
                 <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
             </a>
             <twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration <span class="{{ hydradataItems.valid ? 'font-light opacity-80' : 'text-error' }}">{{ hydradataItems.name }}</span>
         </h1>
         {% if hydradataItems and (others is not null and others.count > 0) %}
 		<div class="divider my-6">
-            {% set indexes = [hydradataItems.index]|merge(others.validIndexes) %}
-            <a href="{{ path('hydration_generate', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all {{ indexes|length }}">
+            {% set indexes = [hydradataItems.index]|merge(others.hydrationReadyIndexes) %}
+            <a href="{{ path('hydration_generate', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all {{ indexes|length }}">
                 Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
             </a>
-            <a href="{{ path('hydration_test', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all {{ indexes|length }}">
+            {# <a href="{{ path('hydration_test', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all {{ indexes|length }}">
                 Tout tester ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
-            </a>
+            </a> #}
         </div>
         {% endif %}
 
 		{% if hydradataItems is null %}
-            <div role="alert" class="alert alert-warning">
-                <twig:ux:icon name="tabler:database-exclamation" class="h-6 w-6 shrink-0 stroke-current"/>
+            <twig:wire:alert type="warning">
                 <span>Aucune donnée disponible</span>
-            </div>
+            </twig:wire:alert>
 		{% else %}
-            {% import "@AequationWire/hydration/partials/_elements.html.twig" as elements %}
             <ul class="list bg-base-100 rounded-box shadow-md">
-                {{ elements.renderItem(hydradataItems, extended: true) }}
+                <twig:wire:hydra-items-show hydradataItems="{{ hydradataItems }}" extended="{{ true }}" context="show" icon="{{ true }}" />
             </ul>
             {% if others is not null and others.count > 0 %}
             <div class="divider my-4">
@@ -41,7 +39,7 @@
             </div>
             <ul class="list bg-base-100 rounded-box shadow-md">
                 {% for other in others %}
-                {{ elements.renderItem(other, extended: true) }}
+                <twig:wire:hydra-items-show hydradataItems="{{ other }}" extended="{{ true }}" context="show" icon="{{ true }}" />
                 {% endfor %}
             </ul>
             {% endif %}

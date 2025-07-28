@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
@@ -30,6 +31,7 @@ use DateTimeImmutable;
 #[UniqueEntity(fields: ['email'], groups: ['registration','persist','update'], message: 'Cet email {{ value }} est déjà utilisé')]
 #[ORM\HasLifecycleCallbacks]
 #[WireRelationMapping(WireUser::ITEMS_ACCEPT)]
+#[AdminGroup(group: 'Persons', order: 1, icon: 'tabler:users-group')]
 abstract class WireUser extends WireItem implements WireUserInterface
 {
     use Webpageable, Relinkable, Categorized;
@@ -124,15 +126,6 @@ abstract class WireUser extends WireItem implements WireUserInterface
         $this->relinks = new ArrayCollection();
         $this->factorys = new ArrayCollection();       
         $this->setCssthemes([]); 
-    }
-
-    public static function transformFromDto(mixed $value, mixed $source): mixed
-    {
-        if($source->superadmin) {
-            $value->setSuperadmin();
-            dump($source, $value);
-        }
-        return $value;
     }
 
     public function __toString(): string

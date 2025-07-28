@@ -58,9 +58,8 @@ class WebpageType extends AbstractType
         // $wsClass = $this->wireEm->resolveFinalEntity(WireWebsectionInterface::class);
         // if($wsClass) {
             /** @see https://symfony.com/doc/current/reference/forms/types/choice.html */
-            $builder->add('websections', EntityType::class, [
-                'label' => 'fields.websections',
-                // 'mapped' => false,
+            $builder->add('sections', EntityType::class, [
+                'label' => 'fields.sections',
                 'by_reference' => true,
                 'class' => $this->wireEm->findOneFinal(WireWebsectionInterface::class)->name,
                 'choices' => $this->entityService->getWebsectionsChoices(),

@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
@@ -21,6 +22,7 @@ use Exception;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[Vich\Uploadable]
+#[AdminGroup(group: 'Media', order: 8, icon: 'tabler:photo')]
 abstract class WirePdf extends WireItem implements WirePdfInterface
 {
 
@@ -92,7 +94,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         $this->file = $file;
         if(HttpRequest::isCli()) {
             $filesystem = new Filesystem();
-            $dest = $filesystem->tempnam(dir: $this->__estatus->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
+            $dest = $filesystem->tempnam(dir: $this->getEmbededStatus()->appWire->getTempDir(), prefix: pathinfo($this->file->getFilename(), PATHINFO_FILENAME).'_', suffix: '.'.pathinfo($this->file->getFilename(), PATHINFO_EXTENSION));
             $filesystem->copy($this->file->getRealPath(), $dest, true);
             try {
                 $this->file = new UploadedFile(path: $dest, originalName: $this->file->getFilename(), test: true);
@@ -125,7 +127,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
     ): ?string
     {
         // $filter ??= $this->getLiipDefaultFilter();
-        return $this->__estatus->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
+        return $this->getEmbededStatus()->wireEntityManager->getBrowserPath($this, $filter, $runtimeConfig, $resolver, $referenceType);
     }
 
     public function updateName(): static
@@ -228,7 +230,7 @@ abstract class WirePdf extends WireItem implements WirePdfInterface
         string $action = 'inline'
     ): ?string
     {
-        return $this->__estatus->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->getEmbededStatus()->appWire->get('router')->generate('output_pdf_action', ['action' => $action, 'pdf' => $this->getSlug()], $referenceType ?? UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     public function getSourcetype(): int

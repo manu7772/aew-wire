@@ -7,7 +7,7 @@ class WireWebsectionDto extends WireItemDto
 {
     // Fields
     #[Map(if: 'strlen')]
-    public string $title;
+    public ?string $title = null;
     #[Map(if: 'strlen')]
     public string $twigfile;
     #[Map(if: 'is_bool')]

@@ -3,7 +3,7 @@
 namespace Aequation\WireBundle\Service\trait;
 
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Interface\WireHydratable;

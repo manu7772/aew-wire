@@ -9,11 +9,13 @@ use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
+use ArrayIterator;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
+use Traversable;
 
 /**
  * Use Gedmo extension for sortable
@@ -45,6 +47,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     #[Assert\Valid(groups: ['persist','update'])]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $childs;
+    protected Collection $temp_childs;
 
     public function __construct()
     {
@@ -53,9 +56,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     }
 
     // Sortgroup
-    public function getSortgroup(
-        ?BetweenManyChildInterface $child = null
-    ): string
+    public function getSortgroup(?BetweenManyChildInterface $child = null): string
     {
         return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
@@ -71,16 +72,110 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return !$this->isEmpty();
     }
 
-    public function getCount(): int
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->childs);
+    }
+
+    public function count(): int
     {
         return $this->childs->count();
+    }
+
+    #[ORM\PostLoad]
+    public function initTempChilds(): void
+    {
+        $this->temp_childs = new ArrayCollection($this->childs->toArray());
+    }
+    
+    public function findTempChild(
+        WireItemInterface|WireItemCollectionInterface $child
+    ): ?WireItemCollectionInterface
+    {
+        if(!$child->getSelfState()->isNew() && !$this->getSelfState()->isNew()) {
+            foreach ($this->temp_childs as $temp_child) {
+                /** @var WireItemCollectionInterface $temp_child */
+                if($temp_child->getChild(false) === $child || $temp_child === $child) {
+                    return $temp_child;
+                }
+            }
+        }
+        return null;
+    }
+
+    public function getChilds(): Collection
+    {
+        return $this->childs;
+    }
+
+    public function setChilds(iterable $childs): static
+    {
+        $this->removeChilds();
+        foreach ($childs as $child) {
+            $this->addChild($child);
+        }
+        return $this;
+    }
+    
+    public function addChild(WireItemInterface|WireItemCollectionInterface $child): static
+    {
+        if(!$this->hasChild($child)) {
+            $new_child = $this->findTempChild($child);
+            $new_child ??= $child instanceof WireItemCollectionInterface ? $child : new WireItemCollection($this, $child);
+            if(!$this->childs->contains($new_child)) {
+                $this->childs->add($new_child);
+            }
+        }
+        return $this;
+    }
+
+    public function hasChild(WireItemInterface|WireItemCollectionInterface $child): bool
+    {
+        foreach ($this->childs as $ic) {
+            /** @var WireItemCollectionInterface $ic */
+            // if($child instanceof WireItemInterface) {
+            //     if($ic->getChild(false) === $child) {
+            //         return true;
+            //     }
+            // } else {
+            //     if($ic === $child || $ic->getChild(false) === $child->getChild(false)) {
+            //         return true;
+            //     }
+            // }
+            if($ic->getChild(false) === $child || $ic === $child || ($child instanceof WireItemCollectionInterface && $ic->getChild(false) === $child->getChild(false))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function removeChild(WireItemInterface|WireItemCollectionInterface $child): static
+    {
+        if($child instanceof WireItemInterface) {
+            foreach ($this->childs as $ic) {
+                /** @var WireItemCollectionInterface $ic */
+                if($ic->getChild(false) === $child) {
+                    return $this->removeChild($ic);
+                }
+            }
+        }
+        $this->childs->removeElement($child);
+        return $this;
+    }
+
+    public function removeChilds(): static
+    {
+        foreach ($this->childs as $child) {
+            $this->removeChild($child);
+        }
+        return $this;
     }
 
     // Position
     public function getItemPosition(WireItemInterface $item): int|false
     {
         foreach ($this->childs as $ic) {
-            if($ic->getChild() === $item) return $ic->getPosition();
+            if($ic->getChild(false) === $item) return $ic->getPosition();
         }
         return false;
     }
@@ -88,7 +183,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function setItemPosition(WireItemInterface $item, int $position): static
     {
         foreach ($this->childs as $ic) {
-            if($ic->getChild() === $item) {
+            if($ic->getChild(false) === $item) {
                 $ic->setPosition($position);
                 break;
             }
@@ -99,14 +194,14 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     public function getItems(): Collection
     {
         return $this->childs->map(
-            fn(WireItemCollectionInterface $ic) => $ic->getChild($this)
+            fn(WireItemCollectionInterface $ic) => $ic->getChild(true)
         );
     }
 
     public function getActiveItems(): Collection
     {
         return $this->childs
-            ->map(fn(WireItemCollectionInterface $ic) => $ic->getChild())
+            ->map(fn(WireItemCollectionInterface $ic) => $ic->getChild(true))
             ->filter(fn(WireItemInterface $item) => $item->isActive());
     }
 
@@ -121,46 +216,26 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
 
     public function addItem(WireItemInterface $item): static
     {
-        if($item !== $this && !$this->hasItem($item)) {
-            $this->childs->add(new WireItemCollection($this, $item));
-        } else {
-            $this->removeItem($item);
-        }
+        $this->addChild($item);
         return $this;
     }
 
     public function hasItem(WireItemInterface $item): bool
     {
-        return $this->getItems()->contains($item);
+        return $this->hasChild($item);
     }
 
     public function removeItem(WireItemInterface $item): static
     {
-        // $this->childs = $this->childs->filter(
-        //     fn(WireItemCollectionInterface $ic) => $ic->getChild() !== $item
-        // );
-        foreach ($this->childs as $child) {
-            if($child->getChild() === $item) {
-                $this->childs->removeElement($child);
-                $child->preRemove();
-                break;
-            }
-        }
-        return $this;
+        return $this->removeChild($item);
     }
 
     public function removeItems(): static
     {
-        foreach ($this->childs as $child) {
-            $this->removeItem($child->getChild());
-        }
-        return $this;
+        return $this->removeChilds();
     }
 
-    public function isAcceptsChildForParent(
-        WireItemInterface $item,
-        string $property
-    ): bool
+    public function isAcceptsChildForParent(WireItemInterface $item, string $property): bool
     {   
         if($item !== $this) {
             foreach (static::ITEMS_ACCEPT[$property] as $field => $classes) {
@@ -173,10 +248,7 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return false;
     }
 
-    public function filterAcceptedChildsForParent(
-        Collection $items,
-        string $property
-    ): Collection
+    public function filterAcceptedChildsForParent(Collection $items, string $property): Collection
     {
         return $items->filter(fn($item) => $item !== $this && $this->isAcceptsChildForParent($item, $property));
     }

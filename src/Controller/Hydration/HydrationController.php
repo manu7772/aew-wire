@@ -1,16 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Controller\Hydration;
 
-use Aequation\WireBundle\Component\HydradataItems;
 use Aequation\WireBundle\Component\interface\HydradataCollectionInterface;
 use Aequation\WireBundle\Component\interface\HydradataItemsInterface;
-use Aequation\WireBundle\Entity\interface\WireUserInterface;
-use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
-use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\ObjectMapper\ObjectMapperInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -31,75 +27,90 @@ class HydrationController extends AbstractController
         ]);
     }
 
-    #[Route('/show/{index}', name: 'show')]
-    public function show(string $index): Response
+    #[Route('/show/{name}', name: 'show')]
+    public function show(string $name): Response
     {
         $datas = $this->hydrator->getHydatableData();
-        $hydradataItems = $datas->get($index);
+        $hydradataItems = $datas->getByName($name) ?? $datas->getByShortname($name);
         return $this->render('@AequationWire/hydration/show.html.twig', [
-            'index' => $index,
+            'name' => $name,
             'hydradataItems' => $hydradataItems,
             'others' => $this->getOthers($hydradataItems),
         ]);
     }
 
-    #[Route('/generate/{index}', name: 'generate')]
-    public function generate(string $index): Response
+    #[Route('/generate/{data}', name: 'generate')]
+    public function generate(
+        string $data,
+        Request $request
+    ): Response
     {
-        $indexes = array_unique((array) json_decode($index));
+        $indexes = $this->hydrator->requestDataToIndexes($data);
         $new_indexes = [];
-        foreach ($indexes as $key => $index) {
-            if(is_array($index)) {
-                $items = $index;
-                $index = $key; // Handle single index in array
-            } else {
-                $index = (int) $index; // Ensure index is an integer
-                $items = [];
-            }
-            $opresult = $this->hydrator->generate($index, $items, true);
-            $new_indexes[$index] = true; // Store the index for redirection
-            foreach ($opresult->getMessagesTypedForFlash() as $type => $messages) {
+        $opresults = [];
+        foreach ($indexes as $item) {
+            $opresults[$item['index']] = $this->hydrator->generate($item['index'], $item['items'], true);
+            $new_indexes[$item['index']] = $opresults[$item['index']]->isSuccess(); // Store the index for redirection
+            foreach ($opresults[$item['index']]->getMessagesTypedForFlash() as $type => $messages) {
                 foreach ($messages as $message) {
                     $this->addFlash($type, $message);
                 }
             }
         }
-        return $this->redirectToRoute('hydration_index', [
-            'indexes' => json_encode($new_indexes),
-        ]);
-        // return $this->render('@AequationWire/hydration/index.html.twig', [
-        //     'indexes' => $indexes,
-        //     'hydradataItems' => $datas,
-        // ]);
+        return ($referer = $request->headers->get('referer'))
+            ? $this->redirect($referer)
+            : $this->redirectToRoute('hydration_index', ['indexes' => json_encode($new_indexes)]);
     }
 
-    #[Route('/test/{index}', name: 'test')]
-    public function test(string $index): Response
+    #[Route('/test/{data}', name: 'test')]
+    public function test(
+        string $data
+    ): Response
     {
-        $indexes = array_unique((array) json_decode($index));
-        $new_indexes = [];
-        foreach ($indexes as $key => $index) {
-            if(is_array($index)) {
-                $items = $index;
-                $index = $key; // Handle single index in array
-            } else {
-                $index = (int) $index; // Ensure index is an integer
-                $items = [];
-            }
-            $opresult = $this->hydrator->generate($index, $items, false);
-            $new_indexes[$index] = true; // Store the index for redirection
-            foreach ($opresult->getMessagesTypedForFlash() as $type => $messages) {
-                foreach ($messages as $message) {
-                    $this->addFlash($type, $message);
+        $indexes = $this->hydrator->requestDataToIndexes($data);
+        $opresults = [];
+        $links = [
+            'valids' => [],
+            'invalids' => [],
+            'count' => 0,
+            'count_valids' => 0,
+            'count_invalids' => 0,
+            // 'valid' => true,
+        ];
+        foreach ($indexes as $item) {
+            $opresults[$item['index']] = $this->hydrator->generate($item['index'], $item['items'], false);
+            // foreach ($opresult->getMessagesTypedForFlash() as $type => $messages) {
+            //     foreach ($messages as $message) {
+            //         $this->addFlash($type, $message);
+            //     }
+            // }
+            foreach ($opresults as $index => $results) {
+                if($results->isSuccess()) {
+                    $links['valids'][$index] ??= [];
+                    foreach ($results->getData() as $data) {
+                        $links['valids'][$index][$data['item_index']] = $data['item_index'];
+                        $links['count']++;
+                        $links['count_valids']++;
+                    }
+                    $links['valids'][$index] = array_values($links['valids'][$index]);
+                } else {
+                    $links['invalids'][$index] ??= [];
+                    foreach ($results->getData() as $data) {
+                        $links['invalids'][$index][$data['item_index']] = $data['item_index'];
+                        $links['count']++;
+                        $links['count_invalids']++;
+                    }
+                    $links['invalids'][$index] = array_values($links['invalids'][$index]);
                 }
             }
         }
-        // return $this->redirectToRoute('hydration_index', [
-        //     'indexes' => json_encode($new_indexes),
-        // ]);
+        $links['valids'] = array_filter($links['valids'], fn($link) => !empty($link));
+        $links['invalids'] = array_filter($links['invalids'], fn($link) => !empty($link));
+        $links['valid'] = empty($links['invalids']);
         return $this->render('@AequationWire/hydration/test.html.twig', [
+            'links' => $links,
+            'opresults' => array_values($opresults),
             'indexes' => $indexes,
-            'hydradataItems' => $this->hydrator->getHydatableData(),
         ]);
     }
 
@@ -111,9 +122,9 @@ class HydrationController extends AbstractController
         }
         return $this->hydrator
             ->getHydatableData()
-            ->getByName($hydradataItems->name)
+            // ->getByName($hydradataItems->name)
             ->filter(
-                fn (HydradataItemsInterface $item) => $item->isValid() && $item->getIndex() !== $hydradataItems->getIndex()
+                fn (HydradataItemsInterface $item) => $item->name === $hydradataItems->name && $item->isValid() && $item->getIndex() !== $hydradataItems->getIndex()
             );
     }
 

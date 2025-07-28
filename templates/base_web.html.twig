@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<twig:HtmlElementAttributes />
+<twig:wire:html-element-attributes />
     <head>
         <meta charset="{{ app.charset }}">
         <title>{% block title %}{{ (webpage.title|default(app.factory.name|default('Bonjour')))|striptags }}{% endblock %}</title>

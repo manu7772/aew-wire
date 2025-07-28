@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Aequation\WireBundle\Component\TwigfileMetadata;
 
-interface WireWebsectionInterface extends WireEntityInterface, TraitEnabledInterface, TraitUnamedInterface
+interface WireWebsectionInterface extends WireEntityInterface, TraitEnabledInterface, TraitUnamedInterface, TraitPreferedInterface
 {
     public function setTempWebpage(?WireWebpageInterface $webpage): static;
     public function getTempWebpage(): ?WireWebpageInterface;
@@ -13,8 +13,6 @@ interface WireWebsectionInterface extends WireEntityInterface, TraitEnabledInter
     public function getTwigfileName(): ?string;
     public function getTwigfile(): ?string;
     public function setTwigfile(string $twigfile): static;
-    public function isPrefered(): bool;
-    public function setPrefered(bool $prefered): static;
     public function getTwigfileMetadata(): TwigfileMetadata;
     public function getSectiontype(): string;
     public function setDefaultSectiontype(): static;

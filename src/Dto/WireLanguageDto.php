@@ -1,16 +1,24 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireLanguageDto extends BaseDto
 {
 
+    #[Map(if: 'strlen')]
     public ?string $locale = null;
+    #[Map(if: 'strlen')]
     public ?string $timezone = null;
+    #[Map(if: 'strlen')]
     public ?string $description = null;
+    #[Map(if: 'is_int')]
     public ?int $position = null;
+    #[Map(if: 'strlen')]
     public ?string $uname = null;
+    #[Map(if: 'is_bool')]
     public bool $prefered = false;
+    #[Map(if: 'is_bool')]
     public bool $enabled = true;
 
     public function __toString(): string

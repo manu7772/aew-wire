@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;

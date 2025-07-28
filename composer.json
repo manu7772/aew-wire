@@ -71,7 +71,8 @@
         "twig/string-extra": "^3.21",
         "twig/intl-extra": "^3.21",
         "symfony/object-mapper": "^7.3",
-        "symfony/apache-pack": "^1.0"
+        "symfony/apache-pack": "^1.0",
+        "tales-from-a-dev/twig-tailwind-extra": "^0.5.0"
     },
     "require-dev": {
         "symfony/framework-bundle": "7.3.*",

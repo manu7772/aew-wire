@@ -2,7 +2,6 @@
 namespace Aequation\WireBundle\Entity;
 
 // Aequation
-
 use Aequation\WireBundle\Component\ArrayTextUtil;
 use Aequation\WireBundle\Component\interface\ArrayTextUtilInterface;
 use Aequation\WireBundle\Doctrine\Type\ArrayTextType;

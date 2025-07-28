@@ -122,6 +122,25 @@ class Encoders implements ToolInterface
         return str_pad(decbin($num), 8, 0, STR_PAD_LEFT);
     }
 
+    /**
+     * @see https://onlinephp.io/c/29621
+     * @see https://onlinephp.io/c/57f26
+     */
+
+    /*
+    $test = 13;
+    $combine = 1;
+    $result1 = $test & $combine;
+    $result2 = $test | $combine;
+    $result3 = $test ^ $combine;
+    function toBin(int $num) {
+        return str_pad(decbin($num), 8, 0, STR_PAD_LEFT);
+    }
+    echo("Test 1 => ".toBin($test)." & ".toBin($combine)." : $result1 (".toBin($result1).")".PHP_EOL);
+    echo("Test 2 => ".toBin($test)." | ".toBin($combine)." : $result2 (".toBin($result2).")".PHP_EOL);
+    echo("Test 3 => ".toBin($test)." ^ ".toBin($combine)." : $result3 (".toBin($result3).")".PHP_EOL);
+    */
+
 
     /*************************************************************************************
      * RANDOMS

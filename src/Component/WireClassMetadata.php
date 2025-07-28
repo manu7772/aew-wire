@@ -1,30 +1,26 @@
 <?php
 namespace Aequation\WireBundle\Component;
 
-use Closure;
-use Exception;
-use ReflectionClass;
-use BadMethodCallException;
-use InvalidArgumentException;
-use Doctrine\ORM\EntityRepository;
 use Aequation\WireBundle\Tools\Objects;
-use Doctrine\ORM\Mapping\ClassMetadata;
-// Symfony
-use Doctrine\ORM\Mapping\AssociationMapping;
-use Aequation\WireBundle\Interface\WireHydratable;
-use Aequation\WireBundle\Attribute\WireRelationMapping;
-// PHP
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
-use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
-use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
-use Aequation\WireBundle\Dto\WireFactoryDto;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
+// Symfony
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
+use Doctrine\ORM\Mapping\AssociationMapping;
 use Symfony\Component\ObjectMapper\Attribute\Map;
+// PHP
+use Exception;
+use ReflectionClass;
+use InvalidArgumentException;
 
 class WireClassMetadata implements WireClassMetadataInterface
 {
@@ -32,8 +28,9 @@ class WireClassMetadata implements WireClassMetadataInterface
 
     public readonly ReflectionClass $reflectionClass;
     public readonly ?ClassMetadata $classMetadata;
-    public readonly ?WireEntityServiceInterface $service;
-    public readonly ?EntityRepository $repository;
+    public readonly HydrationServiceInterface $HydrationService;
+    public readonly false|WireEntityServiceInterface $service;
+    public readonly false|EntityRepository $repository;
     protected array $properties = [];
     public readonly bool $isDev;
     // Data
@@ -50,6 +47,7 @@ class WireClassMetadata implements WireClassMetadataInterface
         string|ClassMetadata $classUtil,
     ) {
         $this->isDev = $this->wCmdm->isDev;
+        $this->HydrationService = $this->wCmdm->wireEm->getHydrationService();
         if($classUtil instanceof ClassMetadata) {
             $this->classMetadata = $classUtil;
             $this->reflectionClass = $this->classMetadata->getReflectionClass();
@@ -73,6 +71,11 @@ class WireClassMetadata implements WireClassMetadataInterface
         return (string) $this->getName();
     }
 
+    public function getWireClassMetadataManager(): WireClassMetadataManagerInterface
+    {
+        return $this->wCmdm;
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -81,6 +84,11 @@ class WireClassMetadata implements WireClassMetadataInterface
     public function getShortName(): string
     {
         return $this->reflectionClass->getShortName();
+    }
+
+    public function getClassMetadata(): ?ClassMetadata
+    {
+        return $this->classMetadata;
     }
 
     public function getReflectionClass(): ReflectionClass
@@ -157,7 +165,7 @@ class WireClassMetadata implements WireClassMetadataInterface
 
     public function __isset($name)
     {
-        return isset($this->classMetadata->$name);
+        return isset($this->$name) || isset($this->classMetadata->$name);
     }
 
 
@@ -255,6 +263,12 @@ class WireClassMetadata implements WireClassMetadataInterface
             $this->subClasses = $subClasses;
         }
         return $onlyManaged ? array_filter($this->subClasses, fn ($sub) => $sub->isManaged()) : $this->subClasses;
+    }
+
+    public function getNextUniqueManagedSubclass(): ?WireClassMetadataInterface
+    {
+        $subs = $this->getSubclasses(true);
+        return count($subs) !== 1 ? null : reset($subs);
     }
 
     public function getSubclassesNames(bool $onlyManaged = false): array
@@ -406,38 +420,67 @@ class WireClassMetadata implements WireClassMetadataInterface
         return $this->isType('hydratable');
     }
 
+    public function isHydrationAvailable(): bool
+    {
+        return $this->isType('serializable') && $this->HydrationService->getHydatableData();
+    }
+
 
     /************************************************************************************************************/
     /** ENTITY MANAGER UTILITIES                                                                                */
     /************************************************************************************************************/
 
-    public function getService(): ?WireEntityServiceInterface
+    public function getHydrationService(): HydrationServiceInterface
+    {
+        return $this->wCmdm->wireEm->getHydrationService();
+    }
+
+    public function getService(): false|WireEntityServiceInterface
     {
         if(!isset($this->service)) {
-            $service = $this->wCmdm->wireEm->appWire->getClassService($this->name);
-            return $service instanceof WireEntityServiceInterface
-                ? $this->service = $service
-                : null;
+            // $list = array_merge([$this], $this->getParents());
+            $list = [$this];
+            foreach ($list as $self) {
+                $service = $this->wCmdm->wireEm->appWire->getClassService($self->name);
+                if($service instanceof WireEntityServiceInterface) {
+                    $this->service = $service;
+                    break;
+                }
+            }
+            if(!isset($this->service)) {
+                if($subclass = $this->getNextUniqueManagedSubclass()) {
+                    $this->service = $subclass->getService();
+                }
+            }
+            $this->service ??= false;
         }
         return $this->service;
     }
 
-    public function getRepository(): EntityRepository
+    public function getRepository(): false|EntityRepository
     {
         if(!isset($this->repository)) {
-            try {
-                // If managed, get repository from class metadata
-                $this->repository = $this->wCmdm->wireEm->getEm()->getRepository($this->name);
-            } catch (Exception $e) {
-                // If not managed, try to get repository from managed subclass
-                throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s cannot find repository.%s%s', [__METHOD__, __LINE__, $this->name, PHP_EOL, $e->getMessage()]));
-                // $this->repository = $this->wCmdm->findOneManaged([$this->name])->getRepository();
+            // $list = array_merge([$this], $this->getParents());
+            $list = [$this];
+            foreach ($list as $self) {
+                try {
+                    // If managed, get repository from class metadata
+                    $this->repository = $this->wCmdm->wireEm->getEm()->getRepository($self->name);
+                } catch (Exception $e) {
+                    // If not managed, try to get repository from managed parent class
+                }
+                if(isset($this->repository)) {
+                    break;
+                }
             }
+            if(!isset($this->repository)) {
+                if($subclass = $this->getNextUniqueManagedSubclass()) {
+                    $this->repository = $subclass->getRepository();
+                }
+            }
+            $this->repository ??= false;
         }
-        if($this->repository instanceof EntityRepository) {
-            return $this->repository;
-        }
-        throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get repository.', [__METHOD__, __LINE__, $this->name]));
+        return $this->repository;
     }
 
     public function getDtoSourceMaps(): array
@@ -474,6 +517,18 @@ class WireClassMetadata implements WireClassMetadataInterface
 
 
     /************************************************************************************************************/
+    /** ATTRIBUTES                                                                                              */
+    /************************************************************************************************************/
+
+    public function getClassAttributes(string $name): mixed
+    {
+        $attrs = Objects::getClassAttributes($this->reflectionClass, $name);
+        // If not found, return null
+        return empty($attrs) ? null : $attrs;
+    }
+
+
+    /************************************************************************************************************/
     /** FIELDS/RELATIONS                                                                                        */
     /************************************************************************************************************/
 
@@ -485,8 +540,30 @@ class WireClassMetadata implements WireClassMetadataInterface
         if($this->reflectionClass->hasProperty($name)) {
             $property = $this->reflectionClass->getProperty($name);
             return $this->properties[$name] = new WirePropertyMetadata($property, $this);
+        } else {
+            // Relative property
+            $rp = $this->reflectionClass->hasProperty($name) ? $this->reflectionClass->getProperty($name) : $name;
+            return $this->properties[$name] = new WirePropertyMetadata($rp, $this);
         }
         return null;
+    }
+
+    public function getFields(): array
+    {
+        $fields = [];
+        foreach ($this->classMetadata->getFieldNames() as $name) {
+            $fields[$name] = $this->getProperty($name);
+        }
+        return $fields;
+    }
+
+    public function getRelations(): array
+    {
+        $relations = [];
+        foreach ($this->classMetadata->getAssociationNames() as $name) {
+            $relations[$name] = $this->getProperty($name);
+    }
+        return $relations;
     }
 
     public function getTarget(string $relation): WireClassMetadataInterface
@@ -497,52 +574,35 @@ class WireClassMetadata implements WireClassMetadataInterface
                 // If the target is a BetweenManyInterface, we return the final names of the child classes
                 foreach ($target->getAssociationMappings() as $mapping) {
                     if($mapping->inversedBy !== $relation) {
-                        break;
+                        return $this->wCmdm->getWireClassMetadata($mapping->targetEntity);
                     }
                 }
-                $target = $this->wCmdm->getWireClassMetadata($mapping->targetEntity);
             }
-            return $target;
         }
         throw new InvalidArgumentException(vsprintf('Error %s line %d: property %s is not a relation in class %s.', [__METHOD__, __LINE__, $relation, $this->name]));
     }
 
-    public function getTargetName(string $relation): string
+    public function getTargetName(string $relation): false|string
     {
         if(!$this->isManaged()) {
-            // Try find next managed subclass
-            foreach ($this->getSubclasses() as $wCmd) {
-                if($wCmd->isManaged()) {
-                    return $wCmd->getTargetName($relation);
-                }
+            // if($next = $this->getNextUniqueManagedSubclass()) {
+            //     return $next->getTargetName($relation);
+            // }
+            // Try find out next managed subclass
+            foreach ($this->getSubclasses(true) as $wCmd) {
+                return $wCmd->getTargetName($relation);
             }
             throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get target name for relation %s.', [__METHOD__, __LINE__, $this->name, $relation]));
         }
-        return $this->getAssociationMapping($relation)->targetEntity;
+        return $this->classMetadata->getAssociationMapping($relation)->targetEntity;
     }
 
-    public function getTargetNames(string $relation, string $type = 'final'): array
+    public function getTargetNames(string $relation, string $type = 'final'): false|array
     {
-        $target = $this->getTarget($relation);
-        // Check by WireRelationMapping Attribute data if exists
-        $values = null;
-        foreach ($this->getRelativeAssociationData() as $prop => $values) {
-            if($relation === $values['field']) {
-                break;
-            }
+        if(($property = $this->getProperty($relation)) && $property->isRelation()) {
+            return $property->getTargetNames($type);
         }
-        if(!empty($values)) {
-            return $this->wCmdm
-                ->setSearchMode($type)
-                ->filterClasses($values['require'])
-                ->mapSingleValue('shortname')
-                ;
-        }
-        return $this->wCmdm
-            ->setSearchMode($type)
-            ->filterClasses([$target->name])
-            ->mapSingleValue('shortname')
-            ;
+        return false;
     }
 
     /**
@@ -555,6 +615,7 @@ class WireClassMetadata implements WireClassMetadataInterface
     public function getOrphanRelations(): array
     {
         $relative_mappings = $this->getRelativeAssociationMappings(true);
+        // dump($relative_mappings);
         // Filter orphan relations
         $filtered_mappings = [];
         foreach ($this->classMetadata->getAssociationMappings() as $mapping) {
@@ -582,8 +643,10 @@ class WireClassMetadata implements WireClassMetadataInterface
     {
         if(!isset($this->wireRelationMapping)) {
             $mappings = [];
-            foreach ($this->getRelativeAssociationData() as $data) {
+            // dump($this->getRelativeAssociationData());
+            foreach ($this->getRelativeAssociationData() as $property => $data) {
                 $mappings[$data['field']] ??= $this->getProperty($data['field']);
+                // $mappings[$property] ??= $this->getProperty($property);
             }
             $this->wireRelationMapping = $mappings;
         }
@@ -594,9 +657,10 @@ class WireClassMetadata implements WireClassMetadataInterface
      * Get relative relation data
      * Returns properties data of relations not defined in the class metadata
      *
-     * @return array
+     * @param string|null $name
+     * @return false|array
      */
-    protected function getRelativeAssociationData(): array
+    public function getRelativeAssociationData(?string $name = null): false|array
     {
         if(!isset($this->wireRelationData)) {
             if(static::SERIALIZATION_MAPPINGS_BY_ATTRIBUTE) {
@@ -612,6 +676,14 @@ class WireClassMetadata implements WireClassMetadataInterface
                 $mappings = new WireRelationMapping($mappings);
             }
             $this->wireRelationData = $mappings instanceof WireRelationMapping ? $mappings->getMapping() : [];
+        }
+        if(!empty($name)) {
+            foreach ($this->wireRelationData as $values) {
+                if($values['field'] === $name) {
+                    return $values;
+                }
+            }
+            return false;
         }
         return $this->wireRelationData;
     }

@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
@@ -8,6 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Enabled;
+use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Tools\Files;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,14 +26,17 @@ use InvalidArgumentException;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireWebsectionTranslationInterface::class)]
+#[AdminGroup(group: 'WireWebpage', order: 5, icon: 'tabler:letter-w')]
 abstract class WireWebsection extends MappSuperClassEntity implements WireWebsectionInterface
 {
-    use Unamed, Enabled;
+    use Unamed, Enabled, Prefered;
 
     public const ICON = [
         'ux' => 'tabler:letter-s',
         'fa' => 'fa-s'
     ];
+    public const MAX_PREFERED = 12; // 12 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 0; // 0 is the minimum number of prefered sections in the database
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -48,9 +53,6 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     #[ORM\Column()]
     #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
     protected ?string $twigfile = null;
-
-    #[ORM\Column]
-    protected bool $prefered = false;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
@@ -80,6 +82,16 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     public function __toString(): string
     {
         return empty($this->name) ? parent::__toString() : $this->name;
+    }
+
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
     }
 
     public function setTempWebpage(?WireWebpageInterface $webpage): static
@@ -147,18 +159,6 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
             throw new InvalidArgumentException(vsprintf('Error %s line %d: The sectiontype for file %s was not found.', [__FILE__, __LINE__, $this->twigfile]));
         }
         $this->setSectiontype($sectiontype);
-        return $this;
-    }
-
-
-    public function isPrefered(): bool
-    {
-        return $this->prefered;
-    }
-
-    public function setPrefered(bool $prefered): static
-    {
-        $this->prefered = $prefered;
         return $this;
     }
 

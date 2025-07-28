@@ -1,14 +1,13 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
-use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
-use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
@@ -20,14 +19,16 @@ use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Exception;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+// PHP
+use Exception;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[WireRelationMapping(WireFactory::ITEMS_ACCEPT)]
+#[AdminGroup(group: 'Persons', order: 1, icon: 'tabler:users-group')]
 abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 
@@ -55,11 +56,18 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
             'require' => [WireUrlinkInterface::class],
         ],
     ];
+    public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
+
 
     #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;
+
+    #[ORM\ManyToMany(targetEntity: WireArticleInterface::class, inversedBy: 'factorys')]
+    #[ORM\JoinColumn(name: 'factory_article', nullable: false)]
+    protected Collection $articles;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
@@ -80,7 +88,18 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     {
         parent::__construct();
         $this->relinks = new ArrayCollection();
-        $this->associates = new ArrayCollection();        
+        $this->associates = new ArrayCollection();
+        $this->articles = new ArrayCollection();
+    }
+
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
     }
 
     public function getFunctionality(): ?string
@@ -135,5 +154,26 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
         return $this->associates->contains($associate);
     }
 
+    public function getArticles(): Collection
+    {
+        return $this->articles;
+    }
+
+    public function addArticle(WireArticleInterface $article): static
+    {
+        if (!$this->articles->contains($article)) {
+            $this->articles->add($article);
+            $article->addFactory($this);
+        }
+        return $this;
+    }
+
+    public function removeArticle(WireArticleInterface $article): static
+    {
+        if ($this->articles->removeElement($article)) {
+            $article->removeFactory($this);
+        }
+        return $this;
+    }
 
 }

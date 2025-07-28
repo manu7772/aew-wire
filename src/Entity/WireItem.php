@@ -44,10 +44,10 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
     #[ORM\Column(type: Types::INTEGER, unique: true)]
     protected ?int $id = null;
 
-    #[ORM\Column()]
+    #[ORM\Column(nullable: false)]
     #[Assert\NotNull(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
-    protected ?string $name = null;
+    protected string $name;
 
     #[ORM\OneToMany(targetEntity: WireItemCollectionInterface::class, mappedBy: 'child', cascade: ['persist'], orphanRemoval: true)]
     #[Assert\Valid(groups: ['persist','update'])]
@@ -79,9 +79,9 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return empty($this->name) ? parent::__toString() : $this->name;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
-        return $this->name;
+        return $this->name ?? '';
     }
 
     public function setName(string $name): static

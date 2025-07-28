@@ -21,7 +21,7 @@ trait Datetimed
     #[ORM\ManyToOne(targetEntity: WireLanguageInterface::class, fetch: 'EAGER')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(groups: ['persist','update'], message: 'La langue doit être renseignée.')]
-    protected WireLanguageInterface $langage;
+    protected WireLanguageInterface $language;
     // language choices
     protected array $languageChoices;
 
@@ -32,6 +32,9 @@ trait Datetimed
     #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $updatedAt = null;
 
+    /**
+     * IMPORTANT: entity timezone *can be different* than language timezone.
+     */
     #[ORM\Column(nullable: false)]
     #[Assert\NotNull(groups: ['persist','update'], message: 'Le fuseau horaire doit être renseigné.')]
     protected string $timezone;
@@ -110,14 +113,14 @@ trait Datetimed
 
     public function getLanguage(): ?WireLanguageInterface
     {
-        return $this->langage ?? null;
+        return $this->language ?? null;
     }
 
-    public function setLanguage(WireLanguageInterface $langage): static
+    public function setLanguage(WireLanguageInterface $language): static
     {
-        $this->langage = $langage;
-        if(!isset($this->timezone)) {
-            $this->setTimezone($langage->getTimezone());
+        $this->language = $language;
+        if(!isset($this->timezone) || $this->getSelfstate()->isNew()) {
+            $this->setTimezone($language->getTimezone());
         }
         return $this;
     }
@@ -129,7 +132,7 @@ trait Datetimed
 
     public function getLocale(): ?string
     {
-        return $this->langage->getLocale();
+        return $this->language->getLocale();
     }
 
     public function setTimezone(string $timezone): static

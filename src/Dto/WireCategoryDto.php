@@ -9,7 +9,9 @@ use Symfony\Component\ObjectMapper\Attribute\Map;
 class WireCategoryDto extends BaseDto
 {
 
+    #[Map(if: 'strlen')]
     public string $name;
+    #[Map(if: 'strlen')]
     public string $type;
     #[Map(if: 'strlen')]
     public ?string $description = null;

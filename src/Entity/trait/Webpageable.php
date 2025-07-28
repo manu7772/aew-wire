@@ -8,6 +8,7 @@ use Aequation\WireBundle\Tools\Strings;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
@@ -23,15 +24,17 @@ trait Webpageable
     #[ORM\JoinColumn(nullable: true)]
     protected ?WireWebpageInterface $webpage = null;
 
-    #[ORM\Column(type: Types::STRING, nullable: true)]
+    #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
-    protected ?string $title = null;
+    #[Assert\NotNull(message: 'Le titre est obligatoire', groups: ['persist','update'])]
+    protected string $title;
 
-    #[ORM\Column(type: Types::STRING, nullable: true)]
+    #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
-    protected ?string $linktitle = null;
+    #[Assert\NotNull(message: 'Le lien titre est obligatoire', groups: ['persist','update'])]
+    protected string $linktitle;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::JSON, nullable: false)]
     #[Gedmo\Translatable]
     protected array $content = [];
 
@@ -67,9 +70,9 @@ trait Webpageable
         return $this->webpage instanceof WireWebpageInterface;
     }
 
-    public function getTitle(): ?string
+    public function getTitle(): string
     {
-        return $this->title;
+        return $this->title ?? '';
     }
 
     public function setTitle(?string $title): static
@@ -78,12 +81,30 @@ trait Webpageable
         return $this;
     }
 
-    public function getLinktitle(): ?string
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function updateTitles(): void
     {
-        return $this->linktitle;
+        if(empty($this->title ?? null) && !empty($this->linktitle ?? null)) {
+            $this->setTitle($this->linktitle);
+        }
+        if(empty($this->linktitle ?? null) && !empty($this->title ?? null)) {
+            $this->setLinktitle($this->title);
+        }
+        if(empty($this->linktitle ?? null) && empty($this->title ?? null)) {
+            if(property_exists($this, 'name') && !empty($this->name ?? null)) {
+                $this->setTitle($this->name);
+                $this->setLinktitle($this->name);
+            }
+        }
     }
 
-    public function setLinktitle(?string $linktitle): static
+    public function getLinktitle(): string
+    {
+        return $this->linktitle ?? '';
+    }
+
+    public function setLinktitle(string $linktitle): static
     {
         $this->linktitle = $linktitle;
         return $this;
@@ -99,27 +120,27 @@ trait Webpageable
         return $this;
     }
 
-    public function getContent(): ?array
+    public function setContent(?array $content): static
+    {
+        $this->content = $content ?? [];
+        return $this;
+    }
+
+    public function getContent(): array
     {
         return $this->content;
     }
 
-    public function getContentToString(string $join = "\n"): ?string
+    public function getContentToString(string $join = "\n", bool $striptags = true): ?string
     {
         $string = trim(implode($join, $this->content));
         return empty($string) ? null : $string;
     }
 
-    public function getContentToHtml(string $join = "\n"): ?Markup
+    public function getContentToHtml(string $join = "<br>"): ?Markup
     {
-        $string = $this->getContentToString($join);
+        $string = $this->getContentToString($join, false);
         return empty($string) ? null : Strings::markup(nl2br($string));
-    }
-
-    public function setContent(?array $content): static
-    {
-        $this->content = $content;
-        return $this;
     }
 
 }

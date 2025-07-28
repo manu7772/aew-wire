@@ -8,7 +8,7 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterfac
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
@@ -54,7 +54,7 @@ interface WireEntityManagerInterface extends WireServiceInterface
         SurveyRecursionInterface $surveyRecursion,
     );
 
-    public function getNormaliserService(): HydrationServiceInterface;
+    public function getHydrationService(): HydrationServiceInterface;
     public function isDev(): bool;
     public function isProd(): bool;
     public function getAppWireService(): AppWireServiceInterface;

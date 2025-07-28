@@ -19,57 +19,59 @@
         {{ knp_pagination_rel_links(entities) }}
     </div>
     {% endif %}
-    <table class="table table-zebra">
-        <thead>
-            <tr>
-                {% for field_name,field in fields %}
-                {% set name = field.label|default('fields.' ~ field_name)|trans({}, trans_domain) %}
-                {% if name == 'fields.' ~ field_name %}
-                {% set name = field_name %}
-                {% endif %}
-                <th class="whitespace-nowrap align-top">
-                    <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
-                        {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
-                    </div>
-                </th>
-                {% if loop.first and options.actions|default(false) -%}
-                <th class="whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
-                {%- endif %}
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-        {% for entity in entities %}
-            <tr class="hover:bg-base-300 cursor-default{{ entity.active|default(true) ? '' : ' opacity-50 italic' }}">
-                {% for field_name,field in fields %}
-                <td class="align-top">
-                    <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
-                        {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
-                        {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
-                        {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
-                        {% if loop.first and entity.prefered is defined and entity.prefered %}
-                        <span title="{{ 'fields.prefered'|trans({}, trans_domain) }}"><twig:ux:icon name="tabler:star-filled" class="w-4 h-4 inline-block ml-1" /></span>
-                        {% endif %}
-                    </div>
-                </td>
-                {% if loop.first and options.actions|default(false) %}
-                <td class="w-1 align-top">
-                    <div class="flex flex-row justify-center gap-2">
-                        {{ elements.button('show', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
-                        {{ elements.button('edit', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
-                        {{ elements.button('delete', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-red-600'}) }}
-                    </div>
-                </td>
-                {% endif %}
-                {% endfor %}
-            </tr>
-        {% else %}
-            <tr>
-                <td class="align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="overflow-x-auto">
+        <table class="table table-zebra table-pin-rows table-pin-cols">
+            <thead>
+                <tr>
+                    {% for field_name,field in fields %}
+                    {% set name = field.label|default('fields.' ~ field_name)|trans({}, trans_domain) %}
+                    {% if name == 'fields.' ~ field_name %}
+                    {% set name = field_name %}
+                    {% endif %}
+                    <th class="whitespace-nowrap align-top">
+                        <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                            {{ paginated and field.sortable|default(false) ? knp_pagination_sortable(entities, name, [options.alias, field_name]|join('.')) : name }}
+                        </div>
+                    </th>
+                    {% if loop.first and options.actions|default(false) -%}
+                    <th class="whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, trans_domain) }}</th>
+                    {%- endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for entity in entities %}
+                <tr class="hover:bg-base-300 cursor-default{{ entity.active|default(true) ? '' : ' opacity-50 italic' }}">
+                    {% for field_name,field in fields %}
+                    <td class="align-top">
+                        <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                            {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
+                            {{ field_value(entity, field_name, trans_domain, field.view_options|default([])) }}
+                            {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: entities, entity: entity, trans_domain: trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
+                            {% if loop.first and entity.prefered is defined and entity.prefered %}
+                            <span title="{{ 'fields.prefered'|trans({}, trans_domain) }}"><twig:ux:icon name="tabler:star-filled" class="w-4 h-4 inline-block ml-1" /></span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% if loop.first and options.actions|default(false) %}
+                    <td class="w-1 align-top">
+                        <div class="flex flex-row justify-center gap-2">
+                            {{ elements.button('show', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
+                            {{ elements.button('edit', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-blue-400'}) }}
+                            {{ elements.button('delete', entity, {class: '', icon_class: 'w-5 h-5 inline-block hover:text-red-600'}) }}
+                        </div>
+                    </td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+            {% else %}
+                <tr>
+                    <td class="align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': entities|length}, trans_domain) }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% if paginated %}
     <div class="mt-2 w-full justify-end">
         {# {{ knp_pagination_rel_links(entities) }} #}

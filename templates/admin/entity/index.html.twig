@@ -12,7 +12,7 @@
 
 	{% block headtitle %}
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
-        <h1>{{ 'names'|trans|capitalize }}</h1>
+        <h1 class="font-bold text-info text-2xl">{{ 'names'|trans|capitalize }}</h1>
 		{# {% if options.actions|default(false) %}
         <div class="h-full flex flex-row gap-1 items-center">
             {{ elements.button('new', options.trans_domain, { text: true }) }}

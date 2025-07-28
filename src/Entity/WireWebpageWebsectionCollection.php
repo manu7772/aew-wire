@@ -48,6 +48,15 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
         $this->updateSortgroup();
     }
 
+    public function getParent(): object
+    {
+        return $this->webpage;
+    }
+
+    public function getChild(): object
+    {
+        return $this->websection;
+    }
 
     public function getWebpage(): WireWebpageInterface
     {

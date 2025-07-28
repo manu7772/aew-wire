@@ -12,7 +12,10 @@
             "globalapp": {
                 "main": "dist/globalapp_controller.js",
                 "fetch": "eager",
-                "enabled": true
+                "enabled": true,
+                "autoimport": {
+                    "flowbite/dist/flowbite.min.css": false
+                }
             },
             "scrollup": {
                 "main": "dist/scrollup_controller.js",

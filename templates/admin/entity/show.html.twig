@@ -15,7 +15,7 @@
 
     {% block headtitle %}
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
-        <h1><twig:ux:icon name="{{ entity.icon('ux') }}" class="w-8 inline pr-1" />{{ entity }}</h1>
+        <h1 class="font-bold text-info text-2xl"><twig:ux:icon name="{{ entity.icon('ux') }}" class="w-8 inline pr-1" />{{ entity }}</h1>
         <div class="h-full flex flex-row gap-1 items-center">
             {{ elements.button('index', entity.shortname) }}
             {{ elements.button('delete', entity) }}
@@ -24,7 +24,7 @@
     </div>
     {% endblock %}
     {% block entitydata %}
-    <table class="table-show">
+    <table class="table">
         <tbody>
             <tr>
                 <th class="w-1">{{ 'fields.id'|trans }}</th>

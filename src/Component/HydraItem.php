@@ -23,7 +23,8 @@ class HydraItem extends TypedCollection implements HydraItemInterface
 
     public function __construct(
         array $data,
-        protected HydradataItemsInterface $hydradataItems
+        protected HydradataItemsInterface $hydradataItems,
+        public readonly ?int $item_index = null
     ) {
         $this->elements = $data;
         $this->wireEm = $this->hydradataItems->wireEm;

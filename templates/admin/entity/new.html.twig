@@ -8,7 +8,7 @@
 
     {% block headtitle %}
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
-        <h1>{{ 'actions.new'|trans }}</h1>
+        <h1 class="font-bold text-info text-2xl">{{ 'actions.new'|trans }}</h1>
         <div class="h-full flex flex-row gap-1 items-center">
             {{ elements.button('custom', entity.shortname, {
                 path: path('admin_' ~ entity.getShortname(true) ~ '_index'),

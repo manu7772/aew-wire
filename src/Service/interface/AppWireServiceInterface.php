@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Service\interface;
 
+use Aequation\WireBundle\Component\interface\MenuComponentInterface;
+use Aequation\WireBundle\Component\interface\RouterInfoInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -111,7 +113,8 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isTurboFrameRequest(): bool;
     public function isTurboStreamRequest(bool $prepareRequest = false): bool;
     public function getTurboMetas(bool $asMarkup = true): string|Markup;
-    public function getContext(): RequestContext;
+    public function getRouterInfo(): RouterInfoInterface;
+    public function getContext(): ?RequestContext;
     public function getContextAsArray(): array;
     // Dirs
     public function getProjectDir(?string $path = null): string;
@@ -164,6 +167,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isGrantedForUser(?UserInterface $user, $attributes, $object = null, ?string $firewallName = null): bool;
     public function isPublic(): bool;
     public function isPrivate(): bool;
+    public function isCli(): bool;
     public function isDev(): bool;
     public function isDevOrSadmin(): bool;
     public function isProd(): bool;
@@ -182,5 +186,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isRouteAdmin(): bool;
     public function routeExists(string $route, bool|array $control_generation = false): bool;
     public function getUrlIfExists(string $route, array $parameters = [], ?int $referenceType = null, null|array|string $methods = null): ?string;
+    // Menus
+    public function getAdminMenu(array $instances = []): MenuComponentInterface;
 
 }

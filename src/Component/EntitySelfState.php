@@ -263,9 +263,11 @@ class EntitySelfState implements EntitySelfStateInterface
     {
         // Initiate embeded status for Orphan relations
         $relateds = $this->getEmbededStatus()->getOrphanRelations();
+        // dump($relateds);
         foreach ($relateds as $wPmd) {
             /** @var WirePropertyMetadataInterface $wPmd */
             $value = $wPmd->getValue($this->entity);
+            // dump($wPmd, $value);
             switch (true) {
                 case $value instanceof BaseEntityInterface:
                     if(!$value->getSelfState()->isReady()) {
@@ -283,10 +285,11 @@ class EntitySelfState implements EntitySelfStateInterface
                     }
                     break;
                 default:
-                    throw new Exception(vsprintf('Error %s line %d: the related property %s value %s is not supported.', [__METHOD__, __LINE__, $wPmd->name, Objects::toDebugString($value)]));
+                    // throw new Exception(vsprintf('Error %s line %d: the related property "%s" value %s is not supported.', [__METHOD__, __LINE__, $wPmd->name, Objects::toDebugString($value)]));
                     break;
             }
         }
+        // dd('Initiate embeded status for Orphan relations done!');
     }
  
     /**

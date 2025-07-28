@@ -12,8 +12,11 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent()]
-final class EntitiesClassMetadata extends AbstractController
+#[AsLiveComponent(
+    name: 'wire:entities-classmetadata',
+    template: '@AequationWire/components/entities-classmetadata.html.twig'
+)]
+final class EntitiesClassmetadata extends AbstractController
 {
 
     use ComponentWithFormTrait;

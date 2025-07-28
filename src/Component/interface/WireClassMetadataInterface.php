@@ -1,20 +1,21 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 // PHP
 use ReflectionClass;
 use Stringable;
-use Symfony\Component\ObjectMapper\Attribute\Map;
 
 interface WireClassMetadataInterface extends Stringable
 {
+    public function getWireClassMetadataManager(): WireClassMetadataManagerInterface;
     public function getName(): string;
     public function getShortName(): string;
+    public function getClassMetadata(): ?ClassMetadata;
     public function getReflectionClass(): ReflectionClass;
     public function isFinal(): bool;
     public function isInstantiable(): bool;
@@ -30,6 +31,7 @@ interface WireClassMetadataInterface extends Stringable
     public function getParents(): array;
     public function getParentsNames(): array;
     public function getSubclasses(bool $onlyManaged = false): array;
+    public function getNextUniqueManagedSubclass(): ?WireClassMetadataInterface;
     public function getSubclassesNames(bool $onlyManaged = false): array;
     public function getInterfaces(): array;
     public function implementsInterfaces(array $interfaces, bool $typeCompareAnd = true): bool;
@@ -44,15 +46,19 @@ interface WireClassMetadataInterface extends Stringable
     public function isBetween(): bool;
     public function isTranslation(): bool;
     public function isHydratable(): bool;
-    public function getService(): ?WireEntityServiceInterface;
-    public function getRepository(): EntityRepository;
+    public function getService(): false|WireEntityServiceInterface;
+    public function getRepository(): false|EntityRepository;
     public function getDtoSourceMaps(): array;
     public function getFirstDtoSourceMap(): ?Map;
     public function getDtoTargetMaps(): array;
     public function getFirstDtoTargetMap(): ?Map;
+    public function getClassAttributes(string $name): mixed;
     public function getProperty(string $name): ?WirePropertyMetadataInterface;
+    public function getFields(): array;
+    public function getRelations(): array;
     public function getTarget(string $relation): WireClassMetadataInterface;
-    public function getTargetName(string $relation): string;
-    public function getTargetNames(string $relation, string $type = 'final'): array;
+    public function getTargetName(string $relation): false|string;
+    public function getTargetNames(string $relation, string $type = 'final'): false|array;
     public function getOrphanRelations(): array;
+    public function getRelativeAssociationData(?string $name = null): false|array;
 }

@@ -5,17 +5,14 @@ use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireItemDto extends BaseDto
 {
-    // public ?string $euid = null;
-    // public ?string $classname = null;
-    // public ?string $shortname = null;
-    // public ?int $updates = null;
-    // public ?int $id = null;
     #[Map(if: 'strlen')]
     public string $name;
     #[Map(if: 'strlen')]
     public string $uname;
     #[Map(if: 'is_bool')]
     public bool $enabled = true;
+    #[Map(if: 'strlen')]
+    public ?string $timezone = null;
 
     public function __toString(): string
     {

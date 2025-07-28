@@ -32,4 +32,9 @@ class WireUserRelinkCollection implements RelinkCollectionInterface
         $this->__construct_baserelinkcollection($parent, $relink);
     }
 
+    public function getChild(): object
+    {
+        return $this->getRelink();
+    }
+
 }

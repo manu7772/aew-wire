@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony

@@ -1,0 +1,137 @@
+<div{{ attributes }}{{ data_turbo(false) }} class="mt-3">
+    {% if hydradataItems is defined %}
+    <li class="list-row border border-gray-600">
+        <div>
+            {% if icon %}
+            {% set color = hydradataItems.hydrationReady ? 'text-success' : 'text-warning' %}
+            <twig:ux:icon name="{{ getIcon(hydradataItems.name|default('')) }}" class="grow-0 w-5 h-5 {{ hydradataItems.valid ? color : 'text-error' }}"/>
+            {% else %}
+            {% set color = hydradataItems.hydrationReady ? 'status-success' : 'status-warning' %}
+            <div aria-label="{{ hydradataItems.valid ? 'success' : 'error' }}" class="grow-0 status {{ hydradataItems.valid ? color : 'status-error' }} h-3 w-3"></div>
+            {% endif %}
+        </div>
+        <div>
+            <div>{{ hydradataItems.name|default('Entité inconnue') }}{% if hydradataItems.declared_name != hydradataItems.name %} <span class="italic text-gray-400 font-thin text-sm">({{ hydradataItems.declared_name }})</span>{% endif %}</div>
+            {% if extended|default(false) %}
+                {% if hydradataItems.hydrationReady %}
+                    <div class="badge badge-accent mb-1">File: <span class="font-bold">{{ hydradataItems.file ? hydradataItems.file.realPath : '?' }}</span></div>
+                    <br>
+                    {% if hydradataItems.enabled %}
+                        <div class="badge badge-accent mb-1">Status: <span class="font-bold">enabled</span></div>
+                    {% else %}
+                        <div class="badge badge-error mb-1">Status: <span class="font-bold">disabled</span></div>
+                    {% endif %}
+                    <div class="badge badge-accent mb-1">Index: <span class="font-bold">{{ hydradataItems.index }}</span></div>
+                    <div class="badge badge-accent mb-1">Order: <span class="font-bold">{{ hydradataItems.order }}</span></div>
+                    <div class="badge badge-accent mb-1"><span class="font-bold">{{ hydradataItems.count }}</span> entities</div>
+                    <div class="badge badge-accent mb-1"><span class="font-bold">{{ hydradataItems.persisteds.count }}</span> exists</div>
+                    <div class="badge badge-accent mb-1"><span class="font-bold">{{ hydradataItems.news.count }}</span> to create</div>
+                    {# <hr class="my-2 border-gray-600"> #}
+                    <div>
+                        {% for item in hydradataItems %}
+                        <div class="my-2 px-4 py-2 border border-accent rounded-md">
+                            <h3 class="text-lg text-accent font-semibold">{{ item.name }}</h3>
+                            <h4 class="text-accent font-medium">Hydration data</h4>
+                            <table class="table w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="align-top shrink-0 whitespace-nowrap">Property</th>
+                                        <th class="align-top">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for field, value in item %}
+                                    <tr>
+                                        <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
+                                        <td class="align-top">{{ print(value) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <h4 class="text-accent font-medium">Entity in database</h4>
+                            {% if item.persisted %}
+                            <div class="mt-4 rounded-lg overflow-hidden">
+                                <twig:wire:table-entity entity="{{ item.persisted }}" />
+                            </div>
+                            {% else %}
+                            <twig:wire:alert type="warning">Entity not found in database</twig:wire:alert>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if not hydradataItems.valid %}
+                    <twig:wire:alert type="error">
+                        <div class="flex flex-col">
+                            <div>This entity is INVALID not ready for hydratation.</div>
+                            <div class="text-sm font-thin">
+                                <div>Invalid reasons:</div>
+                                <ul class="list-disc pl-4">
+                                    {% for error in hydradataItems.invalidReasons %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </twig:wire:alert>
+                {% elseif not hydradataItems.hydrationReady %}
+                    <twig:wire:alert type="warning">
+                        <div class="flex flex-col">
+                            <div>This entity is not ready for hydratation. Something is missing.</div>
+                            <div class="text-sm font-thin">
+                                {% if hydradataItems.invalidReasons|length %}
+                                <div>Invalid reasons:</div>
+                                <ul class="list-disc pl-4">
+                                    {% for error in hydradataItems.invalidReasons %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <div>Please, create the YAML data file for this entity {{ hydradataItems.name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </twig:wire:alert>
+                {% endif %}
+            {% else %}
+                {% if hydradataItems.hydrationReady %}
+                    <div class="text-xs font-semibold opacity-60">
+                        Index : {{ hydradataItems.index }}{% if hydradataItems.valid %} / Persisteds/total : {{ hydradataItems.persisteds.count }}/{{ hydradataItems.count }}{% endif %}
+                    </div>
+                    <div class="text-xs opacity-60">File : {{ hydradataItems.file ? hydradataItems.file.realPath : '?' }}</div>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% if not hydradataItems.valid %}
+        <div class="list-col-wrap text-xs">
+            <ul class="text-error list-disc pl-4">
+                {% for error in hydradataItems.invalidReasons %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="flex flex-col xl:flex-row gap-1">
+            {% if hydradataItems.hydrationReady %}
+            <a href="{{ path('hydration_generate', {data: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydrationReady ? 'btn-success' : 'btn-warning disabled opacity-30' }}" title="Generate">
+                <twig:ux:icon name="tabler:player-play-filled" class="size-[1.2em]"/>
+            </a>
+            {% endif %}
+            {% if hydradataItems.hydratable %}
+            <a href="{{ path('hydration_test', {data: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydrationReady ? 'btn-success' : 'btn-warning disabled opacity-30' }}" title="Test">
+                <twig:ux:icon name="tabler:player-play" class="size-[1.2em]"/>
+            </a>
+            {% endif %}
+            {% if context|default('list') not in ['show'] and hydradataItems.valid %}
+            <a href="{{ path('hydration_show', {name: hydradataItems.shortname}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydrationReady ? 'btn-success' : 'btn-warning' }}" title="View">
+                <twig:ux:icon name="tabler:eye" class="size-[1.2em]"/>
+            </a>
+            {% endif %}
+        </div>
+    </li>
+    {% else %}
+    <div{{ data_turbo_temporary(false) }} class="mt-12 px-6 py-4 bg-red-800 dark:bg-red-900 text-white border border-red-400 dark:border-red-500 rounded-xl shadow-xl dark:shadow-black w-full">
+        Aucune donnée de type hydratation n'a été trouvée. Veuillez vérifier votre configuration ou créer des données d'hydratation.
+    </div>
+    {% endif %}
+</div>

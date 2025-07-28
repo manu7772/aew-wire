@@ -1,8 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\trait\Prefered;
@@ -15,6 +15,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[WireRelationMapping(WireMenu::ITEMS_ACCEPT)]
+#[AdminGroup(group: 'WireWebpage', order: 5, icon: 'tabler:letter-w')]
 abstract class WireMenu extends WireEcollection implements WireMenuInterface
 {
 
@@ -31,11 +32,24 @@ abstract class WireMenu extends WireEcollection implements WireMenuInterface
         ],
     ];
 
+    public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
+
 
     // public function __construct()
     // {
     //     parent::__construct();
     // }
+
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
+    }
 
     public function getWebpages(
         bool $filterActives = false

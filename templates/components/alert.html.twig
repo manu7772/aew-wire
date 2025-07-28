@@ -1,0 +1,33 @@
+<div{{ attributes }}{{ data_turbo_temporary(false) }}>
+    {% set alert = cva({
+        base: 'my-2 px-6 py-4 text-white text-lg border rounded-lg shadow-lg dark:shadow-black font-bold w-full',
+        variants: {
+            type: {
+                'info': 'bg-info/20 border-info !text-info',
+                'success': 'bg-success/20 border-success !text-success',
+                'warning': 'bg-warning/20 border-warning !text-warning',
+                'error': 'bg-error/20 border-error !text-error',
+                'danger': 'bg-error/20 border-error !text-error',
+                default: 'bg-info/20 border-info !text-info',
+            },
+        },
+    }) %}
+    {% set icon = icon ? cva({
+        variants: {
+            type: {
+                'info': 'tabler:info-circle',
+                'success': 'tabler:circle-check',
+                'warning': 'tabler:exclamation-circle',
+                'error': 'tabler:circle-x',
+                'danger': 'tabler:ban',
+                default: 'tabler:info-circle',
+            },
+        },
+    }) : false %}
+    <div role="alert" class="flex flex-row {{ alert.apply({type}, attributes.render('class')|tailwind_merge) }}">
+        {% if icon -%}
+        <twig:ux:icon name="{{ icon.apply({type}) }}" class="h-7 w-7 shrink-0 stroke-current mr-3" />
+        {%- endif -%}
+        <span>{% block content %}{{ content|raw }}{% endblock %}</span>
+    </div>
+</div>

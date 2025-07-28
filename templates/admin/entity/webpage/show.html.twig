@@ -30,12 +30,12 @@
         </div>
     </div>
     <div class="mb-8">
-        <h2 class="text-lg font-bold mb-2 text-sky-800">{{ 'fields.websections'|trans }}</h2>
+        <h2 class="text-lg font-bold mb-2 text-sky-800">{{ 'fields.sections'|trans }}</h2>
         <div class="flex flex-row gap-1 flex-wrap">
-            {% if entity.websections.empty %}
+            {% if entity.sections.empty %}
             <twig:ux:icon name="tabler:x" class="w-6 h-6 text-gray-400 inline-block" />
             {% else %}
-            {% for section in entity.websections %}
+            {% for section in entity.sections %}
             <span class="badge badge-primary">{{ section.name }}</span>
             {% endfor %}
             {% endif %}

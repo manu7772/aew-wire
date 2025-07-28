@@ -7,6 +7,7 @@ use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
+use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 // Symfony
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -22,6 +23,13 @@ use Stringable;
 use ReflectionClass;
 use ReflectionAttribute;
 use Closure;
+use Countable;
+use DateInterval;
+use DateTime;
+use DateTimeInterface;
+use Doctrine\Common\Collections\Collection;
+use Symfony\Bundle\MakerBundle\Str;
+use Traversable;
 
 class Objects implements ToolInterface
 {
@@ -232,6 +240,68 @@ class Objects implements ToolInterface
                 break;
             default:
                 $string = gettype($something);
+                break;
+        }
+        return Strings::markup($string);
+    }
+
+    public static function print(mixed $something, int $levels = 2, bool $inline = true): Markup
+    {
+        $decorate = fn (string $string, string $element = 'div', ?string $class = null, bool $inline = true): string => vsprintf('<%s%s>%s</%s>', [$inline && $element === 'div' ? 'span' : $element, $class ? ' class="'.$class.'"' : '', $string, $inline && $element === 'div' ? 'span' : $element]);
+        $shadow = fn (string $something): string => $decorate($something, 'span', 'opacity-50 italic text-sm');
+        $num = fn ($something): string => (is_countable($something) ? count($something).' item'.((is_countable($something) && count($something) > 1) ? 's' : '') : 'N/A');
+        $makeUl = function (Traversable|array $something, int $levels) use ($decorate, $shadow): ?string {
+            $something = iterator_to_array($something, true);
+            if(empty($something) || $levels < 1) return null;
+            array_walk($something, fn (&$item, $key) => $item = $shadow($key).' =&gt; '.Objects::print($item, $levels, true));
+            return $decorate($decorate($decorate(implode('</li><li>', $something), 'li'), array_is_list($something) ? 'ol' : 'ul', 'list-disc list-inside pl-4'), inline: false);
+        };
+        $tooltip = fn (string $text, string $content): string => '<div class="tooltip tooltip-top"><div class="tooltip-content p-4 text-justify !min-w-full">'.$content.'</div>'.$decorate(htmlspecialchars($text), class: 'line-clamp-3 hover:line-clamp-none cursor-default', inline: true).'</div>';
+        switch (true) {
+            case is_null($something):
+                $string = $shadow(json_encode($something));
+                break;
+            case is_bool($something):
+                $string = json_encode($something);
+                break;
+            case $something instanceof DateTimeInterface:
+                $string = $shadow(Objects::getShortname($something).' &gt; ').$something->format('Y-m-d H:i:s');
+                break;
+            case $something instanceof DateInterval:
+                /** @see https://www.php.net/manual/en/dateinterval.format.php */
+                $string = $shadow(Objects::getShortname($something).' &gt; ').$something->format('%y years, %m month, %d days, %hh%i');
+                break;
+            case $something instanceof BetweenManyInterface:
+                return Objects::print($something->getChild(), $levels, $inline);
+                break;
+            case $something instanceof Collection:
+                $string = vsprintf($decorate('%s %s%s'), [$shadow(Objects::getShortname($something)), $num($something), $makeUl($something, $levels - 1)]);
+                break;
+            case $something instanceof Countable:
+                $string = vsprintf($decorate('%s %s%s'), [$shadow(Objects::getShortname($something)), $num($something), $makeUl($something, $levels - 1)]);
+                break;
+            case is_object($something) && $something instanceof Stringable:
+                $string = vsprintf($decorate('%s %s'), [$shadow(Objects::getShortname($something)), Objects::print($something->__toString(), $levels, true)]);
+                break;
+            case is_object($something):
+                $string = vsprintf($decorate('%s'), [$shadow(Objects::getShortname($something))]);
+                break;
+            case is_iterable($something):
+                $string = vsprintf($decorate('%s %s%s'), [$shadow(gettype($something)), $num($something), $makeUl($something, $levels - 1)]);
+                break;
+            case is_string($something):
+                if(strip_tags($something) !== $something) {
+                    $something = $tooltip($something, $something);
+                } else {
+                    $something = $decorate($something, class: strlen($something) > 500 ? 'line-clamp-3 hover:line-clamp-none inline cursor-default' : 'inline cursor-default', inline: true);
+                }
+                $string = vsprintf('%s', [$something]);
+                break;
+            case is_scalar($something):
+                $string = $something;
+                break;
+            default:
+                $string = $shadow(gettype($something));
                 break;
         }
         return Strings::markup($string);

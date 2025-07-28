@@ -1,7 +1,6 @@
 <?php
 namespace Aequation\WireBundle\Controller\Hydration;
 
-// Aequation
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
@@ -10,7 +9,6 @@ use Aequation\WireBundle\Service\interface\UnameServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\UnitOfWork;
-use Exception;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -21,6 +19,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+// PHP
+use Exception;
 
 class GenerationController extends AbstractController
 {
@@ -70,7 +70,7 @@ class GenerationController extends AbstractController
     {
         $hydrateds = [];
         $flush = true;
-        $normalizer = $wireEm->getNormaliserService();
+        $normalizer = $wireEm->getHydrationService();
         $data = $normalizer->getYamlData([], 0);
         $classnames = array_keys($data);
         // $bddcounts = 0;

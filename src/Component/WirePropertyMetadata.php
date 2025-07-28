@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
+use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
 // Symfony
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\AssociationMapping;
@@ -16,14 +17,44 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 {
     public readonly string $name;
     public readonly PropertyAccessorInterface $accessor;
-    protected readonly null|AssociationMapping|FieldMapping $relationMapping;
+    protected readonly null|AssociationMapping|FieldMapping $mapping;
+    public readonly ?ClassMetadata $classMetadata;
+    public readonly false|string $inversedBy;
+    public readonly false|array $targetFinals;
+    public readonly false|array $between_map;
+    public readonly false|array $target_names;
+    public readonly false|WireClassMetadataInterface $targetEntity;
+    public readonly false|WireClassMetadataInterface $betweenTarget;
 
     public function __construct(
         public readonly ReflectionProperty $property,
         public readonly WireClassMetadataInterface $wCmd,
     )
     {
+        $this->classMetadata = $this->wCmd->getClassMetadata();
         $this->name = $property->name;
+        if($this->isField()) {
+            $this->mapping = $this->getClassMetadata()->getFieldMapping($this->name);
+        } else if($this->isRelation()) {
+            $this->mapping = $this->getClassMetadata()->getAssociationMapping($this->name);
+            $this->inversedBy = $this->mapping->inversedBy ?? false;
+            // Find between target
+            $this->targetEntity = $this->wCmd->getWireClassMetadataManager()->getWireClassMetadata($this->mapping->targetEntity);
+            if($this->targetEntity->isBetween()) {
+                foreach ($this->targetEntity->getAssociationMappings() as $map) {
+                    if($map->inversedBy !== $this->name) {
+                        $this->betweenTarget = $this->wCmd->getWireClassMetadataManager()->getWireClassMetadata($map->targetEntity);
+                    }
+                }
+            }
+        } else {
+            $this->mapping = null;
+        }
+        // Defaults values is not set
+        $this->inversedBy ??= false;
+        $this->between_map = $this->wCmd->getRelativeAssociationData($this->name);
+        $this->betweenTarget ??= false;
+        $this->targetFinals = $this->getTargetNames('final');
     }
 
     public function getAccessor(): PropertyAccessorInterface
@@ -31,9 +62,9 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         return $this->accessor ??= PropertyAccess::createPropertyAccessorBuilder()->enableExceptionOnInvalidPropertyPath()->getPropertyAccessor();
     }
 
-    public function getClassMetadata(): ClassMetadata
+    public function getClassMetadata(): ?ClassMetadata
     {
-        return $this->wCmd->classMetadata;
+        return $this->classMetadata;
     }
 
     public function getName(): string
@@ -46,9 +77,9 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         return $this->isField() || $this->isRelation();
     }
 
-    public function getRelationMapping(): null|AssociationMapping|FieldMapping
+    public function getMapping(): null|AssociationMapping|FieldMapping
     {
-        return $this->relationMapping ??= $this->getFieldMapping() ?? $this->getAssociationMapping() ?? null;
+        return $this->mapping;
     }
 
 
@@ -58,17 +89,17 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function __call($name, $arguments)
     {
-        return $this->getRelationMapping()->$name(...$arguments);
+        return $this->mapping->$name(...$arguments);
     }
 
     public function __get($name)
     {
-        return $this->getRelationMapping()->$name;
+        return $this->mapping->$name;
     }
 
     public function __isset($name)
     {
-        return isset($this->getRelationMapping()->$name);
+        return $this->mapping && property_exists($this->mapping, $name);
     }
 
 
@@ -78,12 +109,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function isField(): bool
     {
-        return $this->getClassMetadata()->hasField($this->name);
-    }
-
-    public function getFieldMapping(): ?FieldMapping
-    {
-        return $this->isField() ? $this->getClassMetadata()->getFieldMapping($this->name) : null;
+        return $this->classMetadata?->hasField($this->name) ?? false;
     }
 
     public function isId(): bool
@@ -91,7 +117,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         if(!$this->isField()) {
             return false;
         }
-        return $this->getClassMetadata()->isIdentifier($this->name);
+        return $this->classMetadata?->isIdentifier($this->name) ?? false;
     }
 
 
@@ -101,37 +127,54 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function isRelation(): bool
     {
-        return $this->getClassMetadata()->hasAssociation($this->name);
+        return $this->classMetadata?->hasAssociation($this->name) ?? false;
     }
 
-    public function getAssociationMapping(): ?AssociationMapping
+    public function isBetweenRelation(): bool
     {
-        return $this->isRelation() ? $this->getClassMetadata()->getAssociationMapping($this->name) : null;
+        return $this->isRelation() 
+            ? $this->between_map && is_a($this->mapping->targetEntity, BetweenManyInterface::class, true)
+            : false;
     }
 
-    public function isToOne(): bool
+    public function getBetweenTarget(): false|WireClassMetadataInterface
     {
-        return $this->isRelation() ? $this->getAssociationMapping()->isToOne() : false;
+        return $this->betweenTarget;
     }
 
-    public function isToMany(): bool
-    {
-        return $this->isRelation() ? $this->getAssociationMapping()->isToMany() : false;
-    }
+    // public function getTargetEntity(): false|WireClassMetadataInterface
+    // {
+    //     return $this->betweenTarget;
+    // }
 
-    public function isOrphanRemoval(): bool
+    public function getTargetNames(string $type = 'final'): false|array
     {
-        return $this->isRelation() ? $this->getAssociationMapping()->orphanRemoval : false;
+        if(isset($this->target_names)) {
+            return $this->target_names;
+        }
+        if($this->isRelation()) {
+            // Check by WireRelationMapping Attribute data if exists
+            if($this->isBetweenRelation()) {
+                $names = $this->wCmd->getWireClassMetadataManager()
+                    ->setSearchMode($type)
+                    ->setTypeCompareOr() // IMPORTANT!!!
+                    ->filterClasses($this->between_map['require'])
+                    ->mapSingleValue('shortname')
+                    ;
+                return $this->target_names = array_filter($names, fn ($class) => is_a($class, $this->betweenTarget->name, true), ARRAY_FILTER_USE_KEY);
+            }
+            return $this->target_names = $this->wCmd->getWireClassMetadataManager()
+                ->setSearchMode($type)
+                ->filterClasses([$this->mapping->targetEntity])
+                ->mapSingleValue('shortname')
+                ;
+        }
+        return $this->target_names = false;
     }
 
     public function isCascadePersist(): bool
     {
         return ($mapping = $this->getAssociationMapping()) ? in_array('persist', $mapping->cascade, true) : false;
-    }
-
-    public function isOwningSide(): bool
-    {
-        return $this->isRelation() ? $this->getAssociationMapping()->isOwningSide() : false;
     }
 
 

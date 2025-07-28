@@ -284,11 +284,14 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                 'classes' => ['text-left'],
                 'sortable' => true,
             ],
-            'websections' => [
-                'classes' => ['w-1'],
+            'twigfile' => [
+                'sortable' => true,
+            ],
+            'sections' => [
+                // 'classes' => ['w-1'],
                 'label' => 'Nb sections',
                 'view_options' => [
-                    'template' => ['from_string' => '{{ entity.websections.count }}'],
+                    'template' => ['from_string' => '{{ entity.sections.count }}'],
                 ],
                 'sortable' => false,
             ],

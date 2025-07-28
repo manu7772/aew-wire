@@ -1,8 +1,11 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+// Symfony
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Interface EntityEmbededStatusInterface
@@ -10,6 +13,10 @@ use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
  */
 interface EntityEmbededStatusInterface extends EntityEmbededStatusContainerInterface
 {
+    public function getAppWire(): AppWireServiceInterface;
+    public function getWireEm(): WireEntityManagerInterface;
+    public function getEm(): EntityManagerInterface;
+    public function getService(): WireEntityServiceInterface;
     public function isDev(): bool;
     public function isProd(): bool;
     public function isSadmin(): bool;

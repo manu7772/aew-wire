@@ -6,9 +6,12 @@ use Aequation\WireBundle\Component\interface\TypedCollectionInterface;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\ClosureExpressionVisitor;
 use Doctrine\Common\Collections\Order;
+use Doctrine\Common\Collections\ReadableCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 // PHP
+use ArrayAccess;
 use ArrayIterator;
 use Closure;
 use Traversable;
@@ -47,7 +50,7 @@ use const ARRAY_FILTER_USE_BOTH;
  *
  * @phpstan-template TKey of array-key
  * @phpstan-template T
- * @template-implements Collection<TKey,T>
+ * @template-implements TypedCollection<TKey,T>
  * @template-implements Selectable<TKey,T>
  * @phpstan-consistent-constructor
  */
@@ -102,7 +105,7 @@ abstract class TypedCollection implements TypedCollectionInterface
      * @phpstan-template K of array-key
      * @phpstan-template V
      */
-    protected function createFrom(array $elements): static
+    protected function createFrom(array $elements): TypedCollectionInterface
     {
         return new static($elements);
     }
@@ -307,7 +310,7 @@ abstract class TypedCollection implements TypedCollectionInterface
      *
      * @phpstan-template U
      */
-    public function map(Closure $func): static
+    public function map(Closure $func): TypedCollectionInterface
     {
         return $this->createFrom(array_map($func, $this->elements));
     }
@@ -325,7 +328,7 @@ abstract class TypedCollection implements TypedCollectionInterface
      * @return static
      * @phpstan-return static<TKey,T>
      */
-    public function filter(Closure $p): static
+    public function filter(Closure $p): TypedCollectionInterface
     {
         return $this->createFrom(array_filter($this->elements, $p, ARRAY_FILTER_USE_BOTH));
     }
@@ -387,14 +390,28 @@ abstract class TypedCollection implements TypedCollectionInterface
         return array_map(fn (object $wCmd) => $this->getAccessor()->getValue($wCmd, $field), $this->toArray());
     }
 
+    public function mapValues(array $fields): array
+    {
+        return array_map(
+            function (object $wCmd) use ($fields) {
+                $values = [];
+                foreach ($fields as $field) {
+                    $values[$field] = $this->getAccessor()->getValue($wCmd, $field);
+                }
+                return $values;
+            },
+            $this->toArray()
+        );
+    }
+
     public function sortBy(string $property, bool $asc = true): TypedCollectionInterface
     {
         usort($this->elements, function ($a, $b) use ($property, $asc) {
-            $aValue = $asc ? $this->getAccessor()->getValue($a, $property) : $this->getAccessor()->getValue($b, $property);
-            $bValue = $asc ? $this->getAccessor()->getValue($b, $property) : $this->getAccessor()->getValue($a, $property);
+            $aValue = $asc ? $this->getAccessor()->getValue($b, $property) : $this->getAccessor()->getValue($a, $property);
+            $bValue = $asc ? $this->getAccessor()->getValue($a, $property) : $this->getAccessor()->getValue($b, $property);
             return is_string($aValue)
                 ? strcmp((string) $aValue, (string) $bValue) // String comparison
-                : $aValue - $bValue; // Numeric comparison
+                : $aValue <=> $bValue; // Numeric comparison
         });
         return $this;
     }
@@ -406,7 +423,7 @@ abstract class TypedCollection implements TypedCollectionInterface
     }
 
     /** @phpstan-return Collection<TKey, T>&Selectable<TKey,T> */
-    public function matching(Criteria $criteria): static
+    public function matching(Criteria $criteria): TypedCollectionInterface
     {
         $expr     = $criteria->getWhereExpression();
         $filtered = $this->elements;

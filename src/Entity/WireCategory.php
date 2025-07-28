@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
@@ -21,6 +22,7 @@ use Exception;
 #[UniqueEntity(fields: ['name','type'], message: 'Cette catégorie {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireCategoryTranslationInterface::class)]
+#[AdminGroup(group: 'Media', order: 8, icon: 'tabler:photo')]
 abstract class WireCategory extends MappSuperClassEntity implements WireCategoryInterface
 {
 

@@ -9,7 +9,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 // PHP
 use Exception;
 
-abstract class WireWebpageVoter extends WireItemVoter
+class WireWebpageVoter extends WireItemVoter
 {
 
     public const ENTITY_CLASS = WireWebpage::class;

@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Entity\interface;
 use Doctrine\Common\Collections\Collection;
 use Gedmo\Sortable\Sortable;
 
-interface WireRelinkInterface extends WireEntityInterface, TraitDatetimedInterface, TraitUnamedInterface, Sortable, TranslationEntityInterface, TraitCategorizedInterface
+interface WireRelinkInterface extends WireEntityInterface, TraitDatetimedInterface, TraitUnamedInterface, Sortable, TranslationEntityInterface, TraitCategorizedInterface, TraitPreferedInterface
 {
     public function getALink(?int $referenceType = null): ?string;
     public function isUrl(): bool;
@@ -17,8 +17,6 @@ interface WireRelinkInterface extends WireEntityInterface, TraitDatetimedInterfa
     public function getRelinkTypeChoices(): array;
     public function getMainlink(): ?string;
     public function setMainlink(string $mainlink): static;
-    public function isPrefered(): bool;
-    public function setPrefered(bool $prefered): static;
     public function getParams(): ?array;
     public function setParams(?array $params): static;
     public function getTargetChoices(): array;

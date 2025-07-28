@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
@@ -22,6 +23,7 @@ use Twig\Markup;
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
 #[WireRelationMapping(WireWebpage::ITEMS_ACCEPT)]
+#[AdminGroup(group: 'WireWebpage', order: 5, icon: 'tabler:letter-w')]
 abstract class WireWebpage extends WireItem implements WireWebpageInterface
 {
     use Prefered;
@@ -37,10 +39,13 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
             'require' => [WireWebsectionInterface::class],
         ],
     ];
+    public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
 
     #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $sections;
+    protected Collection $temp_sections;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
     protected ?WireMenuInterface $mainmenu;
@@ -68,6 +73,16 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         $this->sections = new ArrayCollection();
     }
 
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
+    }
+
     public function getMainmenu(): ?WireMenuInterface
     {
         return $this->mainmenu ?? null;
@@ -79,85 +94,134 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return $this;
     }
 
-    public function setSection(Collection $sections): static
+    #[ORM\PostLoad]
+    public function initTempSections(): void
     {
-        return $this->setWebsections($sections);
+        $this->temp_sections = new ArrayCollection($this->sections->toArray());
     }
 
-    public function getSections(): Collection
+    public function findTempSection(
+        WireWebsectionInterface|WireWebpageWebsectionCollection $section
+    ): ?WireWebpageWebsectionCollection
     {
-        return $this->sections;
+        if(!$section->getSelfState()->isNew() && !$this->getSelfState()->isNew()) {
+            foreach ($this->temp_sections as $temp_section) {
+                /** @var WireWebpageWebsectionCollection $temp_section */
+                if($temp_section->getChild(false) === $section || $temp_section === $section) {
+                    return $temp_section;
+                }
+            }
+        }
+        return null;
     }
-
-    public function addSection(WireWebsectionInterface $section): bool
+    
+    public function getSections(?string $type = null): Collection
     {
-        return $this->addWebsection($section);
-    }
-
-    public function removeSection(WireWebsectionInterface $section): bool
-    {
-        return $this->removeWebsection($section);
-    }
-
-    public function getWebsections(?string $type = null): Collection
-    {
-        $ws = $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getWebsection()->setTempWebpage($this));
+        $ws = $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getChild()->setTempWebpage($this));
         return empty($type)
             ? $ws
             : $ws->filter(fn(WireWebsectionInterface $section) => $section->getSectiontype() === $type);
     }
 
-    public function getWebsection(string $type): ?WireWebsectionInterface
+    public function setSections(iterable $sections): static
     {
-        foreach ($this->sections as $section) {
-            if($section->getWebsection()->getSectiontype() === $type) {
-                return $section->getWebsection();
+        $this->removeSections();
+        foreach ($sections as $section) {
+            $this->addSection($section);
+        }    
+        return $this;
+    }    
+
+    public function getSection(string $type): ?WireWebsectionInterface
+    {
+        $sections = $this->getSections($type);
+        return $sections->isEmpty() ? null : $sections->first();
+    }
+
+    public function addSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool
+    {
+        if(!$this->hasSection($section)) {
+            $new_section = $this->findTempSection($section);
+            $new_section ??= $section instanceof WebsectionCollectionInterface ? $section : new WireWebpageWebsectionCollection($this, $section);
+            if(!$this->sections->contains($new_section)) {
+                $this->sections->add($new_section);
             }
         }
-        return null;
+        return $this->hasSection($section);
     }
 
-    public function setWebsections(Collection $sections): static
+    public function hasSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool
     {
-        $this->removeWebsections();
-        foreach ($sections as $section) {
-            if($section instanceof WireWebsectionInterface) $this->addWebsection($section);
-        }
-        return $this;
-    }
-
-    public function hasWebsection(WireWebsectionInterface $section): bool
-    {
-        return $this->getWebsections()->contains($section);
-    }
-
-    public function addWebsection(WireWebsectionInterface $section): bool
-    {
-        if(!$this->hasWebsection($section)) {
-            $new_section = new WireWebpageWebsectionCollection($this, $section);
-            $this->sections->add($new_section);
-        }
-        return $this->hasWebsection($section);
-    }
-
-    public function removeWebsection(WireWebsectionInterface $section): bool
-    {
-        foreach ($this->sections as $section_collection) {
-            if($section_collection->getWebsection() === $section) {
-                $this->sections->removeElement($section_collection);
+        foreach ($this->sections as $ic) {
+            /** @var WebsectionCollectionInterface $ic */
+            if($ic->getChild(false) === $section || $ic === $section || ($section instanceof WebsectionCollectionInterface && $ic->getChild(false) === $section->getChild(false))) {
                 return true;
             }
         }
         return false;
     }
 
-    public function removeWebsections(): static
+    public function removeSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool
     {
-        foreach ($this->getWebsections() as $section) {
-            $this->removeWebsection($section);
+        if($section instanceof WireWebsectionInterface) {
+            foreach ($this->sections as $ic) {
+                /** @var WireWebpageWebsectionCollection $ic */
+                if($ic->getChild(false) === $section) {
+                    return $this->removeSection($ic);
+                }
+            }
+        }
+        $this->sections->removeElement($section);
+        return !$this->hasSection($section);
+    }
+
+    public function removeSections(): static
+    {
+        foreach ($this->sections as $section) {
+            $this->removeSection($section);
         }
         return $this;
     }
+
+    // public function getWebsections(?string $type = null): Collection
+    // {
+    //     return $this->getSections($type);
+    // }
+
+    // public function getWebsection(string $type): ?WireWebsectionInterface
+    // {
+    //     foreach ($this->sections as $section) {
+    //         if($section->getWebsection()->getSectiontype() === $type) {
+    //             return $section->getWebsection();
+    //         }
+    //     }
+    //     return null;
+    // }
+
+    // public function setWebsections(Collection $sections): static
+    // {
+    //     return $this->setSections($sections);
+    // }
+
+    // public function hasWebsection(WireWebsectionInterface $section): bool
+    // {
+    //     return $this->hasSection($section);
+    // }
+
+    // public function addWebsection(WireWebsectionInterface $section): bool
+    // {
+    //     return $this->addSection($section);
+    // }
+
+    // public function removeWebsection(WireWebsectionInterface $section): bool
+    // {
+    //     return $this->removeSection($section);
+    // }
+
+    // public function removeWebsections(): static
+    // {
+    //     return $this->removeSections();
+    // }
 
     public function getTwigfileName(): ?string
     {

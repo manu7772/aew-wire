@@ -11,11 +11,11 @@
     <div class="card w-128">
         {# <div class="text-center">Vous devez entrer un mot de passe pour accéder au contenu</div> #}
         <form action="{{ path(app.routeHome) }}" method="POST"{{ data_turbo(false) }}>
-            <fieldset class="fieldset w-full bg-base-200 border-gray-600 rounded-box border p-4">
-                <legend class="fieldset-legend">Mot de passe</legend>
-                <div class="join flex items-center justify-center">
-                    <input type="password" name="demo_password" id="_demo_password" placeholder="Entrez le mot de passe ici..." class="input join-item" value={{ app.dev ? password|default("") : "" }} autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" />
-                    <input type="submit" name="submit_password" id="_submit_password" value="Accéder" class="btn btn-info join-item">
+            <fieldset class="fieldset w-full bg-base-200 border-base-200 rounded-box border rounded-lg p-4">
+                <legend class="fieldset-legend px-2">Accéder au site de test</legend>
+                <div class="join mx-auto">
+                    <input type="text" class="input join-item" name="demo_password" id="_demo_password" placeholder="Entrez le mot de passe ici" value={{ app.dev ? password|default("") : "" }} autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" />
+                    <button name="submit_password" id="_submit_password" class="btn join-item btn-info">Accéder</button>
                 </div>
             </fieldset>
         </form>
@@ -28,14 +28,6 @@
         <div class="text-center font-bold text-red-500">Vous êtes <u>connecté</u>, vous ne devriez pas vous retrouver sur cette page.<br>Contactez l'administrateur si cela vous pose un souci,<br>ou retournez à la page d'accueil.</span></div>
     </div>
     {% endif %}
-    {# <label class="swap swap-rotate text-center mt-4">
-        <!-- this hidden checkbox controls the state -->
-        <input type="checkbox" class="theme-controller" value="synthwave" />
-        <!-- sun icon -->
-        <twig:ux:icon name="tabler:sun" class="swap-off h-10 w-10 fill-current" />
-        <!-- moon icon -->
-        <twig:ux:icon name="tabler:moon" class="swap-on h-10 w-10 fill-current" />
-    </label> #}
     {% endblock %}
 </div>
 {% endblock %}

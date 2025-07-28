@@ -1,0 +1,242 @@
+{% import "@AequationWire/admin/partials/_print.html.twig" as print %}
+<div{{ attributes }}{{ data_turbo(false) }}>
+    <dialog id="modal_{{ wCmd.shortname|lower }}" class="modal">
+        <div class="modal-box w-11/12 h-11/12 max-w-7xl border border-gray-500">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><twig:ux:icon name="tabler:x" class="w-4 h-4" /></button>
+            </form>
+            <h3 class="text-center">{{ wCmd.name }}</h3>    
+            <div class="divider text-lg font-black {{ wCmd.instantiable ? 'text-success' : 'text-gray-500'}}">
+                <twig:ux:icon name="{{ wCmd.instantiable ? 'tabler:database-plus' : 'tabler:ghost-3' }}" class="w-14 h-14 inline" />
+                {{ wCmd.shortname }}
+                {% set name = 'name'|trans([], wCmd.shortname) %}
+                {% if name != 'name' %}
+                <div class="font-semibold italic {{ wCmd.instantiable ? 'text-success/60' : 'text-gray-500'}}">{{ name }} ({{ app.locale }})</div>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-row items-stretch justify-self-center gap-4 py-4 text-sm">
+                {% if wCmd.instantiable %}
+                <div>
+                    <twig:ux:icon name="tabler:database" class="w-4 h-4 inline mr-1 text-lime-500" />Instantiable
+                </div>
+                {% else %}
+                <div>
+                    <twig:ux:icon name="tabler:ghost-3" class="w-4 h-4 inline mr-1 text-gray-500" />NOT instantiable
+                </div>
+                {% endif %}
+                {% if wCmd.managed %}
+                <div>
+                    <twig:ux:icon name="tabler:database-plus" class="w-4 h-4 inline mr-1 text-lime-400" />Managed by Doctrine
+                </div>
+                {% else %}
+                <div>
+                    <twig:ux:icon name="tabler:database-x" class="w-4 h-4 inline mr-1 text-gray-500" />NOT managed by Doctrine
+                </div>
+                {% endif %}
+                {% if wCmd.final %}
+                <div>
+                    <twig:ux:icon name="tabler:database-star" class="w-4 h-4 inline mr-1 {{ wCmd.final ? 'text-lime-200' : 'text-gray-500' }}" />Final class
+                </div>
+                {% else %}
+                <div>
+                    <twig:ux:icon name="tabler:database-x" class="w-4 h-4 inline mr-1 text-gray-500" />{{ wCmd.abstract ? 'Abstract ' : 'Not final ' }}class
+                </div>
+                {% endif %}
+            </div>
+            <div class="text-center text-sm">
+                <span class="opacity-70">Service:</span> {{ wCmd.service ? wCmd.service|classname : '---' }}
+            </div>
+            <div class="text-center text-sm">
+                <span class="opacity-70">Repository:</span> {{ wCmd.repository ? wCmd.repository|classname : '---' }}
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 py-4 text-sm">
+                <div>
+                    <div class="divider text-base">Parents ({{ wCmd.parents|length }})</div>
+                    {% for parent in wCmd.parents %}
+                    <div>
+                        <form method="dialog">
+                            <button class="cursor-pointer inline" onclick="modal_{{ parent.shortname|lower }}.showModal()">{{ print.classStates(parent) }}</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No parent classes</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    <div class="divider text-base">Sub classes ({{ wCmd.getSubClasses(false)|length }})</div>
+                    {% for child in wCmd.getSubClasses(false) %}
+                    <div>
+                        <form method="dialog">
+                            <button class="cursor-pointer inline" onclick="modal_{{ child.shortname|lower }}.showModal()">{{ print.classStates(child) }}</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No sub classes</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    {% if not wCmd.hydratable %}
+                    <div class="divider text-base">Not hydratable <twig:ux:icon name="tabler:x" class="w-16 h-16 inline text-error" /></div>
+                    <div class="italic text-gray-500">Not allowed to get Object Mappers<br>(not a final entity class)</div>
+                    {% else %}
+                    <div class="divider text-base">Hydration {% if wCmd.hydratable %}<twig:ux:icon name="tabler:check" class="w-16 h-16 inline text-success" />{% else %}<twig:ux:icon name="tabler:x" class="w-16 h-16 inline text-error" />{% endif %}</div>
+                    <div class="mb-2">
+                        <h4 class="font-semibold text-success">Source Object Mappers</h4>
+                        {% set source_maps = wCmd.dtoSourceMaps %}
+                        {% if source_maps|length %}
+                        <ol class="list-decimal pl-4">
+                            {% for map in source_maps %}
+                            <li>{{ map.source }}</li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <div class="italic text-gray-500">No source Object Mappers</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <h4 class="font-semibold text-success">Target Object Mappers</h4>
+                        {% set target_maps = wCmd.dtoTargetMaps %}
+                        {% if target_maps|length %}
+                        <ol class="list-decimal pl-4">
+                            {% for map in target_maps %}
+                            <li>{{ map.target }}</li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <div class="italic text-gray-500">No target Object Mappers</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if wCmd.managed %}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 py-4 text-sm">
+                <div>
+                    <div class="divider text-base">Fields</div>
+                    {% for field in wCmd.fields %}
+                    <div class="flex flex-row items-start gap-2">
+                        <div><twig:ux:icon name="tabler:caret-right-filled" class="w-4 h-4 {{ field.id ? 'text-lime-400' : 'text-success'}}" /></div>
+                        <div>
+                            <div><span class="font-bold {{ field.id ? 'text-lime-400' : 'text-success'}}">{% if field.id %}<twig:ux:icon name="tabler:key-filled" class="w-4 h-4 inline text-lime-400" />{% endif %}{{ field.name }}</span> <span class="text-gray-400 italic">({{ field.type }}{{ field.type == 'string' and field.length > 0 ? ' ' ~ field.length }})</span></div>
+                            {# <div><span class="text-gray-400 italic">Column:</span> {{ field.columnName }}</div> #}
+                            <div><span class="text-gray-400 italic">Nullable:</span> {{ field.nullable|json_encode }} / <span class="text-gray-400 italic">Unique:</span> {{ field.unique|json_encode }}</div>
+                            {% if field.notInsertable %}
+                            <div class="font-light text-orange-400">Not insertable</div>
+                            {% endif %}
+                            {% if field.notUpdatable %}
+                            <div class="font-light text-orange-400">Not updatable</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No field</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    <div class="divider text-base">Associations</div>
+                    {% for relation in wCmd.relations %}
+                    <div class="flex flex-row items-start gap-2">
+                        {% set side = relation.isOwningSide() ? ' owning side' : ' inverse side' %}
+                        {% set relation_type -%}
+                            {%- if relation.isOneToOne() -%}
+                            OneToOne / {{ side -}}
+                            {%- elseif relation.isManyToOne() -%}
+                            ManyToOne / {{ side -}}
+                            {%- elseif relation.isOneToMany() -%}
+                            OneToMany / {{ side -}}
+                            {%- elseif relation.isManyToMany() -%}
+                            ManyToMany / {{ side -}}
+                            {%- endif -%}
+                        {% endset %}
+                        <div><twig:ux:icon name="tabler:caret-right-filled" class="w-4 h-4 {{ relation.id or relation.betweenRelation ? 'text-lime-400' : 'text-success'}}" /></div>
+                        <div>
+                            <div>
+                                <span class="font-bold {{ relation.id or relation.betweenRelation ? 'text-lime-400' : 'text-success'}}">
+                                    {% if relation.id %}<twig:ux:icon name="tabler:key-filled" class="w-4 h-4 inline text-lime-400" />{% endif %}
+                                    {{ relation.name }}
+                                </span>
+                            </div>
+                            {% if relation.betweenRelation %}
+                            <div class="w-full text-sm border border-lime-400 rounded-md bg-lime-400/10 my-1 px-4 py-2">
+                                <div class="text-lime-400 font-bold"><twig:ux:icon name="tabler:arrow-right-square-filled" class="w-5 h-5 inline text-lime-400 mr-1" />Between target:</div>
+                                <ul class="list-disc pl-4">
+                                    <li><span onclick="modal_{{ relation.betweenTarget|shortname|lower }}.showModal()" class="cursor-pointer">{{ relation.betweenTarget }}</span></li>
+                                </ul>
+                                <div class="text-lime-400 font-bold"><twig:ux:icon name="tabler:arrow-right-square-filled" class="w-5 h-5 inline text-lime-400 mr-1" />Final targets:{% if relation.targetFinals is empty %} <twig:ux:icon name="tabler:x" class="w-6 h-6 text-error inline" />{% endif %}</div>
+                                {% if relation.targetFinals is not empty %}
+                                <ul class="list-disc pl-4">
+                                    {% for target in relation.targetFinals|keys %}
+                                    <li><span onclick="modal_{{ target|shortname|lower }}.showModal()" class="cursor-pointer">{{ target }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Type:</span> {{ relation_type }} (type {{ relation.type }})</div>
+                            {% if relation.targetEntity %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Target:</span> <span onclick="modal_{{ relation.targetEntity.shortname|lower }}.showModal()" class="cursor-pointer">{{ relation.targetEntity.name }}</span></div>
+                            {% endif %}
+                            {% if not relation.isOwningSide() and relation.mappedBy %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Mapped by</span> "{{ relation.mappedBy }}"</div>
+                            {% endif %}
+                            {% if relation.inversedBy %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Inversed by: </span> "{{ relation.inversedBy }}"</div>
+                            {% endif %}
+                            {% if relation.orphanRemoval %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Orphan:</span> orphan removal</div>
+                            {% endif %}
+                            {% if relation.cascade|length %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Cascade:</span> {{ relation.cascade|join(', ') }}</div>
+                            {% endif %}
+                            {% if relation.isOrdered() %}
+                            <div class="text-sm"><span class="text-gray-400 italic">Ordered by:</span> {{ relation.orderBy()|json_encode }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No association</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 py-4 text-sm">
+                <div>
+                    <div class="divider text-base">Interfaces</div>
+                    {% for interface in wCmd.interfaces %}
+                    <div>
+                        - {{ interface.shortname }}
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No interfaces</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    <div class="divider text-base">Traits</div>
+                    {% for trait in wCmd.traits %}
+                    <div>
+                        - {{ trait.shortname }}
+                    </div>
+                    {% else %}
+                    <div class="italic text-gray-500">No traits</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# <div class="divider"></div>
+
+            <div class="modal-action">
+                <form method="dialog">
+                    <!-- if there is a button in form, it will close the modal -->
+                    <button class="btn">Fermer</button>
+                </form>
+            </div> #}
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button></button>
+        </form>
+    </dialog>
+</div>

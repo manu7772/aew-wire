@@ -16,35 +16,30 @@
 				are properly configured to work with the hydration process and they implement the
 				<span class="font-semibold">Aequation\WireBundle\Interface\WireHydratable</span>
 				interface.</p>
-			{% set indexes = hydradataItems.validIndexes|default([]) %}
+			{% set indexes = hydradataItems.hydrationReadyIndexes|default([]) %}
 			{% if indexes|length %}
 			<div class="divider my-6">
-				<a href="{{ path('hydration_generate', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all {{ indexes|length }}">
+				<a href="{{ path('hydration_generate', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all ({{ indexes|length }})">
 					Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
 				</a>
-				<a href="{{ path('hydration_test', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all {{ indexes|length }}">
-					Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
+				<a href="{{ path('hydration_test', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all ({{ indexes|length }})">
+					Tout tester ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
 				</a>
 			</div>
 			{% endif %}
 		</div>
-
 		{% if hydradataItems.empty %}
 		<div role="alert" class="alert alert-warning">
 			<twig:ux:icon name="tabler:database-exclamation" class="h-6 w-6 shrink-0 stroke-current"/>
 			<span>Aucune donnée disponible</span>
 		</div>
 		{% else %}
-		{% import "@AequationWire/hydration/partials/_elements.html.twig" as elements %}
 		<ul class="list bg-base-100 rounded-box shadow-md">
-			<li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ indexes|length }}</li>
+			{# <li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ indexes|length }}</li> #}
 			{% for items in hydradataItems %}
-			{{ elements.renderItem(items) }}
+			<twig:wire:hydra-items-show hydradataItems="{{ items }}" extended="{{ false }}" context="list" icon="{{ true }}" />
 			{% endfor %}
 		</ul>
 		{% endif %}
-
-		{# {{ dump(hydradataItems) }} #}
-
 	{% endif %}
 {% endblock %}

@@ -596,6 +596,16 @@ class Opresult implements OpresultInterface
         return $asHtml ? Strings::markup($string) : $string;
     }
 
+    public function getCssColor(): string
+    {
+        if($this->isSuccess()) return 'success';
+        if($this->isWarning()) return 'warning';
+        if($this->isUndone()) return 'warning';
+        if($this->isFail()) return 'error';
+        return 'info';
+    }
+
+
     public function hasMessages(
         ?string $type = null
     ): bool

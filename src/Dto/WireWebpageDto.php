@@ -1,10 +1,13 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+// Symfony
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Symfony\Component\ObjectMapper\Attribute\Map;
+// PHP
+use Traversable;
 
 class WireWebpageDto extends WireItemDto
 {
@@ -14,25 +17,24 @@ class WireWebpageDto extends WireItemDto
     #[Map(if: 'strlen')]
     public ?string $linktitle = null;
     #[Map(if: 'strlen')]
-    public ?string $timezone = null;
-    #[Map(if: 'strlen')]
     public string $twigfile;
     #[Map(if: 'is_bool')]
     public bool $prefered = false;
     #[Map(if: 'count')]
     public array $content = [];
     // Associations
-    public mixed $mainmenu = null;
+    public null|WireMenuInterface|WireMenuDto $mainmenu = null;
     #[Map(if: 'count')]
-    public Collection $sections;
+    public Traversable $sections;
 
     public function __construct(
         array $data,
-        public WireEntityManagerInterface $_wireEm
+        public readonly WireEntityManagerInterface $_wireEm,
+        public array $_base_options = []
     )
     {
-        parent::__construct($data, $_wireEm);
         $this->sections = new ArrayCollection();
+        parent::__construct($data, $_wireEm, $_base_options);
     }
 
 }

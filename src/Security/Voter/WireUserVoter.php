@@ -10,7 +10,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Exception;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
-abstract class WireUserVoter extends BaseEntityVoter
+class WireUserVoter extends BaseEntityVoter
 {
 
     public const ENTITY_CLASS = WireUser::class;

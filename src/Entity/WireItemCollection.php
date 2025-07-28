@@ -80,11 +80,11 @@ class WireItemCollection implements WireItemCollectionInterface
         return $this->parent;
     }
 
-    public function getChild(
-        ?WireEcollectionInterface $temp_parent = null
-    ): WireItemInterface
+    public function getChild(bool $setTempParent = true): WireItemInterface
     {
-        $this->child->setTempParent($temp_parent);
+        if($setTempParent) {
+            $this->child->setTempParent($this->parent);
+        }
         return $this->child;
     }
 

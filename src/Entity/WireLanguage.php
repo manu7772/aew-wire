@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
@@ -25,6 +25,7 @@ use Exception;
 #[UniqueEntity(fields: ['locale'], message: 'Cette locale {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireLanguageTranslationInterface::class)]
+#[AdminGroup(group: 'Intl', order: 12, icon: 'tabler:flag-filled')]
 abstract class WireLanguage extends MappSuperClassEntity implements WireLanguageInterface
 {
 
@@ -35,13 +36,16 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
         'ux-square' => 'flag:@locale@-1x1',
         'fa' => 'fa-flag'
     ];
+    public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
+
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, unique: true)]
     protected ?int $id = null;
 
-    #[ORM\Column(nullable: false)]
+    #[ORM\Column(nullable: false, unique: true)]
     #[Assert\NotBlank(message: 'La locale est obligatoire', groups: ['persist','update'])]
     protected string $locale;
     // locale choices
@@ -76,6 +80,16 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     public function __toString(): string
     {
         return empty($this->locale) ? parent::__toString() : $this->locale;
+    }
+
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
     }
 
     public function getCountryIcon(

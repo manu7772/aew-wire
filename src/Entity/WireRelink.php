@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
@@ -8,13 +9,14 @@ use Aequation\WireBundle\Entity\interface\WireRelinkTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Datetimed;
+use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Repository\WireRelinkRepository;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
-use Doctrine\Common\Collections\ArrayCollection;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -32,10 +34,11 @@ use Exception;
 #[UniqueEntity(fields: ['name','ownereuid'], message: 'Ce nom {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
+#[AdminGroup(group: 'WireRelink', order: 10, icon: 'tabler:map-pin')]
 abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInterface
 {
 
-    use Datetimed, Unamed, Categorized;
+    use Datetimed, Unamed, Categorized, Prefered;
 
     public const ICON = [
         'ux' => 'tabler:link',
@@ -57,6 +60,9 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         'Téléphone' => 'PHONE',
     ];
     public const RELINK_TYPE = null;
+    public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
+    public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
+
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
@@ -85,9 +91,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     #[ORM\Column(type: Types::TEXT, nullable: false)]
     // #[Assert\NotNull(message: 'Le lien est obligatoire', groups: ['persist','update'])]
     protected ?string $mainlink = null;
-
-    #[ORM\Column]
-    protected bool $prefered = false;
 
     #[ORM\Column(nullable: true)]
     protected ?array $params = null;
@@ -127,6 +130,16 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     public function __toString(): string
     {
         return (string)$this->getMainlink();
+    }
+
+    public function getMaxPrefered(): ?int
+    {
+        return static::MAX_PREFERED;
+    }
+
+    public function getMinPrefered(): ?int
+    {
+        return static::MIN_PREFERED;
     }
 
     public function getALink(
@@ -204,17 +217,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     public function setMainlink(string $mainlink): static
     {
         $this->mainlink = $mainlink;
-        return $this;
-    }
-
-    public function isPrefered(): bool
-    {
-        return $this->prefered;
-    }
-
-    public function setPrefered(bool $prefered): static
-    {
-        $this->prefered = $prefered;
         return $this;
     }
 
@@ -318,9 +320,8 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         if(!isset($this->ownereuid)) {
             $this->ownereuid = $owner->getEuid();
         } else if($this->ownereuid !== $owner->getEuid()) {
-            /** @var WireEntityManagerInterface */
-            $wireEm = $this->getEmbededStatus()->wireEm;
-            $selfowner = $wireEm->findEntityByEuid($this->ownereuid);
+            /** @var BaseEntityInterface */
+            $selfowner = $this->getEmbededStatus()->getWireEm()->findByEuid($this->ownereuid);
             throw new Exception(vsprintf('Error %s line %d:%s-> This %s %s "%s" value ownereuid is already set to "%s" (by %s %s "%s")!%s-> Changing the ownereuid by "%s" (%s %s "%s") is not possible!', [__METHOD__, __LINE__, PHP_EOL, $this->getSelfState()->isNew() ? 'NEW' : 'LOADED', $this->getShortname(), $this->__toString(), $this->ownereuid, $selfowner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $selfowner->getShortname(), $selfowner->__toString(), PHP_EOL, $owner->getEuid(), $owner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $owner->getShortname(), $owner->__toString()]));
         }
         return $this;

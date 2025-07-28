@@ -16,7 +16,7 @@ interface TraitDatetimedInterface extends BaseEntityInterface, TimezoneInterface
     public function updateCreatedAt(): static;
     public function setCreatedAt(): static;
     public function getLanguage(): ?WireLanguageInterface;
-    public function setLanguage(WireLanguageInterface $langage): static;
+    public function setLanguage(WireLanguageInterface $language): static;
     public function getLocale(): ?string;
     public function setTimezone(string $timezone): static;
     public function getTimezone(): string;

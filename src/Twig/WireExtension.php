@@ -5,8 +5,11 @@ use Aequation\WireBundle\Dto\WireMenuCompiledDto;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
@@ -55,11 +58,12 @@ class WireExtension extends AbstractExtension
             new TwigFunction('action_url', [$this->appWire, 'getActionUrl']),
             // new TwigFunction('printr', [Objects::class, 'toDebugString'], ['is_safe' => ['html']]),
             new TwigFunction('toDump', [$this, 'toDump'], ['is_safe' => ['html']]),
+            new TwigFunction('print', [Objects::class, 'print'], ['is_safe' => ['html']]),
             // TURBO-UX
             new TwigFunction('data_turbo_temporary', [$this, 'dataTurboTemporary']),
             new TwigFunction('data_turbo', [$this, 'dataTurbo']),
             // Admin
-            new TwigFunction('getAdminMenu', [$this, 'getAdminMenu']),
+            // new TwigFunction('getAdminMenu', [$this->appWire, 'getAdminMenu']),
         ];
         if(!$this->appWire->isDev()) {
             // Prevent dump function call if not in dev evnironment
@@ -76,7 +80,6 @@ class WireExtension extends AbstractExtension
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
             new TwigFilter('trans_domain', [$this, 'getTransDomain']),
-            new TwigFilter('tailwind_merge', [$this, 'tailwindMerge']),
             new TwigFilter('compiled_menu', [$this, 'getCompiledMenu']),
         ];
     }
@@ -126,21 +129,6 @@ class WireExtension extends AbstractExtension
         return class_exists($entity) ? Objects::getShortname($entity, false) : $entity;
     }
 
-    public function tailwindMerge(string $classes1, string $classes2 = ''): string
-    {
-        $classes1 = preg_split('/\s+/', $classes1);
-        $classes2 = preg_split('/\s+/', $classes2);
-        return implode(' ', array_unique(array_merge($classes1, $classes2)));
-    }
-
-    public function getCompiledMenu(
-        ?WireMenuInterface $menu,
-        $depth = 2,
-    ): ?WireMenuCompiledDto
-    {
-        // Compile menu
-        return $menu ? new WireMenuCompiledDto($menu, $this->appWire, depth: $depth) : null;
-    }
 
     /*************************************************************************************
      * FUNCTIONS
@@ -304,15 +292,6 @@ class WireExtension extends AbstractExtension
     {
         // return Strings::markup('');
         return Strings::markup(' data-turbo="'.($enable ? 'true' : 'false').'"');
-    }
-
-    public function getAdminMenu(): array
-    {
-        // Get admin menu
-        $menu = [
-            '' => []
-        ];
-        return $menu;
     }
 
     /**

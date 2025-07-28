@@ -15,90 +15,22 @@
                 {% endif %}
             </li>
 
-            {% set admin_menu = getAdminMenu() %}
-            {% if app.isGrantedForUser(app.user, 'index', 'User') %}
-            <li>
-                {% set open = app.current_route matches '/^admin_user_/' %}
-                <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-{{ 'users' }}" data-collapse-toggle="dropdown-{{ 'users' }}">
-                    <twig:ux:icon name="{{ getIcon('WireUser') }}" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-                    <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'names'|trans([], 'User') }}</span>
-                    <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
-                </button>
-                <ul id="dropdown-{{ 'users' }}" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
+            {% for lvl1 in app.adminMenu %}
+                {% if lvl1.count %}
+                    {% for lvl2 in lvl1 %}
+                        
+                    {% endfor %}                    
+                {% else %}
+                    {% if lvl1.urls.index|default(false) %}
                     <li>
-                        <a href="{{ path('admin_user_index') }}" class="{{ app.isCurrentRoute('admin_user_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Liste</a>
-                    </li>
-                    {% if app.isGrantedForUser(app.user, 'new', 'User') %}
-                    <li>
-                        <a href="{{ path('admin_user_new') }}" class="{{ app.isCurrentRoute('admin_user_new') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Créer</a>
+                        <a href="{{ path('admin_language_index') }}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <twig:ux:icon name="{{ getIcon('WireLanguage') }}" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+                            <span class="ml-3">{{ 'Language'|trans|capitalize }}</span>
+                        </a>
                     </li>
                     {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            {% if app.isGrantedForUser(app.user, 'index', 'Factory') %}
-            <li>
-                {% set open = app.current_route matches '/^admin_factory_/' %}
-                <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-{{ 'factorys' }}" data-collapse-toggle="dropdown-{{ 'factorys' }}">
-                    <twig:ux:icon name="{{ getIcon('WireFactory') }}" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-                    <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'names'|trans([], 'Factory') }}</span>
-                    <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
-                </button>
-                <ul id="dropdown-{{ 'factorys' }}" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
-                    <li>
-                        <a href="{{ path('admin_factory_index') }}" class="{{ app.isCurrentRoute('admin_factory_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Liste</a>
-                    </li>
-                    {% if app.isGrantedForUser(app.user, 'new', 'Factory') %}
-                    <li>
-                        <a href="{{ path('admin_factory_new') }}" class="{{ app.isCurrentRoute('admin_factory_new') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Créer</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            {# <li>
-                {% set open = app.current_route matches '/^admin_article_/' %}
-                <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-{{ 'articles' }}" data-collapse-toggle="dropdown-{{ 'articles' }}">
-                    <twig:ux:icon name="{{ getIcon('Article') }}" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-                    <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'names'|trans([], 'Article') }}</span>
-                    <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
-                </button>
-                <ul id="dropdown-{{ 'articles' }}" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
-                    {% if app.isGrantedForUser(app.user, 'index', 'Article') %}
-                    <li>
-                        <a href="{{ path('admin_article_index') }}" class="{{ app.isCurrentRoute('admin_article_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Liste</a>
-                    </li>
-                    {% endif %}
-                    {% if app.isGrantedForUser(app.user, 'new', 'Article') %}
-                    <li>
-                        <a href="{{ path('admin_article_new') }}" class="{{ app.isCurrentRoute('admin_article_new') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Créer</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li> #}
-
-            {% if app.isGrantedForUser(app.user, 'index', 'Webpage') %}
-            <li>
-                {% set open = app.current_route matches '/^admin_(webpage|websection|menu)_/' %}
-                <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-{{ 'webpages' }}" data-collapse-toggle="dropdown-{{ 'webpages' }}">
-                    <twig:ux:icon name="{{ getIcon('WireWebpage') }}" aria-hidden="true" class="flex-shrink-0 w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
-                    <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'names'|trans([], 'Webpage') }}</span>
-                    <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
-                </button>
-                <ul id="dropdown-{{ 'webpages' }}" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
-                    <li>
-                        <a href="{{ path('admin_webpage_index') }}" class="{{ app.isCurrentRoute('admin_webpage_index') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">{{ 'names'|trans([], 'Webpage') }}</a>
-                    </li>
-                    {# {% if app.isGrantedForUser(app.user, 'new', 'Websection') %}
-                    <li>
-                        <a href="{{ path('admin_websection_new') }}" class="{{ app.isCurrentRoute('admin_websection_new') ? 'bg-gray-100 dark:bg-gray-900 font-bold ' }}flex items-center p-2 pl-11 w-full text-base text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">{{ 'names'|trans([], 'Websection') }}</a>
-                    </li>
-                    {% endif %} #}
-                </ul>
-            </li>
-            {% endif %}
+                {% endif %}
+            {% endfor %}
 
             {% if app.devOrSadmin %}
             <li>

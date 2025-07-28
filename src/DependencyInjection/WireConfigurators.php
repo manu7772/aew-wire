@@ -109,11 +109,12 @@ Class WireConfigurators
                 }
                 break;
             case 'TwigComponent':
-                // Aequation\WireBundle\Twig\Components\: '@AequationWire/components/'
                 if($asPrepend) {
                     $container->prependExtensionConfig('twig_component', [
+                        // 'anonymous_template_directory' => '@AequationWire/components/',
                         'defaults' => [
                             'Aequation\\WireBundle\\Twig\\Components\\' => '@AequationWire/components/',
+                            // 'wire' => '@AequationWire/components/',
                         ],
                     ]);
                 } else {

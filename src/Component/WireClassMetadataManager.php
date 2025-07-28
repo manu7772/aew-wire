@@ -31,11 +31,11 @@ use Symfony\Component\Validator\Constraints\GroupSequence;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 use Psr\Log\LoggerInterface;
 // PHP
 use Exception;
 use InvalidArgumentException;
-use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireClassMetadataManager implements WireClassMetadataManagerInterface
 {
@@ -62,8 +62,8 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
     public readonly bool $isDev;
     public readonly bool $isDevOrSadmin;
     public readonly PropertyAccessorInterface $accessor;
-    private readonly Stopwatch $stopwatch;
-    private bool $initialized = false;
+    protected readonly Stopwatch $stopwatch;
+    protected bool $initialized = false;
     public readonly ValidatorInterface $validator;
     public readonly LoggerInterface $logger;
 
@@ -171,7 +171,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         }
     }
 
-    private function internalRegisterWireClassMetadata(WireClassMetadataInterface $wcmd): void
+    protected function internalRegisterWireClassMetadata(WireClassMetadataInterface $wcmd): void
     {
         if($this->allClassMetadatas->contains($wcmd) || $this->allClassMetadatas->containsKey($wcmd->getName())) {
             if($this->isDev) {
@@ -180,9 +180,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         } else {
             $this->allClassMetadatas->add($wcmd);
         }
-        if($this->isDev) {
-            // $this->controlData();
-        }
+        // $this->controlData();
     }
 
 
@@ -258,7 +256,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * Sets the search mode for filtering class metadata.
      * This method allows you to specify how the class metadata should be filtered based on the search mode.
      * 
-     * @param string $mode The search mode to set. Valid modes are: 'all', 'appwire', between', 'translation', 'hydratable'.
+     * @param string $mode The search mode to set. Valid modes are: 'all', 'final', 'instantiable', 'managed', 'abstract'.
      * @return static
      */
     public function setSearchMode(string $mode): static
@@ -853,7 +851,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
     /** DEV CONTROLS                                                                                            */
     /************************************************************************************************************/
 
-    private function controlData(): void
+    protected function controlData(): void
     {
         if($this->isDev) {
             $this->logger->debug(vsprintf('%s line %d: [DEV] control registered class metadata %s', [__METHOD__, __LINE__, static::class]));

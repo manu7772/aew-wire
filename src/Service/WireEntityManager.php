@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
+
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
@@ -21,10 +23,13 @@ use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
+use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
+use Aequation\WireBundle\Tools\Iterables;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\UnitOfWork;
@@ -88,7 +93,7 @@ class WireEntityManager implements WireEntityManagerInterface
     }
 
 
-    public function getNormaliserService(): HydrationServiceInterface
+    public function getHydrationService(): HydrationServiceInterface
     {
         return $this->appWire->get(HydrationServiceInterface::class);
     }

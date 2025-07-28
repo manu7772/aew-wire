@@ -4,7 +4,7 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
-use Aequation\WireBundle\Dto\interfaace\WireEntityDtoInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Dto\WireUserDto;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
@@ -441,7 +441,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
             //     // 'sortable' => false,
             // ],
             'roles' => [
-                'classes' => ['text-center'],
+                // 'classes' => ['text-center'],
                 'view_options' => [
                     'template' => ['from_string' => '{{ list_roles(entity.roles) }}']
                 ],

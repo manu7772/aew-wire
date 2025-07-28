@@ -10,7 +10,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Exception;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
-abstract class WireWebsectionVoter extends BaseEntityVoter
+class WireWebsectionVoter extends BaseEntityVoter
 {
 
     public const ENTITY_CLASS = WireWebsection::class;
@@ -42,10 +42,10 @@ abstract class WireWebsectionVoter extends BaseEntityVoter
                         return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     case 'edit':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
+                        return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     case 'delete':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
+                        return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     default:
                         throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));

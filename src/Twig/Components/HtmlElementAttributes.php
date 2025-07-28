@@ -6,7 +6,10 @@ use Symfony\Component\Routing\Router;
 // Symfony
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-#[AsTwigComponent]
+#[AsTwigComponent(
+    name: 'wire:html-element-attributes',
+    template: '@AequationWire/components/html-element-attributes.html.twig'
+)]
 class HtmlElementAttributes
 {
 

@@ -2,10 +2,18 @@
 namespace Aequation\WireBundle\Service;
 
 // Aequation
+
+use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\DebugToOptimize;
+use Aequation\WireBundle\Component\interface\MenuComponentInterface;
+use Aequation\WireBundle\Component\interface\RouterInfoInterface;
+use Aequation\WireBundle\Component\MenuComponent;
+use Aequation\WireBundle\Component\RouterInfo;
+use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -16,6 +24,7 @@ use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\ServerInfoInterface;
 use Aequation\WireBundle\Service\interface\TimezoneInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
@@ -79,6 +88,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     private readonly Stopwatch $stopwatch;
     public int $survey = 0;
     public readonly array $retrieved_session_data;
+    public readonly RouterInfoInterface $routerInfo;
 
     // Serializable data
     private int $timestamp;
@@ -309,8 +319,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         foreach (Objects::getClassAttributes($objectOrClass, ClassCustomService::class) as $attr) {
             if($this->has($attr->service)) {
                 return $this->get($attr->service);
-            } else if($this->isDev()) {
-                throw new Exception(vsprintf('Error %s line %d: service %s not found with %s %s!', [__METHOD__, __LINE__, $attr->service, gettype($objectOrClass), is_object($objectOrClass) ? get_class($objectOrClass) : $objectOrClass]));
             }
         }
         return null;
@@ -579,32 +587,24 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             : $html;
     }
 
+    public function getRouterInfo(): RouterInfoInterface
+    {
+        return $this->routerInfo ??= new RouterInfo($this);
+    }
+
     /**
      * get RequestContext
      * 
      * @return RequestContext
      */
-    public function getContext(): RequestContext
+    public function getContext(): ?RequestContext
     {
-        /** @var RouterInterface $router */
-        $router = $this->get('router');
-        return $router?->getContext() ?: null;
+        return $this->getRouterInfo()->getContext();
     }
 
     public function getContextAsArray(): array
     {
-        $context = $this->getContext();
-        return [
-            'BaseUrl' => $context->getBaseUrl(),
-            'PathInfo' => $context->getPathInfo(),
-            'Method' => $context->getMethod(),
-            'Host' => $context->getHost(),
-            'Scheme' => $context->getScheme(),
-            'HttpPort' => $context->getHttpPort(),
-            'HttpsPort' => $context->getHttpsPort(),
-            'QueryString' => $context->getQueryString(),
-            // 'Parameters' => $context->getParameters(),
-        ];
+        return $this->getRouterInfo()->getContextAsArray();
     }
 
     /**
@@ -646,7 +646,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         return $session instanceof SessionInterface
             && $event->isMainRequest()
             && $this->isMainFirewall()
-            && !HttpRequest::isCli()
+            && !$this->getRouterInfo()->isCli()
             && !WireAppGlobalSubscriber::isWdtRequest($event)
             ;
     }
@@ -677,7 +677,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             if($this->isLocked()) {
                 throw new Exception(vsprintf('Error %s line %d: can not initialize AppWire data while it is locked (firewall: %s / path: %s)!', [__METHOD__, __LINE__, $this->getFirewallName(), $event->getRequest()->getPathInfo()]));
             }
-            if(HttpRequest::isCli()) {
+            if($this->getRouterInfo()->isCli()) {
                 throw new Exception(vsprintf('Error %s line %d: CLI request is not available for initialization!', [__METHOD__, __LINE__]));
             }
             if(WireAppGlobalSubscriber::isWdtRequest($event)) {
@@ -1375,9 +1375,9 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
      * 
      * @return bool
      */
-    public static function isCli(): bool
+    public function isCli(): bool
     {
-        return HttpRequest::isCli();
+        return $this->getRouterInfo()->isCli();
     }
 
     /**
@@ -1794,6 +1794,67 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             return empty($url) ? false : $url;
         }
         return false;
+    }
+
+
+    /************************************************************************************************************/
+    /** MENUS                                                                                                   */
+    /************************************************************************************************************/
+
+    public function getAdminMenu(array $instances = []): MenuComponentInterface
+    {
+        $instances = count($instances) ? $instances : [WireEntityInterface::class];
+        $groups = [];
+        foreach ($this->get(WireEntityManagerInterface::class)->getEntitiesMetadata()->setTypeCompareOr()->findFinals($instances) as $classname => $wCmd) {
+            /** @var WireClassMetadataInterface $wCmd */
+            if($this->isGranted('index', $wCmd->name)) {
+                $group_s = $wCmd->getClassAttributes(AdminGroup::class);
+                if(!empty($group_s)) {
+                    $group = reset($group_s);
+                    $groups[$group->group] ??= [
+                        'order' => $group->order,
+                        'name' => $group->group,
+                        'icon' => $group->icon,
+                        'entities' => [],
+                    ];
+                    $groups[$group->group]['entities'][$wCmd->name] = [
+                        'wCmd' => $wCmd,
+                        'urls' => [
+                            'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
+                            'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
+                        ],
+                    ];
+                } else {
+                    $groups[Objects::getShortname($classname)] ??= [
+                        'order' => null,
+                        'name' => Objects::getShortname($classname),
+                        'icon' => $classname::ICON['ux'] ?? BaseMappSuperClassEntity::ICON['ux'],
+                        'entities' => [],
+                    ];
+                    $groups[Objects::getShortname($classname)]['entities'][$wCmd->name] = [
+                        'wCmd' => $wCmd,
+                        'urls' => [
+                            'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
+                            'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
+                        ],
+                    ];
+                }
+            }
+        }
+        uasort( // --> or use uasort to preserve keys
+            $groups,
+            function (array $a, array $b) {
+                if(null === $a['order']) return 2;
+                if(null === $b['order']) return -2;
+                return $a['order'] <=> $b['order'];
+            }
+        );
+        $ord = 0;
+        foreach ($groups as $name => $group) {
+            $groups[$name]['order'] = $ord++;
+        }
+        // dump(new MenuComponent($groups, $this->getRouterInfo()));
+        return new MenuComponent($groups, $this->getRouterInfo());
     }
 
 }

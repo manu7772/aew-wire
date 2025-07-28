@@ -13,4 +13,7 @@ interface WireFactoryInterface extends WireItemInterface, TraitPreferedInterface
     public function setFunctionality(?string $functionality = null): static;
     public function getDescription(): ?string;
     public function setDescription(?string $description = null): static;
+    public function getArticles(): Collection;
+    public function addArticle(WireArticleInterface $article): static;
+    public function removeArticle(WireArticleInterface $article): static;
 }

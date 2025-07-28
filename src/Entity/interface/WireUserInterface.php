@@ -3,6 +3,8 @@ namespace Aequation\WireBundle\Entity\interface;
 
 // Symfony
 
+use DateInterval;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -16,8 +18,6 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public const ROLE_SUPER_ADMIN = 'ROLE_SUPER_ADMIN';
 
     public function isLoggable(): bool;
-    public function isVerified(): bool;
-    public function updateLastLogin(): static;
     public function isSadmin(): bool;
 
     public function getEmail(): ?string;
@@ -40,12 +40,28 @@ interface WireUserInterface extends WireItemInterface, UserInterface, EquatableI
     public function setPassword(string $password): static;
     public function setSuperadmin(): static;
     public function isSuperadmin(): bool;
-    public function eraseCredentials(): void;
     public function autoGeneratePassword(int $length = 32, ?string $chars = null, bool $replace = true): static;
     // Csstheme
     public function getCsstheme(): string;
     public function setCsstheme(string $csstheme): static;
+    // Expires
+    public function isExpired(): bool;
+    public function expiresIn(): ?DateInterval;
+    public function getExpiresAt(): ?\DateTimeImmutable;
+    public function setExpiresAt(\DateTimeImmutable $expiresAt): static;
     // Factorys
+    public function getIsVerified(): bool;
+    public function isVerified(): bool;
+    public function setIsVerified(bool $isVerified): static;
+    public function updateIsVerified(): static;
+    public function getLastLogin(): ?DateTimeImmutable;
+    public function setLastLogin(?DateTimeImmutable $lastLogin): static;
+    public function updateLastLogin(): static;
+    public function eraseCredentials(): void;
+    public function getFunctionality(): ?string;
+    public function setFunctionality(?string $functionality = null): static;
+    public function getDescription(): ?string;
+    public function setDescription(?string $description = null): static;
     public function getFactorys(): Collection;
     public function addFactory(WireFactoryInterface $factory): static;
     public function removeFactory(WireFactoryInterface $factory): static;

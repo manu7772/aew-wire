@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
+use Aequation\WireBundle\Entity\WireWebpageWebsectionCollection;
 use Doctrine\Common\Collections\Collection;
 use Twig\Markup;
 
@@ -9,14 +10,15 @@ interface WireWebpageInterface extends WireItemInterface, TraitPreferedInterface
 
     public function getMainmenu(): ?WireMenuInterface;
     public function setMainmenu(?WireMenuInterface $mainmenu): static;
-    public function getSections(): Collection;
-    public function getWebsections(?string $type = null): Collection;
-    public function getWebsection(string $type): ?WireWebsectionInterface;
-    public function setWebsections(Collection $sections): static;
-    public function hasWebsection(WireWebsectionInterface $section): bool;
-    public function addWebsection(WireWebsectionInterface $section): bool;
-    public function removeWebsection(WireWebsectionInterface $section): bool;
-    public function removeWebsections(): static;
+    public function initTempSections(): void;
+    public function findTempSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): ?WireWebpageWebsectionCollection;
+    public function getSections(?string $type = null): Collection;
+    public function setSections(iterable $sections): static;
+    public function getSection(string $type): ?WireWebsectionInterface;
+    public function addSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool;
+    public function hasSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool;
+    public function removeSection(WireWebsectionInterface|WireWebpageWebsectionCollection $section): bool;
+    public function removeSections(): static;
     public function getTwigfileName(): ?string;
     public function getTwigfile(): ?string;
     public function setTwigfile(string $twigfile): static;

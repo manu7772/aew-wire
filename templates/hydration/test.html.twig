@@ -7,44 +7,61 @@
 	{% if not app.devOrSadmin %}
 		{{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
 	{% else %}
-		<h1><twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration</h1>
-		<div class="mb-4 text-sm text-base-content font-light">
-			<p>Hydration is the process of converting data from a format suitable for storage or transmission into a format suitable for use in your application.</p>
-			<p>This page allows you to view and manipulate the hydration process for various entities.</p>
-			<p>Ensure your
-				<span class="font-semibold">hydratable entities</span>
-				are properly configured to work with the hydration process and they implement the
-				<span class="font-semibold">Aequation\WireBundle\Interface\WireHydratable</span>
-				interface.</p>
-			{% set indexes = hydradataItems.validIndexes|default([]) %}
-			{% if indexes|length %}
-			<div class="divider my-6">
-				<a href="{{ path('hydration_generate', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all {{ indexes|length }}">
-					Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
-				</a>
-				<a href="{{ path('hydration_test', {index: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all {{ indexes|length }}">
-					Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
-				</a>
-			</div>
-			{% endif %}
-		</div>
+		<h1 class="text-3xl font-semibold mb-4">
+            <a href="{{ links.valid ? path('hydration_index') : app.request.headers.get('referer') }}" class="btn btn-square btn-ghost btn-outline mr-2">
+                <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
+            </a>
+			<twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>
+			Hydration test
+		</h1>
 
-		{% if hydradataItems.empty %}
-		<div role="alert" class="alert alert-warning">
-			<twig:ux:icon name="tabler:database-exclamation" class="h-6 w-6 shrink-0 stroke-current"/>
-			<span>Aucune donnée disponible</span>
+		{% if links.count > 1 %}
+		<div class="divider my-6">
+			<a href="{{ path('hydration_generate', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Generate all' : 'Generate valids'}} ({{ links.count }})">
+				{{ links.valid ? 'Tout générer' : 'Générer valides' }} ({{ links.count }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
+			</a>
+			<a href="{{ path('hydration_test', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Test all' : 'Test valids'}} ({{ links.count }})">
+				{{ links.valid ? 'Tout tester' : 'Tester valides' }} ({{ links.count }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
+			</a>
 		</div>
-		{% else %}
-		{% import "@AequationWire/hydration/partials/_elements.html.twig" as elements %}
-		<ul class="list bg-base-100 rounded-box shadow-md">
-			<li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ hydradataItems.count }}</li>
-			{% for items in hydradataItems %}
-			{{ elements.renderItem(items) }}
-			{% endfor %}
-		</ul>
 		{% endif %}
 
-		{# {{ dump(hydradataItems) }} #}
+		{% for opresult in opresults %}
+		{% set badge_color = links.count_invalids <= 0 ? 'badge-success' : (links.count_valids > 0 ? 'badge-warning' : 'badge-error') %}
+		{% set border_color = links.count_invalids <= 0 ? 'border-success' : (links.count_valids > 0 ? 'border-warning' : 'border-error') %}
+		<div class="px-4 pb-3 pt-1 border {{ border_color }} rounded-lg my-2">
+			{# <div class="mt-4 mb-2">
+				<twig:wire:alert type="{{ opresult.cssColor }}" icon="{{ true }}">
+					{% if opresult.isSuccess %}
+						Toutes les entités testées ont été hydratées avec succès.
+					{% elseif opresult.isPartialSuccess %}
+						Certaines entités testées n'ont pas pu être hydratées complètement.
+					{% elseif opresult.isFail %}
+						Aucune entité testée n'a pu être hydratée.
+					{% else %}
+						Erreurs lors de l'hydratation des entités.
+					{% endif %}
+				</twig:wire:alert>
+			</div> #}
+			<div class="mt-1">
+				<span class="badge {{ badge_color }} font-bold select-none">{{ links.count }} entité(s) testée(s)</span>
+				<span class="badge {{ links.count_valids > 0 ? 'badge-success' : 'text-base-content/60' }} font-bold select-none">{{ links.count_valids }} entité(s) valide(s)</span>
+				<span class="badge {{ links.count_invalids > 0 ? 'badge-error' : 'text-base-content/60' }} font-bold select-none">{{ links.count_invalids }} entité(s) invalide(s)</span>
+			</div>
+			{% if opresult.data is empty %}
+			<div role="alert" class="alert alert-warning">
+				<twig:ux:icon name="tabler:database-exclamation" class="h-6 w-6 shrink-0 stroke-current"/>
+				<span>Aucune donnée disponible</span>
+			</div>
+			{% else %}
+			<ul class="list rounded-box shadow-md mt-0">
+				{% for item in opresult.data %}
+				<twig:wire:hydra-items-test item="{{ item }}" icon="{{ true }}" />
+				{% endfor %}
+			</ul>
+			{% endif %}
+		</div>
+		{% endfor %}
 
 	{% endif %}
 {% endblock %}

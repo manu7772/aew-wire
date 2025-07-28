@@ -11,23 +11,22 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 interface WirePropertyMetadataInterface
 {
     public function getAccessor(): PropertyAccessorInterface;
-    public function getClassMetadata(): ClassMetadata;
+    public function getClassMetadata(): ?ClassMetadata;
     public function getName(): string;
     public function isMapped(): bool;
-    public function getRelationMapping(): null|AssociationMapping|FieldMapping;
+    public function getMapping(): null|AssociationMapping|FieldMapping;
     public function __call($name, $arguments);
     public function __get($name);
     public function __isset($name);
     public function isField(): bool;
-    public function getFieldMapping(): ?FieldMapping;
+    // public function getFieldMapping(): ?FieldMapping;
     public function isId(): bool;
     public function isRelation(): bool;
-    public function getAssociationMapping(): ?AssociationMapping;
-    public function isToOne(): bool;
-    public function isToMany(): bool;
-    public function isOrphanRemoval(): bool;
+    public function isBetweenRelation(): bool;
+    public function getBetweenTarget(): false|WireClassMetadataInterface;
+    public function getTargetNames(string $type = 'final'): false|array;
     public function isCascadePersist(): bool;
-    public function isOwningSide(): bool;
+    // public function isOwningSide(): bool;
     public function getValue(object $entity): mixed;
     public function setValue(object $entity, mixed $value): void;
 }
