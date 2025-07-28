@@ -1,9 +1,11 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
-// Symfony
-
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+// Symfony
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\ObjectMapper\Attribute\Map;
 // PHP
@@ -19,7 +21,7 @@ class WireMenuDto extends WireItemDto
     #[Map(if: 'is_bool')]
     public bool $prefered = false;
     #[Map(if: 'count')]
-    public array $content = [];
+    public TextContentsInterface $content;
     // Associations
     #[Map(if: 'is_object')]
     public mixed $webpage = null;
@@ -29,13 +31,14 @@ class WireMenuDto extends WireItemDto
     public ArrayCollection $childs;
 
     public function __construct(
-        array $data,
+        public mixed $data,
         public readonly WireEntityManagerInterface $_wireEm,
         public array $_base_options = []
     )
     {
         $this->childs = new ArrayCollection();
-        parent::__construct($data, $_wireEm, $_base_options);
+        $this->content = new TextContents();
+        $this->initialize();
     }
 
 }

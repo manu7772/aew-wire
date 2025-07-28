@@ -1,6 +1,6 @@
 <div{{ attributes }}{{ data_turbo(false) }} class="mt-3">
     {% if hydradataItems is defined %}
-    <li class="list-row border border-gray-600">
+    <li class="list-row border border-gray-600{% if bg is not null %}{{ bg ? ' bg-success/20' : 'bg-error/20' }}{% endif %}">
         <div>
             {% if icon %}
             {% set color = hydradataItems.hydrationReady ? 'text-success' : 'text-warning' %}
@@ -11,7 +11,7 @@
             {% endif %}
         </div>
         <div>
-            <div>{{ hydradataItems.name|default('Entité inconnue') }}{% if hydradataItems.declared_name != hydradataItems.name %} <span class="italic text-gray-400 font-thin text-sm">({{ hydradataItems.declared_name }})</span>{% endif %}</div>
+            <div class="font-bold mb-2">{{ hydradataItems.name|default('Entité inconnue') }}{% if hydradataItems.declared_name != hydradataItems.name %} <span class="italic text-gray-400 font-thin text-sm">({{ hydradataItems.declared_name }})</span>{% endif %}</div>
             {% if extended|default(false) %}
                 {% if hydradataItems.hydrationReady %}
                     <div class="badge badge-accent mb-1">File: <span class="font-bold">{{ hydradataItems.file ? hydradataItems.file.realPath : '?' }}</span></div>
@@ -31,31 +31,9 @@
                         {% for item in hydradataItems %}
                         <div class="my-2 px-4 py-2 border border-accent rounded-md">
                             <h3 class="text-lg text-accent font-semibold">{{ item.name }}</h3>
-                            <h4 class="text-accent font-medium">Hydration data</h4>
-                            <table class="table w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="align-top shrink-0 whitespace-nowrap">Property</th>
-                                        <th class="align-top">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for field, value in item %}
-                                    <tr>
-                                        <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
-                                        <td class="align-top">{{ print(value) }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            <h4 class="text-accent font-medium">Entity in database</h4>
-                            {% if item.persisted %}
                             <div class="mt-4 rounded-lg overflow-hidden">
-                                <twig:wire:table-entity entity="{{ item.persisted }}" />
+                                <twig:wire:hydra-entity hydraItem="{{ item }}" />
                             </div>
-                            {% else %}
-                            <twig:wire:alert type="warning">Entity not found in database</twig:wire:alert>
-                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>

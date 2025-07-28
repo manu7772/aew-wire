@@ -24,7 +24,7 @@
             </div>
             {% endif %}
             <div class="mt-4 rounded-lg overflow-hidden">
-                <twig:wire:table-entity entity="{{ item.entity }}" />
+                <twig:wire:hydra-entity hydraItem="{{ item.data }}" />
             </div>
         </div>
         <div class="flex flex-col xl:flex-row gap-1">

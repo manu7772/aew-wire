@@ -1,7 +1,9 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use DateTimeImmutable;
 use Symfony\Component\ObjectMapper\Attribute\Map;
@@ -22,16 +24,19 @@ class WireUserDto extends WireItemDto
     public Traversable|array|null $roles = [];
     #[Map(if: 'count')]
     public Traversable|array|null $cssthemes = [];
+    #[Map(if: 'count')]
+    public TextContentsInterface $content;
     // Calls
     #[Map(if: 'is_bool')]
     public bool $superadmin = false;
 
     public function __construct(
-        public array|WireUserInterface $data,
+        public mixed $data,
         public readonly WireEntityManagerInterface $_wireEm,
         public array $_base_options = [],
     ) {
-        parent::__construct($data, $_wireEm, $_base_options);
+        $this->content = new TextContents();
+        $this->initialize();
         if ($this->data instanceof WireUserInterface) {
             $this->superadmin = $this->data->isSuperadmin();
         }

@@ -231,20 +231,36 @@ class HydrationService implements HydrationServiceInterface
                             if(static::VALIDATE_BEFORE_PERSIST) {
                                 /** @var ConstraintViolationListInterface */
                                 $errors = $this->wireEm->validateEntity($entity);
-                                $opresult->addData($id, ['classname' => $hydradataItems->name, 'index' => $index, 'item_index' => $id, 'json_item_index' => json_encode([$index => [$id]]), 'entity' => $entity, 'data' => $hydra_item, 'errors' => $errors]);
+                                $opresult->addData($id, [
+                                    'classname' => $hydradataItems->name,
+                                    'index' => $index,
+                                    'item_index' => $id,
+                                    'json_item_index' => json_encode([$index => [$id]]),
+                                    'entity' => $entity,
+                                    'data' => $hydra_item,
+                                    'errors' => $errors
+                                ]);
                                 if(count($errors) > 0) {
-                                    $opresult->addError(vsprintf('Hydration data for %s index "%s%s" is not valid, because:<br>- %s', [$hydradataItems->name, $index, $all_data->count() > 1 ? '/'.$id : '', $errors]));
+                                    $opresult->addError(vsprintf('Hydration data for %s index "%s%s" is not valid, because:<br>- %s', [$hydradataItems->getShortname(), $index, $all_data->count() > 1 ? '/'.$id : '', $errors]));
                                     continue;
                                 }
                             }
-                            // $opresult->addSuccess(vsprintf('Hydration data for %s index "%s" has been generated successfully.', [$hydradataItems->name, $index]));
+                            // $opresult->addSuccess(vsprintf('Hydration data for %s index "%s" has been generated successfully.', [$hydradataItems->getShortname(), $index]));
                             $em->persist($entity);
                             if(!static::VALIDATE_BEFORE_PERSIST) {
                                 /** @var ConstraintViolationListInterface */
                                 $errors = $this->wireEm->validateEntity($entity);
-                                $opresult->addData($id, ['classname' => $hydradataItems->name, 'index' => $index, 'item_index' => $id, 'json_item_index' => json_encode([$index => [$id]]), 'entity' => $entity, 'data' => $hydra_item, 'errors' => $errors]);
+                                $opresult->addData($id, [
+                                    'classname' => $hydradataItems->name,
+                                    'index' => $index,
+                                    'item_index' => $id,
+                                    'json_item_index' => json_encode([$index => [$id]]),
+                                    'entity' => $entity,
+                                    'data' => $hydra_item,
+                                    'errors' => $errors
+                                ]);
                                 if(count($errors) > 0) {
-                                    $opresult->addError(vsprintf('Hydration data for %s index "%s%s" is not valid, because:<br>- %s', [$hydradataItems->name, $index, $all_data->count() > 1 ? '/'.$id : '', $errors]));
+                                    $opresult->addError(vsprintf('Hydration data for %s index "%s%s" is not valid, because:<br>- %s', [$hydradataItems->getShortname(), $index, $all_data->count() > 1 ? '/'.$id : '', $errors]));
                                     continue;
                                 }
                             }
@@ -252,29 +268,29 @@ class HydrationService implements HydrationServiceInterface
                                 $em->flush();
                                 // try {
                                 // } catch (Throwable $th) {
-                                //     $opresult->addError(vsprintf('Failed to <span class="font-bold underline">flush</span> entity for %s index "%s%s":%s', [$hydradataItems->name, $index, $all_data->count() > 1 ? '/'.$id : '', PHP_EOL.'- ERROR: '.$th->getMessage()]));
+                                //     $opresult->addError(vsprintf('Failed to <span class="font-bold underline">flush</span> entity for %s index "%s%s":%s', [$hydradataItems->getShortname(), $index, $all_data->count() > 1 ? '/'.$id : '', PHP_EOL.'- ERROR: '.$th->getMessage()]));
                                 // }
                             } else {
                                 $em->detach($entity); // Detach the entity to avoid flushing it
                                 $this->addCreated($entity);
                                 // dump($this->getCreateds());
                             }
-                            $opresult->addSuccess(vsprintf('Entity %s index "%s" has been <span class="font-bold underline">%s</span> successfully.', [Objects::toDebugString($entity), $index.'/'.$id, $flush ? 'flushed' : 'tested']));
+                            $opresult->addSuccess(vsprintf('#%s %s <span class="font-bold underline">%s OK</span>', [$index, Objects::getShortname($entity), $flush ? 'flush' : 'test']));
                             // dd($opresult);
                         } else {
-                            $opresult->addError(vsprintf('Failed to <span class="font-bold underline">generate (%s)</span> hydration data for %s index "%s%s".', [$flush ? 'flush' : 'test', $hydradataItems->name, $index, $all_data->count() > 1 ? '/'.$id : '']));
+                            $opresult->addError(vsprintf('#%s %s <span class="font-bold underline">%s FAIL</span>', [$index, $hydradataItems->getShortname(), $flush ? 'flush' : 'test']));
                         }
                     }
                     // dd($opresult, $opresult->getMessagesTypedForFlash());
                     // if($opresult->isSuccess()) {
                         // flush the entity if required
-                        // $opresult->addSuccess(vsprintf('%s entities for %s index "%s" has been <span class="font-bold underline">%s</span> successfully.', ['+'.$all_data->count(), $hydradataItems->name, $index, $flush ? 'flushed' : 'tested']));
+                        // $opresult->addSuccess(vsprintf('%s entities for %s index "%s" has been <span class="font-bold underline">%s</span> successfully.', ['+'.$all_data->count(), $hydradataItems->getShortname(), $index, $flush ? 'flushed' : 'tested']));
                     // }
                 } else {
-                    $opresult->addUndone(vsprintf('No data found for %s index "%s".', [$hydradataItems->name, $index]));
+                    $opresult->addUndone(vsprintf('No data found for %s index "%s".', [$hydradataItems->getShortname(), $index]));
                 }
             } else {
-                $opresult->addError(vsprintf('Hydration data for %s index "%s" is not valid, because:<br>- %s', [$hydradataItems->name, $index, implode('<br>- ', $hydradataItems->getInvalidReasons())]));
+                $opresult->addError(vsprintf('Hydration data for %s index "%s" is not valid, because:<br>- %s', [$hydradataItems->getShortname(), $index, implode('<br>- ', $hydradataItems->getInvalidReasons())]));
             }
         } else {
             $opresult->addError(vsprintf('Hydration data for index "%s" not found in path "%s".', [$index, $path]));

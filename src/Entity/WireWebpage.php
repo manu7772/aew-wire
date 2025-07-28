@@ -3,18 +3,23 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Dto\WireWebpageDto;
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
+use Aequation\WireBundle\Entity\interface\TwigfileInterface;
+use Aequation\WireBundle\Entity\Twigfile;
+use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\trait\Prefered;
-use Aequation\WireBundle\Tools\Files;
 use Aequation\WireBundle\Tools\Strings;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use Dom\Text;
 use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -50,27 +55,50 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
     protected ?WireMenuInterface $mainmenu;
 
-    #[ORM\Column()]
-    #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
-    protected ?string $twigfile = null;
+    #[ORM\Embedded(Twigfile::class)]
+    protected TwigfileInterface $twigfile;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
-    protected ?string $title = null;
+    protected ?string $title;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
-    protected ?string $linktitle = null;
+    protected ?string $linktitle;
 
-    #[ORM\Column]
+    #[ORM\Embedded(TextContents::class)]
     #[Gedmo\Translatable]
-    protected array $content = [];
+    protected TextContentsInterface $content;
 
 
     public function __construct()
     {
         parent::__construct();
         $this->sections = new ArrayCollection();
+        $this->twigfile = new Twigfile();
+        $this->content = new TextContents();
+    }
+
+    public static function _createFromDto(WireWebpageDto $dto): static
+    {
+        $instance = new static();
+        foreach ($dto->toArray() as $property => $value) {
+            $instance->{$property} = $value;
+        }
+        return $instance;
+    }
+
+    public function _updateFromDto(WireWebpageDto $dto): static
+    {
+        foreach ($dto->toArray() as $property => $value) {
+            $this->{$property} = $value;
+        }
+        return $this;
+    }
+
+    public function _createDto(array $options = []): WireWebpageDto
+    {
+        return new WireWebpageDto($this, $this->getEmbededStatus()->getWireEm(), $options);
     }
 
     public function getMaxPrefered(): ?int
@@ -183,59 +211,18 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return $this;
     }
 
-    // public function getWebsections(?string $type = null): Collection
-    // {
-    //     return $this->getSections($type);
-    // }
-
-    // public function getWebsection(string $type): ?WireWebsectionInterface
-    // {
-    //     foreach ($this->sections as $section) {
-    //         if($section->getWebsection()->getSectiontype() === $type) {
-    //             return $section->getWebsection();
-    //         }
-    //     }
-    //     return null;
-    // }
-
-    // public function setWebsections(Collection $sections): static
-    // {
-    //     return $this->setSections($sections);
-    // }
-
-    // public function hasWebsection(WireWebsectionInterface $section): bool
-    // {
-    //     return $this->hasSection($section);
-    // }
-
-    // public function addWebsection(WireWebsectionInterface $section): bool
-    // {
-    //     return $this->addSection($section);
-    // }
-
-    // public function removeWebsection(WireWebsectionInterface $section): bool
-    // {
-    //     return $this->removeSection($section);
-    // }
-
-    // public function removeWebsections(): static
-    // {
-    //     return $this->removeSections();
-    // }
 
     public function getTwigfileName(): ?string
     {
-        return empty($this->twigfile)
-            ? null
-            : Files::stripTwigfile($this->twigfile, true);
+        return $this->twigfile->isEmpty() ? null : $this->twigfile->getName();
     }
 
-    public function getTwigfile(): ?string
+    public function getTwigfile(): ?TwigfileInterface
     {
-        return $this->twigfile;
+        return $this->twigfile->isEmpty() ? null : $this->twigfile;
     }
 
-    public function setTwigfile(string $twigfile): static
+    public function setTwigfile(TwigfileInterface $twigfile): static
     {
         $this->twigfile = $twigfile;
         return $this;
@@ -267,29 +254,18 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
     #[ORM\PreUpdate]
     public function updateLinkTitle(): static
     {
-        if(empty($this->linktitle)) $this->linktitle = $this->title;
-        $this->linktitle = trim($this->linktitle);
+        if(empty($this->linktitle ?? null)) {
+            $this->setLinktitle($this->title ?? $this->name);
+        }
         return $this;
     }
 
-    public function getContent(): array
+    public function getContent(): TextContentsInterface
     {
         return $this->content;
     }
 
-    public function getContentToString(string $join = "\n"): ?string
-    {
-        $string = trim(implode($join, $this->content));
-        return empty($string) ? null : $string;
-    }
-
-    public function getContentToHtml(string $join = "\n"): ?Markup
-    {
-        $string = $this->getContentToString($join);
-        return empty($string) ? null : Strings::markup(nl2br($string));
-    }
-
-    public function setContent(array $content): static
+    public function setContent(TextContentsInterface $content): static
     {
         $this->content = $content;
         return $this;

@@ -3,6 +3,7 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Component\interface\HydradataItemsInterface;
 use Aequation\WireBundle\Component\interface\HydraItemInterface;
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -45,6 +46,16 @@ class HydraItem extends TypedCollection implements HydraItemInterface
         return $this->name;
     }
 
+    public function getHydradataItems(): HydradataItemsInterface
+    {
+        return $this->hydradataItems;
+    }
+
+    public function getWcmd(): WireClassMetadataInterface|false
+    {
+        return $this->hydradataItems->getWcmd();
+    }
+
     protected function update(bool $update_persisted = false): void
     {
         if($update_persisted) {
@@ -65,10 +76,15 @@ class HydraItem extends TypedCollection implements HydraItemInterface
     public function getHydratedEntity(): ?object
     {
         $entity = $this->hasPersisted() ? $this->getPersisted() : $this->getNew();
-        if($this->hasPersisted() && $entity->getSelfState()->isNew()) {
-            throw new Exception(vsprintf('Error %s line %d: the entity %s is not persisted. Please persist it before accessing it.', [__METHOD__, __LINE__, Objects::toDebugString($this->persisted)]));
-        }
+        // if($this->hasPersisted() && $entity->getSelfState()->isNew()) {
+        //     throw new Exception(vsprintf('Error %s line %d: the entity %s is not persisted. Please persist it before accessing it.', [__METHOD__, __LINE__, Objects::toDebugString($this->persisted)]));
+        // }
         return $this->objectMapper->map($this->createDto(), $entity);
+    }
+
+    public function getPersistedOrNew(): ?object
+    {
+        return $this->persisted ?? $this->getNew();
     }
 
     public function getPersisted(): ?object

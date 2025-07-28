@@ -537,13 +537,16 @@ class WireClassMetadata implements WireClassMetadataInterface
         if(isset($this->properties[$name])) {
             return $this->properties[$name];
         }
+        $parts = preg_split('/\./', $name);
+        $name = array_shift($parts);
         if($this->reflectionClass->hasProperty($name)) {
-            $property = $this->reflectionClass->getProperty($name);
-            return $this->properties[$name] = new WirePropertyMetadata($property, $this);
+            $wpm = new WirePropertyMetadata($this->reflectionClass->getProperty($name), $this, $parts);
+            return $this->properties[$wpm->name] = $wpm;
         } else {
             // Relative property
-            $rp = $this->reflectionClass->hasProperty($name) ? $this->reflectionClass->getProperty($name) : $name;
-            return $this->properties[$name] = new WirePropertyMetadata($rp, $this);
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: property %s not found in class %s.', [__METHOD__, __LINE__, $name, $this->name]));
+            // $rp = $this->reflectionClass->hasProperty($name) ? $this->reflectionClass->getProperty($name) : $name;
+            // return $this->properties[$name] = new WirePropertyMetadata($rp, $this);
         }
         return null;
     }

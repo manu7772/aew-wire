@@ -15,18 +15,20 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
 #[AsTwigComponent(
-    name: 'wire:table-entity',
-    template: '@AequationWire/components/table-entity.html.twig'
+    name: 'wire:hydra-entity',
+    template: '@AequationWire/components/hydra-entity.html.twig'
 )]
-class TableEntity extends AbstractController
+class HydraEntity extends AbstractController
 {
 
     // use ComponentWithFormTrait;
     use DefaultActionTrait;
 
     #[ExposeInTemplate(name: 'entity', getter: 'getEntity')]
-    public object $entity;
-    public WireClassMetadataInterface $wCmd;
+    public ?object $entity = null;
+    #[ExposeInTemplate(name: 'hydraItem', getter: 'getHydraItem')]
+    public ?HydraItemInterface $hydraItem = null;
+    public ?WireClassMetadataInterface $wCmd;
 
     public function __construct(
         public readonly WireEntityManagerInterface $wireEm
@@ -40,14 +42,19 @@ class TableEntity extends AbstractController
     //     return $form->getForm();
     // }
 
-    public function getEntity(): object
+    public function getEntity(): ?object
     {
-        return $this->entity;
+        return $this->entity ?? $this->getHydraItem()?->getPersistedOrNew() ?? null;
     }
 
-    public function getWCmd(): WireClassMetadataInterface
+    public function getHydraItem(): ?HydraItemInterface
     {
-        return $this->wCmd ??= $this->wireEm->getEntityMetadata($this->entity);
+        return $this->hydraItem ?? null;
+    }
+
+    public function getWCmd(): ?WireClassMetadataInterface
+    {
+        return $this->wCmd ??= ($entity = $this->getEntity()) ? $this->wireEm->getEntityMetadata($entity) : null;
     }
 
 }

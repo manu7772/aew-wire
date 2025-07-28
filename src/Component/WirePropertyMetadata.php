@@ -16,6 +16,7 @@ use ReflectionProperty;
 class WirePropertyMetadata implements WirePropertyMetadataInterface
 {
     public readonly string $name;
+    public readonly string $mapping_name;
     public readonly PropertyAccessorInterface $accessor;
     protected readonly null|AssociationMapping|FieldMapping $mapping;
     public readonly ?ClassMetadata $classMetadata;
@@ -29,20 +30,23 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
     public function __construct(
         public readonly ReflectionProperty $property,
         public readonly WireClassMetadataInterface $wCmd,
+        public array $parts = [],
     )
     {
         $this->classMetadata = $this->wCmd->getClassMetadata();
-        $this->name = $property->name;
+        $name = $property->name;
+        $this->mapping_name = implode('.', array_merge([$name], $this->parts));
+        $this->name = implode('_', array_merge([$name], $this->parts));
         if($this->isField()) {
-            $this->mapping = $this->getClassMetadata()->getFieldMapping($this->name);
+            $this->mapping = $this->getClassMetadata()->getFieldMapping($this->mapping_name);
         } else if($this->isRelation()) {
-            $this->mapping = $this->getClassMetadata()->getAssociationMapping($this->name);
+            $this->mapping = $this->getClassMetadata()->getAssociationMapping($this->mapping_name);
             $this->inversedBy = $this->mapping->inversedBy ?? false;
             // Find between target
             $this->targetEntity = $this->wCmd->getWireClassMetadataManager()->getWireClassMetadata($this->mapping->targetEntity);
             if($this->targetEntity->isBetween()) {
                 foreach ($this->targetEntity->getAssociationMappings() as $map) {
-                    if($map->inversedBy !== $this->name) {
+                    if($map->inversedBy !== $this->mapping_name) {
                         $this->betweenTarget = $this->wCmd->getWireClassMetadataManager()->getWireClassMetadata($map->targetEntity);
                     }
                 }
@@ -50,6 +54,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         } else {
             $this->mapping = null;
         }
+        // if(preg_match('/^twigfile/', $this->name)) dd($this);
         // Defaults values is not set
         $this->inversedBy ??= false;
         $this->between_map = $this->wCmd->getRelativeAssociationData($this->name);
@@ -82,6 +87,16 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         return $this->mapping;
     }
 
+    public function getMappingName(): string
+    {
+        return $this->mapping_name;
+    }
+
+    public function isEmbedded(): bool
+    {
+        return count($this->parts) > 0;
+    }
+
 
     /************************************************************************************************************/
     /** INHERITED FROM CLASSMETADATA                                                                            */
@@ -109,7 +124,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function isField(): bool
     {
-        return $this->classMetadata?->hasField($this->name) ?? false;
+        return $this->classMetadata?->hasField($this->mapping_name) ?? false;
     }
 
     public function isId(): bool
@@ -117,7 +132,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
         if(!$this->isField()) {
             return false;
         }
-        return $this->classMetadata?->isIdentifier($this->name) ?? false;
+        return $this->classMetadata?->isIdentifier($this->mapping_name) ?? false;
     }
 
 
@@ -127,7 +142,7 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function isRelation(): bool
     {
-        return $this->classMetadata?->hasAssociation($this->name) ?? false;
+        return $this->classMetadata?->hasAssociation($this->mapping_name) ?? false;
     }
 
     public function isBetweenRelation(): bool
@@ -184,12 +199,12 @@ class WirePropertyMetadata implements WirePropertyMetadataInterface
 
     public function getValue(object $entity): mixed
     {
-        return $this->getAccessor()->getValue($entity, $this->name);
+        return $this->getAccessor()->getValue($entity, $this->mapping_name);
     }
 
     public function setValue(object $entity, mixed $value): void
     {
-        $this->getAccessor()->setValue($entity, $this->name, $value);
+        $this->getAccessor()->setValue($entity, $this->mapping_name, $value);
     }
 
 }

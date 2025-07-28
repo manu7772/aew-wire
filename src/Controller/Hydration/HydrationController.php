@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Controller\Hydration;
 use Aequation\WireBundle\Component\interface\HydradataCollectionInterface;
 use Aequation\WireBundle\Component\interface\HydradataItemsInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
+use Exception;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,7 +23,7 @@ class HydrationController extends AbstractController
     public function index(string $indexes): Response
     {
         return $this->render('@AequationWire/hydration/index.html.twig', [
-            'indexes' => array_unique((array) json_decode($indexes)),
+            'indexes' => (array) json_decode($indexes),
             'hydradataItems' => $this->hydrator->getHydatableData(),
         ]);
     }
@@ -52,14 +53,19 @@ class HydrationController extends AbstractController
             $opresults[$item['index']] = $this->hydrator->generate($item['index'], $item['items'], true);
             $new_indexes[$item['index']] = $opresults[$item['index']]->isSuccess(); // Store the index for redirection
             foreach ($opresults[$item['index']]->getMessagesTypedForFlash() as $type => $messages) {
-                foreach ($messages as $message) {
-                    $this->addFlash($type, $message);
+                if(!empty($messages)) {
+                    $all_messages = [];
+                    foreach ($messages as $message) {
+                        $all_messages[] = $message;
+                    }
+                    $this->addFlash($type, implode('<br>- ', $all_messages));
                 }
             }
         }
-        return ($referer = $request->headers->get('referer'))
-            ? $this->redirect($referer)
-            : $this->redirectToRoute('hydration_index', ['indexes' => json_encode($new_indexes)]);
+        return $this->redirectToRoute('hydration_index', ['indexes' => json_encode($new_indexes)]);
+        // return ($referer = $request->headers->get('referer'))
+        //     ? $this->redirect($referer)
+        //     : $this->redirectToRoute('hydration_index', ['indexes' => json_encode($new_indexes)]);
     }
 
     #[Route('/test/{data}', name: 'test')]
@@ -70,43 +76,49 @@ class HydrationController extends AbstractController
         $indexes = $this->hydrator->requestDataToIndexes($data);
         $opresults = [];
         $links = [
+            'counts' => [],
             'valids' => [],
             'invalids' => [],
-            'count' => 0,
-            'count_valids' => 0,
-            'count_invalids' => 0,
-            // 'valid' => true,
+            'total' => 0,
+            'total_valids' => 0,
+            'total_invalids' => 0,
+            'valid' => true,
         ];
         foreach ($indexes as $item) {
             $opresults[$item['index']] = $this->hydrator->generate($item['index'], $item['items'], false);
-            // foreach ($opresult->getMessagesTypedForFlash() as $type => $messages) {
-            //     foreach ($messages as $message) {
-            //         $this->addFlash($type, $message);
-            //     }
-            // }
-            foreach ($opresults as $index => $results) {
-                if($results->isSuccess()) {
-                    $links['valids'][$index] ??= [];
-                    foreach ($results->getData() as $data) {
-                        $links['valids'][$index][$data['item_index']] = $data['item_index'];
-                        $links['count']++;
-                        $links['count_valids']++;
+            foreach ($opresults[$item['index']]->getMessagesTypedForFlash() as $type => $messages) {
+                if(!empty($messages)) {
+                    $all_messages = [];
+                    foreach ($messages as $message) {
+                        $all_messages[] = $message;
                     }
-                    $links['valids'][$index] = array_values($links['valids'][$index]);
-                } else {
-                    $links['invalids'][$index] ??= [];
-                    foreach ($results->getData() as $data) {
-                        $links['invalids'][$index][$data['item_index']] = $data['item_index'];
-                        $links['count']++;
-                        $links['count_invalids']++;
-                    }
-                    $links['invalids'][$index] = array_values($links['invalids'][$index]);
+                    $this->addFlash($type, implode('<br>- ', $all_messages));
                 }
             }
         }
-        $links['valids'] = array_filter($links['valids'], fn($link) => !empty($link));
-        $links['invalids'] = array_filter($links['invalids'], fn($link) => !empty($link));
-        $links['valid'] = empty($links['invalids']);
+        foreach ($opresults as $index => $results) {
+            $links['counts'][$index] = 0;
+            $links['valids'][$index] = [];
+            $links['invalids'][$index] = [];
+            foreach ($results->getData() as $data) {
+                $links['counts'][$index]++;
+                if($results->isSuccess()) {
+                    $links['valids'][$index][$data['item_index']] = $data['item_index'];
+                    $links['total']++;
+                    $links['total_valids']++;
+                } else {
+                    $links['valid'] = false;
+                    $links['invalids'][$index][$data['item_index']] = $data['item_index'];
+                    $links['total']++;
+                    $links['total_invalids']++;
+                }
+            }
+            if($links['counts'][$index] !== count($links['valids'][$index]) + count($links['invalids'][$index])) {
+                throw new Exception(vsprintf('Error %s line %d: the count of valid (%d) and invalid (%d) links does not match the total count (%d) for index %s.', [__METHOD__, __LINE__, count($links['valids'][$index]), count($links['invalids'][$index]), $links['counts'][$index], $index]));
+            }
+        }
+        // $links['valids'] = array_filter($links['valids'], fn($link) => !empty($link));
+        // $links['invalids'] = array_filter($links['invalids'], fn($link) => !empty($link));
         return $this->render('@AequationWire/hydration/test.html.twig', [
             'links' => $links,
             'opresults' => array_values($opresults),

@@ -5,6 +5,8 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\WireEmbeddedInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -21,18 +23,25 @@ use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Doctrine\ORM\Mapping\FieldMapping;
 use Exception;
 
 class BaseDto implements WireEntityDtoInterface
 {
     public const EXCEPTION_ON_RELATION_NOT_FOUND = false;
+    public const DEFAULT_OPTIONS = [
+        'enabled' => true,
+        'replace' => true,
+        'export_empty_data' => false,
+        'import_empty_data' => false,
+        'create_relations' => true, // If true, relations will be created if not found
+    ];
 
     public readonly string $_target;
     public readonly WireEntityServiceInterface $_service;
     public readonly HydrationServiceInterface $hydrator;
     public readonly WireClassMetadataManagerInterface $_wCmdm;
     public readonly WireClassMetadataInterface $_wCmd;
-    public bool $_createRelations = true;
     public PropertyAccessorInterface $_accessor;
     public array $_options = [];
     // Extra data
@@ -41,10 +50,49 @@ class BaseDto implements WireEntityDtoInterface
     // public array $_history = [];
 
     public function __construct(
-        public $data,
+        public mixed $data,
         public readonly WireEntityManagerInterface $_wireEm,
         public array $_base_options = [],
     ) {
+        $this->initialize();
+    }
+
+    public function __toString(): string
+    {
+        return static::class;
+    }
+
+    public function toArray(): array
+    {
+        $values = array_filter(
+            get_object_vars($this),
+            fn (mixed $value, string $name): bool => preg_match('/^(?!_)/', $name) && !(empty($value) && !$this->getOption($name, 'export_empty_data') && !is_numeric($value) && !is_bool($value)),
+            ARRAY_FILTER_USE_BOTH
+        );
+        return array_map(
+            function (mixed $value): null|string|int|float|bool|array {
+                switch (true) {
+                    case $value instanceof DateTimeInterface:
+                        return $value->format(DATE_ATOM);
+                        break;
+                    case $value instanceof TraitUnamedInterface:
+                        return $value->getUnameName();
+                        break;
+                    case $value instanceof WireEntityInterface:
+                        return $value->getEuid();
+                        break;
+                    default:
+                        return $value;
+                        break;
+                };
+            },
+            $values
+        );
+    }
+
+    protected function initialize(): void
+    {
+        $this->_base_options = array_merge(static::DEFAULT_OPTIONS, $this->_base_options);
         $this->_accessor = PropertyAccess::createPropertyAccessorBuilder()->enableMagicCall()->getPropertyAccessor();
         $this->hydrator = $this->_wireEm->getHydrationService();
         $this->_wCmdm = $this->_wireEm->getEntitiesMetadata();
@@ -58,131 +106,28 @@ class BaseDto implements WireEntityDtoInterface
         if($this->_wCmd->name !== $this->_target) {
             throw new Exception(sprintf('Error %s line %d: Dto target "%s" does not match service metadata name "%s"!', __METHOD__, __LINE__, $this->_target, $this->_wCmd->name));
         }
-        $this->integrateData();
-    }
-
-    public function __toString(): string
-    {
-        return static::class;
-    }
-
-    public function toArray(): array
-    {
-        $values = array_filter(
-            get_object_vars($this),
-            fn (mixed $value, string $name): bool => preg_match('/^(?!_)/', $name) && (!empty($value) || is_numeric($value) || is_bool($value)),
-            ARRAY_FILTER_USE_BOTH
-        );
-        return array_map(
-            function (mixed $value): null|string|int|float|bool|array {
-                switch (true) {
-                    case $value instanceof DateTimeInterface:
-                        return $value->format(DATE_ATOM);
-                        break;
-                    default:
-                        return $value;
-                        break;
-                };
-            },
-            $values
-        );
-    }
-
-    public function createRelations(bool $_createRelations): static
-    {
-        $this->_createRelations = $_createRelations;
-        return $this;
-    }
-
-    public function isCreateRelations(): bool
-    {
-        return $this->_createRelations;
-    }
-
-    public function integrateData(): void
-    {
+        $fieldMappings = [];
+        foreach ($this->_wCmd->fieldMappings as $name => $map) {
+            $parts = preg_split('/\./', $name);
+            $name = reset($parts);
+            $fieldMappings[$name] = $map;
+        }
         foreach ($this->data as $attr => $value) {
             $this->compileAttributeName($attr);
+            if(empty($value) && !$this->getOption($attr, 'import_empty_data') && !is_numeric($value) && !is_bool($value)) {
+                continue;
+            }
             if($this->_options[$attr]['enabled']) {
                 switch (true) {
                     case preg_match('/^(?!_)/', $attr) && property_exists($this, $attr):
-                        if(array_key_exists($attr, $this->_wCmd->fieldMappings)) {
-                            /** @see https://www.doctrine-project.org/projects/doctrine-dbal/en/4.2/reference/types.html */
-                            $type = $this->_wCmd->fieldMappings[$attr]['type'];
-                            switch ($type) {
-                                case 'string':
-                                case 'text':
-                                case 'ascii_string':
-                                    if($this->_options[$attr]['replace'] || empty($this->{$attr}) || !is_string($this->{$attr})) {
-                                        $this->{$attr} = (string) $value;
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'smallint':
-                                case 'integer':
-                                case 'bigint':
-                                    if($this->_options[$attr]['replace'] || !is_int($this->{$attr})) {
-                                        $this->{$attr} = (int) $value;
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'decimal':
-                                case 'number':
-                                case 'smallfloat':
-                                case 'float':
-                                    if($this->_options[$attr]['replace'] || !is_float($this->{$attr})) {
-                                        $this->{$attr} = (float) $value;
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'date_immutable':
-                                case 'datetimez_immutable':
-                                case 'datetime_immutable':
-                                case 'time_immutable':
-                                    if($this->_options[$attr]['replace'] || !($this->{$attr} instanceof DateTimeImmutable)) {
-                                        $this->{$attr} = new DateTimeImmutable($value);
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'date':
-                                case 'datetimez':
-                                case 'datetime':
-                                case 'time':
-                                    if($this->_options[$attr]['replace'] || !($this->{$attr} instanceof DateTime)) {
-                                        $this->{$attr} = new DateTime($value);
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'dateinterval':
-                                    if($this->_options[$attr]['replace'] || !($this->{$attr} instanceof DateInterval)) {
-                                        $this->{$attr} = new DateInterval($value);
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'boolean':
-                                    if($this->_options[$attr]['replace'] || !is_bool($this->{$attr})) {
-                                        $this->{$attr} = (bool) $value;
-                                        // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    }
-                                    break;
-                                case 'json':
-                                case 'jsonb':
-                                case 'simple_array':
-                                    if($this->_options[$attr]['replace'] || empty($this->{$attr}) || !is_array($this->{$attr})) {
-                                        $this->{$attr} = (array) $value;
-                                    } else {
-                                        $this->{$attr} = array_unique(array_merge($this->{$attr}, (array) $value));
-                                    }
-                                    // $this->addHistory($attr, $this->{$attr}, $this->_options[$attr]);
-                                    break;
-                                // case 'binary':
-                                // case 'blob':
-                                //     throw new Exception(vsprintf('Error %s line %d: cannot set "%s" value for attribute "%s" in class %s.', [__METHOD__, __LINE__, $type, $attr, static::class]));
-                                //     break;
-                                default:
-                                    throw new Exception(vsprintf('Error %s line %d: cannot set "%s" value for attribute "%s" in class %s.', [__METHOD__, __LINE__, $type, $attr, static::class]));
-                                    // $this->{$attr} = $value;
-                                    break;
+                        if(array_key_exists($attr, $fieldMappings)) {
+                            if($this->convertFieldValue($fieldMappings[$attr], $value)) {
+                                if(is_a($fieldMappings[$attr]['originalClass'], WireEmbeddedInterface::class, true)) {
+                                    $class = $fieldMappings[$attr]['originalClass'];
+                                    $this->{$attr} = new $class(...((array) $value));
+                                } else {
+                                    $this->{$attr} = $value;
+                                }
                             }
                         } else if(array_key_exists($attr, $this->_wCmd->associationMappings)) {
                             /** @var AssociationMapping */
@@ -202,7 +147,7 @@ class BaseDto implements WireEntityDtoInterface
                                         if($related = $this->tryFindEntity($value)) {
                                             $this->{$attr} = $related;
                                         } else if(static::EXCEPTION_ON_RELATION_NOT_FOUND) {
-                                            if($this->isCreateRelations()) {
+                                            if($this->getOption($attr, 'create_relations')) {
                                                 throw new Exception(vsprintf('Error %s line %d: could not find related entity "%s" for attribute "%s" in class "%s". You should create it before.', [__METHOD__, __LINE__, $value, $attr, static::class]));
                                             }
                                             throw new Exception(vsprintf('Error %s line %d: could not find related entity "%s" for attribute "%s" in class "%s".', [__METHOD__, __LINE__, $value, $attr, static::class]));
@@ -221,7 +166,7 @@ class BaseDto implements WireEntityDtoInterface
                                                 $collection->add($related);
                                             }
                                         } else if(static::EXCEPTION_ON_RELATION_NOT_FOUND) {
-                                            if($this->isCreateRelations()) {
+                                            if($this->getOption($attr, 'create_relations')) {
                                                 throw new Exception(vsprintf('Error %s line %d: could not find related entity "%s" for attribute "%s" in class "%s". You should create it before.', [__METHOD__, __LINE__, $val, $attr, static::class]));
                                             }
                                             throw new Exception(vsprintf('Error %s line %d: could not find related entity "%s" for attribute "%s" in class "%s".', [__METHOD__, __LINE__, $val, $attr, static::class]));
@@ -266,6 +211,98 @@ class BaseDto implements WireEntityDtoInterface
         // dd($this, $this->toArray());
     }
 
+    /**
+     *  @see https://www.doctrine-project.org/projects/doctrine-dbal/en/4.2/reference/types.html
+     */
+    protected function convertFieldValue(FieldMapping $map, mixed &$value): bool
+    {
+        $fieldName = $map->declaredField ?? $map->fieldName;
+        switch ($map->type) {
+            case 'string':
+            case 'text':
+            case 'ascii_string':
+                if($this->_options[$fieldName]['replace'] || empty($this->{$fieldName}) || !is_string($this->{$fieldName})) {
+                    $value = (string) $value;
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'smallint':
+            case 'integer':
+            case 'bigint':
+                if($this->_options[$fieldName]['replace'] || !is_int($this->{$fieldName})) {
+                    $value = (int) $value;
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'decimal':
+            case 'number':
+            case 'smallfloat':
+            case 'float':
+                if($this->_options[$fieldName]['replace'] || !is_float($this->{$fieldName})) {
+                    $value = (float) $value;
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'date_immutable':
+            case 'datetimez_immutable':
+            case 'datetime_immutable':
+            case 'time_immutable':
+                if($this->_options[$fieldName]['replace'] || !($this->{$fieldName} instanceof DateTimeImmutable)) {
+                    $value = new DateTimeImmutable($value);
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'date':
+            case 'datetimez':
+            case 'datetime':
+            case 'time':
+                if($this->_options[$fieldName]['replace'] || !($this->{$fieldName} instanceof DateTime)) {
+                    $value = new DateTime($value);
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'dateinterval':
+                if($this->_options[$fieldName]['replace'] || !($this->{$fieldName} instanceof DateInterval)) {
+                    $value = new DateInterval($value);
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'boolean':
+                if($this->_options[$fieldName]['replace'] || !is_bool($this->{$fieldName})) {
+                    $value = (bool) $value;
+                    // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                    return true;
+                }
+                break;
+            case 'json':
+            case 'jsonb':
+            case 'simple_array':
+                if($this->_options[$fieldName]['replace'] || empty($this->{$fieldName}) || !is_array($this->{$fieldName})) {
+                    $value = (array) $value;
+                } else {
+                    $value = array_unique(array_merge($this->{$fieldName}, (array) $value));
+                }
+                // $this->addHistory($fieldName, $this->{$fieldName}, $this->_options[$fieldName]);
+                return true;
+                break;
+            // case 'binary':
+            // case 'blob':
+            //     throw new Exception(vsprintf('Error %s line %d: cannot set "%s" value for attribute "%s" in class %s.', [__METHOD__, __LINE__, $map->type, $fieldName, static::class]));
+            //     break;
+            default:
+                throw new Exception(vsprintf('Error %s line %d: cannot set "%s" value for attribute "%s" in class %s.', [__METHOD__, __LINE__, $map->type, $fieldName, static::class]));
+                // $value = $value;
+                break;
+        }
+        return false;
+    }
+
     protected function tryFindEntity(int|string|array $value): ?object
     {
         if(is_array($value)) {
@@ -292,10 +329,7 @@ class BaseDto implements WireEntityDtoInterface
 
     protected function compileAttributeName(string &$name): void
     {
-        $options = [
-            'enabled' => isset($this->_base_options['enabled']) ? $this->_base_options['enabled'] : true,
-            'replace' => isset($this->_base_options['replace']) ? $this->_base_options['replace'] : true,
-        ];
+        $options = $this->_base_options;
         switch (true) {
             case preg_match('/^\~/', $name):
                 /**
@@ -311,6 +345,16 @@ class BaseDto implements WireEntityDtoInterface
                 break;
         }
         $this->_options[$name] = $options;
+    }
+
+    public function getOptions(string $attr): array
+    {
+        return $this->_options[$attr] ?? $this->_base_options;
+    }
+
+    public function getOption(string $attr, string $option): mixed
+    {
+        return $this->_options[$attr][$option] ?? $this->_base_options[$option];
     }
 
     // protected function addHistory(

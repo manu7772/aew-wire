@@ -1,13 +1,15 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
 
-{% block title %}Hydration
-{% endblock %}
+{% block title %}Hydration{% endblock %}
 
 {% block main_content %}
 	{% if not app.devOrSadmin %}
 		{{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
 	{% else %}
-		<h1 class="text-3xl font-semibold mb-4"><twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration</h1>
+		<h1 class="text-3xl font-semibold mb-4">
+			<twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>
+			Hydration <span class="text-accent">menu</span>
+		</h1>
 		<div class="mb-4 text-sm text-base-content font-light">
 			<p>Hydration is the process of converting data from a format suitable for storage or transmission into a format suitable for use in your application.</p>
 			<p>This page allows you to view and manipulate the hydration process for various entities.</p>
@@ -16,14 +18,14 @@
 				are properly configured to work with the hydration process and they implement the
 				<span class="font-semibold">Aequation\WireBundle\Interface\WireHydratable</span>
 				interface.</p>
-			{% set indexes = hydradataItems.hydrationReadyIndexes|default([]) %}
-			{% if indexes|length %}
+			{% set ready_indexes = hydradataItems.hydrationReadyIndexes|default([]) %}
+			{% if ready_indexes|length %}
 			<div class="divider my-6">
-				<a href="{{ path('hydration_generate', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all ({{ indexes|length }})">
-					Tout générer ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
+				<a href="{{ path('hydration_generate', {data: ready_indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Generate all ({{ ready_indexes|length }})">
+					Tout générer ({{ ready_indexes|length }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
 				</a>
-				<a href="{{ path('hydration_test', {data: indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all ({{ indexes|length }})">
-					Tout tester ({{ indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
+				<a href="{{ path('hydration_test', {data: ready_indexes|json_encode}) }}" class="btn btn-soft btn-success" title="Test all ({{ ready_indexes|length }})">
+					Tout tester ({{ ready_indexes|length }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
 				</a>
 			</div>
 			{% endif %}
@@ -35,9 +37,9 @@
 		</div>
 		{% else %}
 		<ul class="list bg-base-100 rounded-box shadow-md">
-			{# <li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ indexes|length }}</li> #}
+			{# <li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ ready_indexes|length }}</li> #}
 			{% for items in hydradataItems %}
-			<twig:wire:hydra-items-show hydradataItems="{{ items }}" extended="{{ false }}" context="list" icon="{{ true }}" />
+			<twig:wire:hydra-items-show hydradataItems="{{ items }}" extended="{{ false }}" context="list" icon="{{ true }}" bg="{{ items.index in indexes|keys ? indexes[items.index] : null }}" />
 			{% endfor %}
 		</ul>
 		{% endif %}

@@ -101,6 +101,11 @@ class HydradataItems extends TypedCollection implements HydradataItemsInterface
         return !$this->isRoot();
     }
 
+    public function getWcmd(): WireClassMetadataInterface|false
+    {
+        return $this->wCmd;
+    }
+
     public function getFile(): ?SplFileInfo
     {
         return $this->file;

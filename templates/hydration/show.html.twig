@@ -1,17 +1,16 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
 
-{% block title %}Hydration {{ hydradataItems.name }}
-{% endblock %}
+{% block title %}Hydration show {{ hydradataItems.name }}{% endblock %}
 
 {% block main_content %}
 	{% if not app.devOrSadmin %}
 		{{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
 	{% else %}
-		<h1>
+		<h1 class="text-3xl font-semibold mb-4">
             <a href="{{ app.request.headers.get('referer') }}" class="btn btn-square btn-ghost btn-outline mr-2">
                 <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
             </a>
-            <twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration <span class="{{ hydradataItems.valid ? 'font-light opacity-80' : 'text-error' }}">{{ hydradataItems.name }}</span>
+            <twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>Hydration <span class="text-accent">show</span> <span class="{{ hydradataItems.valid ? 'font-light opacity-80' : 'text-error' }}">{{ hydradataItems.name }}</span>
         </h1>
         {% if hydradataItems and (others is not null and others.count > 0) %}
 		<div class="divider my-6">
@@ -25,27 +24,19 @@
         </div>
         {% endif %}
 
-		{% if hydradataItems is null %}
-            <twig:wire:alert type="warning">
-                <span>Aucune donnée disponible</span>
-            </twig:wire:alert>
-		{% else %}
-            <ul class="list bg-base-100 rounded-box shadow-md">
-                <twig:wire:hydra-items-show hydradataItems="{{ hydradataItems }}" extended="{{ true }}" context="show" icon="{{ true }}" />
-            </ul>
-            {% if others is not null and others.count > 0 %}
-            <div class="divider my-4">
-                <h3 class="text-success">Others of same name <span class="font-bold">{{ hydradataItems.name }}</span></h3>
-            </div>
-            <ul class="list bg-base-100 rounded-box shadow-md">
-                {% for other in others %}
-                <twig:wire:hydra-items-show hydradataItems="{{ other }}" extended="{{ true }}" context="show" icon="{{ true }}" />
-                {% endfor %}
-            </ul>
-            {% endif %}
-		{% endif %}
-
-		{# {{ dump(hydradataItems, others) }} #}
+        <ul class="list bg-base-100 rounded-box shadow-md">
+            <twig:wire:hydra-items-show hydradataItems="{{ hydradataItems }}" extended="{{ true }}" context="show" icon="{{ true }}" />
+        </ul>
+        {% if others is not null and others.count > 0 %}
+        <div class="divider my-4">
+            <h3 class="text-success">Others of same name <span class="font-bold">{{ hydradataItems.name }}</span></h3>
+        </div>
+        <ul class="list bg-base-100 rounded-box shadow-md">
+            {% for other in others %}
+            <twig:wire:hydra-items-show hydradataItems="{{ other }}" extended="{{ true }}" context="show" icon="{{ true }}" />
+            {% endfor %}
+        </ul>
+        {% endif %}
 
 	{% endif %}
 {% endblock %}

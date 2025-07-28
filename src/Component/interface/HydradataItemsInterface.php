@@ -34,6 +34,8 @@ interface HydradataItemsInterface extends TypedCollectionInterface
     public function isRoot(): bool;
     /** Is a child: filtered of it's parent */
     public function isFiltered(): bool;
+    /** Get wCmd */
+    public function getWcmd(): WireClassMetadataInterface|false;
     /** File data */
     public function getFile(): ?SplFileInfo;
     public function setFile(?SplFileInfo $file): static;

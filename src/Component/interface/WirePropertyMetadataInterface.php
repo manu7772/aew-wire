@@ -15,6 +15,8 @@ interface WirePropertyMetadataInterface
     public function getName(): string;
     public function isMapped(): bool;
     public function getMapping(): null|AssociationMapping|FieldMapping;
+    public function isEmbedded(): bool;
+    public function getMappingName(): string;
     public function __call($name, $arguments);
     public function __get($name);
     public function __isset($name);

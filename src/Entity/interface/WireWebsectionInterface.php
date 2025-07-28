@@ -11,11 +11,13 @@ interface WireWebsectionInterface extends WireEntityInterface, TraitEnabledInter
     public function setMainmenu(?WireMenuInterface $mainmenu): static;
     public function getTwigfileChoices(): array;
     public function getTwigfileName(): ?string;
-    public function getTwigfile(): ?string;
-    public function setTwigfile(string $twigfile): static;
+    public function getTwigfile(): ?TwigfileInterface;
+    public function setTwigfile(TwigfileInterface $twigfile): static;
     public function getTwigfileMetadata(): TwigfileMetadata;
     public function getSectiontype(): string;
     public function setDefaultSectiontype(): static;
     public function setSectiontype(string $sectiontype): static;
+    public function getContent(): TextContentsInterface;
+    public function setContent(TextContentsInterface $content): static;
 
 }

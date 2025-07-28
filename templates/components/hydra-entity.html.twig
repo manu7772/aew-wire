@@ -1,0 +1,69 @@
+<div{{attributes}}{{data_turbo(false)}} class="my-1">
+	{% if entity or hydraItem %}
+
+		<!-- name of each tab group should be unique -->
+		<div class="tabs tabs-lift">
+
+            <input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Vues" checked="checked"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <twig:ux:icon name="tabler:arrow-big-up-filled" class="h-4 w-4 inline" />
+                <span class="italic opacity-50">Cliquez sur les onglets à droite pour afficher les données de l'entité.</span>
+            </div>
+
+            {% if hydraItem %}
+            <input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Hydration data"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th class="align-top shrink-0 whitespace-nowrap">Property</th>
+                                <th class="align-top">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field, value in hydraItem %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
+                                <td class="align-top">{{ print(value) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if entity %}
+            <label class="tab">
+                <input type="radio" name="tab_{{ entity.euid }}"/>
+                <twig:ux:icon name="{{ entity.selfState.new ? 'tabler:plus' : 'tabler:database' }}" class="size-4 me-2" />
+                Object entity
+            </label>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <twig:wire:table-entity entity="{{ entity }}" />
+            </div>
+            {% endif %}
+
+            {% if this.wCmd %}
+			<input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Interfaces"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                {% for interface in this.wCmd.interfaces %}
+                <span class="badge badge-accent font-bold select-none mb-1">{{ interface.shortname }}</span>
+                {% endfor %}
+            </div>
+
+			<input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Traits"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                {% for trait in this.wCmd.traits %}
+                <span class="badge badge-accent font-bold select-none mb-1">{{ trait.shortname }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+		</div>
+
+	{% else %}
+		<twig:wire:alert type="warning">Aucune entité n'a été fournie pour afficher les données.</twig:wire:alert>
+	{% endif %}
+</div>

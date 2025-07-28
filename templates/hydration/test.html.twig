@@ -1,7 +1,6 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
 
-{% block title %}Hydration
-{% endblock %}
+{% block title %}Hydration test{% endblock %}
 
 {% block main_content %}
 	{% if not app.devOrSadmin %}
@@ -12,23 +11,24 @@
                 <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
             </a>
 			<twig:ux:icon name="tabler:database-plus" class="w-8 h-8 inline mr-2"/>
-			Hydration test
+			Hydration <span class="text-accent">test</span>
 		</h1>
 
-		{% if links.count > 1 %}
+		{% if links.total > 1 %}
 		<div class="divider my-6">
-			<a href="{{ path('hydration_generate', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Generate all' : 'Generate valids'}} ({{ links.count }})">
-				{{ links.valid ? 'Tout générer' : 'Générer valides' }} ({{ links.count }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
+			<a href="{{ path('hydration_generate', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Generate all' : 'Generate valids'}} ({{ links.total }})">
+				{{ links.valid ? 'Tout générer' : 'Générer valides' }} ({{ links.total }}) <twig:ux:icon name="tabler:player-track-next-filled" class="size-[1.4em]"/>
 			</a>
-			<a href="{{ path('hydration_test', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Test all' : 'Test valids'}} ({{ links.count }})">
-				{{ links.valid ? 'Tout tester' : 'Tester valides' }} ({{ links.count }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
+			<a href="{{ path('hydration_test', {data: links.valids|json_encode}) }}" class="btn btn-soft btn-success" title="{{ links.valid ? 'Test all' : 'Test valids'}} ({{ links.total }})">
+				{{ links.valid ? 'Tout tester' : 'Tester valides' }} ({{ links.total }}) <twig:ux:icon name="tabler:player-track-next" class="size-[1.4em]"/>
 			</a>
 		</div>
 		{% endif %}
 
 		{% for opresult in opresults %}
-		{% set badge_color = links.count_invalids <= 0 ? 'badge-success' : (links.count_valids > 0 ? 'badge-warning' : 'badge-error') %}
-		{% set border_color = links.count_invalids <= 0 ? 'border-success' : (links.count_valids > 0 ? 'border-warning' : 'border-error') %}
+		{% set current_index = (opresult.data|first).index %}
+		{% set badge_color = links.total_invalids <= 0 ? 'badge-success' : (links.total_valids > 0 ? 'badge-warning' : 'badge-error') %}
+		{% set border_color = links.total_invalids <= 0 ? 'border-success' : (links.total_valids > 0 ? 'border-warning' : 'border-error') %}
 		<div class="px-4 pb-3 pt-1 border {{ border_color }} rounded-lg my-2">
 			{# <div class="mt-4 mb-2">
 				<twig:wire:alert type="{{ opresult.cssColor }}" icon="{{ true }}">
@@ -44,9 +44,9 @@
 				</twig:wire:alert>
 			</div> #}
 			<div class="mt-1">
-				<span class="badge {{ badge_color }} font-bold select-none">{{ links.count }} entité(s) testée(s)</span>
-				<span class="badge {{ links.count_valids > 0 ? 'badge-success' : 'text-base-content/60' }} font-bold select-none">{{ links.count_valids }} entité(s) valide(s)</span>
-				<span class="badge {{ links.count_invalids > 0 ? 'badge-error' : 'text-base-content/60' }} font-bold select-none">{{ links.count_invalids }} entité(s) invalide(s)</span>
+				<span class="badge {{ badge_color }} font-bold select-none">{{ links.counts[current_index] }} entité(s) testée(s)</span>
+				<span class="badge {{ links.valids[current_index]|length > 0 ? 'badge-success' : 'text-base-content/60' }} font-bold select-none">{{ links.valids[current_index]|length }} entité(s) valide(s)</span>
+				<span class="badge {{ links.invalids[current_index]|length > 0 ? 'badge-error' : 'text-base-content/60' }} font-bold select-none">{{ links.invalids[current_index]|length }} entité(s) invalide(s)</span>
 			</div>
 			{% if opresult.data is empty %}
 			<div role="alert" class="alert alert-warning">

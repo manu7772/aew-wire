@@ -4,6 +4,8 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
+use Aequation\WireBundle\Entity\interface\TwigfileInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
@@ -50,17 +52,16 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
     protected ?WireMenuInterface $mainmenu = null;
 
-    #[ORM\Column()]
-    #[Assert\Regex(pattern: Files::TWIGFILE_MATCH, match: true, message: 'Le format du fichier est invalide.', groups: ['persist','update'])]
-    protected ?string $twigfile = null;
+    #[ORM\Embedded(Twigfile::class)]
+    protected TwigfileInterface $twigfile;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
     protected ?string $title = null;
 
-    #[ORM\Column]
+    #[ORM\Embedded(TextContents::class)]
     #[Gedmo\Translatable]
-    protected array $content = [];
+    protected TextContentsInterface $content;
 
     #[ORM\Column(length: 32, nullable: false)]
     protected string $sectiontype;
@@ -76,6 +77,8 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     {
         parent::__construct();
         $this->translations = new ArrayCollection();
+        $this->twigfile = new Twigfile();
+        $this->content = new TextContents();
     }
 
 
@@ -141,20 +144,18 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
 
     public function getTwigfileName(): ?string
     {
-        return empty($this->twigfile)
-            ? null
-            : Files::stripTwigfile($this->twigfile, true);
+        return $this->twigfile->isEmpty() ? null : $this->twigfile->getName();
     }
 
-    public function getTwigfile(): ?string
+    public function getTwigfile(): ?TwigfileInterface
     {
-        return $this->twigfile;
+        return $this->twigfile->isEmpty() ? null : $this->twigfile;
     }
 
-    public function setTwigfile(string $twigfile): static
+    public function setTwigfile(TwigfileInterface $twigfile): static
     {
         $this->twigfile = $twigfile;
-        $sectiontype = $this->getEmbededStatus()->service->getSectiontypeOfFile($this->twigfile);
+        $sectiontype = $this->getEmbededStatus()->service->getSectiontypeOfFile($this->twigfile->getPath());
         if(empty($sectiontype)) {
             throw new InvalidArgumentException(vsprintf('Error %s line %d: The sectiontype for file %s was not found.', [__FILE__, __LINE__, $this->twigfile]));
         }
@@ -173,12 +174,12 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
         return $this;
     }
 
-    public function getContent(): array
+    public function getContent(): TextContentsInterface
     {
         return $this->content;
     }
 
-    public function setContent(array $content): static
+    public function setContent(TextContentsInterface $content): static
     {
         $this->content = $content;
         return $this;

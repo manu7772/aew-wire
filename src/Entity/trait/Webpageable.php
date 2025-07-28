@@ -1,8 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
 // Symfony
@@ -34,14 +36,15 @@ trait Webpageable
     #[Assert\NotNull(message: 'Le lien titre est obligatoire', groups: ['persist','update'])]
     protected string $linktitle;
 
-    #[ORM\Column(type: Types::JSON, nullable: false)]
+    #[ORM\Embedded(TextContents::class)]
     #[Gedmo\Translatable]
-    protected array $content = [];
+    protected TextContentsInterface $content;
 
 
     public function __construct_webpageable(): void
     {
         if(!($this instanceof TraitWebpageableInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitWebpageableInterface::class]));
+        $this->content = new TextContents();
     }
 
     public static function getDefaultWebpageUname(): ?string
@@ -110,37 +113,16 @@ trait Webpageable
         return $this;
     }
 
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function updateLinkTitle(): static
-    {
-        if(empty($this->linktitle) && !empty($this->title)) {
-            $this->setLinktitle($this->title);
-        }
-        return $this;
-    }
-
-    public function setContent(?array $content): static
-    {
-        $this->content = $content ?? [];
-        return $this;
-    }
-
-    public function getContent(): array
+    public function getContent(): TextContentsInterface
     {
         return $this->content;
     }
 
-    public function getContentToString(string $join = "\n", bool $striptags = true): ?string
+    public function setContent(TextContentsInterface $content): static
     {
-        $string = trim(implode($join, $this->content));
-        return empty($string) ? null : $string;
+        $this->content = $content;
+        return $this;
     }
 
-    public function getContentToHtml(string $join = "<br>"): ?Markup
-    {
-        $string = $this->getContentToString($join, false);
-        return empty($string) ? null : Strings::markup(nl2br($string));
-    }
 
 }
