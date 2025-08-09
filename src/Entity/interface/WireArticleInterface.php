@@ -5,7 +5,7 @@ namespace Aequation\WireBundle\Entity\interface;
 use DateTimeInterface;
 use Doctrine\Common\Collections\Collection;
 
-interface WireArticleInterface extends WireItemInterface, TraitOwnerInterface, TraitRelinkableInterface, TraitWebpageableInterface, TraitCategorizedInterface
+interface WireArticleInterface extends WireItemInterface, TraitOwnerInterface, TraitRelinkableInterface, TraitWebpageableInterface, TraitCategorizedInterface, BetweenSortedParentInterface
 {
     public function getStart(): ?DateTimeInterface;
     public function setStart(?DateTimeInterface $start): static;

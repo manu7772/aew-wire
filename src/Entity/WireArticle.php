@@ -1,35 +1,37 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\AdminGroup;
-use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
-use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
-use Aequation\WireBundle\Entity\interface\WireArticleInterface;
-use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
-use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
-use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
-use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
-use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Owner;
+use Aequation\WireBundle\Attribute\AdminGroup;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
 use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Webpageable;
+use Aequation\WireBundle\Entity\trait\BetweenSortedParent;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
+use Aequation\WireBundle\Entity\interface\WireArticleInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Validator\Constraints as Assert;
 // PHP
 use DateTimeInterface;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 
 #[ORM\HasLifecycleCallbacks]
 #[AdminGroup(group: 'Media', order: 8, icon: 'tabler:photo')]
+#[WireRelationMapping(WireEcollection::ITEMS_ACCEPT)]
 abstract class WireArticle extends WireItem implements WireArticleInterface
 {
 
-    use Owner, Webpageable, Relinkable, Categorized;
-
-    #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'articles')]
-    protected Collection $factorys;
+    use Owner, Webpageable, Relinkable, Categorized, BetweenSortedParent;
 
     public const ICON = [
         'ux' => 'tabler:article',
@@ -53,6 +55,15 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
             'require' => [WireUrlinkInterface::class],
         ],
     ];
+    public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
+
+    #[ORM\OneToMany(targetEntity: WireArticleRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[Assert\Valid(groups: ['persist','update'])]
+    protected Collection $relinks;
+
+    #[ORM\ManyToMany(targetEntity: WireFactoryInterface::class, mappedBy: 'articles')]
+    protected Collection $factorys;
 
     public function __construct()
     {
@@ -129,6 +140,11 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
         return $this;
     }
 
+    // Sortgroup
+    public function getSortgroup(?BetweenSortedChildInterface $child = null): string
+    {
+        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireRelinkInterface ? '@'.$child->getShortname() : '');
+    }
 
 
 }

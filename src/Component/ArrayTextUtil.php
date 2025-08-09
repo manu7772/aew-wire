@@ -58,7 +58,7 @@ class ArrayTextUtil implements ArrayTextUtilInterface
     ): static
     {
         $this->strings = array_map('trim', $this->strings);
-        $this->strings = array_filter($this->strings, fn($string) => !empty($string));
+        $this->strings = array_filter($this->strings, fn($string) => !empty(strip_tags($string)));
         if($removeDuplicates) {
             $this->strings = array_unique($this->strings);
         }

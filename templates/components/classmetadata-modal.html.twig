@@ -122,13 +122,13 @@
                         <div>
                             <div><span class="font-bold {{ field.id ? 'text-lime-400' : 'text-success'}}">{% if field.id %}<twig:ux:icon name="tabler:key-filled" class="w-4 h-4 inline text-lime-400" />{% endif %}{{ field.name }}</span> <span class="text-gray-400 italic">({{ field.type }}{{ field.type == 'string' and field.length > 0 ? ' ' ~ field.length }})</span></div>
                             {# <div><span class="text-gray-400 italic">Column:</span> {{ field.columnName }}</div> #}
-                            <div><span class="text-gray-400 italic">Nullable:</span> {{ field.nullable|json_encode }} / <span class="text-gray-400 italic">Unique:</span> {{ field.unique|json_encode }}</div>
                             {% if field.notInsertable %}
-                            <div class="font-light text-orange-400">Not insertable</div>
+                            <div class="font-bold text-sm text-warning">Not insertable</div>
                             {% endif %}
                             {% if field.notUpdatable %}
-                            <div class="font-light text-orange-400">Not updatable</div>
+                            <div class="font-bold text-sm text-warning">Not updatable</div>
                             {% endif %}
+                            <div><span class="text-gray-400 italic">Nullable:</span> {{ field.nullable|json_encode }} / <span class="text-gray-400 italic">Unique:</span> {{ field.unique|json_encode }}</div>
                         </div>
                     </div>
                     {% else %}
@@ -156,26 +156,26 @@
                             <div>
                                 <span class="font-bold {{ relation.id or relation.betweenRelation ? 'text-lime-400' : 'text-success'}}">
                                     {% if relation.id %}<twig:ux:icon name="tabler:key-filled" class="w-4 h-4 inline text-lime-400" />{% endif %}
-                                    {{ relation.name }}
+                                    {{ relation.virtualName }}{% if relation.virtualName != relation.name %}<span class="text-gray-300 font-light italic text-sm"><twig:ux:icon name="tabler:chevron-right" class="size-4 inline px-0.5" />from: {{ relation.name }}</span>{% endif %}
                                 </span>
                             </div>
                             {% if relation.betweenRelation %}
                             <div class="w-full text-sm border border-lime-400 rounded-md bg-lime-400/10 my-1 px-4 py-2">
                                 <div class="text-lime-400 font-bold"><twig:ux:icon name="tabler:arrow-right-square-filled" class="w-5 h-5 inline text-lime-400 mr-1" />Between target:</div>
                                 <ul class="list-disc pl-4">
-                                    <li><span onclick="modal_{{ relation.betweenTarget|shortname|lower }}.showModal()" class="cursor-pointer">{{ relation.betweenTarget }}</span></li>
+                                    <li><span onclick="modal_{{ relation.betweenTargetEntity.shortname|lower }}.showModal()" class="cursor-pointer">{{ relation.betweenTargetEntity.name }}</span></li>
                                 </ul>
-                                <div class="text-lime-400 font-bold"><twig:ux:icon name="tabler:arrow-right-square-filled" class="w-5 h-5 inline text-lime-400 mr-1" />Final targets:{% if relation.targetFinals is empty %} <twig:ux:icon name="tabler:x" class="w-6 h-6 text-error inline" />{% endif %}</div>
-                                {% if relation.targetFinals is not empty %}
+                                <div class="text-lime-400 font-bold"><twig:ux:icon name="tabler:arrow-right-square-filled" class="w-5 h-5 inline text-lime-400 mr-1" />Final targets:{% if relation.targetEntities is empty %} <twig:ux:icon name="tabler:x" class="w-6 h-6 text-error inline" />{% endif %}</div>
+                                {% if relation.targetEntities is not empty %}
                                 <ul class="list-disc pl-4">
-                                    {% for target in relation.targetFinals|keys %}
+                                    {% for target in relation.targetEntities|keys %}
                                     <li><span onclick="modal_{{ target|shortname|lower }}.showModal()" class="cursor-pointer">{{ target }}</span></li>
                                     {% endfor %}
                                 </ul>
                                 {% endif %}
                             </div>
                             {% endif %}
-                            <div class="text-sm"><span class="text-gray-400 italic">Type:</span> {{ relation_type }} (type {{ relation.type }})</div>
+                            <div class="text-sm"><span class="text-gray-400 italic">Type:</span> {{ relation_type }} <span class="text-gray-400 italic text-xs">(type {{ relation.type }})</span></div>
                             {% if relation.targetEntity %}
                             <div class="text-sm"><span class="text-gray-400 italic">Target:</span> <span onclick="modal_{{ relation.targetEntity.shortname|lower }}.showModal()" class="cursor-pointer">{{ relation.targetEntity.name }}</span></div>
                             {% endif %}

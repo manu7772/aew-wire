@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\WireMenu;
@@ -30,9 +32,7 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
                 if($repair) {
                     /** @var WireWebpageServiceInterface */
                     $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
-                    $menu_webpage ??= $webpageService->getWebpageFor($menu);
-                    if($menu_webpage) {
-                        $menu->setWebpage($menu_webpage);
+                    if($menu_webpage = $webpageService->getFirstExposableWebpage($menu, true, true)) {
                         $this->getWireEm()->getEntityManager()->flush();
                         $opresult->addSuccess(vsprintf('Webpage "%s" assigned to menu "%s".', [
                             Objects::toDump($menu_webpage),
@@ -47,30 +47,22 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
         return $opresult;
     }
 
-    /**
-     * Create a new WireMenu entity.
-     * 1. Add Wepage (Uname: "wp_page_menu") to the menu.
-     * 
-     * @param array|false $data
-     * @param array $context
-     * @return WireMenuInterface
-     */
-    public function createEntity(
-        array $data = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): WireMenuInterface
+    public function entityEventActions(
+        BaseEntityInterface $entity
+    ): void
     {
-        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
-        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
-            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+        if(!is_a($entity, static::ENTITY_CLASS)) {
+            if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
         }
-        /** @var WireWebpageServiceInterface */
-        $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
-        $menu_webpage = $webpageService->getWebpageFor($entity);
-        if($menu_webpage) {
-            $entity->setWebpage($menu_webpage);
+        if($entity->getSelfState()->isNew()) {
+            // After created actions...
+            $this->wireEm->defaultEntityEventActions($entity);
         }
-        return $entity;
+        if($entity->getSelfState()->isLoaded()) {
+            // After loaded actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+        }
+        // After all actions...
     }
 
     public function getMainMenu(): ?WireMenuInterface

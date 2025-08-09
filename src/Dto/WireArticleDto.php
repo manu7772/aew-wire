@@ -5,6 +5,8 @@ use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\ObjectMapper\Attribute\Map;
 // PHP
 use Traversable;
@@ -20,19 +22,21 @@ class WireArticleDto extends WireItemDto
     public mixed $owner = null;
     public mixed $webpage = null;
     #[Map(if: 'count')]
-    public Traversable|array|null $categorys = null;
+    public Collection $categorys;
     #[Map(if: 'count')]
-    public Traversable|array|null $factorys = null;
+    public Collection $factorys;
     #[Map(if: 'count')]
     public TextContentsInterface $content;
 
     public function __construct(
-        public mixed $data,
-        public readonly WireEntityManagerInterface $_wireEm,
-        public array $_base_options = [],
+        protected mixed $data,
+        protected WireEntityManagerInterface $_wireEm,
+        protected array $_base_options = [],
     ) {
+        $this->categorys = new ArrayCollection();
+        $this->factorys = new ArrayCollection();
         $this->content = new TextContents();
-        $this->initialize();
+        parent::__construct($data, $_wireEm, $_base_options);
     }
 
 }

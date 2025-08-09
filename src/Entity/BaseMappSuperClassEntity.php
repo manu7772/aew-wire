@@ -48,6 +48,12 @@ abstract class BaseMappSuperClassEntity implements BaseEntityInterface
         return $this->id ?? null;
     }
 
+    public function setId(mixed $id): static
+    {
+        // Never set id directly
+        return $this;
+    }
+
     /**
      * get as string
      *

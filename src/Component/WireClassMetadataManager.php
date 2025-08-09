@@ -9,7 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
@@ -21,6 +21,7 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 // Symfony
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -42,7 +43,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
     public const ENTITY_TYPES = [
         'all' => [],
         'appwire' => [WireEntityInterface::class],
-        'between' => [BetweenManyInterface::class],
+        'between' => [BetweenSortedInterface::class],
         'translation' => [WireTranslationInterface::class],
         'hydratable' => [WireHydratable::class],
     ];
@@ -601,17 +602,16 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new model instance.', [__METHOD__, __LINE__, $classname]));
     }
 
-    // public function newDto(string $classname, mixed $data, array $context = []): WireEntityDtoInterface
-    // {
-    //     if($wCmd = $this->getWireClassMetadata($classname)) {
-    //         if(!$wCmd->isInstantiable()) {
-    //             $wCmd = $this->findOneInstantiable([$wCmd->name]);
-    //         }
-    //         $entity = $wCmd->newDto($data, $context);
-    //         return $entity;
-    //     }
-    //     throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new DTO instance.', [__METHOD__, __LINE__, $classname]));
-    // }
+    public function newDto(string $classname, mixed $data, array $options = []): ?WireEntityDtoInterface
+    {
+        if($wCmd = $this->getWireClassMetadata($classname)) {
+            if(!$wCmd->isInstantiable()) {
+                $wCmd = $this->findOneInstantiable([$wCmd->name]);
+            }
+            return $wCmd->newDto($data, $options);
+        }
+        throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not available to create a new DTO instance.', [__METHOD__, __LINE__, $classname]));
+    }
 
 
     /************************************************************************************************************/
@@ -695,7 +695,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         if(!in_array($eventName, $valid_events = ['postCreated', 'postLoaded'])) {
             throw new InvalidArgumentException(vsprintf('Error %s line %d: event name %s is not recognized!%s- Valid events are: %s', [__METHOD__, __LINE__, $eventName, PHP_EOL, implode(', ', $valid_events)]));
         }
-        if($entity->getSelfState()->isModel()) return;
+        // if($entity->getSelfState()->isModel()) return;
         $actions = [
             TraitOwnerInterface::class => [
                 // 'postLoaded',
@@ -705,10 +705,10 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
                 // 'postLoaded',
                 'postCreated',
             ],
-            TraitUnamedInterface::class => [
-                // 'postLoaded',
-                'postCreated',
-            ],
+            // TraitUnamedInterface::class => [
+            //     // 'postLoaded',
+            //     'postCreated',
+            // ],
             TraitDatetimedInterface::class => [
                 // 'postLoaded',
                 'postCreated',
@@ -763,21 +763,24 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
                             }
                         }
                         break;
-                    case TraitUnamedInterface::class:
-                        /** @var TraitUnamedInterface $entity */
-                        if(empty($entity->getUname())) {
-                            throw new Exception(vsprintf('Error %s line %d: entity %s %s has no Uname! Please set it before calling %s.', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString(), $eventName]));
-                        }
-                        if(!$entity->getUname()->getSelfState()->isReady()) {
-                            throw new Exception(vsprintf('Error %s line %d: entity %s %s has Uname (%s) selfstate not ready! Please set it before calling %s.', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString(), $entity->getUname(), $eventName]));
-                        }
-                        break;
+                    // case TraitUnamedInterface::class:
+                    //     /** @var TraitUnamedInterface $entity */
+                    //     if(empty($entity->getUname())) {
+                    //         throw new Exception(vsprintf('Error %s line %d: entity %s %s has no Uname! Please set it before calling %s.', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString(), $eventName]));
+                    //     }
+                    //     if(!$entity->getUname()->getSelfState()->isReady()) {
+                    //         throw new Exception(vsprintf('Error %s line %d: entity %s %s has Uname (%s) selfstate not ready! Please set it before calling %s.', [__METHOD__, __LINE__, $entity->getClassname(), $entity->__toString(), $entity->getUname(), $eventName]));
+                    //     }
+                    //     break;
                     default:
                         // Action not recognized
                         throw new InvalidArgumentException(vsprintf('Error %s line %d: action for interface %s not recognized!', [__METHOD__, __LINE__, $interface]));
                         break;
                 }
             }
+        }
+        if($service = $this->getService($entity)) {
+            $service->entityEventActions($entity);
         }
     }
 
@@ -843,7 +846,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
 
     public function getTargetFinalNames(string $classname, string $relation): array
     {
-        return $this->getWireClassMetadata($classname)->getTargetFinalNames($relation);
+        return $this->getWireClassMetadata($classname)->getTargetNames($relation, 'final');
     }
 
 

@@ -3,6 +3,8 @@ namespace Aequation\WireBundle\Twig\Components;
 
 use Aequation\WireBundle\Form\EntityClassMetadataType;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Tools\Objects;
+use Aequation\WireBundle\Tools\Strings;
 // Symfony
 use Doctrine\Common\Collections\Collection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -11,6 +13,7 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
+use Twig\Markup;
 
 #[AsLiveComponent(
     name: 'wire:entities-classmetadata',
@@ -24,10 +27,10 @@ final class EntitiesClassmetadata extends AbstractController
 
     #[ExposeInTemplate(name: 'list', getter: 'getList')]
     public Collection $list;
-    #[ExposeInTemplate(name: 'listAll', getter: 'getListAll')]
-    public Collection $listAll;
+    // #[ExposeInTemplate(name: 'listAll', getter: 'getListAll')]
+    // public Collection $listAll;
     #[ExposeInTemplate(name: 'command', getter: 'getCommand')]
-    public string $command;
+    public Markup $command;
 
     public function __construct(
         public WireEntityManagerInterface $wireEm
@@ -56,23 +59,33 @@ final class EntitiesClassmetadata extends AbstractController
 
     public function getListAll(): Collection
     {
-        return $this->listAll = $this->wireEm->getEntitiesMetadata()->resetFilters()->getAll();
+        return $this->wireEm->getEntitiesMetadata()->resetFilters()->getAll();
     }
 
-    public function getCommand(): string
+    public function getCommand(): Markup
     {
-        return $this->command = $this->formValues['mode'] === 'all' && (!$this->formValues['interfaces'] && !$this->formValues['classes'])
-            ? 'ClassMetadataManager->getAll()'
-            : vsprintf('ClassMetadataManager%s%s%s', [
-                $this->formValues['type_comparison'] ? '' : '->setTypeCompare(false)',
-                $this->formValues['mode'] === 'all' ? '' : vsprintf('->setSearchMode("%s")', [$this->formValues['mode']]),
-                $this->formValues['interfaces'] || $this->formValues['classes'] ? vsprintf('->filterClasses(%s)', [
-                    json_encode(array_merge(
-                        $this->formValues['interfaces'] ?? [],
-                        $this->formValues['classes'] ?? []
+        $command = $this->formValues['mode'] === 'all' && (!$this->formValues['interfaces'] && !$this->formValues['classes'])
+            ? '<span class="text-info">ClassMetadataManager</span>-><span class="text-success">getAll</span>()'
+            : vsprintf('<span class="text-info">ClassMetadataManager</span>%s%s%s', [
+                $this->formValues['type_comparison'] ? '' : '-><span class="text-success">setTypeCompare</span>(false)',
+                $this->formValues['mode'] === 'all' ? '' : vsprintf('-><span class="text-success">setSearchMode</span>("%s")', [$this->formValues['mode']]),
+                $this->formValues['interfaces'] || $this->formValues['classes'] ? vsprintf('-><span class="text-success">filterClasses</span>(%s)', [
+                    implode(', ', array_merge(
+                        static::shortnames($this->formValues['interfaces']) ?? [],
+                        static::shortnames($this->formValues['classes']) ?? []
                     ))
-                ]) : '->filterClasses([])'
+                ]) : '-><span class="text-success">filterClasses</span>([])'
             ]);
+        return $this->command = Strings::markup($command);
+    }
+
+    protected static function shortnames(?array $classes): ?array
+    {
+        if(!$classes) return null;
+        return array_map(
+            static fn(string $class): string => Objects::getShortname($class).'::class',
+            $classes
+        );
     }
 
 }

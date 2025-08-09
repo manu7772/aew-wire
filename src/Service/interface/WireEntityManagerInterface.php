@@ -64,10 +64,10 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
     public function isGrantsCheckEnabled(): bool;
-    public function createEntity(string $classname, array $data = [], array $context = []): object;
-    public function createModel(string $classname, array $data = [], array $context = []): BaseEntityInterface;
-    public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false;
-    public function createDto(string $classname, array $data = [], array $context = []): ?WireEntityDtoInterface;
+    public function createEntity(string $classname, array $data = [], array $options = []): object;
+    public function createModel(string $classname, array $data = [], array $options = []): BaseEntityInterface;
+    public function createClone(BaseEntityInterface $entity, array $changes = [], array $options = []): BaseEntityInterface|false;
+    public function createDto(string $classname, array $data = [], array $options = []): ?WireEntityDtoInterface;
     public function validateEntity(object $entity, string|GroupSequence|array|null $addGroups = null, Constraint|array|null $constraints = null, bool $throws = false): ConstraintViolationListInterface;
     public function getRepository(string|object $objectOrClass): ?EntityRepository;
     public function findById(string $classname, string $id): ?BaseEntityInterface;
@@ -88,8 +88,9 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function count(string $classname, bool|array $criteria = []): int;
     public function findAll(string $classname, bool|array $criteria = [], ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array;
     public function findOneBy(string $classname, int|string $identifier, bool|array $criteria = [], ?array $orderBy = null): ?object;
-    public function addPostFlushInfos(PostFlushEventArgs $args): void;
-    public function getPostFlushInfos(bool $getLastOnly = false): array;
+    public function defaultEntityEventActions(BaseEntityInterface $entity): void;
+    // public function addPostFlushInfos(PostFlushEventArgs $args): void;
+    // public function getPostFlushInfos(bool $getLastOnly = false): array;
     public function getEntitiesMetadata(): WireClassMetadataManagerInterface;
     public function getEntityMetadata(string|object $objectOrClass): WireClassMetadataInterface;
     public function getBrowserPath(WireImageInterface|WirePdfInterface $media, ?string $filter = null, array $runtimeConfig = [], $resolver = null, $referenceType = UrlGeneratorInterface::ABSOLUTE_URL): ?string;

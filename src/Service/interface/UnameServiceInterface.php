@@ -7,7 +7,7 @@ use Aequation\WireBundle\Entity\interface\UnameInterface;
 interface UnameServiceInterface extends WireEntityServiceInterface
 {
 
-    public function findOrphanUnames(): array;
-    public function removeOrphanUnames(array|string|UnameInterface $unames): OpresultInterface;
+    // public function findOrphanUnames(): array;
+    // public function removeOrphanUnames(array|string|UnameInterface $unames): OpresultInterface;
 
 }

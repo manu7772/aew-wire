@@ -58,10 +58,7 @@ class Twigfile implements TwigfileInterface
 
     public function isEmpty(): bool
     {
-        return
-            empty($this->name) &&
-            empty($this->path)
-            ;
+        return empty($this->name);
     }
 
 }

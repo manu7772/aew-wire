@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
+use Aequation\WireBundle\Entity\WireCategory;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -21,7 +22,7 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     use TraitBaseService;
     use TraitBaseEntityService;
     
-    public const ENTITY_CLASS = WireCategoryInterface::class;
+    public const ENTITY_CLASS = WireCategory::class;
 
     public readonly array $availableTypes;
 

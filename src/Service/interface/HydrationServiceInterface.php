@@ -32,6 +32,7 @@ interface HydrationServiceInterface extends WireServiceInterface
     public function tryFindCreated(int|string|array $value, ?string $classname = null): ?object;
     public function getCreateds(): Collection;
     public function generate(int $index, array $items = [], bool $flush = false, ?string $path = null): OpresultInterface;
+    public function getDto(object $object, array $options = []): ?object;
     public function getDataFiles(?string $path = null): array;
     public function getHydratableClasses(): WireClassMetadataCollectionInterface;
     public static function parseYamlData(string $yaml): array|false;

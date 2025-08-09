@@ -2,13 +2,13 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
-use Aequation\WireBundle\Entity\WireRslink;
-use Aequation\WireBundle\Service\interface\WireRslinkServiceInterface;
+use Aequation\WireBundle\Entity\WireRsoclink;
+use Aequation\WireBundle\Service\interface\WireRsoclinkServiceInterface;
 
-class WireRslinkService extends WireRelinkService implements WireRslinkServiceInterface
+class WireRsoclinkService extends WireRelinkService implements WireRsoclinkServiceInterface
 {
 
-    const ENTITY_CLASS = WireRslink::class;
+    const ENTITY_CLASS = WireRsoclink::class;
 
     public function checkDatabase(
         ?OpresultInterface $opresult = null,
@@ -16,7 +16,7 @@ class WireRslinkService extends WireRelinkService implements WireRslinkServiceIn
     ): OpresultInterface
     {
         $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireRslinkInterface entities
+        // Check all WireRsoclinkInterface entities
         return $opresult;
     }
 

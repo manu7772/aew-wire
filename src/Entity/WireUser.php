@@ -9,6 +9,7 @@ use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\trait\BetweenSortedParent;
 use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Relinkable;
 use Aequation\WireBundle\Entity\trait\Webpageable;
@@ -34,7 +35,7 @@ use DateTimeImmutable;
 #[AdminGroup(group: 'Persons', order: 1, icon: 'tabler:users-group')]
 abstract class WireUser extends WireItem implements WireUserInterface
 {
-    use Webpageable, Relinkable, Categorized;
+    use Webpageable, Relinkable, Categorized, BetweenSortedParent;
 
     public const ICON = [
         'ux' => 'tabler:user-filled',

@@ -1,16 +1,18 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
+use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 // Symfony
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\Validator\Constraints as Assert;
-use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Sortable\Entity\Repository\SortableRepository;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
@@ -40,8 +42,8 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
 
 
     public function __construct(
-        WireWebpageInterface $webpage,
-        WireWebsectionInterface $websection
+        WireWebpageInterface&BetweenSortedParentInterface $webpage,
+        WireWebsectionInterface&BetweenSortedChildInterface $websection
     ) {
         $this->webpage = $webpage;
         $this->websection = $websection;
@@ -55,7 +57,7 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
 
     public function getChild(): object
     {
-        return $this->websection;
+        return $this->websection->setTempWebpage($this->webpage);
     }
 
     public function getWebpage(): WireWebpageInterface
@@ -63,10 +65,10 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
         return $this->webpage;
     }
 
-    public function getWebsection(): WireWebsectionInterface
-    {
-        return $this->websection;
-    }
+    // public function getWebsection(): WireWebsectionInterface
+    // {
+    //     return $this->websection;
+    // }
 
     public function getPosition(): int
     {
@@ -81,7 +83,7 @@ class WireWebpageWebsectionCollection implements WebsectionCollectionInterface
 
     public function updateSortgroup(): static
     {
-        $this->sortgroup = $this->webpage->getEuid().'_Websection';
+        $this->sortgroup = $this->webpage->getSortgroup($this->websection);
         return $this;
     }
 

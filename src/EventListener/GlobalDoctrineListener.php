@@ -124,7 +124,7 @@ class GlobalDoctrineListener
     ): void {
         // Remove all persisteds
         // $this->wireEm->clearPersisteds();
-        $this->wireEm->addPostFlushInfos($event);
+        // $this->wireEm->addPostFlushInfos($event);
     }
 
     // public function onClear(

@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Dto;
 
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+// Symfony
 use Symfony\Component\ObjectMapper\Attribute\Map;
 
 class WireLanguageDto extends BaseDto
@@ -24,6 +26,14 @@ class WireLanguageDto extends BaseDto
     public function __toString(): string
     {
         return $this->locale ?? parent::__toString();
+    }
+
+    public function __construct(
+        protected mixed $data,
+        protected WireEntityManagerInterface $_wireEm,
+        protected array $_base_options = [],
+    ) {
+        parent::__construct($data, $_wireEm, $_base_options);
     }
 
 }

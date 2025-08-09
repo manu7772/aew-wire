@@ -3,7 +3,6 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
@@ -65,7 +64,7 @@ abstract class WireItemService implements WireItemServiceInterface
                 'sortable' => true,
             ],
         ];
-        $model = $this->createModel();
+        $model = $this->getWireEm()->createModel(static::getEntityClassname());
         $entities = $this->getPaginated();
         /** @var BaseWireRepository */
         $repo = $this->getRepository();

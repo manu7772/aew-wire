@@ -245,7 +245,6 @@ class HydrationService implements HydrationServiceInterface
                                     continue;
                                 }
                             }
-                            // $opresult->addSuccess(vsprintf('Hydration data for %s index "%s" has been generated successfully.', [$hydradataItems->getShortname(), $index]));
                             $em->persist($entity);
                             if(!static::VALIDATE_BEFORE_PERSIST) {
                                 /** @var ConstraintViolationListInterface */
@@ -265,27 +264,21 @@ class HydrationService implements HydrationServiceInterface
                                 }
                             }
                             if($flush) {
-                                $em->flush();
-                                // try {
-                                // } catch (Throwable $th) {
-                                //     $opresult->addError(vsprintf('Failed to <span class="font-bold underline">flush</span> entity for %s index "%s%s":%s', [$hydradataItems->getShortname(), $index, $all_data->count() > 1 ? '/'.$id : '', PHP_EOL.'- ERROR: '.$th->getMessage()]));
-                                // }
+                                try {
+                                    $em->flush();
+                                } catch (Throwable $th) {
+                                    $opresult->addError(vsprintf('#%s %s <span class="font-bold underline">%s FAIL</span>', [$index, $hydradataItems->getShortname(), $flush ? 'flush' : 'test']));
+                                }
                             } else {
                                 $em->detach($entity); // Detach the entity to avoid flushing it
                                 $this->addCreated($entity);
-                                // dump($this->getCreateds());
                             }
                             $opresult->addSuccess(vsprintf('#%s %s <span class="font-bold underline">%s OK</span>', [$index, Objects::getShortname($entity), $flush ? 'flush' : 'test']));
-                            // dd($opresult);
+                            // dump($entity);
                         } else {
                             $opresult->addError(vsprintf('#%s %s <span class="font-bold underline">%s FAIL</span>', [$index, $hydradataItems->getShortname(), $flush ? 'flush' : 'test']));
                         }
                     }
-                    // dd($opresult, $opresult->getMessagesTypedForFlash());
-                    // if($opresult->isSuccess()) {
-                        // flush the entity if required
-                        // $opresult->addSuccess(vsprintf('%s entities for %s index "%s" has been <span class="font-bold underline">%s</span> successfully.', ['+'.$all_data->count(), $hydradataItems->getShortname(), $index, $flush ? 'flushed' : 'tested']));
-                    // }
                 } else {
                     $opresult->addUndone(vsprintf('No data found for %s index "%s".', [$hydradataItems->getShortname(), $index]));
                 }
@@ -296,6 +289,12 @@ class HydrationService implements HydrationServiceInterface
             $opresult->addError(vsprintf('Hydration data for index "%s" not found in path "%s".', [$index, $path]));
         }
         return $opresult;
+    }
+
+    public function getDto(object $object, array $options = []): ?object
+    {
+        // dd($object, $this->wireEm->getEntityMetadata($object)->newDto(options: $options));
+        return $this->objectMapper->map($object, $this->wireEm->getEntityMetadata($object)->newDto(options: $options));
     }
 
     public function getDataFiles(?string $path = null): array

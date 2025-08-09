@@ -61,7 +61,7 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
                 'sortable' => false,
             ],
         ];
-        $model = $this->createModel();
+        $model = $this->getWireEm()->createModel(static::getEntityClassname());
         $entities = $this->getPaginated();
         /** @var BaseWireRepository */
         $repo = $this->getRepository();

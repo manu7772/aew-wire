@@ -6,6 +6,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\UnitOfWork;
@@ -24,10 +25,11 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public function getUow(): UnitOfWork;
     // public function checkEntity(BaseEntityInterface $entity): void;
     // New
-    public function createEntity(array $data = [], array $context = []): BaseEntityInterface;
-    public function createModel(array $data = [], array $context = []): BaseEntityInterface;
-    public function createClone(BaseEntityInterface $entity,array $changes = [], array $context = []): BaseEntityInterface|false;
-    public function createDto(array $data = [], array $context = []): ?WireEntityDtoInterface;
+    // public function createEntity(array $data = [], array $context = []): BaseEntityInterface;
+    // public function createModel(array $data = [], array $context = []): BaseEntityInterface;
+    // public function createClone(BaseEntityInterface $entity,array $changes = [], array $context = []): BaseEntityInterface|false;
+    // public function createDto(array $data = [], array $context = []): ?WireEntityDtoInterface;
+    public function entityEventActions(BaseEntityInterface $entity): void;
     // Maintain database
     public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
     // Querys

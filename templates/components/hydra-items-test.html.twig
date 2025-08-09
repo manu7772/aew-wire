@@ -3,28 +3,22 @@
     <li class="list-row border border-gray-600">
         <div>
             {% if icon %}
-            <twig:ux:icon name="{{ getIcon(item.classname|default('')) }}" class="grow-0 w-5 h-5 {{ item.errors is empty ? 'text-success' : 'text-error' }}"/>
+            <twig:ux:icon name="{{ getIcon(item.classname|default('')) }}" class="grow-0 size-5 {{ item.errors is empty ? 'text-success' : 'text-error' }}"/>
             {% else %}
             <div aria-label="{{ item.errors is empty ? 'success' : 'error' }}" class="grow-0 status {{ item.errors is empty ? 'text-success' : 'text-error' }} h-3 w-3"></div>
             {% endif %}
         </div>
         <div>
-            <div>{{ item.classname|default('Entité inconnue') }}<span class="italic opacity-50">[{{ item.item_index }}]</span> <twig:ux:icon name="tabler:arrow-narrow-right" class="w-5 h-5 inline" /> <span class="font-bold">{{ item.entity.__toString() }}</span></div>
-            {% if item.errors is not empty %}
-            <div>
-                <ul class="list-disc pl-4 text-error text-md">
-                {% for error in item.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-                </ul>
+            <div>{{ item.classname|default('Entité inconnue') }}<span class="italic opacity-50">[{{ item.item_index }}]</span> <twig:ux:icon name="tabler:arrow-narrow-right" class="size-5 inline" /> <span class="font-bold">{{ item.entity.__toString() }}</span></div>
+            <div class="mt-1 mb-2">
+                {% if item.errors is not empty %}
+                <div class="text-error"><twig:ux:icon name="tabler:x" class="size-5 inline" /> Hydrated entity is <span class="font-bold">invalid</span></div>
+                {% else %}
+                <div class="text-success"><twig:ux:icon name="tabler:check" class="size-5 inline" /> Hydrated entity is <span class="font-bold">valid</span></div>
+                {% endif %}
             </div>
-            {% else %}
-            <div>
-                <span class="text-success"><twig:ux:icon name="tabler:check" class="w-5 h-5 inline" /> Hydrated entity is <span class="font-bold">valid</span></span>
-            </div>
-            {% endif %}
             <div class="mt-4 rounded-lg overflow-hidden">
-                <twig:wire:hydra-entity hydraItem="{{ item.data }}" />
+                <twig:wire:hydra-entity entity="{{ item.entity }}" hydraItem="{{ item.data }}" errors="{{ item.errors|default([]) }}" />
             </div>
         </div>
         <div class="flex flex-col xl:flex-row gap-1">

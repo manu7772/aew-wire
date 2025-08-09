@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\WireWebpage;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -71,6 +72,17 @@ class WebpageType extends AbstractType
                 'priority' => 50
             ]);
         // }
+        $builder->add('mainmenu', EntityType::class, [
+            'label' => 'fields.mainmenu',
+            'by_reference' => true,
+            'class' => $this->wireEm->findOneFinal(WireMenuInterface::class)->name,
+            'choice_label' => 'name',
+            'multiple' => false,
+            'expanded' => false,
+            'required' => true,
+            'help' => 'Choisissez le menu principal pour cette page web',
+            'priority' => 45
+        ]);
         $builder->add('enabled', CheckboxType::class, [
             'label' => 'fields.enabled',
             'required' => false,

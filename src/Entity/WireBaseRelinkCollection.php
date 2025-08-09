@@ -1,28 +1,26 @@
 <?php
-namespace Aequation\WireBundle\Entity\trait;
+namespace Aequation\WireBundle\Entity;
 
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\WireBaseRelinkCollectionInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
 use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
 use Aequation\WireBundle\Entity\interface\TraitRelinkableInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Exception;
 use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Sortable\Entity\Repository\SortableRepository;
 use Gedmo\Mapping\Annotation as Gedmo;
 
-trait BaseRelinkCollection
+#[ORM\Entity(repositoryClass: SortableRepository::class)]
+#[ORM\Table(name: '`sorted_relinks_base`')]
+#[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
+#[ORM\InheritanceType('SINGLE_TABLE')]
+abstract class WireBaseRelinkCollection implements WireBaseRelinkCollectionInterface
 {
-
-    // Define Relation in the entity class:
-    // #[ORM\Id]
-    // #[ORM\ManyToOne(targetEntity: XxxxxxxxInterface::class, inversedBy: 'relinks')]
-    protected $parent;
-
-    #[ORM\OneToOne(targetEntity: WireRelinkInterface::class, cascade: ['persist'], orphanRemoval: true)]
-    #[Assert\NotNull(groups: ['persist','update'])]
-    #[Assert\Valid(groups: ['persist','update'])]
-    protected WireRelinkInterface $relink;
+    protected TraitRelinkableInterface&BetweenSortedParentInterface $parent;
 
     #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Assert\NotNull(groups: ['persist','update'])]
@@ -33,16 +31,23 @@ trait BaseRelinkCollection
     #[Gedmo\SortablePosition]
     protected int $position = 0;
 
-    public function __construct_baserelinkcollection(
-        TraitRelinkableInterface $parent,
-        WireRelinkInterface $relink
+    #[ORM\Id]
+    #[ORM\OneToOne(targetEntity: WireRelinkInterface::class, cascade: ['persist'], inversedBy: 'parent')]
+    #[Assert\NotNull(groups: ['persist','update'])]
+    #[Assert\Valid(groups: ['persist','update'])]
+    protected WireRelinkInterface $relink;
+
+    public function __construct(
+        WireRelinkInterface&BetweenSortedChildInterface $relink
     ) {
-        if($parent === $relink) throw new Exception(vsprintf('Error %s line %d: the parent and child parameters must be different', [__METHOD__, __LINE__]));
-        $this->parent = $parent;
         $this->relink = $relink;
-        $this->relink->setOwnereuid($this->parent);
         $this->synchParentLanguage();
         $this->updateSortgroup();
+    }
+
+    public function getChild(): object
+    {
+        return $this->getRelink();
     }
 
     #[ORM\PrePersist]
@@ -54,12 +59,12 @@ trait BaseRelinkCollection
         return $this;
     }
 
-    public function getParent(): TraitRelinkableInterface
+    public function getParent(): TraitRelinkableInterface&BetweenSortedParentInterface
     {
         return $this->parent;
     }
 
-    public function getRelink(): WireRelinkInterface
+    public function getRelink(): WireRelinkInterface&BetweenSortedChildInterface
     {
         return $this->relink;
     }

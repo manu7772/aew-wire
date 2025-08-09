@@ -73,7 +73,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return empty($this->name) ? parent::__toString() : $this->name;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
@@ -147,7 +147,7 @@ abstract class WireCategory extends MappSuperClassEntity implements WireCategory
         return $this;
     }
 
-    public function getSlug(): string
+    public function getSlug(): ?string
     {
         return $this->slug;
     }

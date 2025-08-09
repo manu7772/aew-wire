@@ -56,7 +56,7 @@ class EntityDenormalizer implements DenormalizerInterface
     {
         return $this->isEnabled() ? [
             BaseEntityInterface::class => true,
-            // BetweenManyInterface::class => true,
+            // BetweenSortedInterface::class => true,
             // TranslationEntityInterface::class => true,
         ] : ['*' => null];
     }

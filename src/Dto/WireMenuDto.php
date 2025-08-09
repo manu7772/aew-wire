@@ -2,16 +2,14 @@
 namespace Aequation\WireBundle\Dto;
 
 use Aequation\WireBundle\Entity\interface\TextContentsInterface;
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\TextContents;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
-use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\ObjectMapper\Attribute\Map;
 // PHP
 use Traversable;
 
-class WireMenuDto extends WireItemDto
+class WireMenuDto extends WireEcollectionDto
 {
     // Fields
     #[Map(if: 'strlen')]
@@ -27,18 +25,14 @@ class WireMenuDto extends WireItemDto
     public mixed $webpage = null;
     #[Map(if: 'is_object')]
     public ?object $language = null;
-    // #[Map(if: 'count')]
-    public ArrayCollection $childs;
 
     public function __construct(
-        public mixed $data,
-        public readonly WireEntityManagerInterface $_wireEm,
-        public array $_base_options = []
-    )
+        protected mixed $data,
+        protected WireEntityManagerInterface $_wireEm,
+        protected array $_base_options = [],    )
     {
-        $this->childs = new ArrayCollection();
         $this->content = new TextContents();
-        $this->initialize();
+        parent::__construct($data, $_wireEm, $_base_options);
     }
 
 }

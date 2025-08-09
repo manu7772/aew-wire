@@ -44,7 +44,7 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
     #[Assert\Regex(pattern: Encoders::EUID_SCHEMA, groups: ['persist','update'])]
     protected string $entityEuid;
 
-    public readonly WireEntityInterface $entity;
+    public readonly ?WireEntityInterface $entity;
 
     /**
      * get self as string
@@ -78,6 +78,7 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
             throw new Exception(vsprintf("Error %s line %d:%s- Can not set another entity!", [__METHOD__, __LINE__, PHP_EOL]));
         }
         if (!empty($uname) || empty($this->id)) {
+            // if(!Encoders::isEuidFormatValid($uname) && !empty($uname)) dd($this->id, $uname, $this->getSelfState()->isNew(), Encoders::isUnameFormatValid($uname), !in_array(strtolower($uname), static::RESERVED_UNAMES));
             if (empty($uname)) $uname = $this->entity->getEuid();
             $this->setUname($uname);
         }
@@ -103,18 +104,25 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
      */
     public function setUname(string $uname): static
     {
-        // dump($this);
-        if($this->getSelfState()->isLoaded() && $this->id !== $uname) {
-            // Can not update Uname if already set in database
-            if($this->getEmbededStatus()->isDevOrSadmin()) {
-                throw new Exception(vsprintf('Error %s line %d:%s- Cant not update Uname as %s: Uname is already set with value %s!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname), json_encode($this->id)]));
+        if(
+            $this->getSelfState()->isNew()
+            && Encoders::isUnameFormatValid($uname)
+            && !in_array(strtolower($uname), static::RESERVED_UNAMES)
+        ) {
+            $this->id = $uname;
+        } else if($this->getEmbededStatus()->isDevOrSadmin()) {
+            if(!$this->getSelfState()->isNew() && $uname !== $this->id) {
+                // Can not update Uname if already set in database
+                throw new Exception(vsprintf('Error %s line %d: Cant not update Uname as %s: Uname is already set with value %s!', [__METHOD__, __LINE__, json_encode($uname), json_encode($this->id)]));
+            }
+            if(!Encoders::isUnameFormatValid($uname)) {
+                throw new Exception(vsprintf('Error %s line %d: Uname "%s" is not valid!', [__METHOD__, __LINE__, $uname]));
+            }
+            if(in_array(strtolower($uname), static::RESERVED_UNAMES)) {
+                throw new Exception(vsprintf('Error %s line %d: Uname "%s" is reserved!', [__METHOD__, __LINE__, $uname]));
             }
         }
-        if (!Encoders::isUnameFormatValid($uname)) throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is invalid!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
-        if(in_array(strtolower($uname), static::RESERVED_UNAMES)) {
-            throw new Exception(vsprintf('Error %s line %d:%s- Uname %s is reserved!', [__METHOD__, __LINE__, PHP_EOL, json_encode($uname)]));
-        }
-        $this->id = $uname;
+        // if(!Encoders::isEuidFormatValid($uname)) dd($uname, $this->getSelfState()->isNew(), Encoders::isUnameFormatValid($uname), !in_array(strtolower($uname), static::RESERVED_UNAMES));
         return $this;
     }
 
@@ -130,12 +138,6 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
 
     public function getEntity(): ?TraitUnamedInterface
     {
-        if(!isset($this->entity)) {
-            $entity = $this->getEmbededStatus()?->wireEntityManager->getEntityByEuid($this->entityEuid) ?? null;
-            if($entity instanceof TraitUnamedInterface) {
-                $this->entity = $entity;
-            }
-        }
-        return $this->entity ?? null;
+        return $this->entity ??= $this->getEmbededStatus()?->getWireEm()->findByEuid($this->entityEuid) ?: null;
     }
 }

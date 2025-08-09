@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Component;
 use Aequation\WireBundle\Component\interface\HydradataItemsInterface;
 use Aequation\WireBundle\Component\interface\HydraItemInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -20,6 +21,7 @@ class HydraItem extends TypedCollection implements HydraItemInterface
     protected ?object $persisted = null;
     public readonly EntityRepository $repo;
     public readonly WireEntityManagerInterface $wireEm;
+    public readonly HydrationServiceInterface $hydrator;
     public readonly ObjectMapperInterface $objectMapper;
 
     public function __construct(
@@ -29,7 +31,8 @@ class HydraItem extends TypedCollection implements HydraItemInterface
     ) {
         $this->elements = $data;
         $this->wireEm = $this->hydradataItems->wireEm;
-        $this->objectMapper = $this->wireEm->appWire->get(HydrationServiceInterface::class)->getObjectMapper();
+        $this->hydrator = $this->wireEm->appWire->get(HydrationServiceInterface::class);
+        $this->objectMapper = $this->hydrator->getObjectMapper();
         $this->name = $this->hydradataItems->name;
         // Try find entity in database
         $this->repo = $this->wireEm->getRepository($this->name);
@@ -75,11 +78,10 @@ class HydraItem extends TypedCollection implements HydraItemInterface
 
     public function getHydratedEntity(): ?object
     {
-        $entity = $this->hasPersisted() ? $this->getPersisted() : $this->getNew();
-        // if($this->hasPersisted() && $entity->getSelfState()->isNew()) {
-        //     throw new Exception(vsprintf('Error %s line %d: the entity %s is not persisted. Please persist it before accessing it.', [__METHOD__, __LINE__, Objects::toDebugString($this->persisted)]));
-        // }
-        return $this->objectMapper->map($this->createDto(), $entity);
+        $entity = $this->getPersistedOrNew();
+        $dto = $this->createDto($entity);
+        // dd($dto, $entity);
+        return $this->objectMapper->map($dto, $entity);
     }
 
     public function getPersistedOrNew(): ?object
@@ -97,14 +99,38 @@ class HydraItem extends TypedCollection implements HydraItemInterface
         return $this->persisted instanceof BaseEntityInterface;
     }
 
-    public function createDto(array $over_data = []): ?object
+    public function createDto(array|object $pre_set_data = []): ?object
     {
-        return $this->wireEm->createDto($this->name, array_merge($this->toArray(), $over_data));
+        // dump($pre_set_data);
+        if(is_object($pre_set_data)) {
+            $pre_set_data = $pre_set_data instanceof WireEntityDtoInterface ? $pre_set_data->toArray() : $this->hydrator->getDto($pre_set_data)->toArray();
+        }
+        // dump($pre_set_data);
+        $dto = $this->wireEm->createDto($this->name, $pre_set_data);
+        // dump($dto, $this->toArray());
+        $dto->insertData($this->toArray());
+        // dump($dto);
+        return $dto;
     }
 
     public function getNew(): ?object
     {
         return $this->wireEm->getEntitiesMetadata()->newInstance($this->name);
     }
+
+    // public static function mergeData(array $pre_set_data, array $data): array
+    // {
+    //     $adds = ['~'];
+    //     $keys = array_keys($data);
+    //     foreach ($adds as $add) {
+    //         foreach ($keys as $key) {
+    //             $keys[] = $add.$key;
+    //         }
+    //     }
+    //     $merged = array_merge(array_filter($pre_set_data, fn ($key) => !in_array($key, $keys), ARRAY_FILTER_USE_KEY), $data);
+    //     dd($keys, $pre_set_data, $data, $merged);
+    //     return $merged;
+    //     // return array_merge($pre_set_data, $data);
+    // }
 
 }

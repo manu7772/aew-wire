@@ -1,23 +1,23 @@
 <div{{attributes}}{{data_turbo(false)}} class="my-1">
 	{% if entity or hydraItem %}
 
-		<!-- name of each tab group should be unique -->
 		<div class="tabs tabs-lift">
 
-            <input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Vues" checked="checked"/>
+            <input type="radio" name="tab_he_{{ entity.euid }}" class="tab" aria-label="Vues" checked="checked"/>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
                 <twig:ux:icon name="tabler:arrow-big-up-filled" class="h-4 w-4 inline" />
                 <span class="italic opacity-50">Cliquez sur les onglets à droite pour afficher les données de l'entité.</span>
             </div>
 
             {% if hydraItem %}
-            <input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Hydration data"/>
+            <input type="radio" name="tab_he_{{ entity.euid }}" class="tab" aria-label="Hydration data"/>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
                 <div class="my-2 border border-accent rounded-md overflow-hidden">
                     <table class="table table-zebra w-full">
-                        <thead>
+                        <thead class="bg-accent/20">
                             <tr>
                                 <th class="align-top shrink-0 whitespace-nowrap">Property</th>
+                                <th class="align-top shrink-0 whitespace-nowrap max-md:hidden">Type</th>
                                 <th class="align-top">Value</th>
                             </tr>
                         </thead>
@@ -25,7 +25,9 @@
                             {% for field, value in hydraItem %}
                             <tr>
                                 <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
-                                <td class="align-top">{{ print(value) }}</td>
+                                <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ value|type }}</td>
+                                <td class="align-top"><twig:wire:print-value property="{{ field }}" from="{{ hydraItem.toArray }}" classname="" /></td>
+                                {# <td class="align-top"><twig:wire:print-value value="{{ value }}" classname="" /></td> #}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -36,28 +38,77 @@
 
             {% if entity %}
             <label class="tab">
-                <input type="radio" name="tab_{{ entity.euid }}"/>
-                <twig:ux:icon name="{{ entity.selfState.new ? 'tabler:plus' : 'tabler:database' }}" class="size-4 me-2" />
+                <input type="radio" name="tab_he_{{ entity.euid }}"/>
+                <twig:ux:icon name="{{ entity.selfState.new ? 'tabler:plus' : 'tabler:database' }}" class="size-4 me-2{{ entity.selfState.new ? ' text-warning' : ' text-success' }}" />
                 Object entity
             </label>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
-                <twig:wire:table-entity entity="{{ entity }}" />
+                <twig:wire:table-entity entity="{{ entity }}" debug="{{ false }}" />
+            </div>
+            {% endif %}
+
+            {% if errors|length %}
+            <label class="tab">
+                <input type="radio" name="tab_he_{{ entity.euid }}"/>
+                <twig:ux:icon name="tabler:alert-triangle" class="size-4 me-2{{ errors|length ? ' text-error' }}" />
+                Errors
+            </label>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                {% if errors|length %}
+                <ul class="list-disc pl-4 text-error font-bold text-md">
+                    {% for error in errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <twig:wire:alert type="success" class="text-lg font-bold">No errors found for this entity.</twig:wire:alert>
+                {% endif %}
             </div>
             {% endif %}
 
             {% if this.wCmd %}
-			<input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Interfaces"/>
+			<input type="radio" name="tab_he_{{ entity.euid }}" class="tab" aria-label="Interfaces"/>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
-                {% for interface in this.wCmd.interfaces %}
-                <span class="badge badge-accent font-bold select-none mb-1">{{ interface.shortname }}</span>
-                {% endfor %}
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0 max-md:hidden">Classname</th>
+                                <th class="text-accent">Shortname</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interface in this.wCmd.interfaces %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap max-md:hidden">{{ interface.name }}</td>
+                                <td class="align-top">{{ interface.shortname }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-			<input type="radio" name="tab_{{ entity.euid }}" class="tab" aria-label="Traits"/>
+			<input type="radio" name="tab_he_{{ entity.euid }}" class="tab" aria-label="Traits"/>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
-                {% for trait in this.wCmd.traits %}
-                <span class="badge badge-accent font-bold select-none mb-1">{{ trait.shortname }}</span>
-                {% endfor %}
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0 max-md:hidden">Classname</th>
+                                <th class="text-accent">Shortname</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trait in this.wCmd.traits %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap max-md:hidden">{{ trait.name }}</td>
+                                <td class="align-top">{{ trait.shortname }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {% endif %}
 

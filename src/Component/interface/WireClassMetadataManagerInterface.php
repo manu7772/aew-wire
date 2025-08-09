@@ -51,7 +51,7 @@ interface WireClassMetadataManagerInterface
     public function getFirstDtoTargetMap(string|object $classname): ?Map;
     public function newInstance(string $classname, mixed $data = null, array $context = []): object;
     public function newModel(string $classname, mixed $data = null, array $context = []): object;
-    // public function newDto(string $classname, mixed $data, array $context = []): WireEntityDtoInterface;
+    public function newDto(string $classname, mixed $data, array $options = []): ?WireEntityDtoInterface;
     public function postCreated(object $entity): void;
     public function postLoaded(object $entity): void;
     public function validateEntity(object $entity,string|GroupSequence|array|null $addGroups = null,Constraint|array|null $constraints = null): ConstraintViolationListInterface;

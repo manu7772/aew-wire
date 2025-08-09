@@ -15,6 +15,8 @@ use Aequation\WireBundle\Repository\WireRelinkRepository;
 use Aequation\WireBundle\Service\Interface\WireRelinkServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
+use Aequation\WireBundle\Entity\interface\WireBaseRelinkCollectionInterface;
 // Symfony
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -31,7 +33,6 @@ use Exception;
 #[ClassCustomService(WireRelinkServiceInterface::class)]
 #[ORM\DiscriminatorColumn(name: "class_name", type: "string")]
 #[ORM\InheritanceType('JOINED')]
-#[UniqueEntity(fields: ['name','ownereuid'], message: 'Ce nom {{ value }} existe déjà', groups: ['persist','update'])]
 #[ORM\HasLifecycleCallbacks]
 #[Gedmo\TranslationEntity(class: WireRelinkTranslationInterface::class)]
 #[AdminGroup(group: 'WireRelink', order: 10, icon: 'tabler:map-pin')]
@@ -62,7 +63,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     public const RELINK_TYPE = null;
     public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
     public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
-
+    public const BY_PREFERED = ['shortname','parent.euid'];
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
@@ -98,8 +99,8 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
     #[ORM\Column(length: 8, nullable: true)]
     protected ?string $target = null;
 
-    // #[ORM\OneToOne(targetEntity: RelinkCollectionInterface::class, mappedBy: 'relink', cascade: ['persist'])]
-    // protected RelinkCollectionInterface $parent;
+    #[ORM\OneToOne(targetEntity: WireBaseRelinkCollectionInterface::class, mappedBy: 'relink', cascade: ['persist'], orphanRemoval: true)]
+    protected WireBaseRelinkCollectionInterface $parent;
 
     #[ORM\Column]
     protected bool $turboenabled = true;
@@ -111,10 +112,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
 
     #[ORM\Column(type: Types::STRING, nullable: true)]
     protected ?string $linktitle = null;
-
-    #[ORM\Column(type: Types::STRING, nullable: false, updatable: false)]
-    #[Assert\Regex(pattern: Encoders::EUID_SCHEMA)]
-    public readonly string $ownereuid;
 
 
     public function __construct()
@@ -142,31 +139,27 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return static::MIN_PREFERED;
     }
 
+    public function getPreferedBy(): array
+    {
+        return static::BY_PREFERED;
+    }
+
+    public function getPosition(): int|false
+    {
+        return $this->parent->getPosition();
+    }
+
+    public function setPosition(int $position): bool
+    {
+        $this->parent->setPosition($position);
+        return true;
+    }
+
     public function getALink(
         ?int $referenceType = null
     ): ?string
     {
         throw new Exception(vsprintf('Error %s line %d: please implement this in final entity', [__METHOD__, __LINE__]));
-        // switch ($this->getRelinkType()) {
-        //     case 'URL':
-        //         if($this->isUrl()) {
-        //             return $this->mainlink;
-        //         } else if($this->isRoute()) {
-        //             return $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceType ?? Router::ABSOLUTE_PATH);
-        //         }
-        //         break;
-        //     case 'ADDRESS':
-        //         throw new Exception(vsprintf('Error %s line %d: please implement this in final entity', [__METHOD__, __LINE__]));
-        //         // return $this->getMaplink();
-        //         break;
-        //     case 'EMAIL':
-        //         return 'mailto:'.$this->mainlink;
-        //         break;
-        //     case 'PHONE':
-        //         return 'tel:'.preg_replace('/[\s\t]/', '', $this->mainlink);
-        //         break;
-        // }
-        // return null;
     }
 
     public function isUrl(): bool
@@ -296,7 +289,7 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
         return $this;
     }
 
-    public function getSlug(): string
+    public function getSlug(): ?string
     {
         return $this->slug;
     }
@@ -313,23 +306,6 @@ abstract class WireRelink extends MappSuperClassEntity implements WireRelinkInte
             $t->setObject($this);
         }
         return $this;
-    }
-
-    public function setOwnereuid(TraitRelinkableInterface $owner): static
-    {
-        if(!isset($this->ownereuid)) {
-            $this->ownereuid = $owner->getEuid();
-        } else if($this->ownereuid !== $owner->getEuid()) {
-            /** @var BaseEntityInterface */
-            $selfowner = $this->getEmbededStatus()->getWireEm()->findByEuid($this->ownereuid);
-            throw new Exception(vsprintf('Error %s line %d:%s-> This %s %s "%s" value ownereuid is already set to "%s" (by %s %s "%s")!%s-> Changing the ownereuid by "%s" (%s %s "%s") is not possible!', [__METHOD__, __LINE__, PHP_EOL, $this->getSelfState()->isNew() ? 'NEW' : 'LOADED', $this->getShortname(), $this->__toString(), $this->ownereuid, $selfowner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $selfowner->getShortname(), $selfowner->__toString(), PHP_EOL, $owner->getEuid(), $owner->getSelfState()->isNew() ? 'NEW' : 'LOADED', $owner->getShortname(), $owner->__toString()]));
-        }
-        return $this;
-    }
-
-    public function getOwnereuid(): string
-    {
-        return $this->ownereuid;
     }
 
     public function getLinkicon(): string

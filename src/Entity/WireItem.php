@@ -2,6 +2,7 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
 use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
@@ -101,7 +102,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this;
     }
 
-    public function getPosition(?WireEcollectionInterface $parent = null): int|false
+    public function getPosition(?BetweenSortedParentInterface $parent = null): int|false
     {
         $parent ??= $this->getTempParent();
         if($parent) {
@@ -109,6 +110,21 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
                 /** @var WireItemCollectionInterface $ic */
                 if($ic->getParent() === $parent) {
                     return $ic->getPosition();
+                }
+            }
+        }
+        return false;
+    }
+
+    public function setPosition(int $position, ?BetweenSortedParentInterface $parent = null): bool
+    {
+        $parent ??= $this->getTempParent();
+        if($parent) {
+            foreach ($this->parents as $ic) {
+                /** @var WireItemCollectionInterface $ic */
+                if($ic->getParent() === $parent) {
+                    $ic->setPosition($position);
+                    return $this->getPosition($parent) === $position;
                 }
             }
         }
@@ -199,7 +215,7 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this->parents->isEmpty();
     }
 
-    public function getSlug(): string
+    public function getSlug(): ?string
     {
         return $this->slug;
     }

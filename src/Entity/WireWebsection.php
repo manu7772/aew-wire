@@ -4,16 +4,17 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Attribute\AdminGroup;
 use Aequation\WireBundle\Attribute\PostEmbeded;
 use Aequation\WireBundle\Component\TwigfileMetadata;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
 use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\TwigfileInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Unamed;
-use Aequation\WireBundle\Tools\Files;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -39,6 +40,7 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     ];
     public const MAX_PREFERED = 12; // 12 is the maximum number of prefered sections in the database
     public const MIN_PREFERED = 0; // 0 is the minimum number of prefered sections in the database
+    public const BY_PREFERED = [];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -95,6 +97,27 @@ abstract class WireWebsection extends MappSuperClassEntity implements WireWebsec
     public function getMinPrefered(): ?int
     {
         return static::MIN_PREFERED;
+    }
+
+    public function getPreferedBy(): array
+    {
+        return static::BY_PREFERED;
+    }
+
+    public function getPosition(?BetweenSortedParentInterface $parent = null): int|false
+    {
+        $parent ??= $this->getTempWebpage();
+        return $parent instanceof WireWebpageInterface
+            ? $parent->getSectionPosition($this)
+            : false;
+    }
+
+    public function setPosition(int $position, ?BetweenSortedParentInterface $parent = null): bool
+    {
+        $parent ??= $this->getTempWebpage();
+        return $parent instanceof WireWebpageInterface
+            ? $parent->setSectionPosition($this, $position)
+            : false;
     }
 
     public function setTempWebpage(?WireWebpageInterface $webpage): static

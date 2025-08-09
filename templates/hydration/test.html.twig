@@ -27,8 +27,8 @@
 
 		{% for opresult in opresults %}
 		{% set current_index = (opresult.data|first).index %}
-		{% set badge_color = links.total_invalids <= 0 ? 'badge-success' : (links.total_valids > 0 ? 'badge-warning' : 'badge-error') %}
-		{% set border_color = links.total_invalids <= 0 ? 'border-success' : (links.total_valids > 0 ? 'border-warning' : 'border-error') %}
+		{% set badge_color = links.invalids[current_index]|length <= 0 ? 'badge-success' : (links.valids[current_index]|length > 0 ? 'badge-warning' : 'badge-error') %}
+		{% set border_color = links.invalids[current_index]|length <= 0 ? 'border-success' : (links.valids[current_index]|length > 0 ? 'border-warning' : 'border-error') %}
 		<div class="px-4 pb-3 pt-1 border {{ border_color }} rounded-lg my-2">
 			{# <div class="mt-4 mb-2">
 				<twig:wire:alert type="{{ opresult.cssColor }}" icon="{{ true }}">

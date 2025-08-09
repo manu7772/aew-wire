@@ -179,10 +179,10 @@ class Encoders implements ToolInterface
         // return json_last_error() === JSON_ERROR_NONE;
     }
 
-    public static function fromJson(mixed $json): mixed
+    public static function fromJson(mixed $json, ?bool $associative = null): mixed
     {
         return is_string($json) && json_validate($json)
-            ? json_decode($json)
+            ? json_decode($json, $associative)
             : $json;
     }
 }

@@ -37,7 +37,7 @@ trait Datetimed
      */
     #[ORM\Column(nullable: false)]
     #[Assert\NotNull(groups: ['persist','update'], message: 'Le fuseau horaire doit être renseigné.')]
-    protected string $timezone;
+    protected ?string $timezone = null;
 
     public function __construct_datetimed(): void
     {
@@ -146,7 +146,7 @@ trait Datetimed
         return WireLanguageService::getTimezoneChoices();
     }
 
-    public function getTimezone(): string
+    public function getTimezone(): ?string
     {
         return $this->timezone;
     }

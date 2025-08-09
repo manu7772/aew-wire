@@ -6,7 +6,7 @@ use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
 use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
 use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
 use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
-use Aequation\WireBundle\Entity\interface\WireRslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireRsoclinkInterface;
 use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
 use Aequation\WireBundle\Entity\WireUserRelinkCollection;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -18,7 +18,13 @@ use Exception;
 
 trait Relinkable
 {
-    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent')]
+    /** Add your ORM in the entity */
+    /** WireUser: */
+    // #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** WireFactory: */
+    // #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    // #[ORM\OrderBy(['position' => 'ASC'])]
+    // #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;
 
     public function __construct_relinkable(): void
@@ -242,14 +248,14 @@ trait Relinkable
         return $this->removeRelink($relink);
     }
 
-    // RsLink
+    // Rsoclink
 
     public function getRsocs(): Collection
     {
-        return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireRslinkInterface);
+        return $this->getRelinks()->filter(fn($relink) => $relink instanceof WireRsoclinkInterface);
     }
 
-    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRslinkInterface
+    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRsoclinkInterface
     {
         $rsocs = $this->getRsocs();
         foreach ($rsocs as $relink) {
@@ -273,12 +279,12 @@ trait Relinkable
         return $this;
     }
 
-    public function addRsoc(WireRslinkInterface $relink): bool
+    public function addRsoc(WireRsoclinkInterface $relink): bool
     {
         return $this->addRelink($relink);
     }
 
-    public function removeRsoc(WireRslinkInterface $relink): bool
+    public function removeRsoc(WireRsoclinkInterface $relink): bool
     {
         return $this->removeRelink($relink);
     }

@@ -2,11 +2,10 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface RelinkCollectionInterface extends BetweenManyInterface
+interface BetweenSortedInterface
 {
-    public function __construct_baserelinkcollection(TraitRelinkableInterface $parent, WireRelinkInterface $relink);
-    public function getParent(): TraitRelinkableInterface;
-    public function getRelink(): WireRelinkInterface;
+    public function getParent(): object;
+    public function getChild(): object;
     public function getPosition(): int;
     public function setPosition(int $position): static;
     public function updateSortgroup(): static;

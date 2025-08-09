@@ -1,61 +1,168 @@
-<div{{attributes}}{{data_turbo(false)}} class="my-1">
-    {% if entity.selfState.new %}
-    <div class="badge badge-warning font-extrabold">
-        <twig:ux:icon name="tabler:plus" class="size-4" />
-        Cette entité vient d'être créée.
-    </div>
-    {% else %}
-    <div class="badge badge-success font-extrabold">
-        <twig:ux:icon name="tabler:database" class="size-4" />
-        Cette entité a été trouvée dans la base de données.
-    </div>
+<div{{attributes}}{{data_turbo(false)}} class="mt-8 mb-1">
+    {% set debug = debug|default(false) %}
+    {% if debug %}
+        {% if entity.selfState.new %}
+        <div class="badge badge-warning font-extrabold">
+            <twig:ux:icon name="tabler:plus" class="size-4" />
+            Cette entité vient d'être créée.
+        </div>
+        {% else %}
+        <div class="badge badge-success font-extrabold">
+            <twig:ux:icon name="tabler:database" class="size-4" />
+            Cette entité a été trouvée dans la base de données.
+        </div>
+        {% endif %}
+
+        <div class="tabs tabs-lift">
+
+            <label class="tab">
+                <input type="radio" name="tab_te_{{ entity.euid }}"  checked="checked"/>
+                <twig:ux:icon name="{{ entity.selfState.new ? 'tabler:plus' : 'tabler:database' }}" class="size-4 me-2{{ entity.selfState.new ? ' text-warning' : ' text-success' }}" />
+                Object entity
+            </label>
+            <div class="tab-content bg-base-100 border-base-300 p-2">
     {% endif %}
-    <div class="my-2 border border-accent rounded-md overflow-hidden">
-        <table class="table table-zebra w-full">
-            <thead class="bg-accent/20">
-                <tr>
-                    <th class="text-accent shrink-0">Fields</th>
-                    <th class="text-accent shrink-0">Type</th>
-                    <th class="text-accent">Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for field in this.wCmd.fields %}
-                <tr>
-                    <td class="align-top shrink-0 whitespace-nowrap">{{ field.name }}</td>
-                    <td class="align-top shrink-0 whitespace-nowrap">{{ field.type }}</td>
-                    <td class="align-top">{{ print(field.getValue(entity)) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <thead class="bg-accent/20">
-                <tr>
-                    <th class="text-accent shrink-0">Relations</th>
-                    <th class="text-accent shrink-0">Type</th>
-                    <th class="text-accent">Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for relation in this.wCmd.relations %}
-                {% set side = relation.isOwningSide() ? ' owning side' : ' inverse side' %}
-                {% set relation_type -%}
-                    {%- if relation.isOneToOne() -%}
-                    OneToOne
-                    {%- elseif relation.isManyToOne() -%}
-                    ManyToOne
-                    {%- elseif relation.isOneToMany() -%}
-                    OneToMany
-                    {%- elseif relation.isManyToMany() -%}
-                    ManyToMany
-                    {%- endif -%}
-                {% endset %}
-                <tr>
-                    <td class="align-top shrink-0 whitespace-nowrap">{{ relation.name }}</td>
-                    <td class="align-top shrink-0 whitespace-nowrap">{{ relation_type }} <span class="opacity-50 italic">{{ side }}</span></td>
-                    <td class="align-top">{{ print(entity.(relation.name)) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0">Champ</th>
+                                {% if debug %}
+                                <th class="text-accent shrink-0 max-md:hidden">Type</th>
+                                {% endif %}
+                                <th class="text-accent">Valeur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in this.wCmd.fields %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap">{{ field.name }}</td>
+                                {% if debug %}
+                                <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ field.type }}</td>
+                                {% endif %}
+                                <td class="align-top">
+                                    <twig:wire:print-value property="{{ field.name }}" from="{{ entity }}" classname="" />
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0">Relations</th>
+                                {% if debug %}
+                                <th class="text-accent shrink-0 max-md:hidden">Type</th>
+                                {% endif %}
+                                <th class="text-accent">Valeur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for relation in this.wCmd.relations %}
+                            {% if not relation.hasVirtualChilds() %}
+                                {% set side = relation.isOwningSide() ? ' owning side' : ' inverse side' %}
+                                {% set relation_type -%}
+                                    {%- if relation.isOneToOne() -%}
+                                    OneToOne
+                                    {%- elseif relation.isManyToOne() -%}
+                                    ManyToOne
+                                    {%- elseif relation.isOneToMany() -%}
+                                    OneToMany
+                                    {%- elseif relation.isManyToMany() -%}
+                                    ManyToMany
+                                    {%- endif -%}
+                                {% endset %}
+                                <tr>
+                                    <td class="align-top shrink-0 whitespace-nowrap">{{ relation.virtualName }}{% if relation.virtualName != relation.name %}<span class="text-gray-300 font-light italic text-sm"><twig:ux:icon name="tabler:chevron-right" class="size-4 inline px-0.5" />{{ relation.name }}</span>{% endif %}</td>
+                                    {% if debug %}
+                                    <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ relation_type }} <span class="opacity-50 italic">{{ side }}</span></td>
+                                    {% endif %}
+                                    <td class="align-top">
+                                        <twig:wire:print-value property="{{ relation.virtualName }}" from="{{ entity }}" classname="" />
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+    {% if debug %}
+            </div>
+
+            <label class="tab">
+                <input type="radio" name="tab_te_{{ entity.euid }}"/>
+                <twig:ux:icon name="tabler:transform" class="size-4 me-2"/>
+                Dto
+            </label>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0">Fields</th>
+                                <th class="text-accent shrink-0 max-md:hidden">Type</th>
+                                <th class="text-accent">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field,value in getDto(entity).toArray() %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
+                                <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ value|type }}</td>
+                                <td class="align-top"><twig:wire:print-value property="{{ field }}" from="{{ getDto(entity).toArray }}" classname="" /></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if this.wCmd %}
+			<input type="radio" name="tab_te_{{ entity.euid }}" class="tab" aria-label="Interfaces"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0 max-md:hidden">Classname</th>
+                                <th class="text-accent">Shortname</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interface in this.wCmd.interfaces %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap max-md:hidden">{{ interface.name }}</td>
+                                <td class="align-top shrink-0 whitespace-nowrap">{{ interface.shortname }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+			<input type="radio" name="tab_te_{{ entity.euid }}" class="tab" aria-label="Traits"/>
+			<div class="tab-content bg-base-100 border-base-300 p-2">
+                <div class="my-2 border border-accent rounded-md overflow-hidden">
+                    <table class="table table-zebra w-full">
+                        <thead class="bg-accent/20">
+                            <tr>
+                                <th class="text-accent shrink-0 max-md:hidden">Classname</th>
+                                <th class="text-accent">Shortname</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trait in this.wCmd.traits %}
+                            <tr>
+                                <td class="align-top shrink-0 whitespace-nowrap max-md:hidden">{{ trait.name }}</td>
+                                <td class="align-top shrink-0 whitespace-nowrap">{{ trait.shortname }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    {% endif %}
 </div>

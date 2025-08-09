@@ -7,7 +7,12 @@ use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeClassInterface;
 use Aequation\WireBundle\Attribute\interface\AppAttributeMethodInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
+use Aequation\WireBundle\Component\interface\RepresentationInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedInterface;
+use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use ArrayAccess;
 // Symfony
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -169,6 +174,26 @@ class Objects implements ToolInterface
         return true;
     }
 
+    public static function getObjectIdentifiers(object $object): ?array
+    {
+        $ids = [];
+        if($object instanceof BaseEntityInterface) {
+            $ids['id'] = $object->getId();
+            $ids['euid'] = $object->getEuid();
+        }
+        if($object instanceof TraitUnamedInterface) {
+            $ids['uname'] = $object->getUnameName();
+        }
+        if($object instanceof WireUserInterface) {
+            $ids['email'] = $object->getEmail();
+        }
+        if($object instanceof BetweenSortedChildInterface) {
+            $ids['position'] = $object->getPosition();
+        }
+        $ids['classname'] = static::getClassname($object);
+        return empty($ids) ? null : $ids;
+    }
+
 
     /*************************************************************************************
      * CONVERT
@@ -245,13 +270,13 @@ class Objects implements ToolInterface
         return Strings::markup($string);
     }
 
-    public static function print(mixed $something, int $levels = 2, bool $inline = true): Markup
+    public static function print(mixed $something, int $levels = 3, bool $inline = true): Markup
     {
         $decorate = fn (string $string, string $element = 'div', ?string $class = null, bool $inline = true): string => vsprintf('<%s%s>%s</%s>', [$inline && $element === 'div' ? 'span' : $element, $class ? ' class="'.$class.'"' : '', $string, $inline && $element === 'div' ? 'span' : $element]);
         $shadow = fn (string $something): string => $decorate($something, 'span', 'opacity-50 italic text-sm');
-        $num = fn ($something): string => (is_countable($something) ? count($something).' item'.((is_countable($something) && count($something) > 1) ? 's' : '') : 'N/A');
-        $makeUl = function (Traversable|array $something, int $levels) use ($decorate, $shadow): ?string {
-            $something = iterator_to_array($something, true);
+        $num = fn ($something): string => (is_countable($something) ? count($something).' item'.((is_countable($something) && count($something) > 1) ? 's' : '') : '');
+        $makeUl = function (Traversable|ArrayAccess|array $something, int $levels) use ($decorate, $shadow): ?string {
+            $something = $something instanceof Traversable ? iterator_to_array($something, true) : (array) $something;
             if(empty($something) || $levels < 1) return null;
             array_walk($something, fn (&$item, $key) => $item = $shadow($key).' =&gt; '.Objects::print($item, $levels, true));
             return $decorate($decorate($decorate(implode('</li><li>', $something), 'li'), array_is_list($something) ? 'ol' : 'ul', 'list-disc list-inside pl-4'), inline: false);
@@ -271,10 +296,13 @@ class Objects implements ToolInterface
                 /** @see https://www.php.net/manual/en/dateinterval.format.php */
                 $string = $shadow(Objects::getShortname($something).' &gt; ').$something->format('%y years, %m month, %d days, %hh%i');
                 break;
-            case $something instanceof BetweenManyInterface:
+            case $something instanceof BetweenSortedInterface:
                 return Objects::print($something->getChild(), $levels, $inline);
                 break;
-            case $something instanceof Collection:
+            case $something instanceof RepresentationInterface:
+                $string = $something->__toRepresentation();
+                break;
+            case $something instanceof Traversable || $something instanceof ArrayAccess:
                 $string = vsprintf($decorate('%s %s%s'), [$shadow(Objects::getShortname($something)), $num($something), $makeUl($something, $levels - 1)]);
                 break;
             case $something instanceof Countable:

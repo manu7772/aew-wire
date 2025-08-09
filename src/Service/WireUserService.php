@@ -6,9 +6,11 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Dto\WireUserDto;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Repository\BaseWireRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -69,6 +71,24 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         return $opresult;
     }
 
+    public function entityEventActions(
+        BaseEntityInterface $entity
+    ): void
+    {
+        if(!is_a($entity, static::ENTITY_CLASS)) {
+            if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
+        }
+        if($entity->getSelfState()->isNew()) {
+            // After created actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+        }
+        if($entity->getSelfState()->isLoaded()) {
+            // After loaded actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+        }
+        // After all actions...
+    }
+
     public function getSecurity(): Security
     {
         return $this->security;
@@ -95,7 +115,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
                 'uname' => 'super_admin_manu',
             ];
             /** @var WireUserInterface */
-            $sadmin = $this->createEntity();
+            $sadmin = $this->wireEm->createEntity(static::ENTITY_CLASS);
             $sadmin->setEmail($data['email']);
             $sadmin->setName($data['name']);
             $sadmin->setFirstname($data['firstname']);
@@ -251,7 +271,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): bool
     {
         /** @var UserInterface */
-        $user = $this->createModel(['roles' => (array)$roles]);
+        $user = $this->wireEm->createModel(static::ENTITY_CLASS, ['roles' => (array)$roles]);
         $result = $this->isGrantedForUser($user, $attributes, $object, $firewallName);
         unset($user);
         return $result;
@@ -448,7 +468,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
                 'sortable' => true,
             ],
         ];
-        $model = $this->createModel();
+        $model = $this->getWireEm()->createModel(static::getEntityClassname());
         $entities = $this->getPaginated();
         /** @var BaseWireRepository */
         $repo = $this->getRepository();

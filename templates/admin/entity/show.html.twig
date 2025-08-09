@@ -24,46 +24,7 @@
     </div>
     {% endblock %}
     {% block entitydata %}
-    <table class="table">
-        <tbody>
-            <tr>
-                <th class="w-1">{{ 'fields.id'|trans }}</th>
-                <td>{{ entity.id }}</td>
-            </tr>
-            {% if entity.email|default(false) %}
-            <tr>
-                <th class="w-1">{{ 'fields.email'|trans }}</th>
-                <td>{{ entity.email }}</td>
-            </tr>
-            {% endif %}
-            {% if entity.name|default(false) %}
-            <tr>
-                <th class="w-1">{{ 'fields.name'|trans }}</th>
-                <td>{{ entity.name }}</td>
-            </tr>
-            {% endif %}
-            {% if entity.slug|default(false) %}
-            <tr>
-                <th class="w-1">{{ 'fields.slug'|trans }}</th>
-                <td>{{ entity.slug }}</td>
-            </tr>
-            {% endif %}
-            {% if entity.createdAt|default(false) %}
-            <tr>
-                <th class="w-1">{{ 'fields.createdAt'|trans }}</th>
-                <td>
-                    {# @see https://twig.symfony.com/doc/3.x/filters/format_datetime.html #}
-                    <div>{{ 'field.createdAt'|trans }} : {{ entity.createdAt|format_datetime('medium', 'short') }}</div>
-                    {% if entity.updatedAt %}
-                    <div>{{ 'field.updatedAt'|trans }} : {{ entity.updatedAt|format_datetime('medium', 'short') }}</div>
-                    {% else %}
-                    <div>{{ 'field.not_updated' }}</div>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
+    <twig:wire:table-entity entity="{{ entity }}" debug="{{ app.devOrSadmin }}" />
     {% endblock %}
     {% endif %}
 {% endblock %}

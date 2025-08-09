@@ -6,6 +6,7 @@ use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\WireEntityManager;
@@ -69,54 +70,73 @@ trait TraitBaseEntityService
     /** GENERATION                                                                                      */
     /****************************************************************************************************/
 
-    public function createEntity(
-        array $data = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): BaseEntityInterface {
-        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
-        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
-            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+    // public function createEntity(
+    //     array $data = [], // ---> do not forget uname if wanted!
+    //     array $context = []
+    // ): BaseEntityInterface {
+    //     $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
+    //     if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
+    //         throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+    //     }
+    //     // Add some stuff here...
+    //     return $entity;
+    // }
+
+    // /**
+    //  * create model
+    //  * 
+    //  * @return BaseEntityInterface
+    //  */
+    // public function createModel(
+    //     array $data = [],
+    //     array $context = []
+    // ): BaseEntityInterface
+    // {
+    //     $model = $this->getWireEm()->getEntitiesMetadata()->newModel($this->getEntityClassname(), $data, $context);
+    //     // Add some stuff here...
+    //     return $model;
+    // }
+
+    // public function createClone(
+    //     BaseEntityInterface $entity,
+    //     array $changes = [], // ---> do not forget uname if wanted!
+    //     array $context = []
+    // ): BaseEntityInterface|false
+    // {
+    //     throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet for %s.', [__METHOD__, __LINE__, __FUNCTION__, $this->getEntityClassname()]));
+    // }
+
+    // public function createDto(
+    //     array $data = [],
+    //     array $context = []
+    // ): ?WireEntityDtoInterface
+    // {
+    //     $classes = $this->getDtoClassnames();
+    //     $class = reset($classes);
+    //     if(is_a($class, WireEntityDtoInterface::class, true)) {
+    //         // Needs WireEntityManagerInterface to be passed
+    //         return new $class($data, $this->getWireEm());
+    //     }
+    //     return $class ? new $class($data) : null;
+    // }
+
+    public function entityEventActions(
+        BaseEntityInterface $entity
+    ): void
+    {
+        if(!is_a($entity, $this->getEntityClassname(), true)) {
+            throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), $this->getEntityClassname()]));
         }
-        // Add some stuff here...
-        return $entity;
-    }
-
-    /**
-     * create model
-     * 
-     * @return BaseEntityInterface
-     */
-    public function createModel(
-        array $data = [],
-        array $context = []
-    ): BaseEntityInterface
-    {
-        $model = $this->getWireEm()->getEntitiesMetadata()->newModel($this->getEntityClassname(), $data, $context);
-        // Add some stuff here...
-        return $model;
-    }
-
-    public function createClone(
-        BaseEntityInterface $entity,
-        array $changes = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): BaseEntityInterface|false
-    {
-        throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet for %s.', [__METHOD__, __LINE__, __FUNCTION__, $this->getEntityClassname()]));
-    }
-
-    public function createDto(
-        array $data = [],
-        array $context = []
-    ): ?WireEntityDtoInterface
-    {
-        $classes = $this->getDtoClassnames();
-        $class = reset($classes);
-        if(is_a($class, WireEntityDtoInterface::class, true)) {
-            // Needs WireEntityManagerInterface to be passed
-            return new $class($data, $this->getWireEm());
+        // ... Default event actions for entity
+        if($entity->getSelfState()->isNew()) {
+            // After created actions...
+            $this->wireEm->defaultEntityEventActions($entity);
         }
-        return $class ? new $class($data) : null;
+        if($entity->getSelfState()->isLoaded()) {
+            // After loaded actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+        }
+        // After all actions...
     }
 
     /**
@@ -210,7 +230,7 @@ trait TraitBaseEntityService
             //     'sortable' => true,
             // ],
         ];
-        $model = $this->createModel();
+        $model = $this->getWireEm()->createModel(static::getEntityClassname());
         $entities = $this->getPaginated();
         /** @var BaseWireRepository */
         $repo = $this->getRepository();

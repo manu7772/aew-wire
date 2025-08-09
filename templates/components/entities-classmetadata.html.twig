@@ -1,12 +1,12 @@
 {% import "@AequationWire/admin/partials/_print.html.twig" as print %}
 <div{{ attributes }}{{ data_turbo(false) }}>
     <div class="mockup-code w-full mb-4">
-        <pre data-prefix="$"><code>{{ command }}</code></pre>
+        <pre data-prefix="$">{{ command }}</pre>
     </div>
     {{ form_start(form) }}
     <div class="flex flex-row gap-8 px-1">
         <div class="w-1/4 min-w-60">
-            <h3 class="font-black text-orange-400 mb-2">Found: {{ list.count }}{{ list.count != listAll.count ? ' / ' ~ listAll.count }}</h3>
+            <h3 class="font-black text-orange-400 mb-2">Found: {{ list.count }}{{ list.count != this.listAll.count ? ' / ' ~ this.listAll.count }}</h3>
 
             <div class="flex flex-col gap-0">
                 {% for wCmd in list %}
@@ -46,11 +46,6 @@
                 {% endfor %}
             </div>
 
-            {# MODALS #}
-            {% for wCmd in listAll %}
-            <twig:wire:classmetadata-modal wCmd="{{ wCmd }}" />
-            {% endfor %}
-
         </div>
         <div class="w-1/4">
             {{ form_row(form.classes) }}
@@ -68,6 +63,9 @@
                 <div title="{{ class }}">{{ class|shortname }}</div>
                 {% endfor %}
                 {% for interface in form.interfaces.vars.data %}
+                {% if not loop.first %}
+                <div class="italic font-extrabold opacity-50 text-sm">- {{ form.type_comparison.vars.data ? 'AND' : 'OR' }} -</div>
+                {% endif %}
                 <div title="{{ interface }}">{{ interface|shortname }}</div>
                 {% endfor %}
             </div>
@@ -93,4 +91,10 @@
         </div>
     </div>
     {{ form_end(form) }}
+
+    {# MODALS #}
+    {% for wCmd in this.listAll %}
+    <twig:wire:classmetadata-modal wCmd="{{ wCmd }}" />
+    {% endfor %}
+
 </div>

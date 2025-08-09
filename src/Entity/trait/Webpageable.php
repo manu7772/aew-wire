@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Entity\trait;
 
+use Aequation\WireBundle\Dto\transform\TextContentsTransformer;
 use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
@@ -14,6 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 use Twig\Markup;
 
 trait Webpageable
@@ -29,15 +31,16 @@ trait Webpageable
     #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
     #[Assert\NotNull(message: 'Le titre est obligatoire', groups: ['persist','update'])]
-    protected string $title;
+    protected ?string $title = null;
 
     #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
     #[Assert\NotNull(message: 'Le lien titre est obligatoire', groups: ['persist','update'])]
-    protected string $linktitle;
+    protected ?string $linktitle = null;
 
     #[ORM\Embedded(TextContents::class)]
     #[Gedmo\Translatable]
+    #[Map(if: 'is_object', transform: TextContentsTransformer::class)]
     protected TextContentsInterface $content;
 
 

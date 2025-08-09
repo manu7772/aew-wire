@@ -3,13 +3,16 @@ namespace Aequation\WireBundle\Component;
 
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
-use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
+use Aequation\WireBundle\Component\interface\WirePropertyAbstractMetadataInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Component\interface\WirePropertyAssociationMetadataInterface;
+use Aequation\WireBundle\Component\interface\WirePropertyFieldMetadataInterface;
+use Aequation\WireBundle\Dto\BaseDto;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityRepository;
@@ -24,14 +27,13 @@ use InvalidArgumentException;
 
 class WireClassMetadata implements WireClassMetadataInterface
 {
-    public const SERIALIZATION_MAPPINGS_BY_ATTRIBUTE = true;
-
     public readonly ReflectionClass $reflectionClass;
     public readonly ?ClassMetadata $classMetadata;
     public readonly HydrationServiceInterface $HydrationService;
     public readonly false|WireEntityServiceInterface $service;
     public readonly false|EntityRepository $repository;
-    protected array $properties = [];
+    protected array $properties = ['fields' => [], 'relations' => []];
+    protected false|array $relationNames = false;
     public readonly bool $isDev;
     // Data
     public readonly string $name;
@@ -39,7 +41,7 @@ class WireClassMetadata implements WireClassMetadataInterface
     protected readonly array $subClasses;
     protected readonly array $interfaces;
     protected readonly array $traits;
-    protected readonly array $wireRelationData;
+    protected readonly false|WireRelationMapping $virtualRelationMapping;
     protected readonly array $wireRelationMapping;
 
     public function __construct(
@@ -58,6 +60,7 @@ class WireClassMetadata implements WireClassMetadataInterface
             $this->name = $this->reflectionClass->getName();
             // $this->wCmdm->registerWireClassMetadata($this);
         }
+        $this->getVirtualRelationMapping();
         $this->getSubclasses();
     }
 
@@ -265,6 +268,12 @@ class WireClassMetadata implements WireClassMetadataInterface
         return $onlyManaged ? array_filter($this->subClasses, fn ($sub) => $sub->isManaged()) : $this->subClasses;
     }
 
+    public function getFirstNextManagedSubclass(): ?WireClassMetadataInterface
+    {
+        $subs = $this->getSubclasses(true);
+        return empty($subs) ? null : reset($subs);
+    }
+
     public function getNextUniqueManagedSubclass(): ?WireClassMetadataInterface
     {
         $subs = $this->getSubclasses(true);
@@ -379,11 +388,16 @@ class WireClassMetadata implements WireClassMetadataInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not final, cannot create a new model.', [__METHOD__, __LINE__, $this->name]));
     }
 
-    // public function newDto(array $data = [], array $context = []): WireEntityDtoInterface
-    // {
-    //     $dto = new WireFactoryDto($data, $context);
-    //     return $dto;
-    // }
+    public function newDto(array $data = [], array $options = []): ?WireEntityDtoInterface
+    {
+        $dto_class = $options['dto_class'] ?? $this->getFirstDtoSourceMap()?->source ?? null;
+        if($dto_class) {
+            return is_a($dto_class, WireEntityDtoInterface::class, true)
+                ? new $dto_class($data, $this->wCmdm->wireEm, $options)
+                : new $dto_class();
+        }
+        return null;
+    }
 
 
     /************************************************************************************************************/
@@ -532,163 +546,185 @@ class WireClassMetadata implements WireClassMetadataInterface
     /** FIELDS/RELATIONS                                                                                        */
     /************************************************************************************************************/
 
-    public function getProperty(string $name): ?WirePropertyMetadataInterface
+    public function getProperty(string $name): ?WirePropertyAbstractMetadataInterface
     {
-        if(isset($this->properties[$name])) {
-            return $this->properties[$name];
-        }
+        return $this->getField($name) ?? $this->getRelation($name) ?? null;
+    }
+
+    public function getField(string $name): ?WirePropertyFieldMetadataInterface
+    {
         $parts = preg_split('/\./', $name);
-        $name = array_shift($parts);
-        if($this->reflectionClass->hasProperty($name)) {
-            $wpm = new WirePropertyMetadata($this->reflectionClass->getProperty($name), $this, $parts);
-            return $this->properties[$wpm->name] = $wpm;
+        $property = array_shift($parts);
+        $test = $property.'['.implode('][', $parts).']';
+        if(!isset($this->properties['fields'][$property]) && in_array($name, $this->getFieldNames())) {
+            $test .= ' => TRUE';
+            if(isset($this->properties['fields'][$property])) $test = false;
+            $wpm = new WirePropertyFieldMetadata($this->name, $property, $this, $parts);
+            return $this->properties['fields'][$wpm->name] = $wpm;
         } else {
-            // Relative property
-            throw new InvalidArgumentException(vsprintf('Error %s line %d: property %s not found in class %s.', [__METHOD__, __LINE__, $name, $this->name]));
-            // $rp = $this->reflectionClass->hasProperty($name) ? $this->reflectionClass->getProperty($name) : $name;
-            // return $this->properties[$name] = new WirePropertyMetadata($rp, $this);
+            $test .= ' => FALSE';
+            if(isset($this->properties['fields'][$property])) $test = false;
         }
-        return null;
+        if($test && $this->getShortName() === 'Webpage') dump($test);
+        return $this->properties['fields'][$property] ??null;
     }
 
-    public function getFields(): array
+    public function getFieldNames(bool $includeVirtuals = true): array
     {
-        $fields = [];
-        foreach ($this->classMetadata->getFieldNames() as $name) {
-            $fields[$name] = $this->getProperty($name);
+        return array_combine($this->classMetadata->getFieldNames(), $this->classMetadata->getFieldNames()) ?: [];
+    }
+
+    public function getFields(bool $includeVirtuals = true): array
+    {
+        foreach ($this->getFieldNames() as $name) {
+            $this->getField($name);
         }
-        return $fields;
+        return $includeVirtuals ? $this->properties['fields'] : array_filter($this->properties['fields'], fn (WirePropertyFieldMetadataInterface $wpm) => !$wpm->isVirtualChild());
     }
 
-    public function getRelations(): array
+    public function getRelation(string $name): ?WirePropertyAssociationMetadataInterface
     {
-        $relations = [];
-        foreach ($this->classMetadata->getAssociationNames() as $name) {
-            $relations[$name] = $this->getProperty($name);
-    }
-        return $relations;
+        if(count(preg_split('/\./', $name)) > 1) {
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: relation name "%s" cannot contain dots.', [__METHOD__, __LINE__, $name]));
+        }
+        if(!isset($this->properties['relations'][$name]) && in_array($name, $this->getRelationNames(true))) {
+            $wpm = new WirePropertyAssociationMetadata($this->name, $name, $this);
+            $this->properties['relations'][$wpm->name] = $wpm;
+            if($wpm->hasVirtualChilds()) {
+                // Add virtual relations
+                foreach ($wpm->getVirtualChilds() as $subname => $rel) {
+                    $this->properties['relations'][$subname] = $rel;
+                }
+            }
+        }
+        return $this->properties['relations'][$name] ?? null;
     }
 
-    public function getTarget(string $relation): WireClassMetadataInterface
+    public function getRelationNames(bool $includeVirtuals = true): array
     {
-        if($this->getProperty($relation)->isRelation()) {
-            $target = $this->wCmdm->getWireClassMetadata($this->getTargetName($relation));
-            if($target->isBetween()) {
-                // If the target is a BetweenManyInterface, we return the final names of the child classes
-                foreach ($target->getAssociationMappings() as $mapping) {
-                    if($mapping->inversedBy !== $relation) {
-                        return $this->wCmdm->getWireClassMetadata($mapping->targetEntity);
+        if(false === $this->relationNames) {
+            $this->relationNames = [];
+            foreach ($this->classMetadata->getAssociationNames() as $fieldname) {
+                $this->relationNames[$fieldname] = $fieldname;
+                // If the relation is a virtual relation, add the virtual names
+                if($this->virtualRelationMapping) {
+                    foreach ($this->virtualRelationMapping->getFieldPropertyNames($fieldname) as $property) {
+                        if(!array_key_exists($property, $this->relationNames)) {
+                            $this->relationNames['@'.$property] = $property; // Prefix key with '@' to indicate virtual relation
+                        }
                     }
                 }
             }
         }
-        throw new InvalidArgumentException(vsprintf('Error %s line %d: property %s is not a relation in class %s.', [__METHOD__, __LINE__, $relation, $this->name]));
+        // if(str_ends_with($this->getShortName(), "Factory")) dump(array_merge(['_name' => $this->name], $this->relationNames));
+        return $includeVirtuals ? $this->relationNames : array_filter($this->relationNames, fn ($keyname) => !str_starts_with($keyname, '@'), ARRAY_FILTER_USE_KEY);
     }
 
-    public function getTargetName(string $relation): false|string
+    public function getRelations(bool $includeVirtuals = true): array
+    {
+        foreach ($this->getRelationNames($includeVirtuals) as $name) {
+            $this->getRelation($name);
+        }
+        return $includeVirtuals ? $this->properties['relations'] : array_filter($this->properties['relations'], fn (WirePropertyAssociationMetadataInterface $wpm) => !$wpm->isVirtualChild());
+    }
+
+
+    /************************************************************************************************************/
+    /** FIELDS/RELATIONS --> Targets                                                                            */
+    /************************************************************************************************************/
+
+    public function getTarget(string $name, bool $findOutVirtual = true): WireClassMetadataInterface
+    {
+        if($relation = $this->getRelation($name)) {
+            return $relation->getTarget($findOutVirtual);
+            // $target = $this->wCmdm->getWireClassMetadata($this->getTargetName($name));
+            // if($target->isBetween()) {
+            //     // If the target is a BetweenSortedInterface, we return the final names of the child classes
+            //     foreach ($target->getAssociationMappings() as $mapping) {
+            //         if($mapping->inversedBy !== $name) {
+            //             return $this->wCmdm->getWireClassMetadata($mapping->targetEntity);
+            //         }
+            //     }
+            // }
+        }
+        throw new InvalidArgumentException(vsprintf('Error %s line %d: property %s is not a relation in class %s.', [__METHOD__, __LINE__, $name, $this->name]));
+    }
+
+    public function getTargetName(string $name): false|string
     {
         if(!$this->isManaged()) {
-            // if($next = $this->getNextUniqueManagedSubclass()) {
-            //     return $next->getTargetName($relation);
-            // }
-            // Try find out next managed subclass
-            foreach ($this->getSubclasses(true) as $wCmd) {
-                return $wCmd->getTargetName($relation);
+            if($next = $this->getFirstNextManagedSubclass()) {
+                return $next->getTargetName($name);
             }
-            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get target name for relation %s.', [__METHOD__, __LINE__, $this->name, $relation]));
+            // Try find out next managed subclass
+            // foreach ($this->getSubclasses(true) as $wCmd) {
+            //     if($target = $wCmd->getTargetName($name)) {
+            //         return $target;
+            //     }
+            // }
+            throw new InvalidArgumentException(vsprintf('Error %s line %d: class %s is not managed by Doctrine, cannot get target name for relation %s.', [__METHOD__, __LINE__, $this->name, $name]));
         }
-        return $this->classMetadata->getAssociationMapping($relation)->targetEntity;
+        return $this->classMetadata->getAssociationMapping($name)->targetEntity;
     }
 
-    public function getTargetNames(string $relation, string $type = 'final'): false|array
+    public function getTargetNames(string $name, string $type = 'final'): false|array
     {
-        if(($property = $this->getProperty($relation)) && $property->isRelation()) {
+        if($property = $this->getRelation($name)) {
             return $property->getTargetNames($type);
         }
         return false;
     }
 
+
+    /************************************************************************************************************/
+    /** FIELDS/RELATIONS --> OrphanRemoval                                                                      */
+    /************************************************************************************************************/
+
     /**
      * Get OrphanRemoval associations
-     * Returns the WirePropertyMetadatas relations of the class that are marked as orphanRemoval
+     * Returns the array<WirePropertyAssociationMetadataInterface> relations of the class that are marked as orphanRemoval
      *
      * @param string $relation
-     * @return AssociationMapping
+     * @return array<WirePropertyAssociationMetadataInterface>
      */
     public function getOrphanRelations(): array
     {
-        $relative_mappings = $this->getRelativeAssociationMappings(true);
-        // dump($relative_mappings);
-        // Filter orphan relations
-        $filtered_mappings = [];
-        foreach ($this->classMetadata->getAssociationMappings() as $mapping) {
-            if(is_a($mapping->targetEntity, BetweenManyInterface::class, true)) {
-                // If the target entity is a BetweenManyInterface, we return the final names of the child classes
-                $relative =  $relative_mappings[$mapping->fieldName] ?? null;
-                if($relative && $relative->orphanRemoval) {
-                    // If the mapping is found in relative mappings, we keep it
-                    $filtered_mappings[$relative->name] ??= $relative;
-                }
-            } else if($mapping->orphanRemoval) {
-                $filtered_mappings[$mapping->fieldName] ??= $this->getProperty($mapping->fieldName);
-            }
-        }
-        return $filtered_mappings;
+        return array_filter(
+            $this->getRelations(false),
+            fn (WirePropertyAssociationMetadataInterface $wpm) => $wpm->orphanRemoval
+        );
     }
 
-    /**
-     * Get relative relation mappings
-     * Returns mappings of relations not defined in the class metadata
-     *
-     * @return array
-     */
-    protected function getRelativeAssociationMappings(): array
-    {
-        if(!isset($this->wireRelationMapping)) {
-            $mappings = [];
-            // dump($this->getRelativeAssociationData());
-            foreach ($this->getRelativeAssociationData() as $property => $data) {
-                $mappings[$data['field']] ??= $this->getProperty($data['field']);
-                // $mappings[$property] ??= $this->getProperty($property);
-            }
-            $this->wireRelationMapping = $mappings;
-        }
-        return $this->wireRelationMapping;
-    }
+
+    /************************************************************************************************************/
+    /** VIRTUAL RELATION MAPPING                                                                               */
+    /************************************************************************************************************/
 
     /**
-     * Get relative relation data
+     * Get virtual relation data
      * Returns properties data of relations not defined in the class metadata
      *
      * @param string|null $name
-     * @return false|array
+     * @return false|WireRelationMapping
      */
-    public function getRelativeAssociationData(?string $name = null): false|array
+    public function getVirtualRelationMapping(): false|WireRelationMapping
     {
-        if(!isset($this->wireRelationData)) {
-            if(static::SERIALIZATION_MAPPINGS_BY_ATTRIBUTE) {
-                // Get serialization mappings by WireRelationMapping attribute
-                $mappings = Objects::getClassAttributes($this->name, WireRelationMapping::class);
-                // Get first mapping
-                /** @var WireRelationMapping|false $mapping */
-                $mappings = reset($mappings);
-            } else {
-                // Get serialization mappings by class constant ITEMS_ACCEPT
-                $constant = $this->name.'::ITEMS_ACCEPT';
-                $mappings = defined($constant) ? constant($constant) : [];
-                $mappings = new WireRelationMapping($mappings);
-            }
-            $this->wireRelationData = $mappings instanceof WireRelationMapping ? $mappings->getMapping() : [];
+        if(!isset($this->virtualRelationMapping)) {
+            $mappings = Objects::getClassAttributes($this->name, WireRelationMapping::class);
+            $this->virtualRelationMapping = empty($mappings) ? false : reset($mappings);
+            // if(defined($this->name.'::ITEMS_ACCEPT')) {
+            //     $mappings = new WireRelationMapping($this->name::ITEMS_ACCEPT);
+            //     /** @var WireRelationMapping $mapping */
+            //     $this->virtualRelationMapping = $mappings->mapping;
+            //     dump($this->name, $this->virtualRelationMapping);
+            // } else {
+            //     $this->virtualRelationMapping = [];
+            // }
         }
-        if(!empty($name)) {
-            foreach ($this->wireRelationData as $values) {
-                if($values['field'] === $name) {
-                    return $values;
-                }
-            }
-            return false;
-        }
-        return $this->wireRelationData;
+        // if(empty($this->virtualRelationMapping)) {
+        //     return false;
+        // }
+        return $this->virtualRelationMapping;
     }
 
 }

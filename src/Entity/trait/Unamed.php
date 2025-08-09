@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Entity\trait;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
@@ -40,21 +41,23 @@ trait Unamed
                 dump(Objects::printUname($this->uname), Objects::printUname($uname));
                 throw new Exception(vsprintf('Error %s line %d: in %s (is %s), can not replace the Uname object with %s!', [__METHOD__, __LINE__, static::class, $this->getSelfState()->isNew() ? 'new entity' : 'loaded from database', $uname->getSelfState()->isNew() ? 'a new Uname' : 'another Uname loaded from database']));
             }
-        } else if(is_string($uname)) {
-            // String
-            if($this->getSelfState()->isNew()) {
-                $this->uname ??= new Uname();
-                $this->uname->attributeEntity($this, $uname);
-            } else {
-                $this->uname->setUname($uname);
-            }
-        } else if(is_null($uname)) {
+        } else if(empty($uname)) {
             // NULL
             if($this->getSelfState()->isNew()) {
                 $this->uname ??= new Uname();
                 $this->uname->attributeEntity($this);
             } else {
                 // $this->uname->setUname(null);
+            }
+        } else if(is_string($uname)) {
+            // String
+            if($this->getSelfState()->isNew()) {
+                $this->uname ??= new Uname();
+                // dump($this, $uname);
+                $this->uname->attributeEntity($this, $uname);
+                // if(!Encoders::isEuidFormatValid($uname) && !empty($uname)) dd($this, $uname);
+            } else {
+                $this->uname->setUname($uname);
             }
         }
         if(empty($this->uname)) {
@@ -66,7 +69,9 @@ trait Unamed
 
     public function setUname(UnameInterface|string $uname): static
     {
-        return $this->updateUname($uname);
+        $this->updateUname($uname);
+        // dump($uname);
+        return $this;
     }
 
     public function getUname(): ?UnameInterface

@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Doctrine\Common\Collections\Collection;
 
-interface TraitRelinkableInterface extends BaseEntityInterface
+interface TraitRelinkableInterface extends BaseEntityInterface, BetweenSortedParentInterface
 {
     public function __construct_relinkable(): void;
     public function getRelinks(): Collection;
@@ -37,10 +37,10 @@ interface TraitRelinkableInterface extends BaseEntityInterface
     public function setUrls(Collection $relinks): static;
     public function addUrl(WireUrlinkInterface $relink): bool;
     public function removeUrl(WireUrlinkInterface $relink): bool;
-    // RsLink
+    // Rsoclink
     public function getRsocs(): Collection;
-    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRslinkInterface;
+    public function getPreferedRsoc(bool $firstIfNoPrefered = true): ?WireRsoclinkInterface;
     public function setRsocs(Collection $relinks): static;
-    public function addRsoc(WireRslinkInterface $relink): bool;
-    public function removeRsoc(WireRslinkInterface $relink): bool;
+    public function addRsoc(WireRsoclinkInterface $relink): bool;
+    public function removeRsoc(WireRsoclinkInterface $relink): bool;
 }

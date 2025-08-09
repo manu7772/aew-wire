@@ -5,7 +5,7 @@ interface WireCategoryInterface extends WireEntityInterface, TranslationEntityIn
 {
 
     // name
-    public function getName(): string;
+    public function getName(): ?string;
     public function setName(string $name): static;
     // type
     public function getType(): ?string;

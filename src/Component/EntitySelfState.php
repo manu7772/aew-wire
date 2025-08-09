@@ -6,7 +6,7 @@ use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
-use Aequation\WireBundle\Component\interface\WirePropertyMetadataInterface;
+use Aequation\WireBundle\Component\interface\WirePropertyAbstractMetadataInterface;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
@@ -265,7 +265,7 @@ class EntitySelfState implements EntitySelfStateInterface
         $relateds = $this->getEmbededStatus()->getOrphanRelations();
         // dump($relateds);
         foreach ($relateds as $wPmd) {
-            /** @var WirePropertyMetadataInterface $wPmd */
+            /** @var WirePropertyAbstractMetadataInterface $wPmd */
             $value = $wPmd->getValue($this->entity);
             // dump($wPmd, $value);
             switch (true) {

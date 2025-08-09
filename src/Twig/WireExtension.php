@@ -1,20 +1,13 @@
 <?php
 namespace Aequation\WireBundle\Twig;
 
-use Aequation\WireBundle\Dto\WireMenuCompiledDto;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
-use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
-use Aequation\WireBundle\Entity\WireRelink;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
 // Symfony
@@ -39,7 +32,6 @@ class WireExtension extends AbstractExtension
     public function __construct(
         private AppWireServiceInterface $appWire,
         private WireEntityManagerInterface $wireEm,
-        // private WireUserServiceInterface $userService,
         private TranslatorInterface $translator,
         private Environment $twig
     )
@@ -56,14 +48,12 @@ class WireExtension extends AbstractExtension
             new TwigFunction('print_attributes', [$this, 'printAttributes'], ['is_safe' => ['html']]),
             new TwigFunction('action_path', [$this->appWire, 'getActionPath']),
             new TwigFunction('action_url', [$this->appWire, 'getActionUrl']),
-            // new TwigFunction('printr', [Objects::class, 'toDebugString'], ['is_safe' => ['html']]),
+            new TwigFunction('getDto', [$this->appWire->get(HydrationServiceInterface::class), 'getDto']),
             new TwigFunction('toDump', [$this, 'toDump'], ['is_safe' => ['html']]),
             new TwigFunction('print', [Objects::class, 'print'], ['is_safe' => ['html']]),
             // TURBO-UX
             new TwigFunction('data_turbo_temporary', [$this, 'dataTurboTemporary']),
             new TwigFunction('data_turbo', [$this, 'dataTurbo']),
-            // Admin
-            // new TwigFunction('getAdminMenu', [$this->appWire, 'getAdminMenu']),
         ];
         if(!$this->appWire->isDev()) {
             // Prevent dump function call if not in dev evnironment
@@ -79,8 +69,8 @@ class WireExtension extends AbstractExtension
             new TwigFilter('has_text', [Strings::class, 'hasText']),
             new TwigFilter('shortname', [Objects::class, 'getShortname']),
             new TwigFilter('classname', [Objects::class, 'getClassname']),
+            new TwigFilter('type', [$this, 'getType']),
             new TwigFilter('trans_domain', [$this, 'getTransDomain']),
-            new TwigFilter('compiled_menu', [$this, 'getCompiledMenu']),
         ];
     }
 
@@ -104,7 +94,7 @@ class WireExtension extends AbstractExtension
     public function filterActive(
         null|ArrayCollection|array $items,
         bool $keepEmptyCollections = false
-    ): ArrayCollection|array
+    ): Collection|array
     {
         if(empty($items)) {
             // If items is empty, return empty array
@@ -127,6 +117,11 @@ class WireExtension extends AbstractExtension
             return $entity->getTrans_domain();
         }
         return class_exists($entity) ? Objects::getShortname($entity, false) : $entity;
+    }
+
+    public function getType(mixed $item): string
+    {
+        return is_object($item) ? Objects::getShortname($item, false) : gettype($item);
     }
 
 

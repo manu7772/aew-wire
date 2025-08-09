@@ -1,6 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Component\interface;
 
+use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
 use Doctrine\ORM\EntityRepository;
@@ -31,6 +33,7 @@ interface WireClassMetadataInterface extends Stringable
     public function getParents(): array;
     public function getParentsNames(): array;
     public function getSubclasses(bool $onlyManaged = false): array;
+    public function getFirstNextManagedSubclass(): ?WireClassMetadataInterface;
     public function getNextUniqueManagedSubclass(): ?WireClassMetadataInterface;
     public function getSubclassesNames(bool $onlyManaged = false): array;
     public function getInterfaces(): array;
@@ -38,9 +41,9 @@ interface WireClassMetadataInterface extends Stringable
     public function getInterfacesNames(): array;
     public function getTraits(): array;
     public function getTraitsNames(): array;
-    public function newInstance(?array $data = null, array $context = []): object;
-    public function newModel(?array $data = null, array $context = []): object;
-    // public function newDto(array $data = [], array $context = []): WireEntityDtoInterface;
+    public function newInstance(?array $data = null, array $options = []): object;
+    public function newModel(?array $data = null, array $options = []): object;
+    public function newDto(array $data = [], array $options = []): ?WireEntityDtoInterface;
     public function isType(string $type): bool;
     public function isAppwire(): bool;
     public function isBetween(): bool;
@@ -53,12 +56,11 @@ interface WireClassMetadataInterface extends Stringable
     public function getDtoTargetMaps(): array;
     public function getFirstDtoTargetMap(): ?Map;
     public function getClassAttributes(string $name): mixed;
-    public function getProperty(string $name): ?WirePropertyMetadataInterface;
+    public function getProperty(string $name): ?WirePropertyAbstractMetadataInterface;
     public function getFields(): array;
-    public function getRelations(): array;
+    public function getRelations(bool $includeVirtuals = true): array;
     public function getTarget(string $relation): WireClassMetadataInterface;
-    public function getTargetName(string $relation): false|string;
     public function getTargetNames(string $relation, string $type = 'final'): false|array;
     public function getOrphanRelations(): array;
-    public function getRelativeAssociationData(?string $name = null): false|array;
+    public function getVirtualRelationMapping(): false|WireRelationMapping;
 }

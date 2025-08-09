@@ -2,26 +2,29 @@
 namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\AdminGroup;
-use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
-use Aequation\WireBundle\Entity\interface\WireArticleInterface;
-use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
-use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
-use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
-use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
-use Aequation\WireBundle\Entity\interface\WireUserInterface;
-use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Prefered;
 use Aequation\WireBundle\Entity\trait\Relinkable;
+use Aequation\WireBundle\Entity\trait\Categorized;
 use Aequation\WireBundle\Entity\trait\Webpageable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Entity\trait\BetweenSortedParent;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
+use Aequation\WireBundle\Entity\interface\WireArticleInterface;
+use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
+use Aequation\WireBundle\Entity\interface\WireEmailinkInterface;
+use Aequation\WireBundle\Entity\interface\WirePhonelinkInterface;
+use Aequation\WireBundle\Entity\interface\WireAddresslinkInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
 // Symfony
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Gedmo\Mapping\Annotation as Gedmo;
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
 
@@ -32,7 +35,7 @@ use Exception;
 abstract class WireFactory extends WireItem implements WireFactoryInterface
 {
 
-    use Prefered, Webpageable, Relinkable, Categorized;
+    use Prefered, Webpageable, Relinkable, Categorized, BetweenSortedParent;
 
     public const ICON = [
         'ux' => 'tabler:building-factory-2',
@@ -58,7 +61,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     ];
     public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
     public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
-
+    public const BY_PREFERED = [];
 
     #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
@@ -100,6 +103,11 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     public function getMinPrefered(): ?int
     {
         return static::MIN_PREFERED;
+    }
+
+    public function getPreferedBy(): array
+    {
+        return static::BY_PREFERED;
     }
 
     public function getFunctionality(): ?string
@@ -174,6 +182,12 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
             $article->removeFactory($this);
         }
         return $this;
+    }
+
+    // Sortgroup
+    public function getSortgroup(?BetweenSortedChildInterface $child = null): string
+    {
+        return $this->getEuid().($child instanceof WireRelinkInterface ? '@'.$child->getShortname() : '');
     }
 
 }

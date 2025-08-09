@@ -4,9 +4,11 @@ namespace Aequation\WireBundle\Service;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Entity\WireWebpage;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
@@ -21,13 +23,11 @@ use Exception;
 abstract class WireWebpageService extends WireItemService implements WireWebpageServiceInterface
 {
 
-    public const ENTITY_CLASS = WireWebpageInterface::class;
+    public const ENTITY_CLASS = WireWebpage::class;
 
     public const CACHE_WP_MODELS_LIFE = null;
     public const FILES_FOLDER = 'webpage/';
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
-
-    protected array $defaultWebpages = [];
 
     public function checkDatabase(
         ?OpresultInterface $opresult = null,
@@ -39,28 +39,29 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         return $opresult;
     }
 
-    /**
-     * Create a new WireMenu entity.
-     * 1. Add default/prefered Websections.
-     * 
-     * @param array|false $data
-     * @param array $context
-     * @return WireWebpageInterface
-     */
-    public function createEntity(
-        array $data = [], // ---> do not forget uname if wanted!
-        array $context = []
-    ): WireWebpageInterface
+    public function entityEventActions(
+        BaseEntityInterface $entity
+    ): void
     {
-        $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
-        if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
-            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
+        if(!is_a($entity, static::ENTITY_CLASS)) {
+            if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
         }
-        // 1. Add default/prefered Websections
-        foreach ($this->appWire->get(WireWebsectionServiceInterface::class)->getPreferedWebsections() as $websection) {
-            $entity->addWebsection($websection);
+        /** @var WireWebpageInterface $entity */
+        if($entity->getSelfState()->isNew()) {
+            // After created actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+            // 1. Add default/prefered Websections
+            /** @var WireWebsectionServiceInterface */
+            $websectionService = $this->wireEm->getEntityService(WireWebsectionInterface::class);
+            foreach ($websectionService->getPreferedWebsections() as $websection) {
+                $entity->addSection($websection);
+            }
         }
-        return $entity;
+        if($entity->getSelfState()->isLoaded()) {
+            // After loaded actions...
+            $this->wireEm->defaultEntityEventActions($entity);
+        }
+        // After all actions...
     }
 
     public function getPreferedWebpage(): ?WireWebpageInterface
@@ -86,31 +87,35 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         return false;
     }
 
-    public function getWebpageFor(
-        string|BaseEntityInterface $entity,
-        bool $attributeToEntity = false,
+    public function getExposableWebpages(
+        string|object $item,
         bool $onlyActiveWebpage = true
+    ): array
+    {
+        return $this->getRepository()->findExposablesFor($item, $onlyActiveWebpage);
+    }
+
+    public function getFirstExposableWebpage(
+        string|object $item,
+        bool $onlyActiveWebpage = true,
+        bool $attributeToEntity = false
     ): ?WireWebpageInterface
     {
-        if(is_a($entity, TraitWebpageableInterface::class, true)) {
-            if($entity instanceof TraitWebpageableInterface && $entity->hasWebpage()) {
-                $webpage = $entity->getWebpage();
+        if($item instanceof TraitWebpageableInterface) {
+            if(($webpage = $item->getWebpage()) && ($webpage->isActive() || !$onlyActiveWebpage) && $webpage->isAvailableForExpose($item)) {
+                return $webpage;
+            }
+        }
+        $availableWebpages = $this->getExposableWebpages($item, $onlyActiveWebpage);
+        if(count($availableWebpages)) {
+            /** @var WireWebpageInterface $webpage */
+            $webpage = reset($availableWebpages);
+            if($attributeToEntity && $item instanceof TraitWebpageableInterface) {
                 if($webpage->isActive() || !$onlyActiveWebpage) {
-                    return $webpage;
+                    $item->setWebpage($webpage);
                 }
             }
-            $classname = Objects::getClassname($entity);
-            if(!isset($this->defaultWebpages[$classname])) {
-                $this->defaultWebpages[$classname] = null;
-                if(($uname = $entity::getDefaultWebpageUname()) && ($webpage = $this->getWireEm()->findEntityByUname($uname))) {
-                    /** @var WireWebpageInterface $webpage */
-                    $this->defaultWebpages[$classname] = $webpage->isActive() || !$onlyActiveWebpage ? $webpage : null;
-                    if($this->defaultWebpages[$classname] && $attributeToEntity && $entity instanceof TraitWebpageableInterface) {
-                        $entity->setWebpage($this->defaultWebpages[$classname]);
-                    }
-                }
-            }
-            return $this->defaultWebpages[$classname];
+            return $webpage;
         }
         return null;
     }
@@ -296,7 +301,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                 'sortable' => false,
             ],
         ];
-        $model = $this->createModel();
+        $model = $this->getWireEm()->createModel(static::getEntityClassname());
         $entities = $this->getPaginated();
         /** @var BaseWireRepository */
         $repo = $this->getRepository();

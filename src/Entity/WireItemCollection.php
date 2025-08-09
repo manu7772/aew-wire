@@ -1,8 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
-use Aequation\WireBundle\Entity\interface\BetweenManyParentInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedParentInterface;
 use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
@@ -56,8 +56,8 @@ class WireItemCollection implements WireItemCollectionInterface
     protected int $position;
 
     public function __construct(
-        BetweenManyParentInterface $parent,
-        BetweenManyChildInterface $child
+        BetweenSortedParentInterface $parent,
+        BetweenSortedChildInterface $child
     )
     {
         if(!($parent instanceof WireEcollectionInterface)) throw new Exception(vsprintf('Error %s line %d: the parent parameter must be an instance of %s', [__METHOD__, __LINE__, WireEcollectionInterface::class]));

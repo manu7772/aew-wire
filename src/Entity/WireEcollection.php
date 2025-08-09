@@ -3,19 +3,21 @@ namespace Aequation\WireBundle\Entity;
 
 use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Entity\interface\BetweenManyChildInterface;
-use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
-use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\trait\BetweenSortedParent;
 use Aequation\WireBundle\Entity\interface\WireItemInterface;
 use Aequation\WireBundle\Repository\WireEcollectionRepository;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
 use Aequation\WireBundle\Service\interface\WireEcollectionServiceInterface;
-use ArrayIterator;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
+// PHP
 use Traversable;
+use ArrayIterator;
 
 /**
  * Use Gedmo extension for sortable
@@ -30,6 +32,8 @@ use Traversable;
 #[WireRelationMapping(WireEcollection::ITEMS_ACCEPT)]
 abstract class WireEcollection extends WireItem implements WireEcollectionInterface
 {
+
+    use BetweenSortedParent;
 
     public const ICON = [
         'ux' => 'tabler:folder',
@@ -53,12 +57,6 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
     {
         parent::__construct();
         $this->childs = new ArrayCollection();
-    }
-
-    // Sortgroup
-    public function getSortgroup(?BetweenManyChildInterface $child = null): string
-    {
-        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
 
     // Has childs
@@ -235,22 +233,11 @@ abstract class WireEcollection extends WireItem implements WireEcollectionInterf
         return $this->removeChilds();
     }
 
-    public function isAcceptsChildForParent(WireItemInterface $item, string $property): bool
-    {   
-        if($item !== $this) {
-            foreach (static::ITEMS_ACCEPT[$property] as $field => $classes) {
-                foreach ($classes as $class) {
-                    if(is_a($item, $class)) return true;
-                }
-                if(is_a($item, $class)) return true;
-            }
-        }
-        return false;
+    // Sortgroup
+    public function getSortgroup(?BetweenSortedChildInterface $child = null): string
+    {
+        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireItemInterface ? '@'.$child->getShortname() : '');
     }
 
-    public function filterAcceptedChildsForParent(Collection $items, string $property): Collection
-    {
-        return $items->filter(fn($item) => $item !== $this && $this->isAcceptsChildForParent($item, $property));
-    }
 
 }

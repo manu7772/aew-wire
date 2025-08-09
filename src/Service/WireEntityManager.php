@@ -24,12 +24,11 @@ use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
-use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
+use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
-use Aequation\WireBundle\Tools\Iterables;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\UnitOfWork;
@@ -59,7 +58,6 @@ class WireEntityManager implements WireEntityManagerInterface
 {
     use TraitBaseService;
 
-    private array $__src = [];
     // Criteria
     public const CRITERIA_ENABLED = ['enabled' => true];
     public const CRITERIA_DISABLED = ['enabled' => false];
@@ -161,10 +159,13 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function isGrantsCheckEnabled(): bool
     {
+        if(HttpRequest::isCli()) {
+            return false;
+        }
         if($this->appWire->isProd()) {
             return true; // Enable grants check by default
         }
-        return HttpRequest::isCli() || $this->appWire->isDev();
+        return true;
     }
 
     /**
@@ -174,17 +175,17 @@ class WireEntityManager implements WireEntityManagerInterface
      * @param string|null $uname
      * @return object
      */
-    public function createEntity(string $classname, array $data = [], array $context = []): object
+    public function createEntity(string $classname, array $data = [], array $options = []): object
     {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
         $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
         if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $wCmd->name)) {
             throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s!', [__METHOD__, __LINE__, $classname]));
         }
-        if($service = $this->getEntityService($classname)) {
-            return $service->createEntity($data, $context);
-        }
-        return $wCmd->newInstance($data);
+        // if($service = $this->getEntityService($classname)) {
+        //     return $service->createEntity($data, $options);
+        // }
+        return $wCmd->newInstance($data, $options);
     }
 
     /**
@@ -192,14 +193,14 @@ class WireEntityManager implements WireEntityManagerInterface
      * 
      * @return BaseEntityInterface
      */
-    public function createModel(string $classname, array $data = [], array $context = []): BaseEntityInterface
+    public function createModel(string $classname, array $data = [], array $options = []): BaseEntityInterface
     {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        if($service = $this->getEntityService($classname)) {
-            return $service->createModel($data, $context);
-        }
+        // if($service = $this->getEntityService($classname)) {
+        //     return $service->createModel($data, $options);
+        // }
         $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
-        return $wCmd->newModel($data);
+        return $wCmd->newModel($data, $options);
     }
 
     /**
@@ -207,7 +208,7 @@ class WireEntityManager implements WireEntityManagerInterface
      * 
      * @return BaseEntityInterface|null
      */
-    public function createClone(BaseEntityInterface $entity, array $changes = [], array $context = []): BaseEntityInterface|false
+    public function createClone(BaseEntityInterface $entity, array $changes = [], array $options = []): BaseEntityInterface|false
     {
         if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity)) {
             throw new Exception(vsprintf('Error %s line %d: you are not allowed to clone %s!', [__METHOD__, __LINE__, $entity]));
@@ -218,14 +219,12 @@ class WireEntityManager implements WireEntityManagerInterface
     public function createDto(
         string $classname,
         array $data = [],
-        array $context = []
+        array $options = []
     ): ?WireEntityDtoInterface
     {
         $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        if($service = $this->getEntityService($classname)) {
-            return $service->createDto($data, $context);
-        }
-        return null;
+        $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
+        return $wCmd->newDto($data, $options);
     }
 
 
@@ -496,18 +495,47 @@ class WireEntityManager implements WireEntityManagerInterface
 
 
     /************************************************************************************************************/
+    /** ENTITY DEFAULT EVENTS                                                                                   */
+    /************************************************************************************************************/
+
+    public function defaultEntityEventActions(BaseEntityInterface $entity): void
+    {
+        // ... Default event actions for entity
+        if($entity->getSelfState()->isNew()) {
+            // After created actions...
+            $this->EntityEvent_webpageable($entity);
+        }
+        if($entity->getSelfState()->isLoaded()) {
+            // After loaded actions...
+            $this->EntityEvent_webpageable($entity);
+        }
+        // After all actions...
+    }
+
+    protected function EntityEvent_webpageable(
+        BaseEntityInterface $entity
+    ): void
+    {
+        if($entity instanceof TraitWebpageableInterface) {
+            /** @var WireWebpageServiceInterface */
+            $webpageService = $this->getEntityService(WireWebpageInterface::class);
+            $webpageService->getFirstExposableWebpage($entity, true, true);
+        }
+    }
+
+    /************************************************************************************************************/
     /** ENTITY INFO                                                                                             */
     /************************************************************************************************************/
 
-    public function addPostFlushInfos(PostFlushEventArgs $args): void
-    {
-        $this->postFlushInfos[] = $args->getObjectManager();
-    }
+    // public function addPostFlushInfos(PostFlushEventArgs $args): void
+    // {
+    //     $this->postFlushInfos[] = $args->getObjectManager();
+    // }
 
-    public function getPostFlushInfos(bool $getLastOnly = false): array
-    {
-        return $getLastOnly ? end($this->postFlushInfos) : $this->postFlushInfos;
-    }
+    // public function getPostFlushInfos(bool $getLastOnly = false): array
+    // {
+    //     return $getLastOnly ? end($this->postFlushInfos) : $this->postFlushInfos;
+    // }
 
     /**
      * get entities [Wire]Metadata

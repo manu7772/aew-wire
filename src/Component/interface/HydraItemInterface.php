@@ -11,6 +11,6 @@ interface HydraItemInterface extends TypedCollectionInterface
     public function getPersistedOrNew(): ?object;
     public function getPersisted(): ?object;
     public function hasPersisted(): bool;
-    public function createDto(array $over_data = []): ?object;
+    public function createDto(array|object $over_data = []): ?object;
     public function getNew(): ?object;
 }

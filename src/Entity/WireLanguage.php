@@ -38,7 +38,7 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     ];
     public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
     public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
-
+    public const BY_PREFERED = [];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -47,18 +47,18 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
 
     #[ORM\Column(nullable: false, unique: true)]
     #[Assert\NotBlank(message: 'La locale est obligatoire', groups: ['persist','update'])]
-    protected string $locale;
+    protected ?string $locale = null;
     // locale choices
     protected array $localeChoices;
 
     #[ORM\Column(nullable: false)]
-    #[Assert\NotNull()]
-    protected string $timezone;
+    #[Assert\NotNull(message: 'Le fuseau horaire est obligatoire', groups: ['persist','update'])]
+    protected ?string $timezone = null;
 
     #[ORM\Column(nullable: false)]
     #[Assert\NotBlank(message: 'Le nom est obligatoire', groups: ['persist','update'])]
     #[Gedmo\Translatable]
-    protected string $name;
+    protected ?string $name = null;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
@@ -90,6 +90,11 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
     public function getMinPrefered(): ?int
     {
         return static::MIN_PREFERED;
+    }
+
+    public function getPreferedBy(): array
+    {
+        return static::BY_PREFERED;
     }
 
     public function getCountryIcon(
@@ -138,10 +143,10 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
 
     public function getDateTimezone(): ?DateTimeZone
     {
-        return new DateTimeZone($this->timezone);
+        return $this->timezone ? new DateTimeZone($this->timezone) : null;
     }
 
-    public function getTimezone(): string
+    public function getTimezone(): ?string
     {
         return $this->timezone;
     }
@@ -153,7 +158,7 @@ abstract class WireLanguage extends MappSuperClassEntity implements WireLanguage
         return $this;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }

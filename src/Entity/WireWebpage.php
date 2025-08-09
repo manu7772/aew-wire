@@ -1,29 +1,30 @@
 <?php
 namespace Aequation\WireBundle\Entity;
 
-use Aequation\WireBundle\Attribute\AdminGroup;
-use Aequation\WireBundle\Attribute\WireRelationMapping;
-use Aequation\WireBundle\Dto\WireWebpageDto;
-use Aequation\WireBundle\Entity\interface\TextContentsInterface;
-use Aequation\WireBundle\Entity\interface\TwigfileInterface;
 use Aequation\WireBundle\Entity\Twigfile;
+use Aequation\WireBundle\Dto\WireWebpageDto;
 use Aequation\WireBundle\Entity\TextContents;
-use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
+use Aequation\WireBundle\Attribute\AdminGroup;
+use Aequation\WireBundle\Entity\trait\Prefered;
+use Aequation\WireBundle\Attribute\WireRelationMapping;
+use Aequation\WireBundle\Component\Wpexpose;
+use Aequation\WireBundle\Component\interface\WpexposeInterface;
+use Aequation\WireBundle\Entity\trait\BetweenSortedParent;
+use Aequation\WireBundle\Entity\interface\TwigfileInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Entity\trait\Prefered;
-use Aequation\WireBundle\Tools\Strings;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use Aequation\WireBundle\Entity\interface\BetweenSortedChildInterface;
+use Aequation\WireBundle\Entity\interface\WpexposeCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
 // Symfony
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Dom\Text;
-use Symfony\Component\Validator\Constraints as Assert;
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Twig\Markup;
 
 #[UniqueEntity(fields: ['name'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
@@ -31,7 +32,7 @@ use Twig\Markup;
 #[AdminGroup(group: 'WireWebpage', order: 5, icon: 'tabler:letter-w')]
 abstract class WireWebpage extends WireItem implements WireWebpageInterface
 {
-    use Prefered;
+    use Prefered, BetweenSortedParent;
 
     public const ICON = [
         'ux' => 'tabler:letter-w',
@@ -39,36 +40,40 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
     public const ITEMS_ACCEPT = [
-        'websections' => [
-            'field' => 'sections',
-            'require' => [WireWebsectionInterface::class],
-        ],
+        // 'sections' => [
+        //     'field' => 'sections',
+        //     'require' => [WireWebsectionInterface::class],
+        // ],
     ];
     public const MAX_PREFERED = 1; // 1 is the maximum number of prefered sections in the database
     public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
+    public const BY_PREFERED = [];
 
     #[ORM\OneToMany(targetEntity: WebsectionCollectionInterface::class, mappedBy: 'webpage', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => 'DESC'])]
     protected Collection $sections;
     protected Collection $temp_sections;
 
     #[ORM\ManyToOne(targetEntity: WireMenuInterface::class, fetch: 'EAGER')]
-    protected ?WireMenuInterface $mainmenu;
+    protected ?WireMenuInterface $mainmenu = null;
 
     #[ORM\Embedded(Twigfile::class)]
     protected TwigfileInterface $twigfile;
 
     #[ORM\Column(nullable: true)]
     #[Gedmo\Translatable]
-    protected ?string $title;
+    protected ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Gedmo\Translatable]
-    protected ?string $linktitle;
+    protected ?string $linktitle = null;
 
     #[ORM\Embedded(TextContents::class)]
     #[Gedmo\Translatable]
     protected TextContentsInterface $content;
+
+    #[ORM\Embedded(WpexposeCollection::class)]
+    protected WpexposeCollectionInterface $wpexposes;
 
 
     public function __construct()
@@ -77,6 +82,7 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         $this->sections = new ArrayCollection();
         $this->twigfile = new Twigfile();
         $this->content = new TextContents();
+        $this->wpexposes = new WpexposeCollection();
     }
 
     public static function _createFromDto(WireWebpageDto $dto): static
@@ -111,6 +117,11 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return static::MIN_PREFERED;
     }
 
+    public function getPreferedBy(): array
+    {
+        return static::BY_PREFERED;
+    }
+
     public function getMainmenu(): ?WireMenuInterface
     {
         return $this->mainmenu ?? null;
@@ -143,9 +154,9 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return null;
     }
     
-    public function getSections(?string $type = null): Collection
+    public function getSections(?string $type = null, bool $passBetweens = true): Collection
     {
-        $ws = $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getChild()->setTempWebpage($this));
+        $ws = $passBetweens ? $this->sections->map(fn(WireWebpageWebsectionCollection $section) => $section->getChild()->setTempWebpage($this)) : $this->sections;
         return empty($type)
             ? $ws
             : $ws->filter(fn(WireWebsectionInterface $section) => $section->getSectiontype() === $type);
@@ -160,9 +171,9 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return $this;
     }    
 
-    public function getSection(string $type): ?WireWebsectionInterface
+    public function getSection(string $type, bool $passBetween = true): ?WireWebsectionInterface
     {
-        $sections = $this->getSections($type);
+        $sections = $this->getSections($type, $passBetween);
         return $sections->isEmpty() ? null : $sections->first();
     }
 
@@ -211,6 +222,28 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return $this;
     }
 
+    public function getSectionPosition(WireWebsectionInterface $section): int|false
+    {
+        foreach ($this->sections as $ic) {
+            /** @var WireWebpageWebsectionCollection $ic */
+            if($ic->getChild() === $section) {
+                return $ic->getPosition();
+            }
+        }
+        return false;
+    }
+
+    public function setSectionPosition(WireWebsectionInterface $section, int $position): bool
+    {
+        foreach ($this->sections as $ic) {
+            /** @var WireWebpageWebsectionCollection $ic */
+            if($ic->getChild() === $section) {
+                $ic->setPosition($position);
+                return true;
+            }
+        }
+        return false;
+    }
 
     public function getTwigfileName(): ?string
     {
@@ -222,8 +255,16 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         return $this->twigfile->isEmpty() ? null : $this->twigfile;
     }
 
-    public function setTwigfile(TwigfileInterface $twigfile): static
+    public function setTwigfile(TwigfileInterface|string $twigfile): static
     {
+        if(is_string($twigfile)) {
+            if(!isset($this->twigfile)) {
+                $this->twigfile = new Twigfile($twigfile);
+            } else {
+                $this->twigfile->setPath($twigfile);
+            }
+            return $this;
+        }
         $this->twigfile = $twigfile;
         return $this;
     }
@@ -270,5 +311,102 @@ abstract class WireWebpage extends WireItem implements WireWebpageInterface
         $this->content = $content;
         return $this;
     }
+
+    // Sortgroup
+    public function getSortgroup(?BetweenSortedChildInterface $child = null): string
+    {
+        return $this->getEuid().(static::SORT_BETWEEN_MANY_BY_CHILDS_CLASS && $child instanceof WireWebsectionInterface ? '@'.$child->getSectiontype() : '');
+    }
+
+
+    /**************************************************************************************************************/
+    /** EXPOSES                                                                                                   */
+    /**************************************************************************************************************/
+
+    public function isAvailableForExpose(string|object $item, ?bool $plural = null): bool
+    {
+        return $this->wpexposes->isAvailableFor($item, $plural);
+    }
+
+    public function getWpexposes(): WpexposeCollectionInterface
+    {
+        return $this->wpexposes;
+    }
+
+    public function setWpexposes(WpexposeCollectionInterface $wpexposes): static
+    {
+        $this->wpexposes = $wpexposes;
+        return $this;
+    }
+
+    public function addWpexpose(...$params): static
+    {
+        // dump($params);
+        if(array_is_list($params)) {
+            foreach ($params as $key => $value) {
+                if($value instanceof WpexposeInterface) {
+                    if($value->isValid() && !$this->wpexposes->contains($value)) {
+                        $this->wpexposes->add($value);
+                    }
+                } else if(is_array($value)) {
+                    $citem = new Wpexpose($value);
+                    if($citem->isValid()) {
+                        $this->wpexposes->add($citem);
+                    } else {
+                        unset($citem);
+                    }
+                } else {
+                    throw new \InvalidArgumentException(sprintf('Error %s line %d: Wpexpose expects an array or a JSON string, got "%s"', __METHOD__, __LINE__, gettype($value)));
+                }
+            }
+        } else if(is_array($params)) {
+            $citem = new Wpexpose($params);
+            if($citem->isValid()) {
+                $this->wpexposes->add($citem);
+            } else {
+                unset($citem);
+            }
+        } else {
+            throw new \InvalidArgumentException(sprintf('Error %s line %d: Wpexpose expects an array or a JSON string, got "%s"', __METHOD__, __LINE__, gettype($params)));
+        }
+        return $this;
+    }
+
+    public function hasWpexpose(...$params): bool
+    {
+        return $this->wpexposes->exists(fn(WpexposeInterface $wexpose) => $wexpose->isValid() && $wexpose->matchParams(...$params));
+    }
+
+    public function getWpexpose(...$params): ?WpexposeInterface
+    {
+        foreach ($this->wpexposes as $wpexpose) {
+            /** @var WpexposeInterface $wpexpose */
+            if ($wpexpose->isValid() && $wpexpose->matchParams(...$params)) {
+                return $wpexpose;
+            }
+        }
+        return null;
+    }
+
+    public function removeWpexpose(...$params): static
+    {
+        foreach ($this->wpexposes as $key => $wpexpose) {
+            /** @var WpexposeInterface $wpexpose */
+            if ($wpexpose->matchParams(...$params)) {
+                $this->wpexposes->removeElement($wpexpose);
+            }
+        }
+        return $this;
+    }
+
+    #[ORM\PostLoad]
+    public function postLoad_wpexpose(): void
+    {
+        // dump($this->wpexposes);
+        $this->wpexposes->regularize();
+        // dump($this->wpexposes);
+    }
+
+
 
 }

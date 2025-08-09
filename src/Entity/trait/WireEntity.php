@@ -47,8 +47,8 @@ trait WireEntity
     public function __construct_entity(): void
     {
         $this->initializeSelfstate();
-        $this->getClassname();
-        $this->getShortName();
+        $this->classname = $this->getReflectionClass()->getName();
+        $this->shortname = $this->getReflectionClass()->getShortName();
         $this->euid = Encoders::geUniquid($this->classname.'|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
@@ -113,6 +113,13 @@ trait WireEntity
         return $this->euid;
     }
 
+    public function setEuid(
+        string $euid
+    ): static {
+        $this->euid ??= $euid;
+        return $this;
+    }
+
     // public function setEuid(
     //     string $euid
     // ): static {
@@ -146,17 +153,29 @@ trait WireEntity
 
     public function getClassname(): string
     {
-        $this->classname ??= $this->getReflectionClass()->getName();
         return $this->classname;
+    }
+
+    public function setClassname(
+        string $classname
+    ): static {
+        $this->classname ??= $classname;
+        return $this;
     }
 
     public function getShortname(
         bool $lowercase = false
     ): string {
-        $this->shortname ??= $this->getReflectionClass()->getShortName();
         return $lowercase
             ? strtolower($this->shortname)
             : $this->shortname;
+    }
+
+    public function setShortname(
+        string $shortname
+    ): static {
+        $this->shortname ??= $shortname;
+        return $this;
     }
 
     public function getTrans_domain(): string

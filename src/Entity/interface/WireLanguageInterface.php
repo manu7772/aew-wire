@@ -13,9 +13,9 @@ interface WireLanguageInterface extends WireEntityInterface, TimezoneInterface, 
     public function setLocale(string $locale): static;
     public function getLocaleChoices(): array;
     public function getDateTimezone(): ?DateTimeZone;
-    public function getTimezone(): string;
+    public function getTimezone(): ?string;
     public function setTimezone(string $timezone): static;
-    public function getName(): string;
+    public function getName(): ?string;
     public function setName(string $name): static;
     public function getDescription(): ?string;
     public function setDescription(?string $description): static;

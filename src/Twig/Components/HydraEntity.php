@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
+use Symfony\Component\Validator\ConstraintViolationList;
 
 #[AsTwigComponent(
     name: 'wire:hydra-entity',
@@ -26,6 +27,8 @@ class HydraEntity extends AbstractController
 
     #[ExposeInTemplate(name: 'entity', getter: 'getEntity')]
     public ?object $entity = null;
+    #[ExposeInTemplate(name: 'errors', getter: 'getErrors')]
+    public array|ConstraintViolationList $errors = [];
     #[ExposeInTemplate(name: 'hydraItem', getter: 'getHydraItem')]
     public ?HydraItemInterface $hydraItem = null;
     public ?WireClassMetadataInterface $wCmd;
@@ -45,6 +48,11 @@ class HydraEntity extends AbstractController
     public function getEntity(): ?object
     {
         return $this->entity ?? $this->getHydraItem()?->getPersistedOrNew() ?? null;
+    }
+
+    public function getErrors(): array|ConstraintViolationList
+    {
+        return $this->errors ?? [];
     }
 
     public function getHydraItem(): ?HydraItemInterface

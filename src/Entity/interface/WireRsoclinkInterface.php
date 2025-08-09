@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity\interface;
 
 
-interface WireRslinkInterface extends WireRelinkInterface
+interface WireRsoclinkInterface extends WireRelinkInterface
 {
 
 }

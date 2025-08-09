@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Entity;
 
 // Aequation
-use Aequation\WireBundle\Entity\interface\WireRslinkInterface;
+use Aequation\WireBundle\Entity\interface\WireRsoclinkInterface;
 use Aequation\WireBundle\Entity\WireRelink;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[UniqueEntity(fields: ['name','ownereuid'], groups: ['persist','update'], message: 'Le nom {{ value }} est déjà utilisé.')]
 #[ORM\HasLifecycleCallbacks]
-abstract class WireRslink extends WireRelink implements WireRslinkInterface
+abstract class WireRsoclink extends WireRelink implements WireRsoclinkInterface
 {
 
     public const ICON = [
