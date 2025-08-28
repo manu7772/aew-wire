@@ -3,8 +3,10 @@ namespace Aequation\WireBundle\ValueResolver;
 
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
+use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
+use ReflectionClassConstant;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
@@ -17,7 +19,8 @@ class AppEntityValueResolver implements ValueResolverInterface
 {
 
     public function __construct(
-        private WireEntityManagerInterface $wireEm
+        // private readonly AppWireServiceInterface $appWire,
+        private readonly WireEntityManagerInterface $wireEm
     )
     {
         // Constructor logic if needed
@@ -29,10 +32,24 @@ class AppEntityValueResolver implements ValueResolverInterface
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         // Find final entity class
-        // $entityClass = $this->wireEm->resolveFinalEntitiesByNames($argument->getType());
-        $repository = $this->wireEm->getRepository($argument->getType());
+        $classes = $this->wireEm->getEntitiesMetadata()->findFinals([$argument->getType()]);
+        if(empty($classes)) {
+            throw new RuntimeException(vsprintf('Error %s line %d: Expected exactly one final class for type "%s", found %d.', [__METHOD__, __LINE__, $argument->getType(), count($classes)]));
+        } else if(count($classes) > 1) {
+            // If more than one class found, try find out by Controller data
+            $controller = $request->attributes->get('_controller');
+            if(!is_string($controller) || !str_contains($controller, '::')) {
+                throw new RuntimeException(vsprintf('Error %s line %d: Expected controller to be a string with "Class::method" format, found "%s".', [__METHOD__, __LINE__, Objects::toDebugString($controller)]));
+            }
+            $controllerParts = explode('::', $controller);
+            $rconstant = new ReflectionClassConstant($controllerParts[0], 'ENTITY_CLASS');
+            $entity_class = $rconstant->getValue();
+        } else {
+            $entity_class = $argument->getType();
+        }
+        $repository = $this->wireEm->getRepository($entity_class);
         if (!$repository) {
-            throw new RuntimeException(vsprintf('Error %s line %d: No repository/service found for type "%s".', [__METHOD__, __LINE__, $argument->getType()]));
+            throw new RuntimeException(vsprintf('Error %s line %d: No repository/service found for type "%s".', [__METHOD__, __LINE__, $entity_class]));
         }
         $routeParams = $request->attributes->get('_route_params');
         $routeMapping = $request->attributes->get('_route_mapping', []);
@@ -55,7 +72,7 @@ class AppEntityValueResolver implements ValueResolverInterface
                 $uid = reset($uids);
                 $argumentName = $argument->getName();
             } else {
-                throw new RuntimeException(vsprintf('Error %s line %d: No route mapping found for type "%s", please write this in the route path (something like this: /path/to/{id:entity}).', [__METHOD__, __LINE__, $argument->getType()]));
+                throw new RuntimeException(vsprintf('Error %s line %d: No route mapping found for type "%s", please write this in the route path (something like this: /path/to/{id:entity}).', [__METHOD__, __LINE__, $entity_class]));
             }
             // $uid ??= array_key_first($routeMapping);
         } else {
@@ -93,7 +110,7 @@ class AppEntityValueResolver implements ValueResolverInterface
                 break;
             default:
                 $value = null;
-                // throw new RuntimeException(vsprintf('Error %s line %d: No valid identifier (id%s) found for type "%s".', [__METHOD__, __LINE__, is_a($classname, SluggableInterface::class, true) ? ' or slug' : '', $argument->getType()]));
+                // throw new RuntimeException(vsprintf('Error %s line %d: No valid identifier (id%s) found for type "%s".', [__METHOD__, __LINE__, is_a($classname, SluggableInterface::class, true) ? ' or slug' : '', $entity_class]));
                 break;
         }
         // if($this->wireEm->appWire->isDev()) {
@@ -101,7 +118,7 @@ class AppEntityValueResolver implements ValueResolverInterface
         // }
         if(empty($value)) {
             // If no value found, return null
-            throw new NotFoundHttpException(vsprintf('Error %s line %d: No value found for type "%s" with identifier "%s".', [__METHOD__, __LINE__, json_encode($argument->getType()), json_encode($request->attributes->get($argumentName, '-- not found --'))]));
+            throw new NotFoundHttpException(vsprintf('Error %s line %d: No value found for type "%s" with identifier "%s".', [__METHOD__, __LINE__, json_encode($entity_class), json_encode($request->attributes->get($argumentName, '-- not found --'))]));
         }
         return [$argumentName => $value];
     }

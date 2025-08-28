@@ -16,7 +16,7 @@
         <div class="tabs tabs-lift">
 
             <label class="tab">
-                <input type="radio" name="tab_te_{{ entity.euid }}"  checked="checked"/>
+                <input type="radio" name="tab_te_{{ entity.euid }}" checked="checked"/>
                 <twig:ux:icon name="{{ entity.selfState.new ? 'tabler:plus' : 'tabler:database' }}" class="size-4 me-2{{ entity.selfState.new ? ' text-warning' : ' text-success' }}" />
                 Object entity
             </label>
@@ -42,7 +42,7 @@
                                 <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ field.type }}</td>
                                 {% endif %}
                                 <td class="align-top">
-                                    <twig:wire:print-value property="{{ field.name }}" from="{{ entity }}" classname="" />
+                                    <twig:wire:print-value :property="field.name" :from="entity" classname="" />
                                 </td>
                             </tr>
                             {% endfor %}
@@ -77,7 +77,7 @@
                                     <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ relation_type }} <span class="opacity-50 italic">{{ side }}</span></td>
                                     {% endif %}
                                     <td class="align-top">
-                                        <twig:wire:print-value property="{{ relation.virtualName }}" from="{{ entity }}" classname="" />
+                                        <twig:wire:print-value :property="relation.virtualName" :from="entity" classname="" />
                                     </td>
                                 </tr>
                             {% endif %}
@@ -109,7 +109,7 @@
                             <tr>
                                 <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
                                 <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ value|type }}</td>
-                                <td class="align-top"><twig:wire:print-value property="{{ field }}" from="{{ getDto(entity).toArray }}" classname="" /></td>
+                                <td class="align-top"><twig:wire:print-value :property="field" :from="getDto(entity).toArray()" classname="" /></td>
                             </tr>
                             {% endfor %}
                         </tbody>

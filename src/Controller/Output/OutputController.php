@@ -52,7 +52,7 @@ class OutputController extends AbstractController
         if(!$this->pdfService) {
             throw $this->createNotFoundException('Le service de génération de PDF n\'est pas disponible');
         }
-        $doc = $this->wire_em->findEntityByUniqueValue($pdf);
+        $doc = $this->wire_em->findByUniqueValue($pdf);
         /** @var ServiceEntityRepository $repo */
         $repo = $this->pdfService->getRepository();
         $doc ??= $repo->find($pdf);

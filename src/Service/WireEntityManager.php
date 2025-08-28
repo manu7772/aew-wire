@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Service;
 // Aequation
 
 use Aequation\WireBundle\Attribute\AdminGroup;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
@@ -24,12 +25,18 @@ use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Repository\interface\BaseWireRepositoryInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
+use Aequation\WireBundle\Entity\interface\TraitDatetimedInterface;
+use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Interface\WireHydratable;
 use Aequation\WireBundle\Service\interface\SurveyRecursionInterface;
 use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Objects;
+use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
+use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
+use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 // Symfony
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\EntityRepository;
@@ -159,11 +166,11 @@ class WireEntityManager implements WireEntityManagerInterface
 
     public function isGrantsCheckEnabled(): bool
     {
-        if(HttpRequest::isCli()) {
+        if(HttpRequest::isCli() || $this->appWire->isXmlHttpRequest()) {
             return false;
         }
         if($this->appWire->isProd()) {
-            return true; // Enable grants check by default
+            return true; // Enable grants check in PROD environment
         }
         return true;
     }
@@ -177,15 +184,13 @@ class WireEntityManager implements WireEntityManagerInterface
      */
     public function createEntity(string $classname, array $data = [], array $options = []): object
     {
-        $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
-        if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $wCmd->name)) {
-            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s!', [__METHOD__, __LINE__, $classname]));
+        // $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
+        /** @var BaseEntityInterface $entity */
+        $entity = $this->getEntitiesMetadata()->newInstance($classname, $data, $options);
+        if($this->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
+            throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s (firewall is %s)!', [__METHOD__, __LINE__, $classname, $this->appWire->getFirewallName()]));
         }
-        // if($service = $this->getEntityService($classname)) {
-        //     return $service->createEntity($data, $options);
-        // }
-        return $wCmd->newInstance($data, $options);
+        return $entity;
     }
 
     /**
@@ -195,12 +200,9 @@ class WireEntityManager implements WireEntityManagerInterface
      */
     public function createModel(string $classname, array $data = [], array $options = []): BaseEntityInterface
     {
-        $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        // if($service = $this->getEntityService($classname)) {
-        //     return $service->createModel($data, $options);
-        // }
-        $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
-        return $wCmd->newModel($data, $options);
+        // $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
+        $model = $this->getEntitiesMetadata()->newModel($classname, $data, $options);
+        return $model;
     }
 
     /**
@@ -222,9 +224,10 @@ class WireEntityManager implements WireEntityManagerInterface
         array $options = []
     ): ?WireEntityDtoInterface
     {
-        $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
-        $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
-        return $wCmd->newDto($data, $options);
+        // $this->surveyRecursion->survey(__METHOD__.'::'.$classname);
+        // $wCmd = $this->getEntitiesMetadata()->findOneInstantiable([$classname]);
+        $dto = $this->getEntitiesMetadata()->newDto($classname, $data, $options);
+        return $dto;
     }
 
 
@@ -498,28 +501,102 @@ class WireEntityManager implements WireEntityManagerInterface
     /** ENTITY DEFAULT EVENTS                                                                                   */
     /************************************************************************************************************/
 
-    public function defaultEntityEventActions(BaseEntityInterface $entity): void
+    public function defaultEntityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void
     {
         // ... Default event actions for entity
         if($entity->getSelfState()->isNew()) {
             // After created actions...
-            $this->EntityEvent_webpageable($entity);
+            $this->checkEntity_datetimed($entity, $opresult, true);
+            $this->checkEntity_owner($entity, $opresult, true);
+            $this->checkEntity_webpageable($entity, true, $opresult, true);
         }
         if($entity->getSelfState()->isLoaded()) {
             // After loaded actions...
-            $this->EntityEvent_webpageable($entity);
         }
         // After all actions...
     }
 
-    protected function EntityEvent_webpageable(
-        BaseEntityInterface $entity
+    public function defaultEntityCheckActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null, bool $repair = false): void
+    {
+        if($entity->getSelfState()->isLoaded()) {
+            // Check webpageable entity
+            $this->checkEntity_datetimed($entity, $opresult, $repair);
+            $this->checkEntity_owner($entity, $opresult, $repair);
+            $this->checkEntity_webpageable($entity, true, $opresult, $repair);
+        } else {
+            throw new Exception(vsprintf('Error %s line %d: check entity does not works with unloaded entities (got %s)!', [__METHOD__, __LINE__, Objects::toDebugString($entity)]));
+        }
+    }
+
+    protected function checkEntity_datetimed(
+        BaseEntityInterface $entity,
+        ?OpresultInterface $opresult = null,
+        bool $repair = false,
     ): void
     {
-        if($entity instanceof TraitWebpageableInterface) {
+        if($entity instanceof TraitDatetimedInterface) {
+            if(empty($entity->getLanguage()) && $repair) {
+                /** @var WireLanguageServiceInterface */
+                $languageService = $this->getEntityService(WireLanguageServiceInterface::class);
+                $entity->setLanguage($languageService->getPreferedLanguage());
+                $opresult->addSuccess(vsprintf('Language %s added to %s!', [$entity->getLanguage()->getName(), Objects::toDebugString($entity)]));
+            }
+            if(empty($entity->getTimezone()) && $repair) {
+                if($entity->getLanguage()) {
+                    $entity->setTimezone($entity->getLanguage()->getTimezone());
+                } else {
+                    /** @var WireLanguageServiceInterface */
+                    $languageService ??= $this->getEntityService(WireLanguageServiceInterface::class);
+                    if(($language = $languageService->getPreferedLanguage()) && $language->getTimezone()) {
+                        $entity->setTimezone($language->getTimezone());
+                        $opresult->addSuccess(vsprintf('Timezone %s added to %s!', [$entity->getTimezone(), Objects::toDebugString($entity)]));
+                    }
+                }
+            }
+        }
+    }
+
+    protected function checkEntity_owner(
+        BaseEntityInterface $entity,
+        ?OpresultInterface $opresult = null,
+        bool $repair = false,
+    ): void
+    {
+        if($entity instanceof TraitOwnerInterface && empty($entity->getOwner())) {
+            /** @var WireUserServiceInterface */
+            $userService = $this->getEntityService(WireUserInterface::class);
+            $admin ??= $userService->getMainAdminUser(true);
+            if(empty($admin)) {
+                if($entity->isOwnerRequired()) {
+                    $opresult->addDanger(vsprintf('%s needs a owner, but no main (s)admin found!', [Objects::toDebugString($entity)]));
+                }
+            } else if($entity->isOwnerRequired() && $repair) {
+                $entity->setOwner($admin);
+                $opresult->addSuccess(vsprintf('Owner %s added to %s %s!', [Objects::toDebugString($admin), TraitOwnerInterface::class, Objects::toDebugString($entity)]));
+            } else if($entity->isOwnerRequired()) {
+                $opresult->addError(vsprintf('%s requires an owner!', [Objects::toDebugString($entity)]));
+            }
+        }
+    }
+
+    protected function checkEntity_webpageable(
+        BaseEntityInterface $entity,
+        bool $onlyActiveWebpage = true,
+        ?OpresultInterface $opresult = null,
+        bool $repair = false,
+    ): void
+    {
+        if($entity instanceof TraitWebpageableInterface && (empty($entity->getWebpage()) || ($onlyActiveWebpage && !$entity->getWebpage()->isActive()))) {
             /** @var WireWebpageServiceInterface */
             $webpageService = $this->getEntityService(WireWebpageInterface::class);
-            $webpageService->getFirstExposableWebpage($entity, true, true);
+            $webpageService->getFirstExposableWebpage($entity, $onlyActiveWebpage, $repair);
+            if ($opresult) {
+                if($entity->getWebpage() && $entity->getWebpage()->isActive()) {
+                    $opresult->addSuccess(vsprintf('Added active webpage %s to entity %s', [$entity->getWebpage(), Objects::toDebugString($entity)]));
+                } else if($entity->isWebpageRequired()) {
+                    $opresult->addWarning(vsprintf('Could not find any active webpage for entity %s', [Objects::toDebugString($entity)]));
+                }
+            }
         }
     }
 

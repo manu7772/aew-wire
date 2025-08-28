@@ -10,14 +10,5 @@ abstract class WireImageService extends WireItemService implements WireImageServ
 
     public const ENTITY_CLASS = WireImage::class;
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireImageInterface entities
-        return $opresult;
-    }
 
 }

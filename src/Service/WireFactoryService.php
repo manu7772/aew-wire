@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
@@ -17,15 +19,6 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
         return $this->getRepository()->findOneBy(['prefered' => true]);
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireFactoryInterface entities
-        return $opresult;
-    }
 
 
     // /****************************************************************************************************/
@@ -38,44 +31,29 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     {
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['w-1'],
-                'sortable' => true,
-            ],
-            'name' => [
-                'classes' => ['text-left'],
-                'sortable' => true,
-            ],
-            'associates' => [
-                // 'classes' => ['w-1'],
-                // 'label' => 'Nb sections',
-                'view_options' => [
-                    'template' => ['from_string' => '{{ entity.associates.count }}'],
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['w-1'],
+                    'sortable' => true,
                 ],
-                'sortable' => false,
+                'name' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+                'associates' => [
+                    // 'classes' => ['w-1'],
+                    // 'label' => 'Nb sections',
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ entity.associates.count }}'],
+                    ],
+                    'sortable' => false,
+                ],
             ],
         ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
-            ],
-        ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

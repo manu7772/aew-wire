@@ -1,0 +1,21 @@
+<div{{ attributes }}>
+
+    {# <turbo-frame id="entity-form-{{ entity.id }}"> #}
+
+        {% if registeredMessage %}
+        <twig:wire:alert type="success" class="mb-2">
+            {{ registeredMessage }}
+        </twig:wire:alert>
+        {% endif %}
+
+        {% if errorMessage %}
+        <twig:wire:alert type="danger" class="mb-2">
+            {{ errorMessage }}
+        </twig:wire:alert>
+        {% endif %}
+
+        {% include ['@AequationWire/admin/entity/' ~ entity.shortname|lower ~ '/_form.html.twig', '@AequationWire/admin/entity/_form.html.twig'] %}
+
+    {# </turbo-frame> #}
+
+</div>

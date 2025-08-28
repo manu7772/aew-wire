@@ -97,6 +97,16 @@ abstract class WirePropertyAbstractMetadata extends ReflectionProperty implement
         return null;
     }
 
+    public function getValue(object|null $object = null): mixed
+    {
+        try {
+            return $this->getAccessor()->getValue($object, $this->mapping_name);
+        } catch (Exception $e) {
+            // Handle exception if needed
+        }
+        return null;
+    }
+
 
     /************************************************************************************************************/
     /** VIRTUALS                                                                                                */

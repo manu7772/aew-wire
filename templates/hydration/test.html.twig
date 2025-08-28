@@ -31,7 +31,7 @@
 		{% set border_color = links.invalids[current_index]|length <= 0 ? 'border-success' : (links.valids[current_index]|length > 0 ? 'border-warning' : 'border-error') %}
 		<div class="px-4 pb-3 pt-1 border {{ border_color }} rounded-lg my-2">
 			{# <div class="mt-4 mb-2">
-				<twig:wire:alert type="{{ opresult.cssColor }}" icon="{{ true }}">
+				<twig:wire:alert :type="opresult.cssColor" :icon="true">
 					{% if opresult.isSuccess %}
 						Toutes les entités testées ont été hydratées avec succès.
 					{% elseif opresult.isPartialSuccess %}
@@ -56,7 +56,7 @@
 			{% else %}
 			<ul class="list rounded-box shadow-md mt-0">
 				{% for item in opresult.data %}
-				<twig:wire:hydra-items-test item="{{ item }}" icon="{{ true }}" />
+				<twig:wire:hydra-items-test :item="item" :icon="true" />
 				{% endfor %}
 			</ul>
 			{% endif %}

@@ -1,0 +1,12 @@
+<div{{ attributes }}>
+    <turbo-frame id="csstheme-switcher-{{ id }}">
+        <button type="button" class="btn btn-ghost" title="{{ 'change_csstheme'|trans }}{{ firewall is defined ? ' / for ' ~ firewall : '' }}">
+            {% set icon = icon|default('tabler:user') %}
+            {% set icon_class = 'size-6' %}
+            <a href="{{ path('aequation_wire_api.csstheme_define', {firewall: app.firewallName, tfid: id}) }}">
+                <span class="sr-only">{{ 'change_csstheme'|trans }}</span>
+                <twig:ux:icon name="{{ icon }}" class="size-6" />
+            </a>
+        </button>
+    </turbo-frame>
+</div>

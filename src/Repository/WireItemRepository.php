@@ -31,15 +31,5 @@ class WireItemRepository extends BaseWireRepository implements WireItemRepositor
     //     parent::__construct($registry, $appWire);
     // }
 
-    public static function getDefaultAlias(): string
-    {
-        return static::ALIAS;
-    }
-
-    public function findPaginated(): Query
-    {
-        $qb = $this->createQueryBuilder(static::getDefaultAlias());
-        return $qb->getQuery();
-    }
 
 }

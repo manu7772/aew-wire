@@ -54,7 +54,7 @@ class Overlay implements JsonSerializable, Serializable
     {
         $this->position = static::OVERLAY_POSITIONS['Bas au centre'];
         if(empty($data)) {
-            $this->name = Encoders::geUniquid('overlay', '_');
+            $this->name = Encoders::getUniquid('overlay', '_');
         } else {
             foreach ($data as $key => $value) {
                 $this->$key = $value;

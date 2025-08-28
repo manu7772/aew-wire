@@ -28,6 +28,11 @@ class RouterInfo implements RouterInfoInterface
         return $this->appWire;
     }
 
+    public function getRouter(): Router
+    {
+        return $this->router;
+    }
+
 
     public function getContext(): ?RequestContext
     {

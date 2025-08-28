@@ -8,9 +8,7 @@ use Aequation\WireBundle\Attribute\ClassCustomService;
 use Aequation\WireBundle\Attribute\DebugToOptimize;
 use Aequation\WireBundle\Component\interface\MenuComponentInterface;
 use Aequation\WireBundle\Component\interface\RouterInfoInterface;
-use Aequation\WireBundle\Component\MenuComponent;
 use Aequation\WireBundle\Component\RouterInfo;
-use Aequation\WireBundle\Entity\BaseMappSuperClassEntity;
 use Aequation\WireBundle\Entity\interface\SluggableInterface;
 use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -32,6 +30,13 @@ use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\HttpRequest;
 use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Tools\Strings;
+use Aequation\WireBundle\Component\interface\WireClassMetadataManagerInterface;
+use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
+use Aequation\WireBundle\Entity\interface\WireImageInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\WirePdfInterface;
+use Aequation\WireBundle\Entity\interface\WireUrlinkInterface;
+use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 // Symphony
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bundle\SecurityBundle\Security\FirewallConfig;
@@ -67,6 +72,7 @@ use Twig\Environment;
 use Twig\Markup;
 use DateTimeImmutable;
 use DateTimeZone;
+use Doctrine\Common\Collections\ArrayCollection;
 use Exception;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use UnitEnum;
@@ -837,7 +843,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
 
     public function getCurrentCssthemes(): array
     {
-        return $this->getCssthemes($this->getFirewallName());
+        return $this->getCssthemes($this->getFirewallName() ?: '_default');
     }
 
     public function getCsstheme(?string $firewall = null): string
@@ -860,28 +866,34 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     #[DebugToOptimize(type: 'warning', description: 'Does not work perfectly. Please optimize!')]
     public function setCsstheme(string $csstheme, ?string $firewall = null): string
     {
-        if($this->isDev() && $this->survey++ > 5) {
-            throw new Exception(vsprintf('Error %s line %d: can not set csstheme, too many attempts!', [__METHOD__, __LINE__]));
-        }
-        $firewall = $this->getFirewallName() ?? '_default';
+        // if($this->isDev() && $this->survey++ > 5) {
+        //     throw new Exception(vsprintf('Error %s line %d: can not set csstheme, too many attempts!', [__METHOD__, __LINE__]));
+        // }
+        $firewall ??= $this->getFirewallName() ?: '_default';
         $user = $this->getUser();
         if($user instanceof WireUserInterface) {
-            if($user->getCsstheme() !== $csstheme) {
-                $user->setCsstheme($csstheme);
+            if($user->getCsstheme($firewall) !== $csstheme) {
+                $user->setCsstheme($csstheme, $firewall);
                 $this->getUserService()->saveUser($user);
             }
-            $csstheme = $user->getCsstheme();
+            $csstheme = $user->getCsstheme($firewall);
+        }
+        if(!in_array($firewall, [$this->getFirewallName(), '_default'], true)) {
+            // If firewall is current, set csstheme
+            return $this->csstheme = $csstheme;
+        } else {
+            $this->csstheme = $csstheme;
         }
         return $this->csstheme = $csstheme;
     }
 
     public function toggleCsstheme(?string $firewall = null): string
     {
-        $firewall = $this->getFirewallName() ?? '_default';
+        $firewall ??= $this->getFirewallName() ?: '_default';
         $choices = $this->getCssthemes($firewall);
         $current = array_search($this->getCsstheme($firewall), $choices) + 1;
         $new_theme = $choices[$current % count($choices)];
-        return $this->setCsstheme($new_theme);
+        return $this->setCsstheme($new_theme, $firewall);
     }
 
 
@@ -1740,6 +1752,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         if($this->isGrantedForUser($user, $action, $subject, $firewall)) {
             $prefix = $is_public ? 'app_' : 'admin_';
             $route = $prefix.$name.'_'.$action;
+            // dump('Route "'.$route.'" exists: '.json_encode($this->routeExists($route, false)));
             if($this->routeExists($route, false)) return $route;
         // } else {
         //     throw new Exception(vsprintf('Error %s line %d: user %s (%s) is not granted for action "%s" on subject "%s" (public: %s / firewall: %s)!', [
@@ -1765,15 +1778,17 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         ?bool $absolute_path = true
     ): string|false
     {
+        $user ??= $this->getUser();
         if($route = $this->getActionRoute($subject, $action, $firewall, $user)) {
             $referenceType = $absolute_path ? Router::ABSOLUTE_PATH : Router::RELATIVE_PATH;
             if(in_array($action, ['show','edit','delete']) && is_object($subject) && !isset($route_params['id'])) {
                 $route_params['id'] = $subject->getId();
             }
             $url = $this->get('router')->generate($route, $route_params, $referenceType);
-            return empty($url) ? false : $url;
+            if(!empty($url)) {
+                return $url;
+            }
         }
-        // dump('getActionPath not found for: '.(is_string($subject) ? $subject : $subject->getEmail()).' to do '.$action.' (fw: '.$firewall.') / User: '.$user?->getEmail() ?? 'anonymous');
         return false;
     }
 
@@ -1801,60 +1816,116 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     /** MENUS                                                                                                   */
     /************************************************************************************************************/
 
-    public function getAdminMenu(array $instances = []): MenuComponentInterface
+    protected function menuCompile(array $interfaces): ArrayCollection
     {
-        $instances = count($instances) ? $instances : [WireEntityInterface::class];
-        $groups = [];
-        foreach ($this->get(WireEntityManagerInterface::class)->getEntitiesMetadata()->setTypeCompareOr()->findFinals($instances) as $classname => $wCmd) {
-            /** @var WireClassMetadataInterface $wCmd */
-            if($this->isGranted('index', $wCmd->name)) {
-                $group_s = $wCmd->getClassAttributes(AdminGroup::class);
-                if(!empty($group_s)) {
-                    $group = reset($group_s);
-                    $groups[$group->group] ??= [
-                        'order' => $group->order,
-                        'name' => $group->group,
-                        'icon' => $group->icon,
-                        'entities' => [],
-                    ];
-                    $groups[$group->group]['entities'][$wCmd->name] = [
-                        'wCmd' => $wCmd,
-                        'urls' => [
-                            'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
-                            'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
-                        ],
-                    ];
-                } else {
-                    $groups[Objects::getShortname($classname)] ??= [
-                        'order' => null,
-                        'name' => Objects::getShortname($classname),
-                        'icon' => $classname::ICON['ux'] ?? BaseMappSuperClassEntity::ICON['ux'],
-                        'entities' => [],
-                    ];
-                    $groups[Objects::getShortname($classname)]['entities'][$wCmd->name] = [
-                        'wCmd' => $wCmd,
-                        'urls' => [
-                            'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
-                            'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
-                        ],
-                    ];
+        /** @var WireClassMetadataManagerInterface */
+        $wcmdm = $this->get(WireEntityManagerInterface::class)->getEntitiesMetadata();
+        $wCmd_urlink = $wcmdm->findFinals([WireUrlinkInterface::class])->first();
+        $menu = new ArrayCollection();
+        foreach ($interfaces as $name => $interface) {
+            if(is_array($interface)) {
+                $menu->set($this->get('translator')->trans($name), $this->menuCompile($interface));
+            } else {
+                foreach ($wcmdm->findFinals((array) $interface) as $wCmd) {
+                    /** @var WireClassMetadataInterface $wCmd */
+                    if($url = $this->getActionPath($wCmd->name, 'index', [])) {
+                        // $urlink = $wCmd_urlink->newModel();
+                        $name = $this->get('translator')->trans('names', [], $wCmd->getShortname());
+                        if($name === 'names') {
+                            $name = $wCmd->getShortname();
+                        }
+                        /** @var WireUrlinkInterface */
+                        $urlink = $wcmdm->newModel($wCmd_urlink->name);
+                        $urlink->setName($wCmd->name);
+                        $urlink->setLinktitle($name);
+                        $urlink->setUrl($url);
+                        $urlink->setRoute($this->getActionRoute($wCmd->name, 'index', null, null) ?: null);
+                        $urlink->setParams([]);
+                        $urlink->temp_icon = $wCmd->name::getIcon();
+                        $menu->set(is_string($name) ? $name : $wCmd->getShortname()."@index", $urlink);
+                    }
                 }
             }
         }
-        uasort( // --> or use uasort to preserve keys
-            $groups,
-            function (array $a, array $b) {
-                if(null === $a['order']) return 2;
-                if(null === $b['order']) return -2;
-                return $a['order'] <=> $b['order'];
-            }
-        );
-        $ord = 0;
-        foreach ($groups as $name => $group) {
-            $groups[$name]['order'] = $ord++;
-        }
-        // dump(new MenuComponent($groups, $this->getRouterInfo()));
-        return new MenuComponent($groups, $this->getRouterInfo());
+        // dump($menu);
+        return $menu;
     }
+
+    public function getAdminMenu(array $instances = []): ArrayCollection
+    {
+        $interfaces = [
+            WireUserInterface::class,
+            WireFactoryInterface::class,
+            WireCategoryInterface::class,
+            'Website' => [
+                WireWebpageInterface::class,
+                WireWebsectionInterface::class,
+            ],
+            'Medias' => [
+                WirePdfInterface::class,
+                WireImageInterface::class,
+            ],
+            WireLanguageInterface::class,
+        ];
+        $menu = $this->menuCompile($interfaces);
+        // dump($menu);
+        return $menu;
+    }
+
+    // public function getAdminMenu(array $instances = []): MenuComponentInterface
+    // {
+    //     $instances = count($instances) ? $instances : [WireEntityInterface::class];
+    //     $groups = [];
+    //     foreach ($this->get(WireEntityManagerInterface::class)->getEntitiesMetadata()->setTypeCompareOr()->findFinals($instances) as $classname => $wCmd) {
+    //         /** @var WireClassMetadataInterface $wCmd */
+    //         if($this->isGranted('index', $wCmd->name)) {
+    //             $group_s = $wCmd->getClassAttributes(AdminGroup::class);
+    //             if(!empty($group_s)) {
+    //                 $group = reset($group_s);
+    //                 $groups[$group->group] ??= [
+    //                     'order' => $group->order,
+    //                     'name' => $group->group,
+    //                     'icon' => $group->icon,
+    //                     'entities' => [],
+    //                 ];
+    //                 $groups[$group->group]['entities'][$wCmd->name] = [
+    //                     'wCmd' => $wCmd,
+    //                     'urls' => [
+    //                         'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
+    //                         'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
+    //                     ],
+    //                 ];
+    //             } else {
+    //                 $groups[Objects::getShortname($classname)] ??= [
+    //                     'order' => null,
+    //                     'name' => Objects::getShortname($classname),
+    //                     'icon' => $classname::ICON['ux'] ?? BaseMappSuperClassEntity::ICON['ux'],
+    //                     'entities' => [],
+    //                 ];
+    //                 $groups[Objects::getShortname($classname)]['entities'][$wCmd->name] = [
+    //                     'wCmd' => $wCmd,
+    //                     'urls' => [
+    //                         'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
+    //                         'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
+    //                     ],
+    //                 ];
+    //             }
+    //         }
+    //     }
+    //     uasort( // --> or use uasort to preserve keys
+    //         $groups,
+    //         function (array $a, array $b) {
+    //             if(null === $a['order']) return 2;
+    //             if(null === $b['order']) return -2;
+    //             return $a['order'] <=> $b['order'];
+    //         }
+    //     );
+    //     $ord = 0;
+    //     foreach ($groups as $name => $group) {
+    //         $groups[$name]['order'] = $ord++;
+    //     }
+    //     // dump(new MenuComponent($groups, $this->getRouterInfo()));
+    //     return new MenuComponent($groups, $this->getRouterInfo());
+    // }
 
 }

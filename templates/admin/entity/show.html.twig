@@ -24,7 +24,7 @@
     </div>
     {% endblock %}
     {% block entitydata %}
-    <twig:wire:table-entity entity="{{ entity }}" debug="{{ app.devOrSadmin }}" />
+    <twig:wire:table-entity :entity="entity" :debug="app.devOrSadmin" />
     {% endblock %}
     {% endif %}
 {% endblock %}

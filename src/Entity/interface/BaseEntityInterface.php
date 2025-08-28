@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\interface\EntityEmbededStatusContainerInterfa
 use Aequation\WireBundle\Component\interface\EntityEmbededStatusInterface;
 use Aequation\WireBundle\Component\interface\EntitySelfStateInterface;
 use Aequation\WireBundle\Interface\ClassDescriptionInterface;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 // PHP
 use Stringable;
 
@@ -15,8 +16,9 @@ interface BaseEntityInterface extends Stringable, ClassDescriptionInterface
     public function __construct_entity(): void;
     public function getId();
     // Count updates
-    public function doUpdate(): void;
+    public function doUpdate(?PreUpdateEventArgs $event = null): static;
     public function getUpdates(): int;
+    public function setUpdates(int $updates): static;
     // Embeded Status
     public function initializeSelfstate(): void;
     public function getSelfState(): ?EntitySelfStateInterface;

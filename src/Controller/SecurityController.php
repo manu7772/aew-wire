@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Controller;
 
 use Aequation\WireBundle\Form\UserDeleteType;
-use Aequation\WireBundle\Form\UserType;
+use Aequation\WireBundle\Form\WireUserType;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
@@ -120,7 +120,7 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(WireUserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

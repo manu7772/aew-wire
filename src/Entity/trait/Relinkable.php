@@ -19,10 +19,7 @@ use Exception;
 trait Relinkable
 {
     /** Add your ORM in the entity */
-    /** WireUser: */
-    // #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    /** WireFactory: */
-    // #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    // #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
     // #[ORM\OrderBy(['position' => 'ASC'])]
     // #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;

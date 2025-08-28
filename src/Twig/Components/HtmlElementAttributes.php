@@ -22,7 +22,9 @@ class HtmlElementAttributes
     ) {
         $this->locale = $appWire->getLocale();
         $this->csstheme = $appWire->getCsstheme();
-        $this->switcherUrl = $appWire->get('router')->generate('aequation_wire_api.csstheme_define');
+        // $this->switcherUrl = $appWire->get('router')->generate('aequation_wire_api.csstheme_define', [
+        //     'firewall' => $appWire->getFirewallName(),
+        // ]);
     }
 
 

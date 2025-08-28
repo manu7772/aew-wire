@@ -10,14 +10,5 @@ abstract class WireEcollectionService extends WireItemService implements WireEco
 
     public const ENTITY_CLASS = WireEcollection::class;
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireEcollectionInterface entities
-        return $opresult;
-    }
 
 }

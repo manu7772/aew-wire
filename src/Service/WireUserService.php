@@ -3,7 +3,9 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Dto\WireUserDto;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
@@ -45,6 +47,10 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
 
     public const ENTITY_CLASS = WireUser::class;
     public const EXCEPT_CHOICE_ROLES_EXPR = '/^((?!ROLE_)|ROLE_USER|ROLE_ALLOWED_TO_SWITCH)/';
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 100, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+    ];
 
     protected ?bool $csstheme = null;
 
@@ -61,33 +67,6 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         parent::__construct($subhierarchy);
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult ??= new Opresult();
-        // Check all WireUserInterface entities
-        return $opresult;
-    }
-
-    public function entityEventActions(
-        BaseEntityInterface $entity
-    ): void
-    {
-        if(!is_a($entity, static::ENTITY_CLASS)) {
-            if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
-        }
-        if($entity->getSelfState()->isNew()) {
-            // After created actions...
-            $this->wireEm->defaultEntityEventActions($entity);
-        }
-        if($entity->getSelfState()->isLoaded()) {
-            // After loaded actions...
-            $this->wireEm->defaultEntityEventActions($entity);
-        }
-        // After all actions...
-    }
 
     public function getSecurity(): Security
     {
@@ -434,56 +413,40 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     {
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['w-1'],
-                'sortable' => true,
-            ],
-            'email' => [
-                'sortable' => true,
-            ],
-            'name' => [
-                'view_options' => [
-                    'template' => ['from_string' => '{{ entity.name }}{% if entity.firstname is not null %}<span class="pl-2 italic text-sm font-extralight opacity-75"> {{ entity.firstname }}</span>{% endif %}']
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['w-1'],
+                    'sortable' => true,
                 ],
-                'sortable' => true,
-            ],
-            // 'ratings' => [
-            //     'classes' => ['text-center'],
-            //     'view_options' => [
-            //         'template' => ['from_string' => '{{ \'actions.count\'|trans({\'%count%\': entity.ratings|length}, \'Rating\') }}']
-            //     ],
-            //     // 'sortable' => false,
-            // ],
-            'roles' => [
-                // 'classes' => ['text-center'],
-                'view_options' => [
-                    'template' => ['from_string' => '{{ list_roles(entity.roles) }}']
+                'email' => [
+                    'sortable' => true,
                 ],
-                'sortable' => true,
+                'name' => [
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ entity.name }}{% if entity.firstname is not null %}<span class="pl-2 italic text-sm font-extralight opacity-75"> {{ entity.firstname }}</span>{% endif %}']
+                    ],
+                    'sortable' => true,
+                ],
+                // 'ratings' => [
+                //     'classes' => ['text-center'],
+                //     'view_options' => [
+                //         'template' => ['from_string' => '{{ \'actions.count\'|trans({\'%count%\': entity.ratings|length}, \'Rating\') }}']
+                //     ],
+                //     // 'sortable' => false,
+                // ],
+                'roles' => [
+                    // 'classes' => ['text-center'],
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ list_roles(entity.roles) }}']
+                    ],
+                    'sortable' => true,
+                ],
             ],
         ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
-            ],
-        ];
+        return new PaginatedContextData($this, $options);
     }
-
 
 }

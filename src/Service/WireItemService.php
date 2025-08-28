@@ -2,7 +2,9 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
@@ -21,6 +23,10 @@ abstract class WireItemService implements WireItemServiceInterface
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireItem::class;
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 100, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+    ];
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
@@ -30,15 +36,6 @@ abstract class WireItemService implements WireItemServiceInterface
     ) {
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult ??= new Opresult();
-        // Check all WireItemInterface entities
-        return $opresult;
-    }
 
     /****************************************************************************************************/
     /** PAGINABLE                                                                                       */
@@ -50,35 +47,20 @@ abstract class WireItemService implements WireItemServiceInterface
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     {
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['text-center','w-0'],
-                'sortable' => true,
-            ],
-            'name' => [
-                'sortable' => true,
-            ],
-        ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
+                'name' => [
+                    'sortable' => true,
+                ],
             ],
         ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

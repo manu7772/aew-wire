@@ -1,14 +1,13 @@
 <?php
 namespace Aequation\WireBundle\Security\Voter;
 
-// Aequation
 use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 // Symfony
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 // PHP
 use Exception;
-use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 class WireUserVoter extends BaseEntityVoter
 {
@@ -51,8 +50,8 @@ class WireUserVoter extends BaseEntityVoter
                         return $attribute === $user || ($userService->compareUsers($user, $attribute) && $userService->isGranted('ROLE_ADMIN'));
                         break;
                     default:
-                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }
@@ -77,14 +76,13 @@ class WireUserVoter extends BaseEntityVoter
                         return $attribute === $user;
                         break;
                     default:
-                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }
                 break;
         }
-
         return false;
     }
 

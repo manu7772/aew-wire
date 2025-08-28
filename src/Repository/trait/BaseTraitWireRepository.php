@@ -1,11 +1,11 @@
 <?php
-
 namespace Aequation\WireBundle\Repository\trait;
 
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
-use Doctrine\ORM\Query\Expr\From;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Query\Expr\From;
 
 trait BaseTraitWireRepository
 {
@@ -61,6 +61,23 @@ trait BaseTraitWireRepository
         }
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+
+    /************************************************************************************************************/
+    /** PAGINATOR                                                                                               */
+    /************************************************************************************************************/
+
+    public function newAliasBuilder(?string $alias = null): QueryBuilder
+    {
+        return $this->createQueryBuilder($alias ?? static::getDefaultAlias());
+    }
+
+    public function findPaginated(?string $alias = null): Query
+    {
+        $qb = $this->newAliasBuilder($alias ?? static::getDefaultAlias());
+        return $qb->getQuery();
+    }
+
 
     /************************************************************************************************************/
     /** COMMON QUERYS                                                                                           */

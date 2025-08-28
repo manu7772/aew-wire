@@ -30,9 +30,5 @@ class WireRelinkRepository extends BaseWireRepository implements WireRelinkRepos
     //     parent::__construct($registry, $appWire);
     // }
 
-    public static function getDefaultAlias(): string
-    {
-        return static::ALIAS;
-    }
 
 }

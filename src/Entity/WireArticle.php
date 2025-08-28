@@ -57,7 +57,7 @@ abstract class WireArticle extends WireItem implements WireArticleInterface
     ];
     public const SORT_BETWEEN_MANY_BY_CHILDS_CLASS = true;
 
-    #[ORM\OneToMany(targetEntity: WireArticleRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: WireArticleRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
     #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;

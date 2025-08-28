@@ -60,7 +60,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
         ],
     ];
 
-    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: WireUserRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
     #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;
@@ -349,7 +349,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
     {
         if(!isset($this->cssthemes)) {
             $cssthemes = [];
-            foreach($this->getEmbededStatus()->appWire->getCssthemes() as $firewall => $css) {
+            foreach($this->getEmbededStatus()->getAppWire()->getCssthemes() as $firewall => $css) {
                 $cssthemes[$firewall] = reset($css);
             }
             $this->setCssthemes($cssthemes);
@@ -381,7 +381,7 @@ abstract class WireUser extends WireItem implements WireUserInterface
 
     public function getCssthemeChoices(?string $firewall = null): array
     {
-        return $this->getEmbededStatus()->appWire->getCssthemes($firewall);
+        return $this->getEmbededStatus()->getAppWire()->getCssthemes($firewall);
     }
 
 

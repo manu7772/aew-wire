@@ -10,14 +10,5 @@ class WireAddresslinkService extends WireRelinkService implements WireAddresslin
 
     const ENTITY_CLASS = WireAddresslink::class;
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireAddresslinkInterface entities
-        return $opresult;
-    }
 
 }

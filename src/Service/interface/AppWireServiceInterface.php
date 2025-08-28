@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\interface\MenuComponentInterface;
 use Aequation\WireBundle\Component\interface\RouterInfoInterface;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 // Symfony
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,6 +28,7 @@ use Twig\Markup;
 // PHP
 use DateTimeImmutable;
 use DateTimeZone;
+use Doctrine\Common\Collections\ArrayCollection;
 use JsonSerializable;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
@@ -144,9 +146,12 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function getTwig(): Environment;
     public function getTwigLoader(): LoaderInterface;
     // Csstheme
-    public function getCsstheme(): string;
-    public function setCsstheme(string $csstheme): string;
-    public function toggleCsstheme(): string;
+    public function getCssthemes(?string $firewall = null): array;
+    public function setCssthemes(array $cssthemes, ?string $firewall = null): static;
+    public function getCurrentCssthemes(): array;
+    public function getCsstheme(?string $firewall = null): string;
+    public function setCsstheme(string $csstheme, ?string $firewall = null): string;
+    public function toggleCsstheme(?string $firewall = null): string;
     // Timestamp / Timezone
     public function setTimezone(string|DateTimeZone $timezone): static;
     public function getDefaultTimezone(): DateTimeZone;
@@ -186,7 +191,10 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
     public function isRouteAdmin(): bool;
     public function routeExists(string $route, bool|array $control_generation = false): bool;
     public function getUrlIfExists(string $route, array $parameters = [], ?int $referenceType = null, null|array|string $methods = null): ?string;
+    public function getActionRoute(string|object $subject, string $action, ?string $firewall = null, ?WireUserInterface $user = null): string|false;
+    public function getActionPath(string|object $subject, string $action, array $route_params = [], ?string $firewall = null, ?WireUserInterface $user = null, ?bool $absolute_path = false): string|false;
+    public function getActionUrl(string|object $subject, string $action, array $route_params = [], ?string $firewall = null, ?WireUserInterface $user = null): string|false;
     // Menus
-    public function getAdminMenu(array $instances = []): MenuComponentInterface;
+    public function getAdminMenu(array $instances = []): ArrayCollection;
 
 }

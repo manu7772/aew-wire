@@ -59,11 +59,13 @@ class Iterables implements ToolInterface
         $final_classes = [];
         foreach (preg_split($pattern, trim($classes), -1, PREG_SPLIT_NO_EMPTY) as $class) {
             $class = trim($class);
-            if(preg_match('/^[a-zA-Z-_][\w-]*$/', $class)) $final_classes[$class] = $class;
+            // if(preg_match('/^[a-zA-Z-_][\w-]*$/', $class)) $final_classes[$class] = $class;
+            $final_classes[$class] = $class;
         }
         return $asString
             ? implode(' ', $final_classes)
-            : $final_classes;
+            : array_values($final_classes)
+            ;
     }
 
 }

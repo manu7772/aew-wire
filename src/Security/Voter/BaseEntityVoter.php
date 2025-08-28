@@ -1,26 +1,31 @@
 <?php
 namespace Aequation\WireBundle\Security\Voter;
 
-// Aequation
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 // PHP
 use Exception;
-use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 abstract class BaseEntityVoter extends Voter implements VoterInterface
 {
 
     public const ENTITY_CLASS = BaseEntityInterface::class;
 
+    public readonly string $entityClass;
+
     public function __construct(
-        protected readonly AppWireServiceInterface $appWire
+        protected readonly AppWireServiceInterface $appWire,
+        protected readonly WireEntityManagerInterface $wireEm,
     ) {
+        $this->entityClass = $this->getEntityClassname();
     }
 
     public static function getEntityClassname(): string
@@ -34,26 +39,19 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
     protected function supports($attribute, $subject): bool
     {
         if(preg_match('/^[A-Z_]+$/', $attribute)) {
-            // dump('Rejected '.$attribute.' for Voter of '.$this->getEntityClassname());
+            // Reject attributes that are all uppercase (usually ROLE_*)
             return false;
         }
-        $classname = $this->getEntityClassname();
-        if(is_a($subject, $classname, true)) {
+        if($subject instanceof $this->entityClass || is_a($subject, $this->entityClass, true)) {
             return true;
         }
-        $classnames = $this->getSupportedSubjectValues();
-        return in_array($subject, $classnames);
+        // includes all sub-shortnames
+        if($subject_classname = $this->wireEm->getEntitiesMetadata()->findEntityClassname($subject)) {
+            return is_a($subject_classname, $this->entityClass, true);
+        }
+        return false;
     }
 
-    public function getSupportedSubjectValues(): array
-    {
-        $classname = $this->getEntityClassname();
-        $shortname = Objects::getShortname($classname, false);
-        if(empty($shortname)) {
-            throw new Exception(vsprintf('Error %s line %d: the class %s must have a short name', [__METHOD__, __LINE__, $classname]));
-        }
-        return [$classname, $shortname, strtolower($shortname)];
-    }
 
     public function voteOnAttribute(
         string $subject,
@@ -81,8 +79,8 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
                         return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     default:
-                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }
@@ -97,7 +95,7 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
                         return false;
                         break;
                     case 'show':
-                        return true;
+                        return !($attribute instanceof TraitEnabledInterface) || $attribute->isActive();
                         break;
                     case 'edit':
                         return false;
@@ -106,8 +104,8 @@ abstract class BaseEntityVoter extends Voter implements VoterInterface
                         return false;
                         break;
                     default:
-                        // $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }

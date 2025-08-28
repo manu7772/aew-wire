@@ -43,13 +43,14 @@ abstract class WireItemVoter extends BaseEntityVoter
                         return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     case 'edit':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
+                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
                         break;
                     case 'delete':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || $attribute->getOwner() === $this->appWire->getUser();
+                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
                         break;
                     default:
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }
@@ -68,13 +69,14 @@ abstract class WireItemVoter extends BaseEntityVoter
                         return $attribute->isActive();
                         break;
                     case 'edit':
-                        return $attribute->getOwner() === $this->appWire->getUser();
+                        return ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
                         break;
                     case 'delete':
-                        return $attribute->getOwner() === $this->appWire->getUser();
+                        return ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
                         break;
                     default:
-                        throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
+                        // throw new Exception(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
                         return false;
                         break;
                 }

@@ -7,8 +7,10 @@ use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 // Symfony
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnClearEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Event\PostPersistEventArgs;
@@ -29,6 +31,7 @@ use Exception;
 #[AsDoctrineListener(event: Events::postUpdate, priority: GlobalDoctrineListener::PRIORITY)]
 #[AsDoctrineListener(event: Events::preRemove, priority: GlobalDoctrineListener::PRIORITY)]
 #[AsDoctrineListener(event: Events::postRemove, priority: GlobalDoctrineListener::PRIORITY)]
+#[AsDoctrineListener(event: Events::onFlush, priority: GlobalDoctrineListener::PRIORITY)]
 #[AsDoctrineListener(event: Events::postFlush, priority: GlobalDoctrineListener::PRIORITY)]
 // #[AsDoctrineListener(event: Events::onClear, priority: GlobalDoctrineListener::PRIORITY)]
 class GlobalDoctrineListener
@@ -105,7 +108,7 @@ class GlobalDoctrineListener
         switch (true) {
             case $entity instanceof WireUserInterface:
                 if (array_intersect($entity->getRoles(), ['ROLE_SUPER_ADMIN', 'ROLE_ADMIN'])) {
-                    throw new Exception('You cannot delete the admin or super admin, please downgrade him before.');
+                    throw new Exception('You cannot delete the admin or super admin, please downgrade this User before.');
                 }
                 break;
         }
@@ -117,6 +120,29 @@ class GlobalDoctrineListener
         $entity = $event->getObject();
         if (!($entity instanceof BaseEntityInterface)) return;
         $entity->__selfstate->setRemoved();
+    }
+
+    public function onFlush(
+        OnFlushEventArgs $event
+    ): void {
+        /** @var EntityManagerInterface */
+        $om = $event->getObjectManager();
+        $uow = $om->getUnitOfWork();
+        foreach ($uow->getScheduledEntityInsertions() as $entity) {
+            if($entity instanceof BaseEntityInterface) {
+                $entity->setUpdates(0);
+            }
+        }
+        foreach ($uow->getScheduledEntityUpdates() as $entity) {
+            if($entity instanceof BaseEntityInterface) {
+                $changeset = $uow->getEntityChangeSet($entity);
+                if(isset($changeset['updates'])) {
+                    $entity->setUpdates($changeset['updates'][0] + 1);
+                } else {
+                    $entity->doUpdate();
+                }
+            }
+        }
     }
 
     public function postFlush(

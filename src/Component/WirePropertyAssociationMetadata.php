@@ -13,6 +13,7 @@ use Aequation\WireBundle\Component\interface\WirePropertyVirtualAssociationMetad
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\OwningSideMapping;
 use Doctrine\ORM\Mapping\InverseSideMapping;
+use Exception;
 // PHP
 use InvalidArgumentException;
 
@@ -102,6 +103,16 @@ class WirePropertyAssociationMetadata extends WirePropertyAbstractMetadata imple
         return $this->name;
     }
 
+    public function getValue(object|null $object = null): mixed
+    {
+        return parent::getValue($object);
+        // try {
+        //     return $this->getAccessor()->getValue($object, $this->mapping_name);
+        // } catch (Exception $e) {
+        //     // Handle exception if needed
+        // }
+        // return null;
+    }
 
     /**************************************************************************************************/
     /** RELATIONS                                                                                     */

@@ -122,9 +122,9 @@ class Opresult implements OpresultInterface
             }
         }
         return
-            $this->actions[static::ACTION_UNDONE] === 0
-            && $this->actions[static::ACTION_WARNING] === 0
-            && $this->actions[static::ACTION_DANGER] === 0
+            // $this->actions[static::ACTION_UNDONE] === 0 &&
+            $this->actions[static::ACTION_WARNING] === 0 &&
+            $this->actions[static::ACTION_DANGER] === 0
             ;
     }
 

@@ -26,7 +26,7 @@
                             <tr>
                                 <td class="align-top shrink-0 whitespace-nowrap">{{ field }}</td>
                                 <td class="align-top shrink-0 whitespace-nowrap opacity-70 italic text-sm font-thin max-md:hidden">{{ value|type }}</td>
-                                <td class="align-top"><twig:wire:print-value property="{{ field }}" from="{{ hydraItem.toArray }}" classname="" /></td>
+                                <td class="align-top"><twig:wire:print-value :property="field" :from="hydraItem.toArray()" classname="" /></td>
                                 {# <td class="align-top"><twig:wire:print-value value="{{ value }}" classname="" /></td> #}
                             </tr>
                             {% endfor %}
@@ -43,7 +43,7 @@
                 Object entity
             </label>
 			<div class="tab-content bg-base-100 border-base-300 p-2">
-                <twig:wire:table-entity entity="{{ entity }}" debug="{{ false }}" />
+                <twig:wire:table-entity :entity="entity" :debug="false" />
             </div>
             {% endif %}
 

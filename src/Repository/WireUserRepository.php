@@ -37,10 +37,11 @@ abstract class WireUserRepository extends WireItemRepository implements WireUser
         string|array $roles
     ): array
     {
-        $qb = $this->createQueryBuilder(static::ALIAS);
+        $qb = $this->newAliasBuilder();
         $roles = $this->userService->getUpperRoleNames($roles);
         foreach($roles as $role) {
-            $qb->orWhere(static::ALIAS.'.roles LIKE :'.$role)
+            // $qb->orWhere(static::ALIAS.'.roles LIKE :'.$role)
+            $qb->orWhere($qb->expr()->like(static::ALIAS.'.roles', ':'.$role))
                 ->setParameter($role, "%\"$role\"%");
         }
         return $qb->getQuery()->getResult();

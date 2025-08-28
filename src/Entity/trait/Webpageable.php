@@ -30,12 +30,12 @@ trait Webpageable
 
     #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
-    #[Assert\NotNull(message: 'Le titre est obligatoire', groups: ['persist','update'])]
+    // #[Assert\NotNull(message: 'Le titre est obligatoire', groups: ['persist','update'])]
     protected ?string $title = null;
 
     #[ORM\Column(type: Types::STRING, nullable: false)]
     #[Gedmo\Translatable]
-    #[Assert\NotNull(message: 'Le lien titre est obligatoire', groups: ['persist','update'])]
+    // #[Assert\NotNull(message: 'Le lien titre est obligatoire', groups: ['persist','update'])]
     protected ?string $linktitle = null;
 
     #[ORM\Embedded(TextContents::class)]
@@ -48,11 +48,6 @@ trait Webpageable
     {
         if(!($this instanceof TraitWebpageableInterface)) throw new Exception(vsprintf('Error %s line %d: this class %s should implement %s!', [__METHOD__, __LINE__, static::class, TraitWebpageableInterface::class]));
         $this->content = new TextContents();
-    }
-
-    public static function getDefaultWebpageUname(): ?string
-    {
-        return static::WP_DEFAULT_UNAME ?: 'wp_page_'.strtolower(Objects::getShortname(static::class));
     }
 
     public function isWebpageRequired(): bool

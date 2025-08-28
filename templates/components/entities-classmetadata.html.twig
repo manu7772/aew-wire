@@ -94,7 +94,7 @@
 
     {# MODALS #}
     {% for wCmd in this.listAll %}
-    <twig:wire:classmetadata-modal wCmd="{{ wCmd }}" />
+    <twig:wire:classmetadata-modal :wCmd="wCmd" />
     {% endfor %}
 
 </div>

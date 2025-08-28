@@ -3,7 +3,9 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\Opresult;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\UnameServiceInterface;
@@ -25,6 +27,10 @@ class UnameService implements UnameServiceInterface
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = Uname::class;
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 1000, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+    ];
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
@@ -32,16 +38,6 @@ class UnameService implements UnameServiceInterface
         protected PaginatorInterface $paginator,
         public readonly HydrationServiceInterface $normalizer,
     ) {
-    }
-
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult ??= new Opresult();
-        // Check all UnameInterface entities
-        return $opresult;
     }
 
     // public function findOrphanUnames(): array
@@ -110,12 +106,9 @@ class UnameService implements UnameServiceInterface
     //  * @param Request $request
     //  * @return array
     //  */
-    // public function getPaginatedContextData(
-    //     ?Request $request = null
-    // ): array
+    // public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     // {
-    //     // $request ??= $this->appWire->getRequest();
-    //     throw new Exception(vsprintf('Method %s not implemented yet.', [__METHOD__]));
+    //     return new PaginatedContextData($this, $options);
     // }
 
 }

@@ -19,19 +19,6 @@ abstract class WireArticleService extends WireItemService implements WireArticle
 {
 
     public const ENTITY_CLASS = WireArticle::class;
-    // Criteria
-    // public const CRITERIA_ENABLED = ['enabled' => true];
-    // public const CRITERIA_DISABLED = ['enabled' => false];
-
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireArticleInterface entities
-        return $opresult;
-    }
 
 
 }

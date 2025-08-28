@@ -63,7 +63,7 @@ class WireItemCollection implements WireItemCollectionInterface
         if(!($parent instanceof WireEcollectionInterface)) throw new Exception(vsprintf('Error %s line %d: the parent parameter must be an instance of %s', [__METHOD__, __LINE__, WireEcollectionInterface::class]));
         if(!($child instanceof WireItemInterface)) throw new Exception(vsprintf('Error %s line %d: the child parameter must be an instance of %s', [__METHOD__, __LINE__, WireItemInterface::class]));
         if($parent === $child) throw new Exception(vsprintf('Error %s line %d: the parent and child parameters must be different', [__METHOD__, __LINE__]));
-        $this->euid = Encoders::geUniquid(static::class . '|');
+        $this->euid = Encoders::getUniquid(static::class . '|');
         $this->parent = $parent;
         $this->child = $child;
         $this->child->attributeDefaultMainparent();

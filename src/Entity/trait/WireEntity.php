@@ -9,6 +9,7 @@ use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\PropertyAccess\PropertyAccess;
@@ -43,13 +44,14 @@ trait WireEntity
     protected int $updates = 0;
 
     public readonly EntitySelfStateInterface $__selfstate;
+    public ?string $temp_icon = null;
 
     public function __construct_entity(): void
     {
         $this->initializeSelfstate();
         $this->classname = $this->getReflectionClass()->getName();
         $this->shortname = $this->getReflectionClass()->getShortName();
-        $this->euid = Encoders::geUniquid($this->classname.'|');
+        $this->euid = Encoders::getUniquid($this->classname.'|');
         // Other constructs
         $construct_methods = array_filter(get_class_methods($this), fn($method_name) => preg_match('/^__construct_(?!entity)/', $method_name));
         foreach ($construct_methods as $method) {
@@ -64,15 +66,27 @@ trait WireEntity
      * UPDATES COUNT
      *************************************************************************************/
 
-     #[ORM\PreUpdate]
-    public function doUpdate(): void
+    //  #[ORM\PreUpdate]
+    public function doUpdate(?PreUpdateEventArgs $event = null): static
     {
-        $this->updates++;
+        if($event) {
+            $changeset = $event->getEntityChangeSet();
+            $this->updates = isset($changeset['updates']) ? $changeset['updates'][0] + 1 : $this->updates + 1;
+        } else {
+            $this->updates++;
+        }
+        return $this;
     }
 
     public function getUpdates(): int
     {
         return $this->updates;
+    }
+
+    public function setUpdates(int $updates): static
+    {
+        $this->updates = $updates;
+        return $this;
     }
 
     /*************************************************************************************

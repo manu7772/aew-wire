@@ -135,16 +135,16 @@ trait Datetimed
         return $this->language->getLocale();
     }
 
-    public function setTimezone(string $timezone): static
+    public function setTimezone(?string $timezone): static
     {
         $this->timezone = $timezone;
         return $this;
     }
 
-    public function getTimezoneChoices(): array
-    {
-        return WireLanguageService::getTimezoneChoices();
-    }
+    // public function getTimezoneChoices(): array
+    // {
+    //     return WireLanguageService::getTimezoneChoices();
+    // }
 
     public function getTimezone(): ?string
     {

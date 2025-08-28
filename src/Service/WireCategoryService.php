@@ -23,6 +23,10 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireCategory::class;
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 1000, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+    ];
 
     public readonly array $availableTypes;
 
@@ -32,33 +36,34 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
         protected PaginatorInterface $paginator,
     ) {
     }
-    
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
+
+    public function checkDatabase(OpresultInterface $opresult, bool $repair = false, array $options = []): void
     {
-        $opresult ??= new Opresult();
-        // Check all WireCategoryInterface entities
-        $all = $this->getRepository()->findAll();
         $repaired = 0;
-        foreach ($all as $entity) {
-            // Repair category type
-            if(!class_exists($entity->getType())) {
-                $opresult->addWarning("Category type {$entity->getType()} does not exist");
-                if($repair) {
-                    $entity->setType($entity->getType());
-                    $repaired++;
+        $this->paginatedAction(
+            callback: function ($entity) use ($opresult, $repair, &$repaired) {
+                /** @var WireCategoryInterface $entity */
+                $this->entityCheckActions($entity, $opresult);
+                // Repair category type
+                if(!class_exists($entity->getType())) {
+                    $opresult->addWarning("Category type {$entity->getType()} does not exist");
+                    if($repair) {
+                        $entity->setType($entity->getType());
+                        $repaired++;
+                    }
                 }
-            }
-        }
+                return $repair;
+            },
+            options: array_merge(static::DEFAULT_CHECK_DB_OPTIONS, $options)
+        );
         if($repaired > 0) {
             $this->getEntityManager()->flush();
             $opresult->addWarning("Repaired $repaired category type(s)");
-        } else {
+        } else if($opresult->isSuccess()) {
             $opresult->addSuccess("All category types are valid");
+        } else {
+            $opresult->addWarning("Some category types are not valid");
         }
-        return $opresult;
     }
 
     /**

@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 // PHP
 use Exception;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 #[Route(path: '/api', name: 'aequation_wire_api.')]
 class AppWireController extends AbstractController
@@ -38,22 +40,37 @@ class AppWireController extends AbstractController
         );
     }
 
-    #[Route('/csstheme/{csstheme}', name: 'csstheme_define', defaults: ['csstheme' => '__toggle__'], methods: ['GET','POST'])]
+    #[Route('/csstheme/{firewall}/{csstheme}', name: 'csstheme_define', defaults: ['csstheme' => '__toggle__'], methods: ['GET','POST'])]
     public function cssthemeSwitcher(
         AppWireServiceInterface $appWire,
-        string $csstheme = '__toggle__'
-    ): JsonResponse
+        string $firewall,
+        string $csstheme = '__toggle__',
+        // Request $request
+    ): Response|JsonResponse
     {
         switch ($csstheme) {
             case '__toggle__':
-                $appWire->toggleCsstheme();
+                $appWire->toggleCsstheme($firewall);
                 break;
             default:
-                $appWire->setCsstheme($csstheme);
+                $appWire->setCsstheme($csstheme, $firewall);
                 break;
         }
+        if($appWire->isTurboFrameRequest()) {
+            // If the request is turbo-frame, we return the HTML for the switcher
+            return $this->render(
+                '@AequationWire/components/csstheme-switcher.html.twig',
+                [
+                    'attributes' => null,
+                    'id' => 'ts-header',
+                    'icon' => 'tabler:user',
+                    'firewall' => $firewall,
+                    // 'firewall' => $appWire->getFirewallName(),
+                ]
+            );
+        }
         return $this->json(
-            data: ['csstheme' => $appWire->getCsstheme()],
+            data: ['csstheme' => $appWire->getCsstheme($firewall)],
             status: JsonResponse::HTTP_OK,
             // context: $appWire->jsonSerialize(),
         );

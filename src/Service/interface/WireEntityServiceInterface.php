@@ -3,13 +3,16 @@
 namespace Aequation\WireBundle\Service\interface;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\UnitOfWork;
+use Knp\Component\Pager\Pagination\PaginationInterface;
 
 interface WireEntityServiceInterface extends WireServiceInterface, EntityServicePaginableInterface
 {
@@ -23,21 +26,22 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public function getEm(): EntityManagerInterface;
     public function getUnitOfWork(): UnitOfWork;
     public function getUow(): UnitOfWork;
-    // public function checkEntity(BaseEntityInterface $entity): void;
-    // New
-    // public function createEntity(array $data = [], array $context = []): BaseEntityInterface;
-    // public function createModel(array $data = [], array $context = []): BaseEntityInterface;
-    // public function createClone(BaseEntityInterface $entity,array $changes = [], array $context = []): BaseEntityInterface|false;
-    // public function createDto(array $data = [], array $context = []): ?WireEntityDtoInterface;
-    public function entityEventActions(BaseEntityInterface $entity): void;
-    // Maintain database
-    public function checkDatabase(?OpresultInterface $opresult = null, bool $repair = false): OpresultInterface;
-    // Querys
+    // Check actions
+    public function entityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void;
+    public function entityCheckActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null, bool $repair = false): void;
+    public function checkDatabase(OpresultInterface $opresult, bool $repair = false, array $options = []): void;
+    // Create
+    public function createEntity(array $data = [], array $options = []): object;
+    public function createModel(array $data = [], array $options = []): BaseEntityInterface;
+    public function createClone(BaseEntityInterface $entity, array $changes = [], array $options = []): BaseEntityInterface|false;
+    public function createDto(array $data = [], array $options = []): ?WireEntityDtoInterface;
+    // Informations
     public static function getEntityClassname(): string;
     public function getEntityShortname(): string;
     public function getDtoClassnames(): array;
     public function getRepository(?string $classname = null): ?EntityRepository;
-    // Find
+    // Pagination
+    public function paginatedAction(Closure $callback, ?string $method = null, array $parameters = [], array $options = []): void;
     /**
      * get entities count
      * - uses criteria

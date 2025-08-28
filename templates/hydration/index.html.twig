@@ -39,7 +39,7 @@
 		<ul class="list bg-base-100 rounded-box shadow-md">
 			{# <li class="p-4 pb-2 text-sm opacity-60 tracking-wide">Liste des entités à générer : {{ ready_indexes|length }}</li> #}
 			{% for items in hydradataItems %}
-			<twig:wire:hydra-items-show hydradataItems="{{ items }}" extended="{{ false }}" context="list" icon="{{ true }}" bg="{{ items.index in indexes|keys ? indexes[items.index] : null }}" />
+			<twig:wire:hydra-items-show :hydradataItems="items" :extended="false" context="list" :icon="true" :bg="items.index in indexes|keys ? indexes[items.index] : null" />
 			{% endfor %}
 		</ul>
 		{% endif %}

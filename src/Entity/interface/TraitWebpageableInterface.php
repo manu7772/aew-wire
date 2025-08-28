@@ -1,13 +1,10 @@
 <?php
 namespace Aequation\WireBundle\Entity\interface;
 
-use Twig\Markup;
-
-interface TraitWebpageableInterface extends WireEntityInterface
+interface TraitWebpageableInterface
 {
 
     public function __construct_webpageable(): void;
-    public static function getDefaultWebpageUname(): ?string;
     public function isWebpageRequired(): bool;
     public function setWebpage(?WireWebpageInterface $pageweb = null): static;
     public function getWebpage(): ?WireWebpageInterface;

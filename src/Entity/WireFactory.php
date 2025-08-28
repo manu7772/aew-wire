@@ -63,7 +63,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     public const MIN_PREFERED = 1; // 1 is the minimum number of prefered sections in the database
     public const BY_PREFERED = [];
 
-    #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: WireFactoryRelinkCollection::class, mappedBy: 'parent', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EAGER')]
     #[ORM\OrderBy(['position' => 'ASC'])]
     #[Assert\Valid(groups: ['persist','update'])]
     protected Collection $relinks;

@@ -506,7 +506,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
                 throw new InvalidArgumentException(vsprintf('Error %s line %d: service %s is not an instance of %s for entity of class %s!', [__METHOD__, __LINE__, $service::class, WireEntityServiceInterface::class, $wCmd->name]));
             }
             if(!is_a($wCmd->name, $service->getEntityClassname(), true)) {
-                throw new InvalidArgumentException(vsprintf('Error %s line %d: service %s is not available for entity of class %s!', [__METHOD__, __LINE__, $service::class, WireEntityServiceInterface::class]));
+                throw new InvalidArgumentException(vsprintf('Error %s line %d: service %s (for class %s) is not available for entity of class %s!', [__METHOD__, __LINE__, $service->getName(), $service->getEntityClassname(), $wCmd->name]));
             }
         }
         return $service instanceof WireEntityServiceInterface ? $service : null;

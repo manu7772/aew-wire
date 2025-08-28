@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireEntityInterface;
@@ -29,19 +31,8 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
     public const FILES_FOLDER = 'webpage/';
     public const SEARCH_FILES_DEPTH = ['>=0','<2'];
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireWebpageInterface entities
-        return $opresult;
-    }
 
-    public function entityEventActions(
-        BaseEntityInterface $entity
-    ): void
+    public function entityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void
     {
         if(!is_a($entity, static::ENTITY_CLASS)) {
             if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
@@ -49,7 +40,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         /** @var WireWebpageInterface $entity */
         if($entity->getSelfState()->isNew()) {
             // After created actions...
-            $this->wireEm->defaultEntityEventActions($entity);
+            $this->wireEm->defaultEntityEventActions($entity, $opresult);
             // 1. Add default/prefered Websections
             /** @var WireWebsectionServiceInterface */
             $websectionService = $this->wireEm->getEntityService(WireWebsectionInterface::class);
@@ -59,7 +50,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
         }
         if($entity->getSelfState()->isLoaded()) {
             // After loaded actions...
-            $this->wireEm->defaultEntityEventActions($entity);
+            $this->wireEm->defaultEntityEventActions($entity, $opresult);
         }
         // After all actions...
     }
@@ -275,47 +266,32 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     {
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['w-1'],
-                'sortable' => true,
-            ],
-            'name' => [
-                'classes' => ['text-left'],
-                'sortable' => true,
-            ],
-            'twigfile' => [
-                'sortable' => true,
-            ],
-            'sections' => [
-                // 'classes' => ['w-1'],
-                'label' => 'Nb sections',
-                'view_options' => [
-                    'template' => ['from_string' => '{{ entity.sections.count }}'],
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['w-1'],
+                    'sortable' => true,
                 ],
-                'sortable' => false,
+                'name' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+                'twigfile' => [
+                    'sortable' => true,
+                ],
+                'sections' => [
+                    // 'classes' => ['w-1'],
+                    'label' => 'Nb sections',
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ entity.sections.count }}'],
+                    ],
+                    'sortable' => false,
+                ],
             ],
         ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
-            ],
-        ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

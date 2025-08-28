@@ -25,7 +25,7 @@
         {% endif %}
 
         <ul class="list bg-base-100 rounded-box shadow-md">
-            <twig:wire:hydra-items-show hydradataItems="{{ hydradataItems }}" extended="{{ true }}" context="show" icon="{{ true }}" />
+            <twig:wire:hydra-items-show :hydradataItems="hydradataItems" :extended="true" context="show" :icon="true" />
         </ul>
         {% if others is not null and others.count > 0 %}
         <div class="divider my-4">
@@ -33,7 +33,7 @@
         </div>
         <ul class="list bg-base-100 rounded-box shadow-md">
             {% for other in others %}
-            <twig:wire:hydra-items-show hydradataItems="{{ other }}" extended="{{ true }}" context="show" icon="{{ true }}" />
+            <twig:wire:hydra-items-show :hydradataItems="other" :extended="true" context="show" :icon="true" />
             {% endfor %}
         </ul>
         {% endif %}

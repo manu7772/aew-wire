@@ -12,6 +12,8 @@ use Aequation\WireBundle\Repository\WireLanguageRepository;
 use Aequation\WireBundle\Service\trait\TraitBaseEntityService;
 // Symfony
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
 // PHP
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
@@ -42,6 +44,10 @@ class WireLanguageService implements WireLanguageServiceInterface
         'ja' => 'Asia/Tokyo',
         'zh' => 'Asia/Shanghai',
         // Add more mappings as needed
+    ];
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 1000, // If the number of entities is less or equal than this value, all entities will be loaded in one query
     ];
 
     public function __construct(
@@ -211,16 +217,6 @@ class WireLanguageService implements WireLanguageServiceInterface
         return array_combine($locales, $locales);
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult ??= new Opresult();
-        // Check all WireLanguageInterface entities
-        return $opresult;
-    }
-
 
     /****************************************************************************************************/
     /** PAGINABLE                                                                                       */
@@ -232,44 +228,29 @@ class WireLanguageService implements WireLanguageServiceInterface
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
     {
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['text-center','w-0'],
-                'sortable' => true,
-            ],
-            'locale' => [
-                'classes' => ['text-center','w-0'],
-                'sortable' => true,
-            ],
-            'name' => [
-                'classes' => ['text-center','w-0'],
-                'sortable' => true,
-            ],
-            'timezone' => [
-                'classes' => ['text-center','w-0'],
-                'sortable' => true,
-            ],
-        ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
+                'locale' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
+                'name' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
+                'timezone' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
             ],
         ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

@@ -19,51 +19,49 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
     public const ENTITY_CLASS = WireMenu::class;
     // public const WP_DEFAULT_UNAME = 'wp_page_menu'; // Uname of the default Webpage for this entity
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
+    public function checkDatabase(OpresultInterface $opresult, bool $repair = false, array $options = []): void
     {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireMenuInterface entities
-        // 1. Check if each menu has a Webpage assigned
-        foreach ($this->getRepository()->findAll() as $menu) {
-            if(!$menu->getWebpage()) {
-                if($repair) {
-                    /** @var WireWebpageServiceInterface */
-                    $webpageService = $this->getWireEm()->getEntityService(WireWebpageInterface::class);
-                    if($menu_webpage = $webpageService->getFirstExposableWebpage($menu, true, true)) {
-                        $this->getWireEm()->getEntityManager()->flush();
-                        $opresult->addSuccess(vsprintf('Webpage "%s" assigned to menu "%s".', [
-                            Objects::toDump($menu_webpage),
-                            Objects::toDump($menu)
-                        ]));
-                    }
-                } else {
-                    $opresult->addWarning(vsprintf('%s has no Webpage assigned. Please assign a Webpage to the menu.', [Objects::toDump($menu)]));
-                }
-            }
-        }
-        return $opresult;
+        parent::checkDatabase($opresult, $repair);
+        $this->paginatedAction(
+            callback: function ($entity) use ($opresult, $repair) {
+                /** @var WireMenuInterface $entity */
+                $this->entityCheckActions($entity, $opresult);
+                // if(!$entity->getWebpage()) {
+                //     if($repair) {
+                //         /** @var WireWebpageServiceInterface */
+                //         $webpageService ??= $this->getWireEm()->getEntityService(WireWebpageInterface::class);
+                //         if($menu_webpage = $webpageService->getFirstExposableWebpage($entity, true, true)) {
+                //             $this->getWireEm()->getEntityManager()->flush();
+                //             $opresult->addSuccess(vsprintf('Webpage "%s" assigned to menu "%s".', [
+                //                 Objects::toDebugString($menu_webpage),
+                //                 Objects::toDebugString($entity)
+                //             ]));
+                //         }
+                //     } else if($entity->isWebpageRequired()) {
+                //         $opresult->addWarning(vsprintf('%s has no Webpage assigned. Please assign a Webpage to the menu.', [Objects::toDebugString($entity)]));
+                //     }
+                // }
+                return $repair;
+            },
+            options: array_merge(static::DEFAULT_CHECK_DB_OPTIONS, $options)
+        );
     }
 
-    public function entityEventActions(
-        BaseEntityInterface $entity
-    ): void
-    {
-        if(!is_a($entity, static::ENTITY_CLASS)) {
-            if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
-        }
-        if($entity->getSelfState()->isNew()) {
-            // After created actions...
-            $this->wireEm->defaultEntityEventActions($entity);
-        }
-        if($entity->getSelfState()->isLoaded()) {
-            // After loaded actions...
-            $this->wireEm->defaultEntityEventActions($entity);
-        }
-        // After all actions...
-    }
+    // public function entityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void
+    // {
+    //     if(!is_a($entity, static::ENTITY_CLASS)) {
+    //         if($this->appWire->isDev()) throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), static::ENTITY_CLASS]));
+    //     }
+    //     if($entity->getSelfState()->isNew()) {
+    //         // After created actions...
+    //         $this->wireEm->defaultEntityEventActions($entity, $opresult);
+    //     }
+    //     if($entity->getSelfState()->isLoaded()) {
+    //         // After loaded actions...
+    //         $this->wireEm->defaultEntityEventActions($entity, $opresult);
+    //     }
+    //     // After all actions...
+    // }
 
     public function getMainMenu(): ?WireMenuInterface
     {

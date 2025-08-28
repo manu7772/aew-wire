@@ -22,6 +22,10 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
+    public const DEFAULT_CHECK_DB_OPTIONS = [
+        'flush_one_by_one' => false,
+        'load_all_if_less_or_equal_than' => 100, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+    ];
 
     public const FILES_FOLDER = 'websection/';
     public const CACHE_WS_MODELS_LIFE = null;
@@ -35,14 +39,6 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
     ) {
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        // Check all WireWebsectionInterface entities
-        return $opresult;
-    }
 
     public function getPreferedWebsections(): array
     {

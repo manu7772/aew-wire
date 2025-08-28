@@ -6,6 +6,7 @@ use Aequation\WireBundle\Component\interface\WirePropertyFieldMetadataInterface;
 use Aequation\WireBundle\Component\interface\WirePropertyVirtualFieldMetadataInterface;
 // Symfony
 use Doctrine\ORM\Mapping\FieldMapping;
+use Exception;
 // PHP
 use ReflectionProperty;
 
@@ -49,6 +50,16 @@ class WirePropertyFieldMetadata extends WirePropertyAbstractMetadata implements 
         return count($this->parts) > 0;
     }
 
+    public function getValue(object|null $object = null): mixed
+    {
+        return parent::getValue($object);
+        // try {
+        //     return $this->getAccessor()->getValue($object, $this->mapping_name);
+        // } catch (Exception $e) {
+        //     // Handle exception if needed
+        // }
+        // return null;
+    }
 
     /**************************************************************************************************/
     /** FIELDS                                                                                        */

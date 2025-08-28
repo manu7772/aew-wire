@@ -2,7 +2,10 @@
 
 namespace Aequation\WireBundle\Service\trait;
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Dto\interface\WireEntityDtoInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
@@ -12,15 +15,19 @@ use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\WireEntityManager;
 use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
+use Closure;
 // Symfony
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\ObjectMapper\Attribute\Map;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 // PHP
 use Exception;
+use Knp\Component\Pager\PaginatorInterface;
 use ReflectionClassConstant;
 
 trait TraitBaseEntityService
@@ -67,62 +74,35 @@ trait TraitBaseEntityService
 
 
     /****************************************************************************************************/
-    /** GENERATION                                                                                      */
+    /** CREATE                                                                                          */
     /****************************************************************************************************/
 
-    // public function createEntity(
-    //     array $data = [], // ---> do not forget uname if wanted!
-    //     array $context = []
-    // ): BaseEntityInterface {
-    //     $entity = $this->getWireEm()->getEntitiesMetadata()->newInstance($this->getEntityClassname(), $data, $context);
-    //     if($this->getWireEm()->isGrantsCheckEnabled() && !$this->appWire->isGranted('new', $entity->getClassname())) {
-    //         throw new Exception(vsprintf('Error %s line %d: you are not allowed to create %s%s!', [__METHOD__, __LINE__, $this->getEntityClassname(), $entity->getClassname() !== $this->getEntityClassname() ? ' (initially requested '.$this->getEntityClassname().')' : '']));
-    //     }
-    //     // Add some stuff here...
-    //     return $entity;
-    // }
+    public function createEntity(array $data = [], array $options = []): object
+    {
+        return $this->getWireEm()->createEntity(static::getEntityClassname(), $data, $options);
+    }
 
-    // /**
-    //  * create model
-    //  * 
-    //  * @return BaseEntityInterface
-    //  */
-    // public function createModel(
-    //     array $data = [],
-    //     array $context = []
-    // ): BaseEntityInterface
-    // {
-    //     $model = $this->getWireEm()->getEntitiesMetadata()->newModel($this->getEntityClassname(), $data, $context);
-    //     // Add some stuff here...
-    //     return $model;
-    // }
+    public function createModel(array $data = [], array $options = []): BaseEntityInterface
+    {
+        return $this->getWireEm()->createModel(static::getEntityClassname(), $data, $options);
+    }
 
-    // public function createClone(
-    //     BaseEntityInterface $entity,
-    //     array $changes = [], // ---> do not forget uname if wanted!
-    //     array $context = []
-    // ): BaseEntityInterface|false
-    // {
-    //     throw new Exception(vsprintf('Error %s line %d: method %s not implemented yet for %s.', [__METHOD__, __LINE__, __FUNCTION__, $this->getEntityClassname()]));
-    // }
+    public function createClone(BaseEntityInterface $entity, array $changes = [], array $options = []): BaseEntityInterface|false
+    {
+        return $this->getWireEm()->createClone($entity, $changes, $options);
+    }
 
-    // public function createDto(
-    //     array $data = [],
-    //     array $context = []
-    // ): ?WireEntityDtoInterface
-    // {
-    //     $classes = $this->getDtoClassnames();
-    //     $class = reset($classes);
-    //     if(is_a($class, WireEntityDtoInterface::class, true)) {
-    //         // Needs WireEntityManagerInterface to be passed
-    //         return new $class($data, $this->getWireEm());
-    //     }
-    //     return $class ? new $class($data) : null;
-    // }
+    public function createDto(array $data = [], array $options = []): ?WireEntityDtoInterface
+    {
+        return $this->getWireEm()->createDto(static::getEntityClassname(), $data, $options);
+    }
 
-    public function entityEventActions(
-        BaseEntityInterface $entity
-    ): void
+
+    /****************************************************************************************************/
+    /** CHECK ACTIONS                                                                                   */
+    /****************************************************************************************************/
+
+    public function entityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void
     {
         if(!is_a($entity, $this->getEntityClassname(), true)) {
             throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::getClassname($entity), $this->getEntityClassname()]));
@@ -130,14 +110,44 @@ trait TraitBaseEntityService
         // ... Default event actions for entity
         if($entity->getSelfState()->isNew()) {
             // After created actions...
-            $this->wireEm->defaultEntityEventActions($entity);
+            $this->wireEm->defaultEntityEventActions($entity, $opresult);
         }
         if($entity->getSelfState()->isLoaded()) {
             // After loaded actions...
-            $this->wireEm->defaultEntityEventActions($entity);
+            $this->wireEm->defaultEntityEventActions($entity, $opresult);
         }
         // After all actions...
     }
+
+    public function entityCheckActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null, bool $repair = false): void
+    {
+        $this->wireEm->defaultEntityCheckActions($entity, $opresult, $repair);
+        if(is_a($entity, $this->getEntityClassname())) {
+            if($entity->getSelfState()->isLoaded()) {
+                // After loaded actions...
+            } else {
+                throw new Exception(vsprintf('Error %s line %d: check entity does not works with unloaded entities (got %s)!', [__METHOD__, __LINE__, Objects::toDebugString($entity)]));
+            }
+        } else {
+            throw new Exception(vsprintf('Error %s line %d: entity %s is not a %s!', [__METHOD__, __LINE__, Objects::toDebugString($entity), $this->getEntityClassname()]));
+        }
+    }
+
+    public function checkDatabase(OpresultInterface $opresult, bool $repair = false, array $options = []): void
+    {
+        $serviceOptions = (new ReflectionClassConstant(static::class, 'DEFAULT_CHECK_DB_OPTIONS'))->getValue();
+        $this->paginatedAction(
+            callback: function ($entity) use ($opresult, $repair) {
+                $this->entityCheckActions($entity, $opresult);
+                return $repair;
+            },
+            options: array_merge($serviceOptions, $options)
+        );
+    }
+
+    /****************************************************************************************************/
+    /** INFORMATIONS                                                                                    */
+    /****************************************************************************************************/
 
     /**
      * Get entity classname
@@ -186,7 +196,89 @@ trait TraitBaseEntityService
 
     /****************************************************************************************************/
     /** PAGINABLE                                                                                       */
+    /** @see https://grafikart.fr/tutoriels/symfony-pagination-2191                                     */
     /****************************************************************************************************/
+
+    /**
+     * Paginated action
+     * - Use this method to perform actions on paginated entities
+     * - The callback should return true if the entity has been modified and needs to be flushed
+     *
+     * - Example of usage:
+     *  
+     *   $options = [
+     *      'flush_one_by_one' => false,
+     *      'load_all_if_less_or_equal_than' => 1000,
+     *   ];
+     *   $this->paginatedAction(
+     *       function ($entity) {
+     *           $entity->doUpdate();
+     *           return true;
+     *       },
+     *       $method,
+     *       $parameters,
+     *       $options
+     *   );
+     *
+     * @param Closure $callback
+     * @param string|null $method
+     * @param array $parameters
+     * @param array $options
+     */
+    public function paginatedAction(Closure $callback, ?string $method = null, array $parameters = [], array $options = []): void
+    {
+        $this->getEm();
+        $default_options = [
+            'number_per_page' => 10,
+            'load_all_if_less_or_equal_than' => 0, // If the number of entities is less or equal than this value, all entities will be loaded in one query
+            'flush_one_by_one' => true,
+            'paginator.distinct.enable' => false,
+            'fetch_join_collection' => false, // Set to true if you want to fetch the collection in one query
+        ];
+        $options = array_merge($default_options, $options);
+        $query = !empty($method) ? $this->getRepository()->$method(...$parameters) : $this->getRepository()->createQueryBuilder('r')->getQuery();
+        foreach ($options as $name => $value) {
+            switch (true) {
+                case $name === Paginator::HINT_ENABLE_DISTINCT:
+                    $query->setHint(Paginator::HINT_ENABLE_DISTINCT, $value);
+                    break;
+            }
+        }
+        $paginator = new Paginator($query, $options['fetch_join_collection']);
+        $nbpp = !empty($options['load_all_if_less_or_equal_than']) && $paginator->count() <= $options['load_all_if_less_or_equal_than'] ? $options['load_all_if_less_or_equal_than'] : $options['number_per_page'];
+        $page = 1;
+        $query->setMaxResults($nbpp);
+        $query->setFirstResult(($page - 1) * $nbpp);
+        $nbpages = ceil($paginator->count() / $nbpp);
+        // dump($paginator, $paginator->count());
+        while ($page <= $nbpages) {
+            // dump('*************** Page '.$page.'/'.$nbpages.' > '.count($paginator->getQuery()->getResult()).' result(s) ***************');
+            $flush = false;
+            $unsets = [];
+            foreach ($paginator as $entity) {
+                $doflush = $callback($entity);
+                if($doflush && $options['flush_one_by_one']) {
+                    // dump('*** FLUSHING (ONE BY ONE) ***');
+                    $this->em->flush();
+                    $this->em->clear();
+                    unset($entity);
+                } else {
+                    $flush |= $doflush;
+                    $unsets[spl_object_hash($entity)] = $entity;
+                }
+            }
+            if($flush) {
+                // dump('*** FLUSHING (PAGE '.$page.') ***');
+                $this->em->flush();
+                $this->em->clear();
+            }
+            foreach ($unsets as $unset) {
+                unset($unset);
+            }
+            $page++;
+            $query->setFirstResult(($page - 1) * $nbpp);
+        }
+    }
 
     /**
      * Get paginated entities.
@@ -196,14 +288,12 @@ trait TraitBaseEntityService
      * @param array $parameters
      * @return PaginationInterface
      */
-    public function getPaginated(
-        ?int $page = null,
-        ?string $method = null,
-        array $parameters = []
-    ): PaginationInterface {
-        if (empty($page)) $page = $this->appWire->getRequest()->query->getInt('page', 1);
-        if (empty($method)) $method = 'findPaginated';
+    public function getPaginated(?int $page = null, ?string $method = null, array $parameters = []): PaginationInterface
+    {
+        if (empty($page)) $page = $this->appWire->getRequest()?->query->getInt('page', 1) ?: 1;
+        $method ??= 'findPaginated';
         $query = $this->getRepository()->$method(...$parameters);
+        $query->setHint(Paginator::HINT_ENABLE_DISTINCT, false);
         return $this->paginator->paginate($query, $page);
     }
 
@@ -213,38 +303,9 @@ trait TraitBaseEntityService
      * @param Request $request
      * @return array
      */
-    public function getPaginatedContextData(
-        ?Request $request = null
-    ): array {
-        // throw new Exception(vsprintf('Method %s not implemented yet.', [__METHOD__]));
-        $request ??= $this->appWire->getRequest();
-        $fields =  [
-            'id' => [
-                'classes' => ['w-1'],
-                'sortable' => true,
-            ],
-            // 'name' => [
-            //     'view_options' => [
-            //         'template' => ['from_string' => '{{ entity.name }}{% if entity.firstname is not null %}<span class="pl-2 italic text-sm font-extralight opacity-75"> {{ entity.firstname }}</span>{% endif %}']
-            //     ],
-            //     'sortable' => true,
-            // ],
-        ];
-        $model = $this->getWireEm()->createModel(static::getEntityClassname());
-        $entities = $this->getPaginated();
-        /** @var BaseWireRepository */
-        $repo = $this->getRepository();
-        return [
-            'entities' => $entities,
-            'fields' => $fields,
-            'options' => [
-                'alias' => $repo->getDefaultAlias(),
-                'classname' => $model->getClassname(),
-                'shortname' => $model->getShortname(),
-                'trans_domain' => $model->getTrans_domain(),
-                'actions' => true,
-            ],
-        ];
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
+    {
+        return new PaginatedContextData($this, $options);
     }
 
 

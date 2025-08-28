@@ -61,7 +61,7 @@ class Encoders implements ToolInterface
      * @param string $separator
      * @return string
      */
-    public static function geUniquid($prefix = "", string $separator = '.')
+    public static function getUniquid($prefix = "", string $separator = '.')
     {
         if (is_object($prefix)) $prefix = spl_object_hash($prefix) . '_' . Times::getMicrotimeid() . '@';
         if (!is_string($prefix)) $prefix = md5(json_encode($prefix)) . '_' . Times::getMicrotimeid() . '@';

@@ -1,0 +1,47 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}Check entities{% endblock %}
+
+{% block main_content %}
+{% if not app.devOrSadmin %}
+    {{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
+{% else %}
+    <h1 class="text-3xl font-semibold mb-4">
+        <twig:ux:icon name="tabler:list-check" class="w-8 h-8 inline mr-2"/>
+        Check entities <span class="text-accent">menu</span>
+    </h1>
+    {% if entities.empty %}
+    <twig:wire:alert type="warning">
+        Aucune donnée disponible
+    </twig:wire:alert>
+    {% else %}
+    <ul class="list bg-base-100 rounded-box shadow-md">
+        {% for entity in entities %}
+        <li class="list-row border border-gray-600 mt-1">
+            <div>
+                <div class="text-xl font-semibold text-accent">{{ entity.shortname }}</div>
+                <div class="text-xs font-thin opacity-60">{{ entity.name }}</div>
+            </div>
+            <div>
+                {# ... #}
+            </div>
+            <div class="flex flex-col xl:flex-row gap-1">
+                {% if entity.service %}
+                <a href="{{ path('check_entity', {entity: entity.shortname, repair: 'true'}) }}" class="btn btn-square btn-soft btn-accent" title="Effectuer la réparation">
+                    <twig:ux:icon name="tabler:tool" class="size-[1.2em]"/>
+                </a>
+                <a href="{{ path('check_entity', {entity: entity.shortname, repair: 'false'}) }}" class="btn btn-square btn-soft btn-accent" title="Lancer le rapport d'analyse">
+                    <twig:ux:icon name="tabler:device-desktop-analytics" class="size-[1.2em]"/>
+                </a>
+                {% else %}
+                <div class="italic opacity-60 text-right">
+                    Pas de service d'analyse<br>pour cette entité
+                </div>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endif %}
+{% endblock %}

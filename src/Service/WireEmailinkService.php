@@ -10,14 +10,5 @@ class WireEmailinkService extends WireRelinkService implements WireEmailinkServi
 
     const ENTITY_CLASS = WireEmailink::class;
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireEmailinkInterface entities
-        return $opresult;
-    }
 
 }

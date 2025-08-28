@@ -8,10 +8,10 @@ use Aequation\WireBundle\Entity\interface\TraitPreferedInterface;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireDatabaseCheckerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use Aequation\WireBundle\Service\interface\WireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\trait\TraitBaseService;
 use Aequation\WireBundle\Tools\Objects;
+// Symfony
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -20,7 +20,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
  * Class WireDatabaseChecker
  * @package Aequation\WireBundle\Service
  */
-#[AsAlias(WireDatabaseCheckerInterface::class, public: false)]
+#[AsAlias(WireDatabaseCheckerInterface::class, public: true)]
 #[Autoconfigure(autowire: true, lazy: true)]
 class WireDatabaseChecker implements WireDatabaseCheckerInterface
 {
@@ -148,9 +148,7 @@ class WireDatabaseChecker implements WireDatabaseCheckerInterface
                     $opresult->addDanger(vsprintf('Error %s line %d: no owner found for %s!', [__METHOD__, __LINE__, $classname, Objects::toDebugString($owner)]));
                     if($repair) {
                         // Attribute main admin as owner by default
-                        /** @var WireUserServiceInterface */
-                        $userService ??= $this->appWire->get(WireUserServiceInterface::class);
-                        $admin ??= $userService->getMainAdminUser();
+                        $admin ??= $this->userService->getMainAdminUser();
                         if(empty($admin)) {
                             $opresult->addDanger(vsprintf('Error %s line %d: no main admin found!', [__METHOD__, __LINE__]));
                         } else {

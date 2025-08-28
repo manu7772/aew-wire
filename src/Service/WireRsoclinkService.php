@@ -10,14 +10,5 @@ class WireRsoclinkService extends WireRelinkService implements WireRsoclinkServi
 
     const ENTITY_CLASS = WireRsoclink::class;
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WireRsoclinkInterface entities
-        return $opresult;
-    }
 
 }

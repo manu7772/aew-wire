@@ -1,0 +1,109 @@
+{% extends '@AequationWire/admin/base_admin.html.twig' %}
+
+{% block title %}Check entity {{ metadata_info.shortname|capitalize }} - {{ repair ? 'Rapport de réparation' : 'Rapport d\'analyse' }}{% endblock %}
+
+{% block main_content %}
+    {% if not app.devOrSadmin %}
+
+        {{ include('@AequationWire/admin/partials/_forbidden.html.twig', {}, true) }}
+    {% else %}
+
+        <h1 class="text-3xl font-semibold mb-4">
+            <a href="{{ path('check_index') }}" class="btn btn-square btn-ghost btn-outline mr-2">
+                <twig:ux:icon name="tabler:chevron-left" class="size-[1.2em]"/>
+            </a>
+            <twig:ux:icon name="tabler:list-check" class="w-8 h-8 inline mr-2"/>
+                Check entity
+                <span class="text-accent">
+                    {{ metadata_info.shortname|capitalize }} 
+                    <span class="italic font-thin text-xl"><twig:ux:icon name="{{ repair ? 'tabler:tool' : 'tabler:device-desktop-analytics' }}" class="size-[1.2em] inline"/> {{ repair ? 'Rapport de réparation' : 'Rapport d\'analyse' }}</span>
+                </span>
+        </h1>
+        <div class="divider my-6">
+            {% if repair %}
+            <a href="{{ path('check_entity', {entity: metadata_info.shortname, repair: 'false'}) }}" class="btn btn-soft {{ report.isSuccess ? 'btn-success' : 'btn-error' }}">
+                Lancer le rapport d'analyse <twig:ux:icon name="tabler:device-desktop-analytics" class="size-[1.4em]"/>
+            </a>
+            {% else %}
+            <a href="{{ path('check_entity', {entity: metadata_info.shortname, repair: 'true'}) }}" class="btn btn-soft {{ report.isSuccess ? 'btn-success' : 'btn-error' }}">
+                Effectuer la réparation <twig:ux:icon name="tabler:tool" class="size-[1.4em]"/>
+            </a>
+            {% endif %}
+        </div>
+
+        {% if report is not defined %}
+
+        <twig:wire:alert type="warning">
+            Aucune donnée disponible pour cette entité
+        </twig:wire:alert>
+
+        {% else %}
+
+            {# {% if report.isSuccess %}
+                <twig:wire:alert type="success" class="my-8">
+                    Rapport d'analyse : aucune erreur détectée
+                </twig:wire:alert>
+            {% else %}
+                <twig:wire:alert type="error" class="my-8">
+                    Le rapport d'analyse a révélé des erreurs
+                </twig:wire:alert>
+            {% endif %} #}
+            <div class="tabs tabs-lift">
+
+                <label class="tab">
+                    <input type="radio" name="tab_te_{{ metadata_info.shortname }}" checked="checked"/>
+                    <twig:ux:icon name="tabler:list" class="size-4 me-2"/>
+                    {{ repair ? 'Réparation' : 'Analyse' }}
+                </label>
+                <div class="tab-content bg-base-100 border-base-300 p-2">
+                    <div class="my-2 px-2 border border-accent rounded-md overflow-hidden">
+
+                        {% if report.isSuccess %}
+                        <twig:wire:alert type="success" class="my-2">
+                            Rapport général d'analyse : aucune erreur détectée
+                        </twig:wire:alert>
+                        {% else %}
+                        <twig:wire:alert type="error" class="my-2">
+                            Le rapport d'analyse a révélé des erreurs
+                        </twig:wire:alert>
+                        {% endif %}
+
+                        {% for type,messages in report.messages %}
+                            {% if messages is not empty %}
+                            <twig:wire:alert type="{{ type }}" class="my-2">
+                                {{ messages|join(', ') }}
+                            </twig:wire:alert>
+                            {% endif %}
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+                <label class="tab">
+                    <input type="radio" name="tab_te_{{ metadata_info.shortname }}"/>
+                    <twig:ux:icon name="tabler:info-circle" class="size-4 me-2"/>
+                    Class info
+                </label>
+                <div class="tab-content bg-base-100 border-base-300 p-2">
+                    <div class="my-2 border border-accent rounded-md overflow-hidden">
+                        {{ dump(metadata_info) }}
+                    </div>
+                </div>
+
+                <label class="tab">
+                    <input type="radio" name="tab_te_{{ metadata_info.shortname }}"/>
+                    <twig:ux:icon name="tabler:database-search" class="size-4 me-2"/>
+                    Entities
+                </label>
+                <div class="tab-content bg-base-100 border-base-300 p-2">
+                    <div class="my-2 border border-accent rounded-md overflow-hidden">
+                        
+                    </div>
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+{% endblock %}

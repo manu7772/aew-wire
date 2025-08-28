@@ -16,11 +16,11 @@ abstract class WireWebpageRepository extends WireItemRepository implements WireW
 
     public function findExposables(bool $onlyActive = false): array
     {
-        $qb = $this->createQueryBuilder(self::ALIAS);
+        $qb = $this->newAliasBuilder();
         if ($onlyActive) {
-            $qb->andWhere(self::ALIAS.'.enabled = true');
+            $qb->andWhere(static::ALIAS.'.enabled = true');
         }
-        $qb->andWhere(self::ALIAS.'.wpexposes.elements != :c')
+        $qb->andWhere(static::ALIAS.'.wpexposes.elements != :c')
             ->setParameter('c', json_encode([]));
         return $qb->getQuery()->getResult();
     }

@@ -5,6 +5,7 @@ namespace Aequation\WireBundle\Repository\interface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 // Symfony
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ObjectRepository;
 // use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -18,12 +19,13 @@ interface BaseWireRepositoryInterface extends ServiceEntityRepositoryInterface, 
     public function hasRelation(string $name): bool;
     public static function alias(): string;
     public static function getDefaultAlias(): string;
-
     // basic querys
     public function count(array $criteria = []): int;
     // public function findOneByEuid(string $euid): ?BaseEntityInterface;
     public function findEntityByEuidOrUname(string $euidOrUname): ?BaseEntityInterface;
-
+    // Pagination
+    public function newAliasBuilder(?string $alias = null): QueryBuilder;
+    public function findPaginated(?string $alias = null): Query;
     // Common querys
     public function findAllActives(): array;
     public function findAllInactives(): array;

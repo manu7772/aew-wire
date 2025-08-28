@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Repository\interface;
 
-interface WireUserRepositoryInterface extends BaseWireRepositoryInterface
+interface WireUserRepositoryInterface extends WireItemRepositoryInterface
 {
 
 }

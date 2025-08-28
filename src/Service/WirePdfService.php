@@ -32,15 +32,6 @@ abstract class WirePdfService extends WireItemService implements WirePdfServiceI
         parent::__construct($appWire, $wireEm, $paginator, $normalizer);
     }
 
-    public function checkDatabase(
-        ?OpresultInterface $opresult = null,
-        bool $repair = false
-    ): OpresultInterface
-    {
-        $opresult = parent::checkDatabase($opresult, $repair);
-        // Check all WirePdfInterface entities
-        return $opresult;
-    }
 
     /**
      * Output a PDF from HTML content

@@ -4,6 +4,7 @@ namespace Aequation\WireBundle\Service\interface;
 
 // Aequation
 
+use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataCollectionInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
@@ -88,9 +89,10 @@ interface WireEntityManagerInterface extends WireServiceInterface
     public function count(string $classname, bool|array $criteria = []): int;
     public function findAll(string $classname, bool|array $criteria = [], ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array;
     public function findOneBy(string $classname, int|string $identifier, bool|array $criteria = [], ?array $orderBy = null): ?object;
-    public function defaultEntityEventActions(BaseEntityInterface $entity): void;
-    // public function addPostFlushInfos(PostFlushEventArgs $args): void;
-    // public function getPostFlushInfos(bool $getLastOnly = false): array;
+    // Event & check actions
+    public function defaultEntityEventActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null): void;
+    public function defaultEntityCheckActions(BaseEntityInterface $entity, ?OpresultInterface $opresult = null, bool $repair = false): void;
+
     public function getEntitiesMetadata(): WireClassMetadataManagerInterface;
     public function getEntityMetadata(string|object $objectOrClass): WireClassMetadataInterface;
     public function getBrowserPath(WireImageInterface|WirePdfInterface $media, ?string $filter = null, array $runtimeConfig = [], $resolver = null, $referenceType = UrlGeneratorInterface::ABSOLUTE_URL): ?string;

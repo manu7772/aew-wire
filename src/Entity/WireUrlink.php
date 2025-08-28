@@ -28,13 +28,14 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
     protected ?string $mainlink = null;
 
     public function getALink(
-        ?int $referenceType = null
+        ?int $referenceTypeIfRoute = null,
+        ?array $replaceRouteParams = null
     ): ?string
     {
         if($this->isUrl()) {
             return $this->mainlink;
         } else if($this->isRoute()) {
-            return $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceType ?? Router::ABSOLUTE_PATH);
+            return $this->getEmbededStatus()->getAppWire()->getUrlIfExists($this->mainlink, is_null($replaceRouteParams) ? ($this->getParams() ?: []) : $replaceRouteParams, $referenceTypeIfRoute ?? Router::ABSOLUTE_PATH);
         }
         return null;
     }
@@ -46,12 +47,13 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
     }
 
     public function getUrl(
-        ?int $referenceTypeIfRoute = Router::ABSOLUTE_PATH
+        ?int $referenceTypeIfRoute = Router::ABSOLUTE_PATH,
+        ?array $replaceRouteParams = null
     ): ?string
     {
         return empty($this->mainlink) || $this->isUrl()
             ? $this->mainlink
-            : $this->getEmbededStatus()->appWire->getUrlIfExists($this->mainlink, $this->params, $referenceTypeIfRoute);
+            : $this->getEmbededStatus()->getAppWire()->getUrlIfExists($this->mainlink, is_null($replaceRouteParams) ? ($this->getParams() ?: []) : $replaceRouteParams, $referenceTypeIfRoute ?? Router::ABSOLUTE_PATH);
     }
 
     public function setRoute(?string $route): static
@@ -64,5 +66,6 @@ abstract class WireUrlink extends WireRelink implements WireUrlinkInterface
     {
         return $this->mainlink;
     }
+
 
 }

@@ -10,6 +10,7 @@ use Aequation\WireBundle\Entity\interface\WireItemTranslationInterface;
 use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Enabled;
+use Aequation\WireBundle\Entity\trait\Grantable;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
@@ -33,7 +34,7 @@ use Gedmo\Sortable\Entity\Repository\SortableRepository;
 #[ORM\HasLifecycleCallbacks]
 abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
 {
-    use Datetimed, Enabled, Unamed;
+    use Datetimed, Enabled, Unamed, Grantable;
 
     public const ICON = [
         'ux' => 'tabler:file',
@@ -85,9 +86,9 @@ abstract class WireItem extends MappSuperClassEntity implements WireItemInterfac
         return $this->name ?? '';
     }
 
-    public function setName(string $name): static
+    public function setName(?string $name): static
     {
-        $this->name = trim($name);
+        $this->name = trim((string)$name);
         return $this;
     }
 

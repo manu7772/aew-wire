@@ -1,0 +1,77 @@
+<div{{ attributes }}>
+
+    {# <turbo-frame id="entity-index-{{ classname|shortname|lower }}"> #}
+
+        <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
+            <h2>{{ contextData.title|default(null) is not empty ? contextData.title|trans|raw : 'actions.count'|trans({'%count%': this.entities.getTotalItemCount}, this.trans_domain) }}</h2>
+            {% if contextData.actions or contextData.top_buttons is defined %}
+            <div class="h-full flex flex-row gap-1 items-center">
+                <twig:wire:button action="new" :entity="contextData.classname" type="button" size="sm" :title="false">{{ 'actions.new'|trans({}, contextData.trans_domain) }}</twig:wire:button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-2 w-full text-right">
+            {{ knp_pagination_rel_links(this.entities) }}
+        </div>
+        <div class="overflow-x-auto">
+            <table class="table table-zebra table-pin-rows table-pin-cols">
+                <thead>
+                    <tr>
+                        {% for field_name,field in this.fields %}
+                        {% set name = field.label|default('fields.' ~ field_name)|trans({}, this.trans_domain) %}
+                        {% if name == 'fields.' ~ field_name %}
+                        {% set name = field_name %}
+                        {% endif %}
+                        <th class="whitespace-nowrap align-top">
+                            <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                                {{ knp_pagination_sortable(this.entities, name, [this.alias, field_name]|join('.')) }}
+                            </div>
+                        </th>
+                        {% if loop.first and contextData.actions -%}
+                        <th class="whitespace-nowrap align-top">{{ 'actions.actions'|trans({}, this.trans_domain) }}</th>
+                        {%- endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for entity in this.entities %}
+                    <tr class="hover:bg-base-300 cursor-default{{ entity.active|default(true) ? '' : ' opacity-50 italic' }}">
+                        {% for field_name,field in this.fields %}
+                        <td class="align-top">
+                            <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                                {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: this.entities, entity: entity, trans_domain: this.trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
+                                {{ field_value(entity, field_name, this.trans_domain, field.view_options|default([])) }}
+                                {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: this.entities, entity: entity, trans_domain: this.trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
+                                {% if loop.first and entity.prefered is defined and entity.prefered %}
+                                <span title="{{ 'fields.prefered'|trans({}, this.trans_domain) }}"><twig:ux:icon name="tabler:star-filled" class="w-4 h-4 inline-block ml-1" /></span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% if loop.first and contextData.actions %}
+                        <td class="w-1 align-top">
+                            <div class="flex flex-row justify-center gap-2">
+                                <twig:wire:button action="show" :entity="entity" type="link" size="sm"></twig:wire:button>
+                                <twig:wire:button action="edit" :entity="entity" type="link" size="sm"></twig:wire:button>
+                                <twig:wire:button action="delete" :entity="entity" type="link" size="sm"></twig:wire:button>
+                            </div>
+                        </td>
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="align-top" colspan="100%">{{ 'actions.count'|trans({'%count%': this.entities|length}, this.trans_domain) }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-2 w-full justify-end">
+            {# {{ knp_pagination_rel_links(this.entities) }} #}
+            {{ knp_pagination_render(this.entities) }}
+        </div>
+
+    {# </turbo-frame> #}
+
+</div>

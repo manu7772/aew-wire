@@ -14,7 +14,7 @@ class UnameRepository extends BaseWireRepository implements UnameRepositoryInter
     public function getClassnameByUname(
         string $uname
     ): ?string {
-        $qb = $this->createQueryBuilder(static::ALIAS);
+        $qb = $this->newAliasBuilder();
         $qb->select(static::ALIAS.'.entityEuid')
             ->where(static::ALIAS.'.id = :uname')
             ->setParameter('uname', $uname);
