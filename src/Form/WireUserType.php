@@ -3,42 +3,28 @@ namespace Aequation\WireBundle\Form;
 
 use Aequation\WireBundle\Entity\WireLanguage;
 use Aequation\WireBundle\Entity\WireUser;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUserServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 // Symfony
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
-use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
-use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
-use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\UX\LiveComponent\Form\Type\LiveCollectionType;
 
-class WireUserType extends AbstractType
+class WireUserType extends WireAbstractType
 {
 
     public const ENTITY_CLASS = WireUser::class;
 
-    public readonly string $classname;
-
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WireUserServiceInterface $entityService
-    )
-    {}
-
-    public function getFinalClassname(): string
-    {
-        return $this->classname ??= $this->entityService->getWireEm()->getEntitiesMetadata()->findOneFinal([static::ENTITY_CLASS])->getName();
-    }
+    /** @var WireUserServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -145,6 +131,9 @@ class WireUserType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
+                'attr' => [
+                    'class' => 'btn btn-accent btn-block btn-lg mt-4',
+                ],
                 // 'attr' => [
                 //     // 'data-action' => 'live#action:prevent',
                 //     // 'data-live-action-param' => 'registerType',
@@ -176,26 +165,17 @@ class WireUserType extends AbstractType
             $builder
                 ->add('roles', ChoiceType::class, [
                     'label' => 'fields.roles',
+                    'attr' => [
+                        'class' => 'h-35'
+                    ],
                     'choices' => $choices,
                     'required' => false,
                     'multiple' => true,
-                    'expanded' => true,
+                    'expanded' => false,
                     'priority' => 30
                 ])
             ;
         }
     }
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => $this->getFinalClassname(),
-            'translation_domain' => $this->entityService->getEntityShortname(),
-            'attr' => [
-                // 'novalidate' => true,
-                'data-action' => 'live#action:prevent',
-                'data-live-action-param' => 'registerType',
-            ]
-        ]);
-    }
 }

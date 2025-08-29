@@ -98,8 +98,15 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
      */
     public function getCategoryTypeChoices(): array
     {
-        $choices = $this->getAvailableTypes(true);
-        return array_flip($choices);
+        $choices = [];
+        foreach ($this->getAvailableTypes(true) as $classname => $shortname) {
+            $name = $this->appWire->get('translator')->trans('name', [], $shortname);
+            if($name === 'name') {
+                $name = $shortname;
+            }
+            $choices[ucfirst($name)] = $classname;
+        }
+        return $choices;
     }
 
 

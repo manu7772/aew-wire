@@ -3,7 +3,7 @@
 
     {% macro level(item, class = null) %}
         {% import _self as self %}
-        <li class="rounded-box {{ item.open ? ' bg-accent/30' }}">
+        <li class="rounded-sm {{ item.open ? ' bg-accent/30' }}">
             {% if item.empty %}
             <a href="{{ item.url }}">{% if item.icon|default(false) %}<twig:ux:icon name="{{ item.icon }}" class="size-4"/>{% endif %}{{ item.title }}</a>
             {% else %}

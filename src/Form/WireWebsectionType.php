@@ -43,7 +43,7 @@ class WireWebsectionType extends AbstractType
         $builder->add('twigfile', ChoiceType::class, [
             'label' => 'fields.twigfile',
             // 'label_attr' => ['class' => 'fieldset-legend'],
-            'attr' => ['class' => 'select'],
+            // 'attr' => ['class' => 'select'],
             'choices' => $this->entityService->getWebsectionModels(),
             'multiple' => false,
             'expanded' => false,
@@ -69,7 +69,10 @@ class WireWebsectionType extends AbstractType
         ]);
         $builder->add('submit', SubmitType::class, [
             'label' => 'actions.save',
-            'attr' => ['data-submit-actions' => 'save_index'],
+            'attr' => [
+                'class' => 'btn btn-accent btn-block btn-lg mt-4',
+                'data-submit-actions' => 'save_index'
+            ],
             'priority' => -1
         ]);
 

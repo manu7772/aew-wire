@@ -48,6 +48,9 @@ class WireFactoryType extends AbstractType
             ])
             ->add('associates', EntityType::class, [
                 'label' => 'fields.associates',
+                'attr' => [
+                    'class' => 'h-35'
+                ],
                 'by_reference' => true,
                 'class' => $this->wireEm->findOneFinal(WireUserInterface::class)->name,
                 'choice_label' => 'email',

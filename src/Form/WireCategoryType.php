@@ -9,6 +9,7 @@ use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 // Symfony
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -36,6 +37,15 @@ class WireCategoryType extends AbstractType
                 'required' => true,
                 'priority' => 25
             ])
+            ->add('type', ChoiceType::class, [
+                'label' => 'fields.type',
+                'choices' => $this->entityService->getCategoryTypeChoices(false, false, true),
+                'help' => 'fields.help.type',
+                'multiple' => false,
+                'expanded' => false,
+                'required' => true,
+                'priority' => 15
+            ])
             ->add('description', null, [
                 'label' => 'fields.description',
                 'required' => false,
@@ -43,7 +53,9 @@ class WireCategoryType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => ['data-submit-actions' => 'save_index'],
+                'attr' => [
+                    'class' => 'btn btn-accent btn-block btn-lg mt-4',
+                ],
                 'priority' => -1
             ])
         ;
@@ -55,6 +67,11 @@ class WireCategoryType extends AbstractType
         $resolver->setDefaults([
             'data_class' => WireCategory::class,
             'translation_domain' => $this->entityService->getEntityShortname(),
+            'attr' => [
+                // 'novalidate' => true,
+                'data-action' => 'live#action:prevent',
+                'data-live-action-param' => 'registerType',
+            ],
         ]);
     }
 }

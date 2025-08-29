@@ -1,5 +1,5 @@
 {
-    "editor.minimap.autohide": false,
+    "editor.minimap.autohide": "none",
     "editor.minimap.enabled": true,
     "files.autoSave": "onFocusChange",
     "twiggy.framework": "ignore",

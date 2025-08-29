@@ -1,30 +1,29 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
-use Aequation\WireBundle\Entity\WireWebpage;
-use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
-// Symfony
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Aequation\WireBundle\Entity\WireWebpage;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+// Symfony
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
+use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 
-class WireWebpageType extends AbstractType
+class WireWebpageType extends WireAbstractType
 {
 
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WireEntityManagerInterface $wireEm,
-        private WireWebpageServiceInterface $entityService
-    )
-    {}
+    public const ENTITY_CLASS = WireWebpage::class;
+
+    /** @var WireWebpageServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -61,12 +60,15 @@ class WireWebpageType extends AbstractType
             /** @see https://symfony.com/doc/current/reference/forms/types/choice.html */
             $builder->add('sections', EntityType::class, [
                 'label' => 'fields.sections',
+                'attr' => [
+                    'class' => 'h-35'
+                ],
                 'by_reference' => true,
                 'class' => $this->wireEm->findOneFinal(WireWebsectionInterface::class)->name,
                 'choices' => $this->entityService->getWebsectionsChoices(),
                 'choice_label' => 'name',
                 'multiple' => true,
-                'expanded' => true,
+                'expanded' => false,
                 'required' => true,
                 'help' => 'Choisissez les sections contenues dans cette page web',
                 'priority' => 50
@@ -91,17 +93,12 @@ class WireWebpageType extends AbstractType
         ]);
         $builder->add('submit', SubmitType::class, [
             'label' => 'actions.save',
-            'attr' => ['data-submit-actions' => 'save_index'],
+            'attr' => [
+                'class' => 'btn btn-accent btn-block btn-lg mt-4',
+            ],
             'priority' => -1
         ]);
 
     }
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => WireWebpage::class,
-            'translation_domain' => $this->entityService->getEntityShortname(),
-        ]);
-    }
 }

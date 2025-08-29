@@ -152,14 +152,19 @@ class EntityForm extends AbstractController
                 $entity = $form->getData();
                 $em = $this->wireEm->getEntityManager();
                 $em->persist($entity);
-                $em->flush();
-                return $this->redirectToRoute('admin_'.$entity->getShortname(true).'_show', ['id' => $entity->getId()]);
+                try {
+                    $em->flush();
+                    return $this->redirectToRoute('admin_'.$entity->getShortname(true).'_show', ['id' => $entity->getId()]);
+                } catch (\Throwable $th) {
+                    $this->errorMessage = "Des erreurs à l'enregistrement ont été détectées.";
+                    // $this->resetForm();
+                }
             } else {
                 // Handle validation errors
                 $this->errorMessage = "Des erreurs de validation ont été détectées.";
             }
         }
-        // $this->resetForm();
+        $this->resetForm();
     }
 
 }

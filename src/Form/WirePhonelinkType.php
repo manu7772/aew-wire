@@ -51,10 +51,10 @@ class WirePhonelinkType extends AbstractType
             'data_class' => $this->getFinalClassname(),
             'translation_domain' => $this->entityService->getEntityShortname(),
             'attr' => [
-                'novalidate' => true,
+                // 'novalidate' => true,
                 'data-action' => 'live#action:prevent',
                 'data-live-action-param' => 'registerType',
-            ]
+            ],
         ]);
     }
 
