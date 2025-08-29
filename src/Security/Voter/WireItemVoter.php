@@ -2,6 +2,8 @@
 namespace Aequation\WireBundle\Security\Voter;
 
 // Aequation
+
+use Aequation\WireBundle\Entity\interface\TraitOwnerInterface;
 use Aequation\WireBundle\Entity\WireItem;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 // Symfony
@@ -43,10 +45,10 @@ abstract class WireItemVoter extends BaseEntityVoter
                         return $this->appWire->isGranted('ROLE_COLLABORATOR');
                         break;
                     case 'edit':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
+                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && (!($attribute instanceof TraitOwnerInterface) || $attribute->getOwner() === $this->appWire->getUser()));
                         break;
                     case 'delete':
-                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
+                        return $this->appWire->isGranted('ROLE_ADMIN') || ($this->appWire->isGranted('ROLE_USER') && (!($attribute instanceof TraitOwnerInterface) || $attribute->getOwner() === $this->appWire->getUser()));
                         break;
                     default:
                         $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
@@ -69,10 +71,10 @@ abstract class WireItemVoter extends BaseEntityVoter
                         return $attribute->isActive();
                         break;
                     case 'edit':
-                        return ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
+                        return ($this->appWire->isGranted('ROLE_USER') && (!($attribute instanceof TraitOwnerInterface) || $attribute->getOwner() === $this->appWire->getUser()));
                         break;
                     case 'delete':
-                        return ($this->appWire->isGranted('ROLE_USER') && $attribute->getOwner() === $this->appWire->getUser());
+                        return ($this->appWire->isGranted('ROLE_USER') && (!($attribute instanceof TraitOwnerInterface) || $attribute->getOwner() === $this->appWire->getUser()));
                         break;
                     default:
                         $vote->addReason(vprintf('Error %s line %d: Unknown subject %s', [__METHOD__, __LINE__, $subject]));
