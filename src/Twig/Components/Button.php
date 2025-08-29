@@ -98,6 +98,7 @@ class Button
     public ?string $trans_domain;
     public bool|string $title;
     public null|string|bool $confirm;
+    public array $size;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,
@@ -157,10 +158,10 @@ class Button
                 // Icon name or false
                 $this->icon = $icon;
             }
-            $size = self::SIZES[$size] ?? self::SIZES['md'];
-            $this->icon_class = Iterables::toClassList($size['icon'].' '.$action_styles['hover'].' '.$icon_class, true);
-            $this->btn_class = Iterables::toClassList(static::TYPES[$type].' '.$size['button'].' '.$btn_class, true);
-            $this->text_class = Iterables::toClassList($size['text'].' '.$text_class, true);
+            $this->size = self::SIZES[$size] ?? self::SIZES['md'];
+            $this->icon_class = Iterables::toClassList($this->size['icon'].' '.$action_styles['hover'].' '.$icon_class, true);
+            $this->btn_class = Iterables::toClassList(static::TYPES[$type].' '.$this->size['button'].' '.$btn_class, true);
+            $this->text_class = Iterables::toClassList($this->size['text'].' '.$text_class, true);
             $this->trans_domain = $trans_domain;
             $this->title = $title === true ? $action_styles['default_text'] : $title;
         }
@@ -193,7 +194,8 @@ class Button
         $resolver->setAllowedValues('type', ['button', 'link', 'ghost']);
         // size
         $resolver->setAllowedTypes('size', ['string', 'null']);
-        $resolver->setAllowedValues('size', array_keys(self::SIZES));
+        $resolver->setDefault('size', 'md');
+        $resolver->setAllowedValues('size', array_merge([null], array_keys(self::SIZES)));
         // action: action name or URL
         $resolver->setRequired('action');
         $resolver->setAllowedTypes('action', ['string']);

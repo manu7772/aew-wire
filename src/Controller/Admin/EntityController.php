@@ -116,7 +116,9 @@ abstract class EntityController extends AbstractController
         ?BaseEntityInterface $entity
     ): Response
     {
-        if($entity) $this->denyAccessUnlessGranted('show', $entity, $this->translator->trans('access_denied'));
+        if($entity) {
+            $this->denyAccessUnlessGranted('show', $entity, $this->translator->trans('access_denied'));
+        }
         return $this->render($this->getTemplatePath('show'), [
             'entity' => $entity,
             'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),

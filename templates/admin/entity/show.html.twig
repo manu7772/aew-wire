@@ -1,14 +1,13 @@
 {% extends '@AequationWire/admin/base_admin.html.twig' %}
-{% import '@AequationWire/admin/partials/_elements.html.twig' as elements %}
 {% trans_default_domain entity.trans_domain %}
 
 {% block title %}{{ 'name'|trans }} {{ entity }}{% endblock %}
 
 {% block main_content %}
-    {% if entity is empty %}
+    {% if not entity %}
 
     {% block empty_data %}
-    {{ elements.alert_warning('not_found'|trans) }}
+    <twig:wire:alert type="warning" icon="tabler:info-circle">{{ 'not_found'|trans }}</twig:wire:alert>
     {% endblock %}
 
     {% else %}
@@ -17,9 +16,9 @@
     <div class="flex flex-row gap-2 flex-wrap justify-between items-start mb-2">
         <h1 class="font-bold text-info text-2xl"><twig:ux:icon name="{{ entity.icon('ux') }}" class="w-8 inline pr-1" />{{ entity }}</h1>
         <div class="h-full flex flex-row gap-1 items-center">
-            {{ elements.button('index', entity.shortname) }}
-            {{ elements.button('delete', entity) }}
-            {{ elements.button('edit', entity) }}
+            <twig:wire:button action="index" :entity="entity.shortname"></twig:wire:button>
+            <twig:wire:button action="delete" :entity="entity"></twig:wire:button>
+            <twig:wire:button action="edit" :entity="entity"></twig:wire:button>
         </div>
     </div>
     {% endblock %}

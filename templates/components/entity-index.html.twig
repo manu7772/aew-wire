@@ -6,7 +6,7 @@
             <h2>{{ contextData.title|default(null) is not empty ? contextData.title|trans|raw : 'actions.count'|trans({'%count%': this.entities.getTotalItemCount}, this.trans_domain) }}</h2>
             {% if contextData.actions or contextData.top_buttons is defined %}
             <div class="h-full flex flex-row gap-1 items-center">
-                <twig:wire:button action="new" :entity="contextData.classname" type="button" size="sm" :title="false">{{ 'actions.new'|trans({}, contextData.trans_domain) }}</twig:wire:button>
+                <twig:wire:button action="new" :entity="contextData.classname" type="button" :title="false">{{ 'actions.new'|trans({}, contextData.trans_domain) }}</twig:wire:button>
             </div>
             {% endif %}
         </div>

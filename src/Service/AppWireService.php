@@ -1860,6 +1860,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
             'Website' => [
                 WireWebpageInterface::class,
                 WireWebsectionInterface::class,
+                WireMenuInterface::class,
             ],
             'Medias' => [
                 WirePdfInterface::class,
@@ -1871,61 +1872,5 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // dump($menu);
         return $menu;
     }
-
-    // public function getAdminMenu(array $instances = []): MenuComponentInterface
-    // {
-    //     $instances = count($instances) ? $instances : [WireEntityInterface::class];
-    //     $groups = [];
-    //     foreach ($this->get(WireEntityManagerInterface::class)->getEntitiesMetadata()->setTypeCompareOr()->findFinals($instances) as $classname => $wCmd) {
-    //         /** @var WireClassMetadataInterface $wCmd */
-    //         if($this->isGranted('index', $wCmd->name)) {
-    //             $group_s = $wCmd->getClassAttributes(AdminGroup::class);
-    //             if(!empty($group_s)) {
-    //                 $group = reset($group_s);
-    //                 $groups[$group->group] ??= [
-    //                     'order' => $group->order,
-    //                     'name' => $group->group,
-    //                     'icon' => $group->icon,
-    //                     'entities' => [],
-    //                 ];
-    //                 $groups[$group->group]['entities'][$wCmd->name] = [
-    //                     'wCmd' => $wCmd,
-    //                     'urls' => [
-    //                         'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
-    //                         'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
-    //                     ],
-    //                 ];
-    //             } else {
-    //                 $groups[Objects::getShortname($classname)] ??= [
-    //                     'order' => null,
-    //                     'name' => Objects::getShortname($classname),
-    //                     'icon' => $classname::ICON['ux'] ?? BaseMappSuperClassEntity::ICON['ux'],
-    //                     'entities' => [],
-    //                 ];
-    //                 $groups[Objects::getShortname($classname)]['entities'][$wCmd->name] = [
-    //                     'wCmd' => $wCmd,
-    //                     'urls' => [
-    //                         'index' => $this->isGranted('index', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_index' : null,
-    //                         'new' => $this->isGranted('new', $wCmd->name) ? 'admin_'.strtolower($wCmd->getShortname()).'_new' : null,
-    //                     ],
-    //                 ];
-    //             }
-    //         }
-    //     }
-    //     uasort( // --> or use uasort to preserve keys
-    //         $groups,
-    //         function (array $a, array $b) {
-    //             if(null === $a['order']) return 2;
-    //             if(null === $b['order']) return -2;
-    //             return $a['order'] <=> $b['order'];
-    //         }
-    //     );
-    //     $ord = 0;
-    //     foreach ($groups as $name => $group) {
-    //         $groups[$name]['order'] = $ord++;
-    //     }
-    //     // dump(new MenuComponent($groups, $this->getRouterInfo()));
-    //     return new MenuComponent($groups, $this->getRouterInfo());
-    // }
 
 }

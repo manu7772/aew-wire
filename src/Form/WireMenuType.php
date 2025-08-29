@@ -16,13 +16,19 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class WireMenuType extends AbstractType
 {
 
+    public const ENTITY_CLASS = WireMenu::class;
+
+    public readonly string $classname;
+
     public function __construct(
         private TranslatorInterface $translator,
-        private WireEntityManagerInterface $wireEm,
         private WireMenuServiceInterface $entityService
     )
+    {}
+
+    public function getFinalClassname(): string
     {
-        
+        return $this->classname ??= $this->entityService->getWireEm()->getEntitiesMetadata()->findOneFinal([static::ENTITY_CLASS])->getName();
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -45,14 +51,9 @@ class WireMenuType extends AbstractType
                 'required' => true,
                 'priority' => 25
             ])
-            ->add('description', null, [
-                'label' => 'fields.description',
-                'required' => false,
-                'priority' => 5
-            ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => ['data-submit-actions' => 'save_index'],
+                // 'attr' => ['data-submit-actions' => 'save_index'],
                 'priority' => -1
             ])
         ;
@@ -62,8 +63,13 @@ class WireMenuType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => WireMenu::class,
+            'data_class' => $this->getFinalClassname(),
             'translation_domain' => $this->entityService->getEntityShortname(),
+            'attr' => [
+                // 'novalidate' => true,
+                'data-action' => 'live#action:prevent',
+                'data-live-action-param' => 'registerType',
+            ]
         ]);
     }
 }

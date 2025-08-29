@@ -1,18 +1,20 @@
 <?php
 namespace Aequation\WireBundle\Service;
 
-use Aequation\WireBundle\Component\interface\OpresultInterface;
-use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
-use Aequation\WireBundle\Entity\interface\WireEntityInterface;
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
-use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Exception;
+use Aequation\WireBundle\Tools\Objects;
 use Aequation\WireBundle\Entity\WireMenu;
 use Aequation\WireBundle\Form\WireMenuType;
+use Aequation\WireBundle\Component\PaginatedContextData;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
+use Aequation\WireBundle\Entity\interface\WireEntityInterface;
+use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+// PHP
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
-use Aequation\WireBundle\Tools\Objects;
-// PHP
-use Exception;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 
 abstract class WireMenuService extends WireEcollectionService implements WireMenuServiceInterface
 {
@@ -69,6 +71,41 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
     {
         $menu = $this->findOneBy(null, ['prefered' => true]);
         return $menu instanceof WireMenuInterface ? $menu : null;
+    }
+
+
+    /****************************************************************************************************/
+    /** PAGINABLE                                                                                       */
+    /****************************************************************************************************/
+
+    /**
+     * Get paginated context data.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
+    {
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['text-center','w-0'],
+                    'sortable' => true,
+                ],
+                'name' => [
+                    'sortable' => true,
+                ],
+                'items' => [
+                    // 'classes' => ['w-1'],
+                    // 'label' => 'Nb items',
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ entity.items.count }}'],
+                    ],
+                    'sortable' => false,
+                ],
+            ],
+        ];
+        return new PaginatedContextData($this, $options);
     }
 
 }
