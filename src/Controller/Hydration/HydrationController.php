@@ -4,12 +4,13 @@ namespace Aequation\WireBundle\Controller\Hydration;
 use Aequation\WireBundle\Component\interface\HydradataCollectionInterface;
 use Aequation\WireBundle\Component\interface\HydradataItemsInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
-use Exception;
 // Symfony
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+// PHP
+use Exception;
 
 #[Route('/hydration', name: 'hydration_')]
 class HydrationController extends AbstractController

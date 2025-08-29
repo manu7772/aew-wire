@@ -14,7 +14,7 @@
             <fieldset class="fieldset w-full bg-base-200 border-base-200 rounded-box border rounded-lg p-4">
                 <legend class="fieldset-legend px-2">Accéder au site de test</legend>
                 <div class="join mx-auto">
-                    <input type="text" class="input join-item" name="demo_password" id="_demo_password" placeholder="Entrez le mot de passe ici" value={{ app.dev ? password|default("") : "" }} autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" />
+                    <input type="text" class="input join-item" name="demo_password" id="_demo_password" placeholder="Entrez le mot de passe ici" value="{{ app.dev ? password|default('') : '' }}" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" />
                     <button name="submit_password" id="_submit_password" class="btn join-item btn-info">Accéder</button>
                 </div>
             </fieldset>
