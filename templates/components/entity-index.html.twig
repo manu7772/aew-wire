@@ -39,11 +39,11 @@
                     <tr class="hover:bg-base-300 cursor-default{{ entity.active|default(true) ? '' : ' opacity-50 italic' }}">
                         {% for field_name,field in this.fields %}
                         <td class="align-top">
-                            <div class="{{ field.classes is defined ? field.classes|join(' ') }}">
+                            <div class="{{ field.classes is defined ? field.classes|join(' ') }} whitespace-nowrap">
                                 {{ field.view_options.template_before is defined ? self.include_template(field.view_options.template_before, {entities: this.entities, entity: entity, trans_domain: this.trans_domain, field: field, options: options}, 'template_before_' ~ options.shortname|lower ~ '_index') }}
                                 {{ field_value(entity, field_name, this.trans_domain, field.view_options|default([])) }}
                                 {{ field.view_options.template_after is defined ? self.include_template(field.view_options.template_after, {entities: this.entities, entity: entity, trans_domain: this.trans_domain, field: field, options: options}, 'template_after_' ~ options.shortname|lower ~ '_index') }}
-                                {% if loop.first and entity.prefered is defined and entity.prefered %}
+                                {% if loop.first and entity.prefered|default(false) %}
                                 <span title="{{ 'fields.prefered'|trans({}, this.trans_domain) }}"><twig:ux:icon name="tabler:star-filled" class="w-4 h-4 inline-block ml-1" /></span>
                                 {% endif %}
                             </div>

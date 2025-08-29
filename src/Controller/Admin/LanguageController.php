@@ -2,7 +2,7 @@
 namespace Aequation\WireBundle\Controller\Admin;
 
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
-use Aequation\WireBundle\Form\LanguageType;
+use Aequation\WireBundle\Form\WireLanguageType;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 // Symfony
@@ -20,6 +20,6 @@ final class LanguageController extends EntityController
 {
 
     public const ENTITY_CLASS = WireLanguageInterface::class;
-    public const FORM_CLASS = LanguageType::class;
+    // public const FORM_CLASS = WireLanguageType::class;
 
 }

@@ -17,7 +17,7 @@
     {% endblock %}
 
     {% block entitydata %}
-    {% include ['@AequationWire/admin/entity/' ~ entity.shortname|lower ~ '/_form.html.twig', '@AequationWire/admin/entity/_form.html.twig'] %}
+    <twig:wire:entity-form :entity="entity"/>
     {% endblock %}
 
 {% endblock %}

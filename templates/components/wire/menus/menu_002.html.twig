@@ -22,13 +22,63 @@
     {# @see https://daisyui.com/components/menu/#collapsible-submenu #}
     {% import _self as self %}
 
-    {% if computed.elements.count > 0 %}
     {# <h2>{{ computed.elements.title }}</h2> #}
     <ul class="menu rounded-box w-full">
-        {% for item_L1 in computed.elements %}
+
+        <li>
+            {% if app.isRouteAdmin() %}
+            <a href="{{ path(app.routeHome) }}" class="flex items-center p-2 text-base font-normal rounded-lg">
+                <twig:ux:icon name="tabler:world-www" aria-hidden="true" class="flex-shrink-0 w-6 h-6 transition duration-75" />
+                <span class="ml-3 font-condensed">{{ 'homepage'|trans|capitalize }}</span>
+            </a>
+            {% else %}
+            <a href="{{ path(app.routeAdmin) }}" class="flex items-center p-2 text-base font-normal rounded-lg">
+                <twig:ux:icon name="tabler:dashboard-filled" aria-hidden="true" class="flex-shrink-0 w-6 h-6 transition duration-75" />
+                <span class="ml-3 font-condensed">{{ 'dashboard'|trans|capitalize }}</span>
+            </a>
+            {% endif %}
+        </li>
+
+        {% for item_L1 in computed.elements|default([]) %}
         {{ self.level(item_L1) }}
         {% endfor %}
+
+        {% if app.devOrSadmin %}
+        <li>
+            {% set open = app.current_route matches '/^(sadmin|classmetadata|hydration)_/' %}
+            <button type="button" aria-expanded="{{ open|json_encode }}" class="{{ open ? 'font-bold ' }}flex items-center p-2 w-full text-base font-normal rounded-lg transition duration-75" aria-controls="dropdown-super-admin" data-collapse-toggle="dropdown-super-admin">
+                <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ 'ROLE_SUPER_ADMIN'|trans }}</span>
+                <twig:ux:icon name="tabler:chevron-down" aria-hidden="true" class="w-6 h-6" />
+            </button>
+            <ul id="dropdown-super-admin" class="{{ not open ? 'hidden ' }}py-2 space-y-2">
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('sadmin_debug_to_optimize') }}" class="{{ app.isCurrentRoute('sadmin_debug_to_optimize') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:align-box-bottom-center" class="w-5 h-5 inline-block mr-2" />Optimisations</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('sadmin_sandbox_tailwind') }}" class="{{ app.isCurrentRoute('sadmin_sandbox_tailwind') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:brand-tailwind" class="w-5 h-5 inline-block mr-2" />Tailwind Sandbox</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('sadmin_sandbox_dto') }}" class="{{ app.isCurrentRoute('sadmin_sandbox_dto') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:object-scan" class="w-5 h-5 inline-block mr-2" />DTO Sandbox</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('sadmin_sandbox_uuid') }}" class="{{ app.isCurrentRoute('sadmin_sandbox_uuid') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:key" class="w-5 h-5 inline-block mr-2" />UUID Sandbox</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('classmetadata_index') }}" class="{{ app.isCurrentRoute('classmetadata_index') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:database-cog" class="w-5 h-5 inline-block mr-2" />Database structure</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('check_index') }}" class="{{ app.isCurrentRoute('check_index') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:list-check" class="w-5 h-5 inline-block mr-2" />Check entities</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('hydration_index') }}" class="{{ app.isCurrentRoute('hydration_index') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:database-plus" class="w-5 h-5 inline-block mr-2" />Hydration</a>
+                </li>
+                <li>
+                    <a{{ data_turbo(false) }} href="{{ path('demo_page') }}" class="{{ app.isCurrentRoute('demo_page') ? 'font-bold ' }}flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg transition duration-75"><twig:ux:icon name="tabler:file-description" class="w-5 h-5 inline-block mr-2" />Demo pages</a>
+                </li>
+            </ul>
+        </li>
+        {% endif %}
+
     </ul>
-    {% endif %}
         
 </div>

@@ -215,7 +215,7 @@ abstract class TypedCollection implements TypedCollectionInterface
         return isset($this->elements[$key]) || array_key_exists($key, $this->elements);
     }
 
-    public function contains(mixed $element)
+    public function contains(mixed $element): bool
     {
         return in_array($element, $this->elements, true);
     }
@@ -315,7 +315,7 @@ abstract class TypedCollection implements TypedCollectionInterface
         return $this->createFrom(array_map($func, $this->elements));
     }
 
-    public function reduce(Closure $func, $initial = null)
+    public function reduce(Closure $func, $initial = null): mixed
     {
         return array_reduce($this->elements, $func, $initial);
     }

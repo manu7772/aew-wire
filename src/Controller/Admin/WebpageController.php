@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\WebpageType;
+use Aequation\WireBundle\Form\WireWebpageType;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class WebpageController extends EntityController
 {
 
     public const ENTITY_CLASS = WireWebpageInterface::class;
-    public const FORM_CLASS = WebpageType::class;
+    // public const FORM_CLASS = WireWebpageType::class;
 
 }

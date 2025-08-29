@@ -39,6 +39,7 @@ interface WireEntityServiceInterface extends WireServiceInterface, EntityService
     public static function getEntityClassname(): string;
     public function getEntityShortname(): string;
     public function getDtoClassnames(): array;
+    public function getEntityType(): string;
     public function getRepository(?string $classname = null): ?EntityRepository;
     // Pagination
     public function paginatedAction(Closure $callback, ?string $method = null, array $parameters = [], array $options = []): void;

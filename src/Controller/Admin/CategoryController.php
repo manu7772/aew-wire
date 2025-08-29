@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\CategoryType;
+use Aequation\WireBundle\Form\WireCategoryType;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class CategoryController extends EntityController
 {
 
     public const ENTITY_CLASS = WireCategoryInterface::class;
-    public const FORM_CLASS = CategoryType::class;
+    public const FORM_CLASS = WireCategoryType::class;
 
 }

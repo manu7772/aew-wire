@@ -11,6 +11,7 @@ use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Entity\WireWebpage;
+use Aequation\WireBundle\Form\WireWebpageType;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
@@ -26,6 +27,7 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
 {
 
     public const ENTITY_CLASS = WireWebpage::class;
+    public const ENTITY_TYPE = WireWebpageType::class;
 
     public const CACHE_WP_MODELS_LIFE = null;
     public const FILES_FOLDER = 'webpage/';
@@ -280,6 +282,9 @@ abstract class WireWebpageService extends WireItemService implements WireWebpage
                 ],
                 'twigfile' => [
                     'sortable' => true,
+                    'view_options' => [
+                        'template' => ['from_string' => '{{ entity.twigfileName }}'],
+                    ],
                 ],
                 'sections' => [
                     // 'classes' => ['w-1'],

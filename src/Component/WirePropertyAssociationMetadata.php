@@ -47,8 +47,8 @@ class WirePropertyAssociationMetadata extends WirePropertyAbstractMetadata imple
             // Not for subclasses
             $this->mapping_name = $this->name;
             $this->mapping = $this->classMetadata->getAssociationMapping($this->mapping_name);
-            $this->inversedBy = $this->mapping instanceof OwningSideMapping && strlen($this->mapping->inversedBy) > 0 ? $this->mapping->inversedBy : false; // inverse field name
-            $this->mappedBy = $this->mapping instanceof InverseSideMapping && strlen($this->mapping->mappedBy) > 0 ? $this->mapping->mappedBy : false; // mapped field name
+            $this->inversedBy = $this->mapping instanceof OwningSideMapping && strlen((string) $this->mapping->inversedBy) > 0 ? $this->mapping->inversedBy : false; // inverse field name
+            $this->mappedBy = $this->mapping instanceof InverseSideMapping && strlen((string) $this->mapping->mappedBy) > 0 ? $this->mapping->mappedBy : false; // mapped field name
             $this->targetEntity = $this->wCmdm->getWireClassMetadata($this->mapping->targetEntity) ?: false;
             if($this->targetEntity?->isBetween() ?? false) {
                 foreach ($this->targetEntity->getAssociationMappings() as $map) {

@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\ArticleType;
+use Aequation\WireBundle\Form\WireArticleType;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class ArticleController extends EntityController
 {
 
     public const ENTITY_CLASS = WireArticleInterface::class;
-    public const FORM_CLASS = ArticleType::class;
+    // public const FORM_CLASS = WireArticleType::class;
 
 }

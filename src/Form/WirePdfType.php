@@ -1,12 +1,8 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Aequation\WireBundle\Entity\interface\WireUserInterface;
-use Aequation\WireBundle\Entity\WireCategory;
-use Aequation\WireBundle\Entity\WireUser;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
-use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Aequation\WireBundle\Entity\WirePdf;
+use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
 // Symfony
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -14,13 +10,12 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class CategoryType extends AbstractType
+class WirePdfType extends AbstractType
 {
 
     public function __construct(
         private TranslatorInterface $translator,
-        private WireEntityManagerInterface $wireEm,
-        private WireCategoryServiceInterface $entityService
+        private WirePdfServiceInterface $entityService
     )
     {
         
@@ -28,8 +23,8 @@ class CategoryType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /** @var WireCategory */
-        // $category = $builder->getData();
+        /** @var WirePdf */
+        // $pdf = $builder->getData();
         $builder
             ->add('name', null, [
                 'label' => 'fields.name',
@@ -53,7 +48,7 @@ class CategoryType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => WireCategory::class,
+            'data_class' => WirePdf::class,
             'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
     }

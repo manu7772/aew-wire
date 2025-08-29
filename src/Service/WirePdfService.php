@@ -5,6 +5,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\PdfizableInterface;
 use Aequation\WireBundle\Entity\interface\WirePdfInterface;
 use Aequation\WireBundle\Entity\WirePdf;
+use Aequation\WireBundle\Form\WirePdfType;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\HydrationServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -19,6 +20,7 @@ use Knp\Component\Pager\PaginatorInterface;
 abstract class WirePdfService extends WireItemService implements WirePdfServiceInterface
 {
     public const ENTITY_CLASS = WirePdf::class;
+    public const ENTITY_TYPE = WirePdfType::class;
 
     public function __construct(
         protected AppWireServiceInterface $appWire,

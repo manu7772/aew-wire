@@ -1,8 +1,0 @@
-{% extends '@AequationWire/admin/entity/show.html.twig' %}
-{% trans_default_domain entity.trans_domain %}
-
-{% block title %}{{ 'name'|trans }} {{ entity }}{% endblock %}
-
-{% block entitydata %}
-    <twig:wire:table-entity :entity="entity" :debug="app.devOrSadmin" />
-{% endblock %}

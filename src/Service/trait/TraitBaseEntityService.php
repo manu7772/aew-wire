@@ -181,6 +181,12 @@ trait TraitBaseEntityService
         );
     }
 
+    public function getEntityType(): string
+    {
+        $rconstant = new ReflectionClassConstant(static::class, 'ENTITY_TYPE');
+        return $rconstant->getValue();
+    }
+
     /**
      * Get Repository
      *

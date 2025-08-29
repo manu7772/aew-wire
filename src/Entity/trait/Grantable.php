@@ -12,7 +12,7 @@ trait Grantable
 {
 
     #[ORM\Column(type: 'string', length: 16, nullable: true, options: ['default' => null])]
-    protected ?string $grant = null;
+    protected ?string $grantlevel = null;
 
     public function __construct_grantable(): void
     {
@@ -21,21 +21,18 @@ trait Grantable
 
     public function isGranted(?UserInterface $user = null): bool
     {
-        if($this->grant === null) return true;
-        return $user->getRoles() && in_array($this->grant, $user->getRoles(), true);
+        if($this->grantlevel === null) return true;
+        return $user->getRoles() && in_array($this->grantlevel, $user->getRoles(), true);
     }
 
-    public function getGrant(): ?string
+    public function getGrantlevel(): ?string
     {
-        return $this->grant;
+        return $this->grantlevel;
     }
 
-    public function setGrant(?string $grant = null): static
+    public function setGrantlevel(?string $grantlevel = null): static
     {
-        if($grant) {
-
-        }
-        $this->grant = $grant;
+        $this->grantlevel = $grantlevel;
         return $this;
     }
 

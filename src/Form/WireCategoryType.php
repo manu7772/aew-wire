@@ -1,8 +1,12 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Aequation\WireBundle\Entity\WireArticle;
-use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\WireCategory;
+use Aequation\WireBundle\Entity\WireUser;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 // Symfony
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -10,12 +14,13 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class ArticleType extends AbstractType
+class WireCategoryType extends AbstractType
 {
 
     public function __construct(
         private TranslatorInterface $translator,
-        private WireArticleServiceInterface $entityService
+        private WireEntityManagerInterface $wireEm,
+        private WireCategoryServiceInterface $entityService
     )
     {
         
@@ -23,8 +28,8 @@ class ArticleType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /** @var WireArticle */
-        // $article = $builder->getData();
+        /** @var WireCategory */
+        // $category = $builder->getData();
         $builder
             ->add('name', null, [
                 'label' => 'fields.name',
@@ -48,7 +53,7 @@ class ArticleType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => WireArticle::class,
+            'data_class' => WireCategory::class,
             'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
     }

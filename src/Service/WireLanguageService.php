@@ -15,6 +15,7 @@ use Aequation\WireBundle\Component\interface\OpresultInterface;
 use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\WireLanguageInterface;
+use Aequation\WireBundle\Form\WireLanguageType;
 // PHP
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -33,6 +34,8 @@ class WireLanguageService implements WireLanguageServiceInterface
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireLanguageInterface::class;
+    public const ENTITY_TYPE = WireLanguageType::class;
+
     public const LOCALES_TIMEZONES = [
         'fr' => 'Europe/Paris',
         'it' => 'Europe/Rome',

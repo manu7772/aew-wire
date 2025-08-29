@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\ImageType;
+use Aequation\WireBundle\Form\WireImageType;
 use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class ImageController extends EntityController
 {
 
     public const ENTITY_CLASS = WireImageInterface::class;
-    public const FORM_CLASS = ImageType::class;
+    // public const FORM_CLASS = WireImageType::class;
 
 }

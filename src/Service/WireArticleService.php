@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\interface\WireArticleInterface;
 use Aequation\WireBundle\Entity\Uname;
 use Aequation\WireBundle\Entity\WireArticle;
+use Aequation\WireBundle\Form\WireArticleType;
 use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
 // Symfony
@@ -19,6 +20,7 @@ abstract class WireArticleService extends WireItemService implements WireArticle
 {
 
     public const ENTITY_CLASS = WireArticle::class;
+    public const ENTITY_TYPE = WireArticleType::class;
 
 
 }

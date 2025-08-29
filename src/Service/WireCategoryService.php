@@ -3,9 +3,12 @@ namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\Opresult;
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\TraitCategorizedInterface;
 use Aequation\WireBundle\Entity\interface\WireCategoryInterface;
 use Aequation\WireBundle\Entity\WireCategory;
+use Aequation\WireBundle\Form\WireCategoryType;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireCategoryServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -23,6 +26,8 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireCategory::class;
+    public const ENTITY_TYPE = WireCategoryType::class;
+
     public const DEFAULT_CHECK_DB_OPTIONS = [
         'flush_one_by_one' => false,
         'load_all_if_less_or_equal_than' => 1000, // If the number of entities is less or equal than this value, all entities will be loaded in one query
@@ -95,6 +100,38 @@ abstract class WireCategoryService implements WireCategoryServiceInterface
     {
         $choices = $this->getAvailableTypes(true);
         return array_flip($choices);
+    }
+
+
+    /****************************************************************************************************/
+    /** PAGINABLE                                                                                       */
+    /****************************************************************************************************/
+
+    /**
+     * Get paginated context data.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
+    {
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['w-1'],
+                    'sortable' => true,
+                ],
+                'name' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+                'typeShortname' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+            ],
+        ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

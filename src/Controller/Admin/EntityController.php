@@ -21,7 +21,7 @@ abstract class EntityController extends AbstractController
 {
 
     public const ENTITY_CLASS = null;
-    public const FORM_CLASS = null;
+    // public const FORM_CLASS = null;
 
     public readonly WireEntityServiceInterface $service;
 

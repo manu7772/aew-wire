@@ -85,7 +85,7 @@ class EntityForm extends AbstractController
 
     public function getEntityType(): string
     {
-        return WireUserType::class; // or any other form type you want to use
+        return $this->getEntityService()->getEntityType(); // or any other form type you want to use
     }
 
     public function mount(
@@ -133,7 +133,7 @@ class EntityForm extends AbstractController
 
     #[LiveAction]
     public function registerType(
-        #[LiveArg('submit')] ?string $submit = null,
+        // #[LiveArg('submit')] ?string $submit = null,
     )
     {
         $this->registeredMessage = null;
@@ -153,15 +153,7 @@ class EntityForm extends AbstractController
                 $em = $this->wireEm->getEntityManager();
                 $em->persist($entity);
                 $em->flush();
-                if($submit !== 'submit_continue') {
-                    // Save and redirect to the entity's show page
-                    $this->addFlash('success', $entity->getSelfState()->isNew() ? "La nouvelle entité a été enregistrée !" : "L'entité a été mise à jour !");
-                    return $this->redirectToRoute('admin_user_show', ['id' => $entity->getId()]);
-                } else {
-                    // Save and continue editing
-                    $this->registeredMessage = "L'entité a été enregistrée. Vous pouvez continuer à la modifier.";
-                    $this->resetForm();
-                }
+                return $this->redirectToRoute('admin_'.$entity->getShortname(true).'_show', ['id' => $entity->getId()]);
             } else {
                 // Handle validation errors
                 $this->errorMessage = "Des erreurs de validation ont été détectées.";

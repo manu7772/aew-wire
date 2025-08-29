@@ -1,7 +1,9 @@
-<html lang="{{ locale }}" data-theme="{{ app.csstheme }}" class="{{ app.user ? 'userlogged ' }}{{ app.csstheme }}">
-
+<html lang="{{ locale }}" data-theme="{{ app.public ? 'light' : 'dark' }}">
+    
 {# 
 
-to define a theme instead of toggling it, set attribute data-csstheme-define="--theme_name--" on the element.
+<html lang="{{ locale }}" data-theme="{{ app.csstheme }}" class="{{ app.user ? 'userlogged ' }}{{ app.csstheme }}">
+
+-- to define a theme instead of toggling it, set attribute data-csstheme-define="--theme_name--" on the element.
 
 #}

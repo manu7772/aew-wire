@@ -1,8 +1,11 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Aequation\WireBundle\Entity\WirePdf;
-use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireUserInterface;
+use Aequation\WireBundle\Entity\WireMenu;
+use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 // Symfony
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -10,12 +13,13 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class PdfType extends AbstractType
+class WireMenuType extends AbstractType
 {
 
     public function __construct(
         private TranslatorInterface $translator,
-        private WirePdfServiceInterface $entityService
+        private WireEntityManagerInterface $wireEm,
+        private WireMenuServiceInterface $entityService
     )
     {
         
@@ -23,11 +27,21 @@ class PdfType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /** @var WirePdf */
-        // $pdf = $builder->getData();
+        /** @var WireMenu */
+        // $menu = $builder->getData();
         $builder
             ->add('name', null, [
                 'label' => 'fields.name',
+                'required' => true,
+                'priority' => 25
+            ])
+            ->add('title', null, [
+                'label' => 'fields.title',
+                'required' => true,
+                'priority' => 25
+            ])
+            ->add('linktitle', null, [
+                'label' => 'fields.linktitle',
                 'required' => true,
                 'priority' => 25
             ])
@@ -48,7 +62,7 @@ class PdfType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => WirePdf::class,
+            'data_class' => WireMenu::class,
             'translation_domain' => $this->entityService->getEntityShortname(),
         ]);
     }

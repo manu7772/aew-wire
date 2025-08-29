@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\WebsectionType;
+use Aequation\WireBundle\Form\WireWebsectionType;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class WebsectionController extends EntityController
 {
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
-    public const FORM_CLASS = WebsectionType::class;
+    // public const FORM_CLASS = WireWebsectionType::class;
 
 }

@@ -13,6 +13,7 @@ use Aequation\WireBundle\Entity\WireUser;
 use Aequation\WireBundle\Entity\interface\TraitEnabledInterface;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
+use Aequation\WireBundle\Form\WireUserType;
 use Aequation\WireBundle\Repository\BaseWireRepository;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
@@ -46,6 +47,8 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireUser::class;
+    public const ENTITY_TYPE = WireUserType::class;
+
     public const EXCEPT_CHOICE_ROLES_EXPR = '/^((?!ROLE_)|ROLE_USER|ROLE_ALLOWED_TO_SWITCH)/';
     public const DEFAULT_CHECK_DB_OPTIONS = [
         'flush_one_by_one' => false,
@@ -392,15 +395,15 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
         return $this;
     }
 
-     public function getSuperadmins(): array
-     {
-         return $this->getRepository()->findGranted('ROLE_ADMIN');
-     }
+    public function getSuperadmins(): array
+    {
+        return $this->getRepository()->findGranted('ROLE_ADMIN');
+    }
 
-     public function getAdmins(): array
-     {
-         return $this->getRepository()->findGranted('ROLE_ADMIN');
-     }
+    public function getAdmins(): array
+    {
+        return $this->getRepository()->findGranted('ROLE_ADMIN');
+    }
 
 
     /****************************************************************************************************/

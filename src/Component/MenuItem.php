@@ -133,7 +133,7 @@ class MenuItem extends TypedCollection implements MenuItemInterface
                 break;
         }
         $this->isOpen();
-        if(!$this->parent) dump($this);
+        // if(!$this->parent) dump($this);
     }
 
     public function isValid(): bool

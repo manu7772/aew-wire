@@ -22,6 +22,6 @@ class UserController extends EntityController
 {
 
     public const ENTITY_CLASS = WireUserInterface::class;
-    public const FORM_CLASS = WireUserType::class;
+    // public const FORM_CLASS = WireUserType::class;
 
 }

@@ -21,6 +21,8 @@ class WireRelinkService implements WireRelinkServiceInterface
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireRelink::class;
+    // public const ENTITY_TYPE = null;
+
     public const DEFAULT_CHECK_DB_OPTIONS = [
         'flush_one_by_one' => false,
         'load_all_if_less_or_equal_than' => 1000, // If the number of entities is less or equal than this value, all entities will be loaded in one query

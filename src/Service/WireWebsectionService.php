@@ -2,7 +2,10 @@
 namespace Aequation\WireBundle\Service;
 
 use Aequation\WireBundle\Component\interface\OpresultInterface;
+use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
+use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
+use Aequation\WireBundle\Form\WireWebsectionType;
 use Aequation\WireBundle\Service\interface\AppWireServiceInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
@@ -22,6 +25,8 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireWebsectionInterface::class;
+    public const ENTITY_TYPE = WireWebsectionType::class;
+
     public const DEFAULT_CHECK_DB_OPTIONS = [
         'flush_one_by_one' => false,
         'load_all_if_less_or_equal_than' => 100, // If the number of entities is less or equal than this value, all entities will be loaded in one query
@@ -219,6 +224,41 @@ abstract class WireWebsectionService implements WireWebsectionServiceInterface
             $default = $this->getDefaultWebsectionModel($entity->getSectiontype());
             if(!empty($default)) $entity->setTwigfile($default);
         }
+    }
+
+
+    /****************************************************************************************************/
+    /** PAGINABLE                                                                                       */
+    /****************************************************************************************************/
+
+    /**
+     * Get paginated context data.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getPaginatedContextData(array $options = []): PaginatedContextDataInterface
+    {
+        $options = [
+            'fields' => [
+                'id' => [
+                    'classes' => ['w-1'],
+                    'sortable' => true,
+                ],
+                'name' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+                'sectiontype' => [
+                    'classes' => ['text-left'],
+                    'sortable' => true,
+                ],
+                'twigfileName' => [
+                    'sortable' => true,
+                ],
+            ],
+        ];
+        return new PaginatedContextData($this, $options);
     }
 
 }

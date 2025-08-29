@@ -9,6 +9,6 @@ abstract class WireImageService extends WireItemService implements WireImageServ
 {
 
     public const ENTITY_CLASS = WireImage::class;
-
+    // public const ENTITY_TYPE = null;
 
 }

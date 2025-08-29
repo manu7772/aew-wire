@@ -6,6 +6,7 @@ use Aequation\WireBundle\Component\interface\PaginatedContextDataInterface;
 use Aequation\WireBundle\Component\PaginatedContextData;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Entity\WireFactory;
+use Aequation\WireBundle\Form\WireFactoryType;
 use Aequation\WireBundle\Service\interface\WireFactoryServiceInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -13,6 +14,7 @@ abstract class WireFactoryService extends WireItemService implements WireFactory
 {
 
     public const ENTITY_CLASS = WireFactory::class;
+    public const ENTITY_TYPE = WireFactoryType::class;
 
     public function getPreferedFactory(): ?WireFactoryInterface
     {

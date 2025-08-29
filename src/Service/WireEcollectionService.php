@@ -9,6 +9,6 @@ abstract class WireEcollectionService extends WireItemService implements WireEco
 {
 
     public const ENTITY_CLASS = WireEcollection::class;
-
+    // public const ENTITY_TYPE = null;
 
 }

@@ -7,6 +7,7 @@ use Aequation\WireBundle\Entity\interface\WireEntityInterface;
 use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\WireMenu;
+use Aequation\WireBundle\Form\WireMenuType;
 use Aequation\WireBundle\Service\interface\WireMenuServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
 use Aequation\WireBundle\Tools\Objects;
@@ -17,6 +18,7 @@ abstract class WireMenuService extends WireEcollectionService implements WireMen
 {
 
     public const ENTITY_CLASS = WireMenu::class;
+    public const ENTITY_TYPE = WireMenuType::class;
     // public const WP_DEFAULT_UNAME = 'wp_page_menu'; // Uname of the default Webpage for this entity
 
     public function checkDatabase(OpresultInterface $opresult, bool $repair = false, array $options = []): void

@@ -1,7 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
-use Aequation\WireBundle\Form\FactoryType;
+use Aequation\WireBundle\Form\WireFactoryType;
 use Aequation\WireBundle\Entity\interface\WireFactoryInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
@@ -17,6 +17,6 @@ class FactoryController extends EntityController
 {
 
     public const ENTITY_CLASS = WireFactoryInterface::class;
-    public const FORM_CLASS = FactoryType::class;
+    // public const FORM_CLASS = WireFactoryType::class;
 
 }

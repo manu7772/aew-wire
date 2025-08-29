@@ -26,7 +26,7 @@ interface TypedCollectionInterface extends Collection, Selectable, Stringable
     public function offsetSet(mixed $offset, mixed $value): void;
     public function offsetUnset(mixed $offset): void;
     public function containsKey(string|int $key): bool;
-    public function contains(mixed $element);
+    public function contains(mixed $element): bool;
     public function exists(Closure $p): bool;
     public function indexOf($element): int|string|false;
     public function get(string|int $key): mixed;
@@ -38,7 +38,7 @@ interface TypedCollectionInterface extends Collection, Selectable, Stringable
     public function isEmpty(): bool;
     public function getIterator(): Traversable;
     public function map(Closure $func): TypedCollectionInterface;
-    public function reduce(Closure $func, $initial = null);
+    public function reduce(Closure $func, $initial = null): mixed;
     public function filter(Closure $p): TypedCollectionInterface;
     public function findFirst(Closure $p): mixed;
     public function forAll(Closure $p): bool;

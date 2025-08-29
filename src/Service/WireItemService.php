@@ -23,6 +23,8 @@ abstract class WireItemService implements WireItemServiceInterface
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireItem::class;
+    // public const ENTITY_TYPE = null;
+    
     public const DEFAULT_CHECK_DB_OPTIONS = [
         'flush_one_by_one' => false,
         'load_all_if_less_or_equal_than' => 100, // If the number of entities is less or equal than this value, all entities will be loaded in one query
