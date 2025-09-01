@@ -2,24 +2,19 @@
 namespace Aequation\WireBundle\Form;
 
 use Aequation\WireBundle\Entity\WirePdf;
-use Aequation\WireBundle\Service\interface\WirePdfServiceInterface;
+use Aequation\WireBundle\Form\WireAbstractType;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 // Symfony
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
-class WirePdfType extends AbstractType
+class WirePdfType extends WireAbstractType
 {
 
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WirePdfServiceInterface $entityService
-    )
-    {
-        
-    }
+    public const ENTITY_CLASS = WirePdf::class;
+
+    /** @var WirePdfServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -38,18 +33,11 @@ class WirePdfType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => ['data-submit-actions' => 'save_index'],
-                'priority' => -1
+                'priority' => -2
             ])
         ;
 
-    }
+        $this->defaultListeners($builder);
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => WirePdf::class,
-            'translation_domain' => $this->entityService->getEntityShortname(),
-        ]);
     }
 }

@@ -5,42 +5,42 @@
         {% set text %}{% block content %}{% endblock %}{% endset %}
 
         {% if confirm %}
-            <button data-modal-target="{{ confirm }}" data-modal-toggle="{{ confirm }}" class="{{ btn_class }}">
-                {% if icon %}
-                <twig:ux:icon name="{{ icon }}" class="{{ icon_class }}" />
-                {% endif %}
-                {% if text|has_text -%}
-                <span class="{{ text_class }}">{{ text|raw }}</span>
-                {%- endif %}
-            </button>
-            <div id="{{ confirm}}" tabindex="-1" data-modal-options="{{ {placement: 'top-center'}|json_encode }}" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-                <div class="relative p-4 w-full max-w-md max-h-full">
-                    <div class="relative bg-white rounded-lg shadow-sm">
-                        <button type="button" class="absolute top-3 end-2.5 bg-transparent opacity-60 hover:opacity-100" data-modal-hide="{{ confirm}}">
-                            <twig:ux:icon name="tabler:x" class="size-6" />
-                            <span class="sr-only">{{ 'Close'|trans }}</span>
-                        </button>
-                        <div class="p-4 md:p-5 text-center">
-                            <twig:ux:icon name="{{ icon }}" class="mx-auto mb-4 size-12" />
-                            <h3 class="mb-5 text-lg">{{ options.confirm|default('actions.confirm_delete'|trans({}, trans_domain)) }}</h3>
-                            <button data-modal-hide="{{ confirm}}" type="button" class="btn btn-white btn-dash">{{ 'false'|trans }}</button>
-                            <form method="post" action="{{ action_path }}" class="inline-block">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
-                                <button type="submit" data-modal-hide="{{ confirm}}" class="btn btn-error btn-outline">{{ 'true'|trans }}</button>
-                            </form>
-                        </div>
+        <button data-modal-target="{{ confirm }}" data-modal-toggle="{{ confirm }}" class="{{ btn_class }}">
+            {% if icon %}
+            <twig:ux:icon name="{{ icon }}" class="{{ icon_class }}" />
+            {% endif %}
+            {% if text|has_text -%}
+            <span class="{{ text_class }}">{{ text|raw }}</span>
+            {%- endif %}
+        </button>
+        <div id="{{ confirm }}" tabindex="-1" data-modal-options="{{ {placement: 'top-center'}|json_encode }}" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative p-4 w-full max-w-md max-h-full">
+                <div class="relative bg-base-100 rounded-lg shadow-sm">
+                    <button type="button" class="absolute top-3 end-2.5 bg-transparent opacity-60 hover:opacity-100" data-modal-hide="{{ confirm }}">
+                        <twig:ux:icon name="tabler:x" class="size-6" />
+                        <span class="sr-only">{{ 'Close'|trans }}</span>
+                    </button>
+                    <div class="p-4 md:p-5 text-center">
+                        <twig:ux:icon name="{{ icon }}" class="mx-auto mb-4 size-12" />
+                        <h3 class="mb-5 text-lg">{{ options.confirm|default('actions.confirm_delete'|trans({}, trans_domain)) }}</h3>
+                        <button data-modal-hide="{{ confirm }}" type="button" class="btn btn-white btn-dash">{{ 'false'|trans }}</button>
+                        <form method="post" action="{{ action_path }}" class="inline-block">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
+                            <button type="submit" data-modal-hide="{{ confirm }}" class="btn btn-error btn-outline">{{ 'true'|trans }}</button>
+                        </form>
                     </div>
                 </div>
             </div>
+        </div>
         {% else %}
-            <a href="{{ action_path }}" class="{{ btn_class }}" title="{{ title ? title|trans({}, trans_domain)|striptags : null }}">
-                {% if icon %}
-                <twig:ux:icon name="{{ icon }}" class="{{ icon_class }}" />
-                {% endif %}
-                {% if text|has_text -%}
-                <span class="{{ text_class }}">{{ text|raw }}</span>
-                {%- endif %}
-            </a>
+        <a href="{{ action_path }}" class="{{ btn_class }}" title="{{ title ? title|trans({}, trans_domain)|striptags : null }}">
+            {% if icon %}
+            <twig:ux:icon name="{{ icon }}" class="{{ icon_class }}" />
+            {% endif %}
+            {% if text|has_text -%}
+            <span class="{{ text_class }}">{{ text|raw }}</span>
+            {%- endif %}
+        </a>
         {% endif %}
 
     {% endif %}

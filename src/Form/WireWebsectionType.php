@@ -1,29 +1,24 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
 use Aequation\WireBundle\Entity\WireWebsection;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebsectionServiceInterface;
 // Symfony
+use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 
-class WireWebsectionType extends AbstractType
+class WireWebsectionType extends WireAbstractType
 {
 
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WireEntityManagerInterface $wireEm,
-        private WireWebsectionServiceInterface $entityService
-    )
-    {}
+    public const ENTITY_CLASS = WireWebsection::class;
+
+    /** @var WireWebsectionServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -66,23 +61,14 @@ class WireWebsectionType extends AbstractType
             'required' => false,
             'help' => 'Activer/désactiver la page web',
             'priority' => 40
-        ]);
-        $builder->add('submit', SubmitType::class, [
+        ])
+        ->add('submit', SubmitType::class, [
             'label' => 'actions.save',
-            'attr' => [
-                'class' => 'btn btn-accent btn-block btn-lg mt-4',
-                'data-submit-actions' => 'save_index'
-            ],
-            'priority' => -1
-        ]);
+            'priority' => -2
+        ])
+        ;
 
-    }
+        $this->defaultListeners($builder);
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => WireWebsection::class,
-            'translation_domain' => $this->entityService->getEntityShortname(),
-        ]);
     }
 }

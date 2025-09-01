@@ -11,6 +11,7 @@ use Aequation\WireBundle\Entity\interface\WireTranslationInterface;
 use Aequation\WireBundle\Entity\trait\Datetimed;
 use Aequation\WireBundle\Entity\trait\Enabled;
 use Aequation\WireBundle\Entity\trait\Grantable;
+use Aequation\WireBundle\Entity\trait\Mainimage;
 use Aequation\WireBundle\Entity\trait\Unamed;
 use Aequation\WireBundle\Service\interface\WireItemServiceInterface;
 use Aequation\WireBundle\Tools\Encoders;
@@ -34,7 +35,7 @@ use Gedmo\Sortable\Entity\Repository\SortableRepository;
 #[ORM\HasLifecycleCallbacks]
 abstract class WireItem extends MappSuperClassEntity implements WireItemInterface
 {
-    use Datetimed, Enabled, Unamed, Grantable;
+    use Datetimed, Enabled, Unamed, Grantable, Mainimage;
 
     public const ICON = [
         'ux' => 'tabler:file',

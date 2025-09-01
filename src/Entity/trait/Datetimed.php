@@ -119,9 +119,9 @@ trait Datetimed
     public function setLanguage(WireLanguageInterface $language): static
     {
         $this->language = $language;
-        if(!isset($this->timezone) || $this->getSelfstate()->isNew()) {
+        // if($this->getSelfstate()->isNew()) {
             $this->setTimezone($language->getTimezone());
-        }
+        // }
         return $this;
     }
 

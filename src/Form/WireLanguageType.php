@@ -2,27 +2,22 @@
 namespace Aequation\WireBundle\Form;
 
 use Aequation\WireBundle\Entity\WireLanguage;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireLanguageServiceInterface;
 // Symfony
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class WireLanguageType extends AbstractType
+class WireLanguageType extends WireAbstractType
 {
 
-    public function __construct(
-        // private TranslatorInterface $translator,
-        // private WireEntityManagerInterface $wireEm,
-        private WireLanguageServiceInterface $entityService
-    )
-    {
-        
-    }
+    public const ENTITY_CLASS = WireLanguage::class;
+
+    /** @var WireLanguageServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -62,18 +57,12 @@ class WireLanguageType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => ['data-submit-actions' => 'save_index'],
-                'priority' => -1
+                'priority' => -2
             ])
         ;
 
+        $this->defaultListeners($builder);
+
     }
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => WireLanguage::class,
-            'translation_domain' => $this->entityService->getEntityShortname(),
-        ]);
-    }
 }

@@ -110,7 +110,6 @@ class EntityForm extends AbstractController
         }
         $this->baseEntity = $baseEntity;
         $this->getEntity();
-        // dump($this->entity);
         $this->options = $options;
     }
 

@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Controller\Admin;
 
+use Aequation\WireBundle\Component\interface\WireClassMetadataInterface;
 use Aequation\WireBundle\Entity\interface\BaseEntityInterface;
 use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
@@ -20,11 +21,11 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 abstract class EntityController extends AbstractController
 {
 
-    public const ENTITY_CLASS = null;
+    public const ENTITY_CLASS = BaseEntityInterface::class;
     // public const FORM_CLASS = null;
 
+    public readonly WireClassMetadataInterface $wCmd;
     public readonly WireEntityServiceInterface $service;
-
 
     public function __construct(
         protected WireEntityManagerInterface $wireEm,
@@ -32,10 +33,12 @@ abstract class EntityController extends AbstractController
         protected TranslatorInterface $translator
     )
     {
-        $this->service = $this->wireEm->getEntityService(static::ENTITY_CLASS ?? '');
-        if (!is_a($this->service->getEntityClassname(), static::ENTITY_CLASS ?? '', true)) {
-            throw new RuntimeException(vsprintf('Error %s line %d: Service found does not manage an instance of "%s".', [__METHOD__, __LINE__, static::ENTITY_CLASS]));
+        $wCmds = $this->wireEm->getEntitiesMetadata()->findFinals([static::ENTITY_CLASS]);
+        if($wCmds->count() !== 1) {
+            throw new RuntimeException(vsprintf('Error %s line %d: Unable to determine one unique entity for class "%s". Found %d entities.', [__METHOD__, __LINE__, static::ENTITY_CLASS, $wCmds->count()]));
         }
+        $this->wCmd = $wCmds->first();
+        $this->service = $this->wireEm->getEntityService($this->wCmd->getName());
     }
 
     protected function getTemplatePath(
@@ -43,7 +46,7 @@ abstract class EntityController extends AbstractController
     ): string
     {
         $templates = [
-            '@AequationWire/admin/entity/'.$this->getEntityShortname(true).'/'.$action.'.html.twig',
+            '@AequationWire/admin/entity/'.strtolower($this->wCmd->getShortName()).'/'.$action.'.html.twig',
             '@AequationWire/admin/entity/'.$action.'.html.twig',
         ];
         foreach ($templates as $template) {
@@ -51,48 +54,47 @@ abstract class EntityController extends AbstractController
                 return $template;
             }
         }
-        throw new RuntimeException(vsprintf('Error %s line %d: No template found for action "%s".', [__METHOD__, __LINE__, $action]));
+        throw new RuntimeException(vsprintf('Error %s line %d: No template found for action "%s" with entity "%s".', [__METHOD__, __LINE__, $action, $this->wCmd->getName()]));
     }
 
-    protected function getEntityClassname(): string
-    {
-        return $this->service->getEntityClassname();
-    }
+    // protected function getEntityClassname(): string
+    // {
+    //     return $this->service->getEntityClassname();
+    // }
 
-    protected function getEntityShortname(
-        bool $lowercase = false
-    ): string
-    {
-        $shortname = $this->service->getEntityShortname();
-        return $lowercase ? strtolower($shortname) : $shortname;
-    }
+    // protected function getEntityShortname(
+    //     bool $lowercase = false
+    // ): string
+    // {
+    //     return $lowercase ? strtolower($this->wCmd->getShortName()) : $this->wCmd->getShortName();
+    // }
 
     protected function getAdminRoute(
         string $action
     ): string
     {
-        return 'admin_'.$this->getEntityShortname(true).'_'.$action;
+        return 'admin_'.strtolower($this->wCmd->getShortName()).'_'.$action;
     }
 
 
     #[Route(name: 'index', methods: ['GET'])]
     public function index(): Response
     {
-        $this->denyAccessUnlessGranted('index', $this->getEntityShortname(), $this->translator->trans('access_denied'));
+        $this->denyAccessUnlessGranted('index', $this->wCmd->getShortName(), $this->translator->trans('access_denied'));
         return $this->render(
             $this->getTemplatePath('index'),
             [
-                'classname' => $this->getEntityClassname(),
+                'classname' => $this->wCmd->getName(),
             ]
         );
     }
 
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
     public function new(
-        Request $request
+        // Request $request
     ): Response
     {
-        $this->denyAccessUnlessGranted('new', $this->getEntityShortname(), $this->translator->trans('access_denied'));
+        $this->denyAccessUnlessGranted('new', $this->wCmd->getShortName(), $this->translator->trans('access_denied'));
         $model = $this->service->createModel();
         // $entity = $this->service->createEntity();
         // $form = $this->createForm((string) static::FORM_CLASS, $entity, ['validation_groups' => ['update']]);
@@ -104,9 +106,9 @@ abstract class EntityController extends AbstractController
         // }
         return $this->render($this->getTemplatePath('new'), [
             'model' => $model,
-            'entity' => $this->service->getEntityClassname(),
+            'entity' => $this->wCmd->getName(),
             // 'form' => $form,
-            // 'trans_domain' => $entity->getShortname(),
+            // 'trans_domain' => $entity->getTrans_domain(),
         ]);
     }
 
@@ -121,13 +123,13 @@ abstract class EntityController extends AbstractController
         }
         return $this->render($this->getTemplatePath('show'), [
             'entity' => $entity,
-            'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
+            'trans_domain' => $entity?->getTrans_domain() ?: $this->wCmd->getShortName(),
         ]);
     }
 
     #[Route('/{id:entity}/edit', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
-        Request $request,
+        // Request $request,
         #[ValueResolver('app_entity_value_resolver')]
         ?BaseEntityInterface $entity
     ): Response
@@ -142,7 +144,7 @@ abstract class EntityController extends AbstractController
         return $this->render($this->getTemplatePath('edit'), [
             'entity' => $entity,
             // 'form' => $form,
-            'trans_domain' => $entity?->getShortname() ?: $this->getEntityShortname(),
+            'trans_domain' => $entity?->getTrans_domain() ?: $this->wCmd->getShortName(),
         ]);
     }
 

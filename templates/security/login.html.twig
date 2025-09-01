@@ -5,50 +5,46 @@
 {% block body %}
     <div class="flex flex-col gap-4 items-center justify-center ">
     {% if error %}
-        <div class="max-w-md w-full">
+        <div class="max-w-md w-full bg-base-200">
             <twig:wire:alert type="error">
                 {{ error.messageKey|trans(error.messageData, 'security') }}
             </twig:wire:alert>
         </div>
     {% endif %}
     {% if app.user %}
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
-            <h1 class="text-2xl text-center font-semibold mb-4 text-sky-800 dark:text-sky-300"><twig:ux:icon name="tabler:user-check" class="w-8 h-8 inline-block"/> {{ 'Login'|trans }}</h1>
+        <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
+            <h1 class="text-2xl text-center font-semibold mb-4"><twig:ux:icon name="tabler:user-check" class="size-8 inline-block"/> {{ 'Login'|trans }}</h1>
             <div class="alert alert-danger text-xl font-bold text-center">
                 <div class="py-6">{{ 'user_already_logged'|trans({'%user%': app.user.userIdentifier}) }}</div>
                 <div>
-                    <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="w-full bg-sky-600 dark:bg-sky-500 text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-lg">{{ 'Exit'|trans }}</a>
+                    <a{{ data_turbo(false) }} href="{{ path('app_logout') }}" class="w-full text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-lg">{{ 'Exit'|trans }}</a>
                 </div>
             </div>
         </div>
     {% else %}
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
-            <h1 class="text-2xl text-center font-semibold mb-4 text-sky-800 dark:text-sky-300"><twig:ux:icon name="tabler:user-check" class="w-8 h-8 inline-block"/> {{ 'Login'|trans }}</h1>
+        {# !!! set framework => csrf_protection: true !!! #}
+        {% set csrf_token_auth = csrf_token('authenticate') %}
+        <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
+            <h1 class="text-2xl text-center font-semibold mb-4"><twig:ux:icon name="tabler:user-check" class="size-8 inline-block"/> {{ 'Login'|trans }}</h1>
             <form method="POST">
-                <!-- User Email -->
-                <div class="mb-4">
-                    <label for="username" class="block text-sm font-medium text-sky-700 dark:text-sky-300">{{ 'Email'|trans }}</label>
-                    <input type="email" value="{{ last_username }}" id="username" name="_username" placeholder="{{ 'Email'|trans }}" class="mt-1 block w-full p-2 rounded-lg border-sky-600 focus:inset-ring-2 focus:ring-sky-600 shadow-sm" required autofocus/>
-                </div>
+                <fieldset>
+                    <!-- User Email -->
+                    <label for="username" class="block text-sm font-medium">{{ 'Email'|trans }}</label>
+                    <input type="email" value="{{ last_username }}" id="username" name="_username" placeholder="{{ 'Email'|trans }}" class="input input-md w-full mb-4" required autofocus/>
 
-                <!-- User Password -->
-                <div class="mb-4">
-                    <label for="password" class="block text-sm font-medium text-sky-700 dark:text-sky-300">{{ 'Password'|trans }}</label>
-                    <input type="password" id="password" name="_password" class="mt-1 block w-full p-2 rounded-lg border-sky-600 focus:inset-ring-2 focus:ring-sky-600 shadow-sm" placeholder="{{ 'Password'|trans }}" autocomplete="current-password" required />
-                </div>
+                    <!-- User Password -->
+                    <label for="password" class="block text-sm font-medium">{{ 'Password'|trans }}</label>
+                    <input type="password" id="password" name="_password" class="input input-md w-full mb-4" placeholder="{{ 'Password'|trans }}" autocomplete="current-password" required />
 
-                {# !!! set framework => csrf_protection: true !!! #}
-                {% set csrf_token_auth = csrf_token('authenticate') %}
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token_auth }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token_auth }}">
 
-                <!-- Submit Button -->
-                <div>
-                    <button{{ data_turbo(false) }} type="submit" class="w-full bg-sky-600 dark:bg-sky-500 text-lg font-bold text-white dark:text-sky-100 py-2 px-4 rounded-lg hover:bg-sky-400 hover:dark:text-sky-900 transition cursor-pointer shadow-lg">{{ 'login'|trans }}</button>
-                </div>
+                    <!-- Submit Button -->
+                    <button{{ data_turbo(false) }} type="submit" class="btn btn-neutral btn-block">{{ 'login'|trans }}</button>
+                </fieldset>
             </form>
         </div>
-        <div class="p-6 bg-white dark:bg-sky-800 border border-sky-400 dark:border-sky-500 rounded-lg shadow-lg dark:shadow-black max-w-md w-full">
-            <div class="text-center text-sky-800 dark:text-sky-300 py-1">
+        <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
+            <div class="text-center py-1">
                 <span class="italic inline">{{ 'No_account'|trans }}</span>
                 <twig:ux:icon name="tabler:circle-arrow-right-filled" class="w-6 ml-3 inline-block"/>
                 <a{{ data_turbo(false) }} href="{{ path('app_register') }}" class="underline font-bold">{{ 'Register'|trans }}</a>

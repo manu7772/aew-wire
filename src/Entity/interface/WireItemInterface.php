@@ -3,7 +3,7 @@ namespace Aequation\WireBundle\Entity\interface;
 
 use Doctrine\Common\Collections\Collection;
 
-interface WireItemInterface extends WireEntityInterface, BetweenSortedChildInterface, SluggableInterface, TranslationEntityInterface, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface, TraitGrantableInterface
+interface WireItemInterface extends WireEntityInterface, BetweenSortedChildInterface, SluggableInterface, TranslationEntityInterface, TraitEnabledInterface, TraitDatetimedInterface, TraitUnamedInterface, TraitGrantableInterface, TraitMainimageInterface
 {
     public function getName(): string;
     public function setName(string $name): static;

@@ -141,11 +141,11 @@
             {% set label_attr = label_attr|merge({'for': id}) %}
         {%- endif -%}
         {% if required -%}
-            {% set label_attr = label_attr|merge({'class': (label_attr.class|default('') ~ ' required')|trim}) %}
+            {% set label_attr = label_attr|merge({'class': (label_attr.class|default('') ~ ' required underline font-bold')|trim}) %}
         {%- endif -%}
-        <{{ element|default('label') }}{% with { attr: label_attr } %}{{ block('attributes') }}{% endwith %}>
+        <{{ element|default('legend') }}{% with { attr: label_attr } %}{{ block('attributes') }}{% endwith %}>
         {{- block('form_label_content') -}}
-        </{{ element|default('label') }}>
+        </{{ element|default('legend') }}>
     {%- endif -%}
 {%- endblock form_label -%}
 
@@ -219,7 +219,7 @@
 {# Rows #}
 
 {%- block form_row -%}
-    {%- set row_attr = row_attr|merge({'class': (row_attr.class|default('fieldset'))|trim}) -%}
+    {%- set row_attr = row_attr|merge({'class': (row_attr.class|default('fieldset bg-base-200 rounded-box w-full border p-4'))|trim}) -%}
     {%- set widget_attr = {} -%}
     {%- if help is not empty -%}
         {%- set widget_attr = {attr: {'aria-describedby': id ~"_help"}} -%}
@@ -259,11 +259,11 @@
 {# Class #}
 
 {% block class_label -%}
-    fieldset-legend
+    fieldset-legend px-2 text-accent
 {%- endblock class_label %}
 
 {% block class_input_radio_label -%}
-    ml-2 text-sm font-medium text-gray-900 dark:text-gray-300
+    ml-2 text-sm font-medium
 {%- endblock class_input_radio_label %}
 
 {% block class_input_switch_label -%}
@@ -279,11 +279,11 @@
 {%- endblock class_input_text %}
 
 {% block class_input_range -%}
-    w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700
+    w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
 {%- endblock class_input_range %}
 
 {% block class_input_file -%}
-    block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400
+    block w-full file-input
 {%- endblock class_input_file %}
 
 {% block class_input_radio -%}
@@ -298,19 +298,19 @@
 {%- endblock class_input_switch %}
 
 {% block class_select -%}
-    select w-full
+    select w-full{{ multiple ? ' h-35' : '' }}
 {%- endblock class_select %}
 
 {% block class_textarea -%}
-    textarea
+    textarea w-full min-h-40
 {%- endblock class_textarea %}
 
 {% block class_button -%}
-    text-gray-900 bg-white font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 border border-gray-200 hover:text-blue-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700
+    btn btn-neutral btn-sm
 {%- endblock class_button %}
 
 {% block class_submit -%}
-    text-white bg-blue-700 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800
+    btn btn-accent btn-block btn-lg mt-4
 {%- endblock class_submit %}
 
 {% block class_time_separator -%}

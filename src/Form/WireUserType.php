@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TimezoneType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
@@ -30,23 +31,22 @@ class WireUserType extends WireAbstractType
     {
         /** @var WireUser */
         $user = $builder->getData();
-        $wireEm = $this->entityService->getWireEm();
-        $languageClass = $wireEm->getEntitiesMetadata()->findOneFinal([WireLanguage::class])->getName();
+        $languageClass = $this->wireEm->getEntitiesMetadata()->findOneFinal([WireLanguage::class])->getName();
         /** @var WireLanguageServiceInterface */
-        $languageService = $wireEm->getEntityService($languageClass);
+        $languageService = $this->wireEm->getEntityService($languageClass);
         $builder
             ->add('email', EmailType::class, [
                 'label' => 'fields.email',
                 'required' => true,
                 'priority' => 100,
-                'help' => 'fields.help.email',
+                'help' => 'help.email',
                 'constraints' => [
                     new NotNull(
                         message: 'L\'email est obligatoire.',
                         groups: ['persist','update'],
                     ),
                     new Email(
-                        message: $this->translator->trans('errors.invalid_email'),
+                        message: 'L\'email n\'a pas un format valide.',
                         groups: ['persist','update'],
                     ),
                 ],
@@ -100,9 +100,9 @@ class WireUserType extends WireAbstractType
                 'required' => true,
                 'priority' => 60,
             ])
-            ->add('timezone', ChoiceType::class, [
+            ->add('timezone', TimezoneType::class, [
                 'label' => 'fields.timezone',
-                'choices' => $languageService->getTimezoneChoices(),
+                // 'choices' => $languageService->getTimezoneChoices(),
                 'placeholder' => 'fields.select_timezone',
                 'required' => true,
                 'priority' => 50,
@@ -118,7 +118,7 @@ class WireUserType extends WireAbstractType
                 'required' => $user->getSelfState()->isNew(),
                 'priority' => 40,
                 'always_empty' => false,
-                'help' => 'fields.help.plainPassword',
+                'help' => 'help.plainPassword',
                 'constraints' => [
                     new Length(
                         min: 8,
@@ -131,9 +131,6 @@ class WireUserType extends WireAbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => [
-                    'class' => 'btn btn-accent btn-block btn-lg mt-4',
-                ],
                 // 'attr' => [
                 //     // 'data-action' => 'live#action:prevent',
                 //     // 'data-live-action-param' => 'registerType',
@@ -165,9 +162,6 @@ class WireUserType extends WireAbstractType
             $builder
                 ->add('roles', ChoiceType::class, [
                     'label' => 'fields.roles',
-                    'attr' => [
-                        'class' => 'h-35'
-                    ],
                     'choices' => $choices,
                     'required' => false,
                     'multiple' => true,
@@ -176,6 +170,9 @@ class WireUserType extends WireAbstractType
                 ])
             ;
         }
+
+        $this->defaultListeners($builder);
+
     }
 
 }

@@ -10,7 +10,7 @@ export default class extends Controller {
     themes_choices = this.classHolder ? (this.classHolder.dataset.cssthemes ? JSON.parse(this.classHolder.dataset.cssthemes) : null) : null
     hasDataTheme = this.classHolder ? this.classHolder.hasAttribute('data-theme') : false
     // Modal confirm
-    // modalConfirms = document.querySelectorAll('[data-modal-confirm]')
+    modalConfirms = document.querySelectorAll('[data-modal-confirm]')
 
     connect() {
         initFlowbite();
@@ -23,10 +23,10 @@ export default class extends Controller {
                 switcher.addEventListener('click', this.cssthemeSwitcher)
             }
         }
-        // for (const modalConf of this.modalConfirms) {
-            // modalConf.addEventListener('click', this.modalConfirm)
-            // modalConf.addEventListener('submit', this.modalConfirm)
-        // }
+        for (const modalConf of this.modalConfirms) {
+            modalConf.addEventListener('click', this.modalConfirm)
+            modalConf.addEventListener('submit', this.modalConfirm)
+        }
     }
 
     disconnect() {
@@ -37,10 +37,10 @@ export default class extends Controller {
                 switcher.removeEventListener('click', this.cssthemeSwitcher)
             }
         }
-        // for (const modalConf of this.modalConfirms) {
-            // modalConf.removeEventListener('click', this.modalConfirm)
-            // modalConf.removeEventListener('submit', this.modalConfirm)
-        // }
+        for (const modalConf of this.modalConfirms) {
+            modalConf.removeEventListener('click', this.modalConfirm)
+            modalConf.removeEventListener('submit', this.modalConfirm)
+        }
     }
 
     toggleCsstheme = () => {
@@ -89,46 +89,46 @@ export default class extends Controller {
             })
     }
 
-    // modalConfirm = (event) => {
-    //     event.preventDefault()
-    //     const main = event.target.closest('[data-modal-confirm]')
-    //     const modal_id = main.getAttribute('data-modal-target')
-    //     // console.debug('Modal confirm triggered for:', modal_id, main)
-    //     const the_modal = FlowbiteInstances.getInstance('Modal', modal_id);
-    //     if(the_modal) {
-    //         if(the_modal.isHidden()) {
-    //             the_modal.show() 
-    //         }
-    //         console.debug('Modal confirm instance found:', the_modal)
-    //         switch (true) {
-    //             case ['FORM'].includes(main.nodeName):
-    //                 const form_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
-    //                 for (const trigger of form_triggers) {
-    //                     trigger.addEventListener('click', (e) => {
-    //                         the_modal.destroyAndRemoveInstance()
-    //                         main.submit()
-    //                     })
-    //                 }
-    //                 break;
-    //             case ['BUTTON', 'A'].includes(main.nodeName):
-    //                 const url = main.getAttribute('href') || main.getAttribute('data-url')
-    //                 if(url) {
-    //                     const abutton_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
-    //                     for (const trigger of abutton_triggers) {
-    //                         trigger.addEventListener('click', (e) => {
-    //                             the_modal.destroyAndRemoveInstance()
-    //                             window.location.href = url
-    //                         })
-    //                     }
-    //                 } else {
-    //                     console.warn('No URL found for modal confirm with BUTTON or A. Please provide a valid URL.')
-    //                 }
-    //                 break;
-    //             default:
-    //                 break;
-    //         }
-    //     }
-    // }
+    modalConfirm = (event) => {
+        event.preventDefault()
+        const main = event.target.closest('[data-modal-confirm]')
+        const modal_id = main.getAttribute('data-modal-target')
+        // console.debug('Modal confirm triggered for:', modal_id, main)
+        const the_modal = FlowbiteInstances.getInstance('Modal', modal_id);
+        if(the_modal) {
+            if(the_modal.isHidden()) {
+                the_modal.show() 
+            }
+            console.debug('Modal confirm instance found:', the_modal)
+            switch (true) {
+                case ['FORM'].includes(main.nodeName):
+                    const form_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
+                    for (const trigger of form_triggers) {
+                        trigger.addEventListener('click', (e) => {
+                            the_modal.destroyAndRemoveInstance()
+                            main.submit()
+                        })
+                    }
+                    break;
+                case ['BUTTON', 'A'].includes(main.nodeName):
+                    const url = main.getAttribute('href') || main.getAttribute('data-url')
+                    if(url) {
+                        const abutton_triggers = the_modal._targetEl.querySelectorAll('[data-modal-confirm-trigger]')
+                        for (const trigger of abutton_triggers) {
+                            trigger.addEventListener('click', (e) => {
+                                the_modal.destroyAndRemoveInstance()
+                                window.location.href = url
+                            })
+                        }
+                    } else {
+                        console.warn('No URL found for modal confirm with BUTTON or A. Please provide a valid URL.')
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 
     // Remove and destroy all Flowbite instances
     destroyAllFlowbiteInstances = () => {

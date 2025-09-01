@@ -2,24 +2,19 @@
 namespace Aequation\WireBundle\Form;
 
 use Aequation\WireBundle\Entity\WireArticle;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireArticleServiceInterface;
 // Symfony
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
-class WireArticleType extends AbstractType
+class WireArticleType extends WireAbstractType
 {
 
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WireArticleServiceInterface $entityService
-    )
-    {
-        
-    }
+    public const ENTITY_CLASS = WireArticle::class;
+
+    /** @var WireArticleServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -38,18 +33,12 @@ class WireArticleType extends AbstractType
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'actions.save',
-                'attr' => ['data-submit-actions' => 'save_index'],
-                'priority' => -1
+                'priority' => -2
             ])
         ;
 
+        $this->defaultListeners($builder);
+
     }
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => WireArticle::class,
-            'translation_domain' => $this->entityService->getEntityShortname(),
-        ]);
-    }
 }

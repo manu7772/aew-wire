@@ -1,33 +1,23 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Symfony\Component\Form\AbstractType;
 use Aequation\WireBundle\Entity\WireUrlink;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireUrlinkServiceInterface;
+// Symfony
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
-class WireUrlinkType extends AbstractType
+class WireUrlinkType extends WireAbstractType
 {
 
     public const ENTITY_CLASS = WireUrlink::class;
 
-    public readonly string $classname;
-
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WireUrlinkServiceInterface $entityService
-    )
-    {}
-
-    public function getFinalClassname(): string
-    {
-        return $this->classname ??= $this->entityService->getWireEm()->getEntitiesMetadata()->findOneFinal([static::ENTITY_CLASS])->getName();
-    }
+    /** @var WireUrlinkServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -42,20 +32,15 @@ class WireUrlinkType extends AbstractType
                         message: 'Le champ URL est invalide',
                     ),
                 ],
-            ]);
-    }
+            ])
+            ->add('submit', SubmitType::class, [
+                'label' => 'actions.save',
+                'priority' => -2
+            ])
+        ;
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => $this->getFinalClassname(),
-            'translation_domain' => $this->entityService->getEntityShortname(),
-            'attr' => [
-                // 'novalidate' => true,
-                'data-action' => 'live#action:prevent',
-                'data-live-action-param' => 'registerType',
-            ],
-        ]);
+        $this->defaultListeners($builder);
+
     }
 
 }

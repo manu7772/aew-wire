@@ -105,7 +105,7 @@ trait Webpageable
         return $this->linktitle ?? '';
     }
 
-    public function setLinktitle(string $linktitle): static
+    public function setLinktitle(?string $linktitle): static
     {
         $this->linktitle = $linktitle;
         return $this;

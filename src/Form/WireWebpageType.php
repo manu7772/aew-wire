@@ -1,21 +1,17 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Symfony\Component\Form\AbstractType;
-use Aequation\WireBundle\Entity\WireWebpage;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-// Symfony
-use Symfony\Contracts\Translation\TranslatorInterface;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Aequation\WireBundle\Entity\interface\WireMenuInterface;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Aequation\WireBundle\Entity\interface\WireWebsectionInterface;
-use Aequation\WireBundle\Service\interface\WireEntityManagerInterface;
 use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WireWebpageServiceInterface;
+use Aequation\WireBundle\Entity\interface\WireMenuInterface;
+use Aequation\WireBundle\Entity\WireWebpage;
+// Symfony
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 
 class WireWebpageType extends WireAbstractType
 {
@@ -60,9 +56,6 @@ class WireWebpageType extends WireAbstractType
             /** @see https://symfony.com/doc/current/reference/forms/types/choice.html */
             $builder->add('sections', EntityType::class, [
                 'label' => 'fields.sections',
-                'attr' => [
-                    'class' => 'h-35'
-                ],
                 'by_reference' => true,
                 'class' => $this->wireEm->findOneFinal(WireWebsectionInterface::class)->name,
                 'choices' => $this->entityService->getWebsectionsChoices(),
@@ -90,14 +83,14 @@ class WireWebpageType extends WireAbstractType
             'required' => false,
             'help' => 'Activer/désactiver la page web',
             'priority' => 40
-        ]);
-        $builder->add('submit', SubmitType::class, [
-            'label' => 'actions.save',
-            'attr' => [
-                'class' => 'btn btn-accent btn-block btn-lg mt-4',
-            ],
-            'priority' => -1
-        ]);
+        ])
+        ->add('submit', SubmitType::class, [
+                'label' => 'actions.save',
+                'priority' => -2
+            ])
+        ;
+
+        $this->defaultListeners($builder);
 
     }
 

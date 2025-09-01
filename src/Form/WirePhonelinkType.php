@@ -1,61 +1,58 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
-use Symfony\Component\Form\AbstractType;
 use Aequation\WireBundle\Entity\WirePhonelink;
+use Aequation\WireBundle\Service\interface\WireEntityServiceInterface;
 use Aequation\WireBundle\Service\interface\WirePhonelinkServiceInterface;
+// Symfony
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
-class WirePhonelinkType extends AbstractType
+class WirePhonelinkType extends WireAbstractType
 {
 
     public const ENTITY_CLASS = WirePhonelink::class;
 
-    public readonly string $classname;
-
-    public function __construct(
-        private TranslatorInterface $translator,
-        private WirePhonelinkServiceInterface $entityService
-    )
-    {}
-
-    public function getFinalClassname(): string
-    {
-        return $this->classname ??= $this->entityService->getWireEm()->getEntitiesMetadata()->findOneFinal([static::ENTITY_CLASS])->getName();
-    }
+    /** @var WirePhonelinkServiceInterface */
+    protected readonly WireEntityServiceInterface $entityService;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('name', null, [
+                'label' => 'fields.name',
+                'required' => false,
+                'translation_domain' => $this->entityService->getEntityShortname(),
+                // 'help' => 'help.name',
+            ])
             ->add('phone', TextType::class, [
                 'label' => 'fields.phone',
+                'attr' => [
+                    'type' => 'tel',
+                ],
                 'required' => true,
+                'translation_domain' => $this->entityService->getEntityShortname(),
                 'constraints' => [
-                    new NotBlank(message: 'Le numéro de téléphone est obligatoire'),
+                    new NotNull(message: 'errors.phone_required'),
+                    new NotBlank(message: 'errors.phone_required'),
                     new Regex(
                         pattern: '/^\+?[0-9\s]+/',
-                        message: 'Le numéro de téléphone doit contenir uniquement des chiffres (et le caractère + en début, optionellement)',
+                        message: 'errors.phone_invalid_format',
                     ),
                 ],
-            ]);
-    }
+            ])
+            ->add('submit', SubmitType::class, [
+                'label' => 'actions.save',
+                'priority' => -2
+            ])
+        ;
 
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setDefaults([
-            'data_class' => $this->getFinalClassname(),
-            'translation_domain' => $this->entityService->getEntityShortname(),
-            'attr' => [
-                // 'novalidate' => true,
-                'data-action' => 'live#action:prevent',
-                'data-live-action-param' => 'registerType',
-            ],
-        ]);
+        $this->defaultListeners($builder);
+
     }
 
 }
