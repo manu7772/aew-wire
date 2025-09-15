@@ -6,17 +6,14 @@ use Aequation\WireBundle\Entity\interface\TextContentsInterface;
 use Aequation\WireBundle\Entity\interface\TraitWebpageableInterface;
 use Aequation\WireBundle\Entity\interface\WireWebpageInterface;
 use Aequation\WireBundle\Entity\TextContents;
-use Aequation\WireBundle\Tools\Objects;
-use Aequation\WireBundle\Tools\Strings;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Symfony\Component\Validator\Constraints as Assert;
+// use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 use Gedmo\Mapping\Annotation as Gedmo;
 // PHP
 use Exception;
-use Symfony\Component\ObjectMapper\Attribute\Map;
-use Twig\Markup;
 
 trait Webpageable
 {

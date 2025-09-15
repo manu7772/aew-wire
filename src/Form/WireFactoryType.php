@@ -1,6 +1,7 @@
 <?php
 namespace Aequation\WireBundle\Form;
 
+use Aequation\WireBundle\Entity\interface\WireImageInterface;
 use Aequation\WireBundle\Entity\WireFactory;
 use Aequation\WireBundle\Entity\WireLanguage;
 use Aequation\WireBundle\Entity\interface\WireUserInterface;
@@ -73,6 +74,7 @@ class WireFactoryType extends WireAbstractType
             ->add('mainimage', WireImageType::class, [
                 'label' => 'compound_name.mainimage',
                 'required' => false,
+                'data' => $this->wireEm->getEntitiesMetadata()->newInstance(WireImageInterface::class),
                 // 'class' => $this->wireEm->getEntitiesMetadata()->findOneFinal([WireImageInterface::class])->getName(),
                 'priority' => 70,
             ])

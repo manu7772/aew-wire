@@ -4,7 +4,6 @@ namespace Aequation\WireBundle\Entity\trait;
 use Aequation\WireBundle\Entity\interface\TraitUnamedInterface;
 use Aequation\WireBundle\Entity\interface\UnameInterface;
 use Aequation\WireBundle\Entity\Uname;
-use Aequation\WireBundle\Tools\Encoders;
 use Aequation\WireBundle\Tools\Objects;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
@@ -17,7 +16,7 @@ trait Unamed
 
     #[ORM\OneToOne(targetEntity: UnameInterface::class, cascade: ['persist','remove'], orphanRemoval: true, fetch: 'EAGER')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\Valid()]
+    #[Assert\Valid(groups: ['persist','update'])]
     protected UnameInterface $uname;
 
 

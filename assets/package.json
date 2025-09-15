@@ -42,8 +42,8 @@
             "sortablejs": "^1.15.6",
             "toastr": "^2.1.4",
             "browser": "^0.2.6",
-            "daisyui": ">=5",
-        "daisyui/theme": ">=5"
+            "daisyui": "^5.1.12",
+        "daisyui/theme": "^5.1.12"
         },
         "entrypoints": {
             "@aequation/wire": "./vendor/aequation/wire/assets/wireadmin.js"
@@ -55,8 +55,8 @@
         "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
         "browser": "^0.2.6",
-        "daisyui": ">=5",
-        "daisyui/theme": ">=5"
+        "daisyui": "^5.1.12",
+        "daisyui/theme": "^5.1.12"
     },
     "DevDependencies": {
         "@hotwired/stimulus": "^3.2.2",
@@ -64,7 +64,7 @@
         "sortablejs": "^1.15.6",
         "toastr": "^2.1.4",
         "browser": "^0.2.6",
-        "daisyui": ">=5",
-        "daisyui/theme": ">=5"
+        "daisyui": "^5.1.12",
+        "daisyui/theme": "^5.1.12"
     }
 }

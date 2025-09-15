@@ -6,6 +6,7 @@ use Aequation\WireBundle\Entity\interface\WireUserInterface;
 use Aequation\WireBundle\Attribute\CurrentUser;
 // Symfony
 use Doctrine\ORM\Mapping as ORM;
+// PHP
 use Exception;
 
 trait Owner

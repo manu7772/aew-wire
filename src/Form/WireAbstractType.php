@@ -53,9 +53,15 @@ abstract class WireAbstractType extends AbstractType
         // Add default event listeners or subscribers here
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
             $form = $event->getForm();
+            // dump(static::ENTITY_CLASS, $event->getData());
             if($form->getParent() && $form->has('submit')) {
                 $form->remove('submit');
             }
+        });
+
+        $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event) {
+            // $form = $event->getForm();
+            dump(static::ENTITY_CLASS, $event->getData());
         });
     }
 
