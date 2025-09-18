@@ -1,0 +1,30 @@
+name: Menu
+names: Menus
+Phonelink: Menu
+Phonelinks: Menus
+fields:
+    id: ID
+    name: Nom
+    title: Titre
+    linktitle: Titre du lien
+    # description: Description
+    enabled: Activé
+    active: Actif
+    inactive: Inactif
+    prefered: Principal
+    items: Éléments
+actions:
+    actions: Actions
+    index: Les menus
+    new: Nouveau menu
+    edit: Modifier le menu
+    show: Voir le menu
+    delete: Supprimer le menu
+    confirm_delete: "Voulez-vous vraiment supprimer ce menu ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer ce menu %name% ?"
+    list: Liste des menus
+    count: "{0} Aucun menu trouvé|{1} 1 menu trouvé|]1,Inf] %count% menus trouvés"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: Le menu n'a pas été trouvé
+not_updated: Non modifié

@@ -1,0 +1,19 @@
+{# put here your dev tests #}
+{% set test = true %}
+{% if test and app.dev %}
+
+
+{# ****************************** #}
+{# ***** Dump compiled menu ***** #}
+{# ****************************** #}
+{# <section class="w-full bg-transparent py-8">
+    <div class="max-w-screen-xl px-4 xl:px-0 mx-auto">
+        <div class="flex flex-col items-stretch place-content-center gap-8 lg:flex-row">
+            {{ dump(webpage.mainmenu|default(null)|compiled_menu) }}
+    	</div>
+	</div>
+</section> #}
+
+
+
+{% endif %}

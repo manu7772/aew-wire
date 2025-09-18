@@ -1,0 +1,29 @@
+name: Pdf
+names: Pdfs
+User: Pdf
+Users: Pdfs
+fields:
+    id: ID
+    name: Nom
+    createdAt: Créée
+    updatedAt: Modifié
+    slug: Slug
+    description: Description
+    active: Actif
+    inactive: Inactif
+    timezone: Fuseau horaire
+actions:
+    actions: Actions
+    index: Les fichiers Pdf
+    new: Nouveau Pdf
+    edit: Modifier le Pdf
+    show: Voir le Pdf
+    delete: Supprimer le Pdf
+    confirm_delete: "Voulez-vous vraiment supprimer ce Pdf ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer ce Pdf %name% ?"
+    list: Liste des Pdfs
+    count: "{0} Aucun Pdf trouvé|{1} 1 Pdf trouvé|]1,Inf] %count% Pdfs trouvés"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: Le Pdf n'a pas été trouvé
+not_updated: Non modifié

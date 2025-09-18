@@ -1,0 +1,32 @@
+name: Image
+names: Images
+User: Image
+Users: Images
+fields:
+    id: ID
+    name: Nom
+    createdAt: Créée
+    updatedAt: Modifiée
+    slug: Slug
+    description: Description
+    active: Active
+    inactive: Inactive
+    timezone: Fuseau horaire
+    file: Fichier image
+compound_name:
+    mainimage: Image
+actions:
+    actions: Actions
+    index: Les images
+    new: Nouvelle image
+    edit: Modifier l'image
+    show: Voir l'image
+    delete: Supprimer l'image
+    confirm_delete: "Voulez-vous vraiment supprimer cette image ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette image %name% ?"
+    list: Liste des images
+    count: "{0} Aucune image trouvée|{1} 1 image trouvée|]1,Inf] %count% images trouvées"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: L'image n'a pas été trouvée
+not_updated: Non modifiée

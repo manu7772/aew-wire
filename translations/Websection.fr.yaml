@@ -1,0 +1,30 @@
+name: section web
+names: sections web
+Websection: section web
+Websections: sections web
+fields:
+    id: ID
+    name: Nom
+    email: Email
+    createdAt: Créée
+    updatedAt: Modifiée
+    slug: Slug
+    active: Active
+    inactive: Inactive
+    prefered: Par défaut
+    timezone: Fuseau horaire
+actions:
+    actions: Actions
+    index: Les sections web
+    new: Nouvelle section web
+    edit: Modifier la section web
+    show: Voir la section web
+    delete: Supprimer la section web
+    confirm_delete: "Voulez-vous vraiment supprimer cette section web ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette section web %name% ?"
+    list: Liste des sections web
+    count: "{0} Aucun section web trouvée|{1} 1 section web trouvée|]1,Inf] %count% sections web trouvées"
+    login_required: Vous devez être connecté pour accéder à cette section
+    save: Enregistrer
+not_found: La section web n'a pas été trouvée
+not_updated: Non modifiée

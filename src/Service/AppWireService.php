@@ -137,6 +137,7 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         $this->setDebug($this->kernel->isDebug());
         $this->setLocaleSwitcher($myLocaleSwitcher);
         $this->setEnabledLocales($this->container->getParameter('locales'));
+        // $this->isTranslate();
         // $this->setCsstheme($this->container->hasParameter('cssthemes') ? $this->container->getParameter('cssthemes') : static::DEFAULT_CSS_THEME);
         // dd($this->container->getParameter('vich_uploader.mappings'), $this->container->getParameter('vich_uploader.metadata'));
         // dd($this->container->getParameter('symfonycasts_tailwind.input_css'));
@@ -204,16 +205,6 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         // }
         $session = $request?->hasSession() ? $request->getSession() : null;
         return $session;
-    }
-
-
-    /************************************************************************************************************/
-    /** TRANSLATABLE WEBSITE                                                                                    */
-    /************************************************************************************************************/
-
-    public function isTranslate(): bool
-    {
-        return $this->getParameter('translation_enabled', false);
     }
 
 
@@ -412,6 +403,14 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
         /** @var WireLanguageServiceInterface $service */
         $service = $this->get(WireLanguageServiceInterface::class);
         return $service->getPreferedLanguage();
+    }
+
+    public function isTranslate(): bool
+    {
+        // if(!$this->getParameter('translation_enabled')) {
+        //     throw new Exception(vsprintf('Error %s line %d: "translation_enabled" (boolean value needed) parameter is not defined in parameters!', [__METHOD__, __LINE__]));
+        // }
+        return $this->getParameter('translation_enabled', false);
     }
 
 
@@ -1572,10 +1571,8 @@ class AppWireService extends AppVariable implements AppWireServiceInterface
     public function getRouteHome(): string
     {
         $route = $this->getParam('home_route', static::DEFAULT_HOME_ROUTE);
-        if($this->isDev()) {
-            if(!$this->routeExists($route)) {
-                throw new Exception(vsprintf('Error %s line %d: public home route %s does not exist!', [__METHOD__, __LINE__, $route]));
-            }
+        if($this->isDev() && !$this->routeExists($route)) {
+            throw new Exception(vsprintf('Error %s line %d: public home route "%s" does not exist!', [__METHOD__, __LINE__, $route]));
         }
         return $route;
     }

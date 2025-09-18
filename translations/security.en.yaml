@@ -1,0 +1,8 @@
+Login_successful: Connextion réussie
+Logout_successful: Vous êtes déconnecté
+Login_failed: Échec de la connexion
+Login_required: Vous devez vous connecter pour accéder à cette page
+Access_denied: Accès refusé
+Password_reset_successful: Réinitialisation du mot de passe réussie
+Password_reset_failed: Échec de la réinitialisation du mot de passe
+Password_change_successful: Changement de mot de passe réussi

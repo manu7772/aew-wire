@@ -1,0 +1,32 @@
+name: Article
+names: Articles
+User: Article
+Users: Articles
+fields:
+    id: ID
+    name: Nom
+    email: Email
+    createdAt: Créé
+    updatedAt: Modifié
+    slug: Slug
+    description: Description
+    active: Actif
+    inactive: Inactif
+    timezone: Fuseau horaire
+actions:
+    actions: Actions
+    index: Les articles
+    new: Nouvel article
+    edit: Modifier l'article
+    show: Voir l'article
+    delete: Supprimer l'article
+    confirm_delete: "Voulez-vous vraiment supprimer cet article ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cet article %name% ?"
+    list: Liste des articles
+    count: "{0} Aucun article trouvée|{1} 1 article trouvé|]1,Inf] %count% articles trouvés"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: L'article n'a pas été trouvé
+not_updated: Non modifié
+Add: Ajouter
+Delete: Supprimer

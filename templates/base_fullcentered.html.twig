@@ -3,7 +3,7 @@
     <head>
         <meta charset="{{ app.charset }}">
         <title>{% block title %}{{ (webpage.title|default(app.factory.name|default('Bonjour')))|striptags }}{% endblock %}</title>
-        <link rel="icon" href="{{ asset('images/logo/favicon_114.png') }}" type="image/x-icon">
+        <link rel="icon" href="{{ asset('images/favicon/favicon.png') }}" type="image/x-icon">
         {% block stylesheets %}
         {% endblock %}
         {% block javascripts %}

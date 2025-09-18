@@ -4,14 +4,12 @@
 
 {% block body %}
     <div class="flex flex-col gap-4 items-center justify-center ">
-    {% if error %}
+        {% if error %}
         <div class="max-w-md w-full bg-base-200">
-            <twig:wire:alert type="error">
-                {{ error.messageKey|trans(error.messageData, 'security') }}
-            </twig:wire:alert>
+            <twig:wire:alert type="error">{{ error.messageKey|trans(error.messageData, 'security') }}</twig:wire:alert>
         </div>
-    {% endif %}
-    {% if app.user %}
+        {% endif %}
+        {% if app.user %}
         <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
             <h1 class="text-2xl text-center font-semibold mb-4"><twig:ux:icon name="tabler:user-check" class="size-8 inline-block"/> {{ 'Login'|trans }}</h1>
             <div class="alert alert-danger text-xl font-bold text-center">
@@ -21,33 +19,44 @@
                 </div>
             </div>
         </div>
-    {% else %}
+        {% else %}
         {# !!! set framework => csrf_protection: true !!! #}
         {% set csrf_token_auth = csrf_token('authenticate') %}
-        <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
-            <h1 class="text-2xl text-center font-semibold mb-4"><twig:ux:icon name="tabler:user-check" class="size-8 inline-block"/> {{ 'Login'|trans }}</h1>
-            <form method="POST">
-                <fieldset>
-                    <!-- User Email -->
-                    <label for="username" class="block text-sm font-medium">{{ 'Email'|trans }}</label>
-                    <input type="email" value="{{ last_username }}" id="username" name="_username" placeholder="{{ 'Email'|trans }}" class="input input-md w-full mb-4" required autofocus/>
 
-                    <!-- User Password -->
-                    <label for="password" class="block text-sm font-medium">{{ 'Password'|trans }}</label>
-                    <input type="password" id="password" name="_password" class="input input-md w-full mb-4" placeholder="{{ 'Password'|trans }}" autocomplete="current-password" required />
+        {# @see https://daisyui.com/components/card/ #}
+        <div class="card bg-base-300 w-112 max-w-11/12 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <twig:ux:icon name="tabler:user-check" class="size-8 inline-block"/> {{ 'Login'|trans }}
+                </h2>
+                <form method="POST">
+                    <fieldset>
+                        <!-- User Email -->
+                        <label for="username" class="block text-sm font-medium">{{ 'Email'|trans }}</label>
+                        <input type="email" value="{{ last_username }}" id="username" name="_username" placeholder="{{ 'Email'|trans }}" class="input input-md w-full mb-4" required autofocus/>
 
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token_auth }}">
+                        <!-- User Password -->
+                        <label for="password" class="block text-sm font-medium">{{ 'Password'|trans }}</label>
+                        <input type="password" id="password" name="_password" class="input input-md w-full mb-4" placeholder="{{ 'Password'|trans }}" autocomplete="current-password" required />
 
-                    <!-- Submit Button -->
-                    <button{{ data_turbo(false) }} type="submit" class="btn btn-neutral btn-block">{{ 'login'|trans }}</button>
-                </fieldset>
-            </form>
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token_auth }}">
+
+                        <!-- Submit Button -->
+                        <div class="card-actions justify-end">
+                            <button{{ data_turbo(false) }} type="submit" class="btn btn-primary">{{ 'login'|trans }}</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
         </div>
-        <div class="p-6 border border-base-300 rounded-lg shadow-lg max-w-md w-full bg-base-200">
-            <div class="text-center py-1">
-                <span class="italic inline">{{ 'No_account'|trans }}</span>
-                <twig:ux:icon name="tabler:circle-arrow-right-filled" class="w-6 ml-3 inline-block"/>
-                <a{{ data_turbo(false) }} href="{{ path('app_register') }}" class="underline font-bold">{{ 'Register'|trans }}</a>
+
+        <div class="card bg-base-300 w-112 max-w-11/12 shadow-lg">
+            <div class="card-body">
+                <div class="text-center">
+                    <span class="italic inline">{{ 'No_account'|trans }}</span>
+                    <twig:ux:icon name="tabler:circle-arrow-right-filled" class="w-6 ml-3 inline-block"/>
+                    <a{{ data_turbo(false) }} href="{{ path('app_register') }}" class="underline font-bold">{{ 'Register'|trans }}</a>
+                </div>
             </div>
         </div>
         {% if csrf_token_auth == 'csrf-token' and app.dev %}
@@ -58,6 +67,6 @@
             </twig:wire:alert>
         </div>
         {% endif %}
-    {% endif %}
+        {% endif %}
     </div>
 {% endblock %}

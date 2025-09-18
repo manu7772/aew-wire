@@ -1,0 +1,61 @@
+name: Utilisateur
+names: Utilisateurs
+User: Utilisateur
+Users: Utilisateurs
+fields:
+    id: ID
+    name: Nom
+    firstname: Prénom
+    email: Email
+    password: Mot de passe
+    plainPassword: Mot de passe
+    new_password: Nouveau mot de passe
+    repeat_password: Confirmez le mot de passe
+    lastLogin: Dernière connexion
+    createdAt: Créé
+    updatedAt: Modifié
+    roles: Rôles
+    csstheme: Thème graphique
+    slug: Slug
+    active: Actif
+    inactive: Inactif
+    timezone: Fuseau horaire
+    select_timezone: Sélectionnez un fuseau horaire
+    language: Langue
+    isVerified: Vérifié
+    phones: Téléphones
+    phone: Numéro de téléphone
+help:
+    email: "L'email doit être valide et unique"
+    plainPassword: "Le mot de passe doit faire au moins 8 caractères (max. 64)"
+actions:
+    actions: Actions
+    index: Les utilisateurs
+    new: Nouvel utilisateur
+    edit: Modifier l'utilisateur
+    show: Voir l'utilisateur
+    delete: Supprimer l'utilisateur
+    confirm_delete: "Voulez-vous vraiment supprimer cet utilisateur ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cet utilisateur %name% ?"
+    list: Liste des utilisateurs
+    count: "{0} Aucun utilisateur trouvé|{1} 1 utilisateur trouvé|]1,Inf] %count% utilisateurs trouvés"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+    save_continue: Enregistrer et continuer
+    delete_my_account: Supprimer mon compte
+    register: Créer mon compte
+not_found: L'utilisateur n'a pas été trouvé
+not_updated: Non modifié
+account:
+    name: Mon compte
+    delete: Supprimer mon compte
+    edit: Modifier mon compte
+higherRole: 'Accès'
+ROLE_USER: 'Utilisateur'
+ROLE_EDITOR: 'Éditeur'
+ROLE_COLLABORATOR: 'Collaborateur'
+ROLE_ADMIN: 'Administrateur'
+ROLE_SUPER_ADMIN: 'Super Administrateur'
+ROLE_ALLOWED_TO_SWITCH: 'Switch'
+Add: Ajouter
+Delete: Supprimer

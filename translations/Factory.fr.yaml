@@ -1,0 +1,52 @@
+name: Clinique
+names: Cliniques
+User: Clinique
+Users: Cliniques
+fields:
+    id: ID
+    name: Nom
+    title: Titre
+    linktitle: Titre du lien
+    email: Email
+    associates: Associés
+    createdAt: Créée
+    updatedAt: Modifiée
+    slug: Slug
+    categories: Catégories
+    description: Description
+    active: Actif
+    inactive: Inactif
+    prefered: Principal
+    language: Langue
+    timezone: Fuseau horaire
+    annuaire: Annuaire
+    annuaire_view: Visible dans l'annuaire
+    functionality: Statut administratif
+    phones: Téléphones
+    phone: Numéro de téléphone
+compound_name:
+    mainimage: Photo principale
+help:
+    title: Titre dans la page de présentation
+    linktitle: Titre du lien dans la liste des structures
+    associates: Liste des associés de la structure
+errors:
+    phone_required: Le numéro de téléphone est obligatoire
+    phone_invalid_format: Le numéro de téléphone doit contenir uniquement des chiffres (et le caractère + en début, optionellement)
+actions:
+    actions: Actions
+    index: Les cliniques
+    new: Nouvelle clinique
+    edit: Modifier la clinique
+    show: Voir la clinique
+    delete: Supprimer la clinique
+    confirm_delete: "Voulez-vous vraiment supprimer cette clinique ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette clinique %name% ?"
+    list: Liste des cliniques
+    count: "{0} Aucune clinique trouvée|{1} 1 clinique trouvée|]1,Inf] %count% cliniques trouvées"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: La clinique n'a pas été trouvée
+not_updated: Non modifiée
+Add: Ajouter
+Delete: Supprimer

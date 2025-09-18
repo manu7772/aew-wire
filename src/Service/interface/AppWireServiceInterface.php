@@ -37,7 +37,7 @@ use UnitEnum;
 interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface, LocaleAwareInterface
 {
 
-    public const DEFAULT_HOME_ROUTE = 'app_home';
+    public const DEFAULT_HOME_ROUTE = 'app_public';
     public const DEFAULT_ADMIN_ROUTE = 'admin_index';
     public const SELF_SERIALIZE_GROUPS = ['identifier','for_session'];
     public const UNSERIALIZE_PROPERTIES = [

@@ -1,0 +1,34 @@
+name: Téléphone
+names: Téléphones
+Phonelink: Téléphone
+Phonelinks: Téléphones
+fields:
+    id: ID
+    name: Nom
+    phones: Téléphones
+    description: Description
+    enabled: Activé
+    active: Actif
+    inactive: Inactif
+    prefered: Principal
+    phone: Numéro de téléphone
+errors:
+    phone_required: Le numéro de téléphone est obligatoire
+    phone_invalid_format: Le numéro de téléphone doit contenir uniquement des chiffres (et le caractère + en début, optionellement)
+actions:
+    actions: Actions
+    index: Les téléphones
+    new: Nouveau téléphone
+    edit: Modifier le téléphone
+    show: Voir le téléphone
+    delete: Supprimer le téléphone
+    confirm_delete: "Voulez-vous vraiment supprimer ce téléphone ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer ce téléphone %name% ?"
+    list: Liste des téléphones
+    count: "{0} Aucun téléphone trouvé|{1} 1 téléphone trouvé|]1,Inf] %count% téléphones trouvés"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: Le téléphone n'a pas été trouvé
+not_updated: Non modifié
+Add: Ajouter
+Delete: Supprimer

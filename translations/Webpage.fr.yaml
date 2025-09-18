@@ -1,0 +1,37 @@
+name: page web
+names: pages web
+Webpage: page web
+Webpages: pages web
+fields:
+    id: ID
+    name: Nom
+    email: Email
+    title: Titre
+    linktitle: Titre du lien
+    twigfile: Mise en page
+    createdAt: Créée
+    updatedAt: Modifiée
+    slug: Slug
+    websections: Sections
+    active: Active
+    enabled: Activée
+    inactive: Inactive
+    prefered: Principale
+    timezone: Fuseau horaire
+    sections: Sections
+    mainmenu: Menu principal
+actions:
+    actions: Actions
+    index: Les pages web
+    new: Nouvelle page web
+    edit: Modifier la page web
+    show: Voir la page web
+    delete: Supprimer la page web
+    confirm_delete: "Voulez-vous vraiment supprimer cette page web ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette page web %name% ?"
+    list: Liste des pages web
+    count: "{0} Aucune page web trouvée|{1} 1 page web trouvée|]1,Inf] %count% pages web trouvées"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: La page web n'a pas été trouvée
+not_updated: Non modifiée

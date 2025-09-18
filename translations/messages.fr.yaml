@@ -1,3 +1,115 @@
 logout_Login_successful: Connextion réussie
 Logout_successful: Vous êtes déconnecté
 scrollup: Haut de page
+Login_successful: Connextion réussie
+user_logged_out: Compte périmé, vous êtes déconnecté
+confirm_logout: Êtes-vous sûr de vouloir vous déconnecter ?
+csrf_token_invalid: Le jeton de sécurité est invalide, veuillez réessayer
+dashboard: Tableau de bord
+env_versions: Versions de l'environnement
+timezone_data: Données de fuseau horaire
+copyrights: Tous droits réservés
+website_map: Plan du site
+social_media: Réseaux sociaux
+coordinates: Coordonnées
+title_generic: Vétoalliance
+admin_title: Vétoalliance
+homepage: Page d'accueil
+admin_info: Admin informations
+'true': Oui
+'false': Non
+Close: Fermer
+Name: Nom
+Description: Description
+Enabled: Actif
+Reference: Référence
+Email: Courriel
+Phone: Téléphone
+Created At: Date création
+Updated At: Dern.modif.
+public_website: Site public
+Home: Retour au site
+password: Mot de passe
+Plain password: Mot de passe
+Agree terms: J'accepte les conditions d'utilisation
+Please enter a password: Vous devez indiquer un mot de passe
+Login: Connexion
+login: connexion
+Logout: Déconnexion
+logout: déconnexion
+logout_confirm: Souhaitez-vous vous déconnecter ?
+No_account: Vous n'avez pas de compte ?
+Register: Créer un compte
+send message: Envoyez un message
+Sent: Envoyé le
+Boolsent: Envoyé
+Minpmaxp: Min/Max
+Tbefore: Temps avant
+Tduring: Durée
+Tafter: Temps après
+account: Compte
+account_edit: Modifier mon compte
+account_return: Retour à mon compte
+my-account: Mon compte name
+update-account: Modifier mon compte name
+Csstheme: Mode sombre
+csstheme: Mode sombre
+change_csstheme: Changer de thème
+open_menu: Ouvrir le menu
+Plain Password: Mot de passe
+Password: Mot de passe
+Lastname: Prénom
+Timezone: Fuseau horaire
+online_account: Mon compte en ligne
+unknown: inconnu
+Imgslides: Diaporama
+Size: Poids
+Filename: Nom fichier
+Image: Image
+Photo: Photo
+File: Fichier
+Plus d'informations: Plus d'infos
+firstname: Nom
+lastname: Prénom
+expiresAt: Date d'expiration
+Expires At: Date d'expiration
+isVerified: Compte vérifié
+cancel: annuler
+Cancel: Abandonner
+Exit: Quitter
+Last Action At: Dern.modif.
+Enregistrer: Enregistrer
+Add: Ajouter
+Delete: Supprimer
+Confirm: Confirmer
+show_map: Afficher la carte
+aide: Aide et conseils pour la navigation sur le site
+# Exception
+exception_title: Une erreur est survenue
+exception_unknown: Erreur inconnue
+error_: Erreur inconnue
+error_unknown: Erreur inconnue
+error_403: Accès non autorisé
+error_404: Page introuvable
+error_500: Erreur serveur
+errors:
+    invalid_email: 'Email invalide'
+    name_too_short: 'Le nom est trop court'
+    name_too_long: 'Le nom est trop long'
+    phone_required: Le numéro de téléphone est obligatoire
+    phone_invalid_format: Le numéro de téléphone doit contenir uniquement des chiffres (et le caractère + en début, optionellement)
+
+access_denied: 'Vous n''avez pas accès à cette page'
+higherRole: 'Accès'
+ROLE_USER: 'Utilisateur'
+ROLE_EDITOR: 'Éditeur'
+ROLE_COLLABORATOR: 'Collaborateur'
+ROLE_ADMIN: 'Administrateur'
+ROLE_SUPER_ADMIN: 'Super Administrateur'
+ROLE_ALLOWED_TO_SWITCH: 'Switch'
+
+# Validations
+email_not_empty: L'email doit être indiqué et valide
+user_already_exists: Cet utilisateur existe déjà
+user_not_found: Cet utilisateur n'existe pas
+user_already_logged: 'Vous êtes déjà connecté en tant que %user%'

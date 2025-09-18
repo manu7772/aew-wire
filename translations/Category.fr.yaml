@@ -1,0 +1,36 @@
+name: catégorie
+names: catégories
+Webpage: catégorie
+Webpages: catégories
+fields:
+    id: ID
+    name: Nom
+    email: Email
+    createdAt: Créée
+    updatedAt: Modifiée
+    slug: Slug
+    description: Description
+    type: Type de catégorie
+    # active: Active
+    # enabled: Activée
+    # inactive: Inactive
+    prefered: Principale
+    # timezone: Fuseau horaire
+    typeShortname: Type
+    help:
+        type: "Type de catégorie (ex: 'Utilisateur' pour les utilisateurs, 'Clinique' pour les cabinets/cliniques, etc.)"
+actions:
+    actions: Actions
+    index: Les catégories
+    new: Nouvelle catégorie
+    edit: Modifier la catégorie
+    show: Voir la catégorie
+    delete: Supprimer la catégorie
+    confirm_delete: "Voulez-vous vraiment supprimer cette catégorie ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette catégorie %name% ?"
+    list: Liste des catégories
+    count: "{0} Aucune catégorie trouvée|{1} 1 catégorie trouvée|]1,Inf] %count% catégories trouvées"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: La catégorie n'a pas été trouvée
+not_updated: Non modifiée

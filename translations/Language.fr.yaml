@@ -1,0 +1,29 @@
+name: Langue
+names: Langues
+Language: Langue
+Languages: Langues
+fields:
+    id: ID
+    name: Nom
+    locale: Locale
+    description: Description
+    enabled: Activée
+    active: Actif
+    inactive: Inactif
+    prefered: Principal
+    timezone: Fuseau horaire
+actions:
+    actions: Actions
+    index: Les Langues
+    new: Nouvelle Langue
+    edit: Modifier la Langue
+    show: Voir la Langue
+    delete: Supprimer la Langue
+    confirm_delete: "Voulez-vous vraiment supprimer cette Langue ?"
+    confirm_delete_named: "Voulez-vous vraiment supprimer cette Langue %name% ?"
+    list: Liste des Langues
+    count: "{0} Aucun Langue trouvée|{1} 1 Langue trouvée|]1,Inf] %count% Langues trouvées"
+    login_required: Vous devez être connecté pour accéder à cette page
+    save: Enregistrer
+not_found: La Langue n'a pas été trouvée
+not_updated: Non modifiée

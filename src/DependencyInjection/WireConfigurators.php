@@ -2,10 +2,37 @@
 namespace Aequation\WireBundle\DependencyInjection;
 
 // Symfony
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\AssetMapper\AssetMapperInterface;
-// PHP
+
 use Exception;
+use Aequation\WireBundle\Entity\Uname;
+use Aequation\WireBundle\Entity\WireItem;
+// PHP
+use Aequation\WireBundle\Entity\WireRelink;
+use Aequation\WireBundle\Entity\WireEcollection;
+use Aequation\WireBundle\Entity\WireItemCollection;
+use Aequation\WireBundle\Entity\WireItemTranslation;
+use Aequation\WireBundle\Doctrine\Type\ArrayTextType;
+use Aequation\WireBundle\Entity\WireRelinkTranslation;
+use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Aequation\WireBundle\Entity\WireCategoryTranslation;
+use Aequation\WireBundle\Entity\WireLanguageTranslation;
+use Aequation\WireBundle\Entity\interface\UnameInterface;
+use Aequation\WireBundle\Entity\WireBaseRelinkCollection;
+use Aequation\WireBundle\Entity\WireWebsectionTranslation;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Aequation\WireBundle\Entity\interface\WireItemInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkInterface;
+use Aequation\WireBundle\Entity\WireWebpageWebsectionCollection;
+use Aequation\WireBundle\Entity\interface\WireEcollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireItemTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WebsectionCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireRelinkTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WireCategoryTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WireLanguageTranslationInterface;
+use Aequation\WireBundle\Entity\interface\WireBaseRelinkCollectionInterface;
+use Aequation\WireBundle\Entity\interface\WireWebsectionTranslationInterface;
+use Aequation\WireBundle\Repository\ResetPasswordRequestRepository;
 
 Class WireConfigurators
 {
@@ -91,10 +118,19 @@ Class WireConfigurators
             //     }
             //     break;
             case 'Framework':
-                $origin_framework = $container->hasParameter('Framework') ? $container->getParameter('Framework') : [];
+                $origin_framework = $container->hasParameter('framework') ? $container->getParameter('framework') : [];
                 $framework_config = array_merge(static::getFrameworkConfig(), $origin_framework);
                 if($asPrepend) {
-                    $container->prependExtensionConfig('Framework', $framework_config);
+                    $container->prependExtensionConfig('framework', $framework_config);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                }
+                break;
+            case 'Doctrine':
+                $origin_doctrine = $container->hasParameter('doctrine') ? $container->getParameter('doctrine') : [];
+                $doctrine_config = array_merge(static::getDoctrineConfig(), $origin_doctrine);
+                if($asPrepend) {
+                    $container->prependExtensionConfig('doctrine', $doctrine_config);
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                 }
@@ -121,6 +157,16 @@ Class WireConfigurators
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                 }
                 break;
+            case 'KnpPaginator':
+                $origin_twig = $container->hasParameter('knp_paginator') ? $container->getParameter('knp_paginator') : [];
+                $knp_config = array_merge(static::getKnpPaginatorConfig(), $origin_twig);
+                if($asPrepend) {
+                    $container->prependExtensionConfig('knp_paginator', $knp_config);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    $container->setParameter('knp_paginator', $knp_config);
+                }
+                break;
             case 'LiipImagine':
                 $origin_twig = $container->hasParameter('liip_imagine') ? $container->getParameter('liip_imagine') : [];
                 $liip_config = array_merge(static::getLiipImagineConfig(), $origin_twig);
@@ -129,6 +175,16 @@ Class WireConfigurators
                 } else {
                     trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
                     $container->setParameter('liip_imagine', $liip_config);
+                }
+                break;
+            case 'SymfonycastsResetPassword':
+                $origin_scrp = $container->hasParameter('symfonycasts_reset_password') ? $container->getParameter('symfonycasts_reset_password') : [];
+                $scrp_config = array_merge(static::getSymfonyCastsResetPasswordConfig(), $origin_scrp);
+                if($asPrepend) {
+                    $container->prependExtensionConfig('symfonycasts_reset_password', $scrp_config);
+                } else {
+                    trigger_error(vsprintf('Error %s line %d: "%s" parameters are not configured directly. Please use preprend mode!', [__METHOD__, __LINE__, $name]), E_USER_WARNING);
+                    $container->setParameter('symfonycasts_reset_password', $scrp_config);
                 }
                 break;
             case 'Tailwind':
@@ -148,7 +204,7 @@ Class WireConfigurators
                         }
                     }
                     $twd_prepend = [
-                        'binary_version' => 'v4.1.10',
+                        // 'binary_version' => 'v4.1.10',
                     ];
                     if(!empty($input_css)) {
                         $twd_prepend['input_css'] = array_values($input_css);
@@ -255,10 +311,66 @@ Class WireConfigurators
         ];
     }
 
+    private static function getDoctrineConfig(): array
+    {
+        return [
+            'dbal' => [
+                'types' => [
+                    'arraytext' => ArrayTextType::class,
+                ],
+            ],
+            'orm' => [
+                'mappings' => [
+                    'gedmo_tree' => [
+                        'type' => 'attribute',
+                        'is_bundle' => false,
+                        'dir' => '%kernel.project_dir%/vendor/gedmo/doctrine-extensions/src/Tree/Entity',
+                        'prefix' => 'Gedmo\Tree\Entity',
+                        'alias' => 'GedmoTree', # (optional) it will default to the name set for the mapping
+                    ],
+                    'translatable' => [
+                        'type' => 'attribute',
+                        'is_bundle' => false,
+                        'dir' => "%kernel.project_dir%/vendor/gedmo/doctrine-extensions/src/Translatable/Entity",
+                        'prefix' => 'Gedmo\Translatable\Entity',
+                        'alias' => 'GedmoTranslatable',
+                    ],
+                ],
+                'resolve_target_entities' => [
+                    # Aequation WireBundle
+                    UnameInterface::class => Uname::class,
+                    WireItemInterface::class => WireItem::class,
+                    WireEcollectionInterface::class => WireEcollection::class,
+                    WireRelinkInterface::class => WireRelink::class,
+                    WireItemCollectionInterface::class => WireItemCollection::class,
+                    WebsectionCollectionInterface::class => WireWebpageWebsectionCollection::class,
+                    WireBaseRelinkCollectionInterface::class => WireBaseRelinkCollection::class,
+                    # translation entities
+                    WireCategoryTranslationInterface::class => WireCategoryTranslation::class,
+                    WireWebsectionTranslationInterface::class => WireWebsectionTranslation::class,
+                    WireItemTranslationInterface::class => WireItemTranslation::class,
+                    WireRelinkTranslationInterface::class => WireRelinkTranslation::class,
+                    WireLanguageTranslationInterface::class => WireLanguageTranslation::class,
+                ],
+            ]
+        ];
+    }
+
     private static function getFrameworkConfig(): array
     {
         return [
-            'csrf_protection' => true,
+            // 'csrf_protection' => true,
+            'csrf_protection' => [
+                'enabled' => true,
+                'check_header' => true,
+            ],
+            'session' => true,
+            'translator' => [
+                'paths' => [
+                    '%kernel.project_dir%/translations',
+                    '%kernel.project_dir%/vendor/aequation/wire/translations',
+                ],
+            ]
         ];
     }
 
@@ -277,6 +389,19 @@ Class WireConfigurators
         ];
     }
 
+    private static function getKnpPaginatorConfig(): array
+    {
+        return [
+            'page_range' => 10,
+            'template' => [
+                'pagination' => '@AequationWire/default/pagination/pagination.html.twig',
+                'sortable' => '@AequationWire/default/pagination/sortable_link.html.twig',
+                'filtration' => '@AequationWire/default/pagination/filtration.html.twig',
+                'rel_links' => '@AequationWire/default/pagination/rel_links.html.twig',
+            ],
+        ];
+    }
+
     private static function getLiipImagineConfig(): array
     {
         return [
@@ -284,6 +409,13 @@ Class WireConfigurators
             'twig' => [
                 'mode' => 'lazy',
             ],
+        ];
+    }
+
+    private static function getSymfonyCastsResetPasswordConfig(): array
+    {
+        return [
+            'request_password_repository' => ResetPasswordRequestRepository::class,
         ];
     }
 
