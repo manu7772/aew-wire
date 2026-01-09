@@ -1,0 +1,6 @@
+
+REQUIRE:
+symfony composer require symfony/config symfony/dependency-injection symfony/stimulus-bundle symfony/http-kernel symfony/var-dumper symfony/expression-language symfony/filesystem symfony/property-access symfony/property-info symfony/string symfony/yaml symfony/http-client symfony/asset-mapper symfony/asset symfony/twig-pack doctrine/doctrine-bundle doctrine/doctrine-migrations-bundle doctrine/orm symfony/serializer symfony/validator symfony/flex symfony/security-bundle symfony/runtime symfony/form twig/twig twig/extra-bundle symfony/translation symfony/event-dispatcher symfonycasts/verify-email-bundle symfonycasts/dynamic-forms symfony/ux-twig-component symfony/ux-live-component symfony/ux-icons symfony/ux-turbo symfony/ux-leaflet-map liip/imagine-bundle vich/uploader-bundle symfonycasts/tailwind-bundle symfony/uid symfony/rate-limiter stof/doctrine-extensions-bundle knplabs/knp-paginator-bundle nucleos/dompdf-bundle symfonycasts/reset-password-bundle symfony/mailer twig/string-extra twig/intl-extra symfony/object-mapper symfony/apache-pack tales-from-a-dev/twig-tailwind-extra
+
+REQUIRE DEV:
+symfony composer require --dev symfony/debug symfony/framework-bundle symfony/phpunit-bridge symfony/twig-bundle symfony/var-dumper symfony/stopwatch symfony/maker-bundle
