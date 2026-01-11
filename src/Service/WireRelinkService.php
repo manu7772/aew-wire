@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 class WireRelinkService implements WireRelinkServiceInterface
 {
 
-    USE TraitBaseService;
+    use TraitBaseService;
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireRelink::class;

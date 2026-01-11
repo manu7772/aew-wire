@@ -19,7 +19,6 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
  */
 abstract class WireUserRepository extends WireItemRepository implements WireUserRepositoryInterface, PasswordUpgraderInterface
 {
-
     const NAME = WireUser::class;
     const ALIAS = 'wireuser';
 

@@ -10,8 +10,6 @@ use Aequation\WireBundle\Repository\interface\WireCategoryRepositoryInterface;
  */
 abstract class WireCategoryRepository extends BaseWireRepository implements WireCategoryRepositoryInterface
 {
-
-    // const NAME = WireCategory::class;
-    // const ALIAS = 'wire_category';
-
+    const NAME = WireCategory::class;
+    const ALIAS = 'wirecategory';
 }

@@ -43,7 +43,7 @@ use Traversable;
 class WireUserService extends RoleHierarchy implements WireUserServiceInterface
 {
 
-    USE TraitBaseService;
+    use TraitBaseService;
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = WireUser::class;

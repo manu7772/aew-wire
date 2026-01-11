@@ -6,8 +6,6 @@ use Aequation\WireBundle\Repository\interface\WireAddresslinkRepositoryInterface
 
 abstract class WireAddresslinkRepository extends WireRelinkRepository implements WireAddresslinkRepositoryInterface
 {
-
     const NAME = WireAddresslink::class;
     const ALIAS = 'wireaddresslink';
-
 }

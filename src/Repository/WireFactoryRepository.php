@@ -11,9 +11,6 @@ use Doctrine\ORM\Query;
  */
 abstract class WireFactoryRepository extends WireItemRepository implements WireFactoryRepositoryInterface
 {
-
     const NAME = WireFactory::class;
-    const ALIAS = 'wire_factory';
-
-
+    const ALIAS = 'wirefactory';
 }

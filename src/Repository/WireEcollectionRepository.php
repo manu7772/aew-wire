@@ -10,8 +10,6 @@ use Aequation\WireBundle\Repository\WireItemRepository;
  */
 class WireEcollectionRepository extends WireItemRepository implements WireEcollectionRepositoryInterface
 {
-
     const NAME = WireEcollection::class;
-    const ALIAS = 'w_ecollection';
-
+    const ALIAS = 'wireecollection';
 }

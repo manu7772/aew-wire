@@ -95,7 +95,7 @@
                 <twig:ux:icon name="tabler:player-play-filled" class="size-[1.2em]"/>
             </a>
             {% endif %}
-            {% if hydradataItems.hydratable %}
+            {% if hydradataItems.hydratable and hydradataItems.index is not empty %}
             <a href="{{ path('hydration_test', {data: hydradataItems.index}) }}" class="btn btn-square btn-soft {{ hydradataItems.hydrationReady ? 'btn-success' : 'btn-warning disabled opacity-30' }}" title="Test">
                 <twig:ux:icon name="tabler:player-play" class="size-[1.2em]"/>
             </a>

@@ -6,8 +6,6 @@ use Aequation\WireBundle\Repository\interface\WireRsoclinkRepositoryInterface;
 
 abstract class WireRsoclinkRepository extends WireRelinkRepository implements WireRsoclinkRepositoryInterface
 {
-
-    public const NAME = WireRsoclink::class;
-    public const ALIAS = 'WireRsoclink';
-
+    const NAME = WireRsoclink::class;
+    const ALIAS = 'wiresoclink';
 }

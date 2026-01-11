@@ -10,8 +10,6 @@ use Aequation\WireBundle\Repository\WireItemRepository;
  */
 abstract class WireImageRepository extends WireItemRepository implements WireImageRepositoryInterface
 {
-
     const NAME = WireImage::class;
-    const ALIAS = 'wire_Image';
-
+    const ALIAS = 'wireimage';
 }

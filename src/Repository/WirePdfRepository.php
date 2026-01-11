@@ -10,8 +10,6 @@ use Aequation\WireBundle\Repository\WireItemRepository;
  */
 abstract class WirePdfRepository extends WireItemRepository implements WirePdfRepositoryInterface
 {
-
     const NAME = WirePdf::class;
     const ALIAS = 'wirepdf';
-
 }

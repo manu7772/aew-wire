@@ -23,7 +23,7 @@ use Exception;
 #[Autoconfigure(autowire: true, lazy: true)]
 class UnameService implements UnameServiceInterface
 {
-    USE TraitBaseService;
+    use TraitBaseService;
     use TraitBaseEntityService;
 
     public const ENTITY_CLASS = Uname::class;

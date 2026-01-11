@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 abstract class WireItemService implements WireItemServiceInterface
 {
 
-    USE TraitBaseService;
+    use TraitBaseService;
     use TraitBaseEntityService;
     
     public const ENTITY_CLASS = WireItem::class;

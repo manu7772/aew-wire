@@ -20,5 +20,4 @@ abstract class WireLanguageRepository extends BaseWireRepository implements Wire
     const NAME = WireLanguage::class;
     const ALIAS = 'wirelanguage';
 
-
 }

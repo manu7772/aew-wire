@@ -7,7 +7,6 @@ use Aequation\WireBundle\Tools\Encoders;
 
 class UnameRepository extends BaseWireRepository implements UnameRepositoryInterface
 {
-
     const NAME = Uname::class;
     const ALIAS = 'uname';
 

@@ -10,8 +10,6 @@ use Aequation\WireBundle\Repository\WireItemRepository;
  */
 abstract class WireMenuRepository extends WireEcollectionRepository implements WireMenuRepositoryInterface
 {
-
     const NAME = WireMenu::class;
-    const ALIAS = 'wire_Menu';
-
+    const ALIAS = 'wiremenu';
 }

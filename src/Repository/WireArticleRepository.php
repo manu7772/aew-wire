@@ -13,9 +13,8 @@ use Doctrine\ORM\QueryBuilder;
  */
 abstract class WireArticleRepository extends WireItemRepository implements WireArticleRepositoryInterface
 {
-
     const NAME = WireArticle::class;
-    const ALIAS = 'wire_article';
+    const ALIAS = 'wirearticle';
 
 
     public function findAllActivesQueryBuilder(QueryBuilder $qb): void

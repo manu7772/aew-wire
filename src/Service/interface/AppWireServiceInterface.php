@@ -44,7 +44,7 @@ interface AppWireServiceInterface extends JsonSerializable, WireServiceInterface
         'csstheme' => false, // --> false: custom action
         'timezone' => false, // --> false: custom action
         'datenow' => true,
-        'tinyvalues' => 'mergeTinyvalues', // --> USE method
+        'tinyvalues' => 'mergeTinyvalues', // --> use method
         'factory' => true,
     ];
     public const DEFAULT_CSS_THEME = 'light';

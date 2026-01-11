@@ -20,7 +20,7 @@ class WireRelinkRepository extends BaseWireRepository implements WireRelinkRepos
     use BaseGedmoOvrSortableRepository;
 
     const NAME = WireRelink::class;
-    const ALIAS = 'wire_Relink';
+    const ALIAS = 'wirerelink';
 
     // public function __construct(
     //     ManagerRegistry $registry,

@@ -21,7 +21,7 @@ class WireItemRepository extends BaseWireRepository implements WireItemRepositor
     use BaseGedmoOvrSortableRepository;
 
     const NAME = WireItem::class;
-    const ALIAS = 'w_item';
+    const ALIAS = 'wireitem';
 
     // public function __construct(
     //     ManagerRegistry $registry,

@@ -34,12 +34,12 @@ class Uname extends BaseMappSuperClassEntity implements UnameInterface
     public const RESERVED_UNAMES = ['uname', 'id', 'euid', 'entityEuid', 'entity', 'entityClassname', 'entityShortname', 'entityEuid', 'entityId', 'entityUname', 'entityUnameId', 'entityUnameEuid'];
 
     #[ORM\Id]
-    #[ORM\Column(updatable: false, type: Types::STRING, unique: true)]
+    #[ORM\Column(updatable: false, type: Types::STRING, unique: true, length: 255)]
     #[Assert\Length(min: 3, minMessage: 'Uname doit contenir au moins {{ min }} lettres', groups: ['persist','update'])]
     #[Assert\Regex(pattern: Encoders::UNAME_SCHEMA, groups: ['persist','update'])]
     protected ?string $id = null;
 
-    #[ORM\Column(updatable: false, unique: true)]
+    #[ORM\Column(updatable: false, unique: true, length: 255)]
     #[Assert\NotNull(groups: ['persist','update'])]
     #[Assert\Regex(pattern: Encoders::EUID_SCHEMA, groups: ['persist','update'])]
     protected string $entityEuid;
