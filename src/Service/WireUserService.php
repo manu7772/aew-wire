@@ -144,12 +144,14 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     {
         /** @var WireUserInterface&TraitEnabledInterface */
         $sadmin = $this->getMainSAdminUser(true);
-        if($sadmin && !$sadmin->isSuperadmin()) {
+        if(!$sadmin) {
+            return null;
+        }
+        if(!$sadmin->isSuperadmin()) {
             $sadmin->setSuperadmin();
             $this->saveUser($sadmin);
-            return $sadmin;
         }
-        return null;
+        return $sadmin;
     }
 
     public function loginUser(

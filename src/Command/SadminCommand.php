@@ -33,7 +33,7 @@ class SadminCommand extends Command
         $sadmin = $this->userService->checkMainSuperadmin();
 
         if($sadmin instanceof WireUserInterface) {
-            $io->success(sprintf('Super admin user found: %s (%s)', $sadmin->getUserIdentifier(), implode(', ', $sadmin->getRoles())));
+            $io->success(sprintf('Super admin (enabled: %s / is superadmin: %s) user found: %s (%s)', $sadmin->isEnabled() ? 'yes' : 'no', $sadmin->isSuperadmin() ? 'yes' : 'no', $sadmin->getUserIdentifier(), implode(', ', $sadmin->getRoles())));
         } else {
             $io->error('No super admin user found and could not create one!');
             return Command::FAILURE;
