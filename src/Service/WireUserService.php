@@ -126,7 +126,7 @@ class WireUserService extends RoleHierarchy implements WireUserServiceInterface
     ): ?WireUserInterface
     {
         $sadmin_email = $this->appWire->getParam('main_sadmin');
-        $sadmin = $this->getRepository()->findOneBy(['email' => $sadmin_email]);
+        $sadmin = $this->getRepository()->findOneByEmail($sadmin_email);
         if($createIfNotFound) {
             $sadmin ??= $this->createDefaultSuperAdmin();
         }

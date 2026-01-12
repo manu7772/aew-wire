@@ -69,7 +69,7 @@ abstract class WireFactory extends WireItem implements WireFactoryInterface
     protected Collection $relinks;
 
     #[ORM\ManyToMany(targetEntity: WireArticleInterface::class, inversedBy: 'factorys')]
-    #[ORM\JoinColumn(name: 'factory_article', nullable: false)]
+    #[ORM\JoinColumn(name: 'factory_article')]
     protected Collection $articles;
 
     #[ORM\Column(nullable: true)]

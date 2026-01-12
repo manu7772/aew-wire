@@ -85,7 +85,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         $this->initialize();
         if($this->isDevOrSadmin) {
             $event = $this->stopwatch->stop(static::STOPWATCH_NAME);
-            if($event->getDuration() >= 45) {
+            if($event->getDuration() > 100) {
                 // If the initialization took more than 40ms, we log a warning
                 $message = vsprintf('%s line %d: [DEV] WireClassMetadataManager initialized in %d ms', [__METHOD__, __LINE__, $event->getDuration()]);
                 $this->logger->warning($message);
@@ -429,7 +429,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @param array $interfaces
      * @return WireClassMetadataInterface
      */
-    public function findOneByType(string $mode = 'all', array $interfaces): WireClassMetadataInterface
+    public function findOneByType(string $mode = 'all', array $interfaces = []): WireClassMetadataInterface
     {
         $finals = $this->findByType($mode, $interfaces);
         if($finals->count() === 1) {
@@ -438,7 +438,7 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
         throw new InvalidArgumentException(vsprintf('Error %s line %d: found more or less than one "%s" (exactly %d) classes for search %s: %s', [__METHOD__, __LINE__, $mode, $finals->count(), json_encode($interfaces), implode(', ', $finals->getKeys())]));
     }
 
-    public function findOneOrNullByType(string $mode = 'all', array $interfaces): ?WireClassMetadataInterface
+    public function findOneOrNullByType(string $mode = 'all', array $interfaces = []): ?WireClassMetadataInterface
     {
         $finals = $this->findByType($mode, $interfaces);
         return $finals->count() === 1 ? $finals->first() : null;
@@ -450,12 +450,12 @@ class WireClassMetadataManager implements WireClassMetadataManagerInterface
      * @param array $interfaces
      * @return WireClassMetadataInterface
      */
-    public function findOneInstantiable(array $interfaces): WireClassMetadataInterface
+    public function findOneInstantiable(array $interfaces = []): WireClassMetadataInterface
     {
         return $this->findOneByType('instantiable', $interfaces);
     }
 
-    public function findOneOrNullInstantiable(array $interfaces): ?WireClassMetadataInterface
+    public function findOneOrNullInstantiable(array $interfaces = []): ?WireClassMetadataInterface
     {
         return $this->findOneOrNullByType('instantiable', $interfaces);
     }

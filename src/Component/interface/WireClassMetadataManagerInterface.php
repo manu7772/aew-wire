@@ -35,8 +35,8 @@ interface WireClassMetadataManagerInterface
     public function findInstantiables(array $interfaces = []): WireClassMetadataCollectionInterface;
     public function findManageds(array $interfaces = []): WireClassMetadataCollectionInterface;
     public function findFinals(array $interfaces = []): WireClassMetadataCollectionInterface;
-    public function findOneByType(string $mode = 'all', array $interfaces): WireClassMetadataInterface;
-    public function findOneOrNullByType(string $mode = 'all', array $interfaces): ?WireClassMetadataInterface;
+    public function findOneByType(string $mode = 'all', array $interfaces = []): WireClassMetadataInterface;
+    public function findOneOrNullByType(string $mode = 'all', array $interfaces = []): ?WireClassMetadataInterface;
     public function findOneInstantiable(array $interfaces): WireClassMetadataInterface;
     public function findOneOrNullInstantiable(array $interfaces): ?WireClassMetadataInterface;
     public function findOneManaged(array $interfaces): WireClassMetadataInterface;
