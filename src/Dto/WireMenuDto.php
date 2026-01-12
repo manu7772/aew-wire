@@ -29,7 +29,8 @@ class WireMenuDto extends WireEcollectionDto
     public function __construct(
         protected mixed $data,
         protected WireEntityManagerInterface $_wireEm,
-        protected array $_base_options = [],    )
+        protected array $_base_options = [],
+    )
     {
         $this->content = new TextContents();
         parent::__construct($data, $_wireEm, $_base_options);

@@ -21,7 +21,8 @@ abstract class WireEcollectionDto extends WireItemDto
     public function __construct(
         protected mixed $data,
         protected WireEntityManagerInterface $_wireEm,
-        protected array $_base_options = [],    )
+        protected array $_base_options = [],
+    )
     {
         $this->childs = new ArrayCollection();
         parent::__construct($data, $_wireEm, $_base_options);

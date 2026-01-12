@@ -11,7 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 
-class WireSlideType extends WireImageType
+class WireSlideType extends WireAbstractType
 {
 
     public const ENTITY_CLASS = WireSlide::class;

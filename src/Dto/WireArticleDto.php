@@ -32,7 +32,8 @@ class WireArticleDto extends WireItemDto
         protected mixed $data,
         protected WireEntityManagerInterface $_wireEm,
         protected array $_base_options = [],
-    ) {
+    )
+    {
         $this->categorys = new ArrayCollection();
         $this->factorys = new ArrayCollection();
         $this->content = new TextContents();

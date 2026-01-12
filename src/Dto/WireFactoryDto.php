@@ -21,6 +21,8 @@ class WireFactoryDto extends WireItemDto
     #[Map(if: 'count')]
     public TextContentsInterface $content;
 
+    public bool $prefered = false;
+
     public function __construct(
         protected mixed $data,
         protected WireEntityManagerInterface $_wireEm,

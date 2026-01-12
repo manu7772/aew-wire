@@ -161,6 +161,7 @@ class HydradataItems extends TypedCollection implements HydradataItemsInterface
             $this->elements = $this->file_data['items'] ?? [];
             $this->enabled = $this->file_data['enabled'] ?? true;
             if($this->checkDatas()) {
+                // dump($this->elements, $this->name);
                 foreach ($this->elements as $key => $data) {
                     $this->elements[$key] = new HydraItem($data, $this, $key);
                 }
@@ -278,7 +279,8 @@ class HydradataItems extends TypedCollection implements HydradataItemsInterface
         $this->data_state = 0b00000000; // Reset data state
         if($this->isModeHydration()) {
             // If file is set, check data
-            if(empty($this->file_data ?? [])) {
+            // dump($this->file_data, $this->name);
+            if(empty($this->file_data ?? []) || empty($this->file_data['items'] ?? [])) {
                 $this->data_state |= static::DATA_STATES['data_empty'];
             } else {
                 foreach (static::DATA_FIELDS as $name) {

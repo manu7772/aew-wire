@@ -23,7 +23,8 @@ class WireCategoryDto extends BaseDto
         protected mixed $data,
         protected WireEntityManagerInterface $_wireEm,
         protected array $_base_options = [],
-    ) {
+    )
+    {
         parent::__construct($data, $_wireEm, $_base_options);
     }
 

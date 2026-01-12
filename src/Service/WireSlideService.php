@@ -5,7 +5,7 @@ use Aequation\WireBundle\Entity\WireSlide;
 use Aequation\WireBundle\Form\WireSlideType;
 use Aequation\WireBundle\Service\interface\WireSlideServiceInterface;
 
-abstract class WireSlideService extends WireImageService implements WireSlideServiceInterface
+abstract class WireSlideService extends WireItemService implements WireSlideServiceInterface
 {
 
     public const ENTITY_CLASS = WireSlide::class;

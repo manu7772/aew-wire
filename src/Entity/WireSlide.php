@@ -4,10 +4,10 @@ namespace Aequation\WireBundle\Entity;
 use Aequation\WireBundle\Entity\interface\WireSlideInterface;
 
 
-class WireSlide extends WireImage implements WireSlideInterface
+class WireSlide extends WireItem implements WireSlideInterface
 {
     public const ICON = [
-        'ux' => 'tabler:slide',
+        'ux' => 'tabler:photo-circle',
         'fa' => 'fa-image'
     ];
 }

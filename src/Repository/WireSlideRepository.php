@@ -8,7 +8,7 @@ use Aequation\WireBundle\Repository\WireItemRepository;
 /**
  * @extends WireItemRepository
  */
-abstract class WireSlideRepository extends WireImageRepository implements WireSlideRepositoryInterface
+abstract class WireSlideRepository extends WireItemRepository implements WireSlideRepositoryInterface
 {
     const NAME = WireSlide::class;
     const ALIAS = 'wireslide';
