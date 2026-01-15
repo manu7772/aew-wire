@@ -29,7 +29,7 @@ class DashboardController extends AbstractController
     #[Route('/help', name: 'help')]
     public function help(): Response
     {
-        $this->addFlash('success', 'Page aide en ligne');
+        // $this->addFlash('success', 'Page aide en ligne');
         return $this->render('@AequationWire/admin/dashboard/help.html.twig');
     }
 

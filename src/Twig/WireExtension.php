@@ -65,6 +65,7 @@ class WireExtension extends AbstractExtension
     public function getFilters(): array
     {
         return [
+            new TwigFilter('isSameText', [Strings::class, 'isSameText']),
             new TwigFilter('filter_active', [$this, 'filterActive']),
             new TwigFilter('has_text', [Strings::class, 'hasText']),
             new TwigFilter('shortname', [Objects::class, 'getShortname']),

@@ -4,4 +4,10 @@
 
 {% block main_content %}
 <h1 class="text-3xl font-semibold mb-4">{{ 'aide'|trans|capitalize }}</h1>
+
+<div class="bg-blue-700 shadow-sm rounded-sm p-4 mb-6">
+    <h2 class="text-2xl font-semibold mb-2">{{ 'Check super admin user'|trans|capitalize }}</h2>
+    <p class="mb-4">Cliquer sur le bouton ci-dessous pour vérifier l'existence d'un super administrateur. S'il n'en existe pas, un nouveau super administrateur sera créé automatiquement.</p>
+    <a href="{{ path('admin_user_check_sadmin') }}" class="btn btn-primary">{{ 'Checker...'|trans|capitalize }}</a>
+</div>
 {% endblock %}

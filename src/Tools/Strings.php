@@ -235,14 +235,31 @@ class Strings implements ToolInterface
      * HTML TEXTS
      *************************************************************************************/
 
+	/**
+	 * Convert element to raw string (without HTML tags, nore spaces)
+	 */
+	public static function toRawString(mixed $element): string
+	{
+		return preg_replace('/\s/', '', strip_tags(is_string($element) || $element instanceof Stringable ? (string)$element : ''));
+	}
+
 	public static function hasText(
 		mixed $element
 	): bool
 	{
-		$element = (string)$element;
-		return is_string($element)
-			? strlen(strip_tags($element)) > 0
-			: false;
+		return strlen(static::toRawString($element)) > 0;
+	}
+
+	public static function isSameText(?string $text1, ?string $text2, float $min_percent = 90.00): bool
+	{
+		$text1 = static::toRawString($text1);
+		$text2 = static::toRawString($text2);
+		if(strlen($text1) > strlen($text2)) {
+			similar_text($text1, $text2, $percent);
+		} else {
+			similar_text($text2, $text1, $percent);
+		}
+		return $percent >= $min_percent;
 	}
 
 	public static function htmlAttributes(
